@@ -1,100 +1,112 @@
-/*
-    *****************
-    DONE BY:- JENISH SHOBHIT
-    *****************
-*/
+/* Sorting models share one trace recorder. A frame is a snapshot, so the
+   reader can move backward or scrub without rerunning an animation. */
+(function (global) {
+  'use strict';
 
-//Variables (BE CAREFUL THESE MIGHT BE USED IN OTHER JS FILES TOO)
-var inp_as=document.getElementById('a_size'),array_size=inp_as.value;
-var inp_gen=document.getElementById("a_generate");
-var inp_aspeed=document.getElementById("a_speed");
-//var array_speed=document.getElementById('a_speed').value;
+  var algorithms = Object.create(null);
 
-var butts_algos=document.querySelectorAll(".algos button");
+  function register(name, definition) {
+    if (algorithms[name]) throw new Error('Duplicate sorting algorithm: ' + name);
+    algorithms[name] = definition;
+  }
 
-var div_sizes=[];
-var divs=[];
-var margin_size;
-var cont=document.getElementById("array_container");
-cont.style="flex-direction:row";
+  function createTrace(input) {
+    var items = input.map(function (value, id) {
+      return Object.freeze({ value: value, id: id });
+    });
+    var settled = new Set();
+    var frames = [];
+    var comparisons = 0;
+    var writes = 0;
+    var swaps = 0;
+    var held = null;
 
-//Array generation and updation.
-
-inp_gen.addEventListener("click",generate_array);
-inp_as.addEventListener("input",update_array_size);
-
-function generate_array()
-{
-    cont.innerHTML="";
-
-    div_sizes = [];
-    divs = [];
-
-    for(var i=0;i<array_size;i++)
-    {
-        div_sizes[i]=Math.floor(Math.random() * 0.5*(inp_as.max - inp_as.min) ) + 10;
-        divs[i]=document.createElement("div");
-        cont.appendChild(divs[i]);
-        margin_size=0.1;
-        divs[i].style=" margin:0% " + margin_size + "%; background-color:#bdbdbd; width:" + (100/array_size-(2*margin_size)) + "%; height:" + (div_sizes[i]) + "%;";
+    function record(caption, active, phase) {
+      frames.push({
+        items: items.slice(),
+        settled: Array.from(settled),
+        active: (active || []).slice(),
+        held: held,
+        caption: caption,
+        phase: phase || 'observe',
+        comparisons: comparisons,
+        writes: writes,
+        swaps: swaps
+      });
     }
-}
 
-function update_array_size()
-{
-    array_size=inp_as.value;
-    generate_array();
-    if (typeof vis_speed === "function") vis_speed();
-}
+    record('Start with this exact array. Predict the first comparison.', []);
 
-window.onload=function(){
-    update_array_size();
-    for(var i=0;i<butts_algos.length;i++)
-    {
-        butts_algos[i].classList.add("butt_unselected");
+    return {
+      frames: frames,
+      length: items.length,
+      at: function (index) { return items[index]; },
+      slice: function (start, end) { return items.slice(start, end); },
+      note: function (caption, active) { record(caption, active); },
+      compare: function (i, j, caption) {
+        comparisons++;
+        record(caption || ('Compare positions ' + i + ' and ' + j + '.'), [i, j], 'compare');
+        return items[i].value - items[j].value;
+      },
+      compareItems: function (a, b, caption, active) {
+        comparisons++;
+        record(caption, active, 'compare');
+        return a.value - b.value;
+      },
+      swap: function (i, j, caption) {
+        if (i === j) return;
+        var temp = items[i];
+        items[i] = items[j];
+        items[j] = temp;
+        swaps++;
+        writes += 2;
+        record(caption || ('Swap positions ' + i + ' and ' + j + '.'), [i, j], 'move');
+      },
+      lift: function (index, caption) {
+        held = items[index];
+        items[index] = null;
+        record(caption, [index], 'move');
+      },
+      move: function (from, to, caption) {
+        items[to] = items[from];
+        items[from] = null;
+        writes++;
+        record(caption, [from, to], 'move');
+      },
+      write: function (index, item, caption) {
+        items[index] = item;
+        if (held === item) held = null;
+        writes++;
+        record(caption, [index], 'move');
+      },
+      release: function (caption, active) {
+        held = null;
+        record(caption, active, 'place');
+      },
+      mark: function (indices, caption) {
+        indices.forEach(function (index) { settled.add(index); });
+        record(caption, indices, 'settled');
+      },
+      finish: function () {
+        held = null;
+        for (var i = 0; i < items.length; i++) settled.add(i);
+        record('Sorted. Every value is now in its final position.', [], 'complete');
+      }
+    };
+  }
+
+  function run(name, input) {
+    var definition = algorithms[name];
+    if (!definition) throw new Error('Unknown sorting algorithm: ' + name);
+    if (!Array.isArray(input) || input.length < 2 || input.length > 64 ||
+        input.some(function (value) { return !Number.isInteger(value) || value < 0 || value > 99; })) {
+      throw new Error('Use 2–64 whole numbers between 0 and 99.');
     }
-};
+    var trace = createTrace(input);
+    definition.sort(trace);
+    trace.finish();
+    return { definition: definition, frames: trace.frames };
+  }
 
-//Running the appropriate algorithm.
-for(var i=0;i<butts_algos.length;i++)
-{
-    butts_algos[i].addEventListener("click",runalgo);
-}
-
-function disable_buttons()
-{
-    for(var i=0;i<butts_algos.length;i++)
-    {
-        butts_algos[i].classList.remove("butt_selected");
-        butts_algos[i].classList.remove("butt_unselected");
-        butts_algos[i].classList.add("butt_locked");
-        butts_algos[i].disabled=true;
-    }
-    inp_as.disabled=true;
-    inp_gen.disabled=true;
-    inp_aspeed.disabled=true;
-}
-
-function runalgo()
-{
-    disable_buttons();
-    this.classList.remove("butt_locked");
-    this.classList.remove("butt_unselected");
-    this.classList.add("butt_selected");
-
-    switch(this.innerHTML)
-    {
-        case "Bubble":Bubble();
-                        break;
-        case "Selection":Selection_sort();
-                        break;
-        case "Insertion":Insertion();
-                        break;
-        case "Merge":Merge();
-                        break;
-        case "Quick":Quick();
-                        break;
-        case "Heap":Heap();
-                        break;
-    }
-}
+  global.SortLab = { register: register, run: run, algorithms: algorithms };
+}(typeof window !== 'undefined' ? window : globalThis));

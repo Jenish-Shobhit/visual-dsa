@@ -1,32 +1,116 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Turn a key into a location, then decide what happens when two keys land together."><meta name="theme-color" content="#ffffff"><title>09 — Hashing · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
-<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">09 / 14 · After stacks and queues</span></div></header>
-<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 09 · After stacks and queues</p><h1>Hashing.</h1><p class="lede">Turn a key into a location, then decide what happens when two keys land together.</p><p class="read-time">About 8 minutes · Use ← → in the figure</p></section>
-<div class="grid"><div class="prose">
-<p>You need to find a value by key, perhaps a student's ID. Scanning every entry works, but a table can use the key to suggest a slot. For a small demonstration with five slots, use <code>slot = key % 5</code>, the remainder after dividing by 5.</p>
-<div class="example"><pre>12 % 5 = 2  → put 12 in slot 2
- 7 % 5 = 2  → slot 2 is occupied</pre></div>
-<p>Both keys want slot 2. That is a <strong>collision</strong>, and it is normal: many possible keys must share a limited number of slots. Our figure uses <em>linear probing</em>: try the next slot until an empty one appears. So 7 goes into slot 3.</p>
-<h2>Look up with the same rule.</h2>
-<p>To find 7, hash it to slot 2. That slot holds 12, so continue to slot 3 and find 7. If you stop at the first different key, the lookup fails. If you reach an empty slot, 7 is absent, provided deletion has preserved the probe chain.</p>
-<p>A real hash function aims to distribute keys evenly. With enough space and a good distribution, insertions and lookups are often <code>O(1)</code> on average. A bad distribution or a very full table can make a long probe chain, up to <code>O(n)</code> work. The <em>load factor</em> is entries divided by slots; growing and rebuilding the table keeps it manageable.</p>
-<h2>Keys need one stable identity.</h2>
-<p>Equal keys must hash to the same starting slot. A lookup must compare keys as it probes, because sharing a slot does not make two keys equal. Some tables keep a list at each slot instead of probing; either strategy must handle collisions deliberately.</p></div></div>
-<section class="figure grid" id="chapter-figure" aria-label="Insert keys into a hash table and resolve a collision"><h2 class="figure-title">Figure 09 / A collision and a lookup</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="Five hash slots with keys and a highlighted probe"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
-<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>With seven slots and <code>slot = key % 7</code>, where do keys 15, 22, and 8 start? Which collide?</li><li>Using linear probing, insert 6, 11, and 16 into five empty slots. Draw the final table and trace a lookup for 16.</li><li>A table has 8 entries and 10 slots. What is its load factor? What might happen to lookup work if it keeps filling without growing?</li></ol></section>
-</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="08-stacks-and-queues.html"><small>Previous / 08</small>← Stacks and queues</a><a class="next" href="10-recursion.html"><small>Next / 10</small>Recursion →</a></div></footer>
-<script src="../js/figure.js"></script><script>(function(){
-
-var svg=document.getElementById('chapter-svg');
-var frames=[
- {slots:['','','','',''],probe:-1,label:'EMPTY TABLE',caption:'Five slots are empty. The hash rule is key % 5.'},
- {slots:['','','12','',''],probe:2,label:'12 % 5 = 2',caption:'Insert 12 at its starting slot, 2.'},
- {slots:['','','12','',''],probe:2,label:'7 % 5 = 2',caption:'Key 7 also hashes to slot 2. The slot holds 12: a collision.'},
- {slots:['','','12','7',''],probe:3,label:'TRY THE NEXT SLOT',caption:'Linear probing moves to slot 3 and inserts 7 there.'},
- {slots:['','','12','7','19'],probe:4,label:'19 % 5 = 4',caption:'Key 19 hashes to the still-empty slot 4.'},
- {slots:['','','12','7','19'],probe:2,label:'LOOK UP 7',caption:'To find 7, start at slot 2. It holds 12, so the search must continue.'},
- {slots:['','','12','7','19'],probe:3,label:'NEXT SLOT',caption:'Slot 3 holds 7. The lookup succeeds after two probes.'}
-];
-function draw(f){var cells=f.slots.map(function(v,i){var x=7+i*70,active=i===f.probe;return '<text x="'+(x+30)+'" y="67" text-anchor="middle" font-size="11" fill="#686868">'+i+'</text><rect x="'+x+'" y="79" width="60" height="75" fill="'+(active?'#e2001a':'#fff')+'" stroke="'+(active?'#e2001a':'#d5d5d5')+'"/><text x="'+(x+30)+'" y="125" text-anchor="middle" font-size="23" font-weight="700" fill="'+(active?'#fff':v?'#111':'#aaa')+'">'+(v||'—')+'</text>';}).join('');svg.innerHTML='<text x="7" y="20" font-size="12" font-weight="700">'+f.label+'</text><text x="7" y="45" font-size="11" fill="#686868">SLOT</text>'+cells+'<line x1="7" y1="174" x2="350" y2="174" stroke="#d5d5d5"/><text x="7" y="201" font-size="12" fill="#686868">RULE  /  KEY % 5</text>';}
-FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
-}());</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Understand hash tables by tracing collisions, probing, lookup, load factor, and deletion hazards.">
+  <meta name="theme-color" content="#f8f5ee"><title>Hashing · Visual DSA</title>
+  <link rel="stylesheet" href="../css/atlas.css">
+  <style>
+    .hash-inputs{display:flex;gap:.65rem;align-items:end;flex-wrap:wrap;margin:0 0 .5rem}
+    .hash-inputs label{font-size:.8rem;font-weight:700;min-width:6rem}.hash-inputs label:first-child{flex:1 1 15rem}
+    .hash-inputs input{display:block;width:100%;margin-top:.25rem;padding:.5rem;border:1px solid #84938d;background:#fff;color:#172a2a;font:inherit}
+    .hash-inputs button{min-height:2.5rem;padding:.5rem .8rem;border:1px solid #172a2a;background:transparent;color:#172a2a;cursor:pointer}.hash-inputs button:hover{border-color:#e86a33}
+    .hash-error{min-height:1.35rem;margin:0 0 .6rem;color:#a83b21;font-size:.85rem}
+    .hash-stage{display:grid;grid-template-columns:minmax(0,.65fr) minmax(0,1.35fr);gap:1.2rem}
+    .hash-stage h3{margin:0 0 .55rem;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:#637174}
+    .hash-rule{padding:1rem;background:#172a2a;color:#fff;font:700 clamp(.83rem,2vw,1.1rem)/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+    .hash-rule strong{display:block;color:#f6aa76;font-size:1.4rem;overflow-wrap:anywhere}
+    .hash-table{display:flex;flex-wrap:wrap;gap:.3rem;min-height:5rem}
+    .hash-cell{flex:1 1 3.2rem;max-width:5rem;min-width:3.2rem;text-align:center;border:1px solid #a9b9b4;background:#fff}
+    .hash-cell small{display:block;padding:.17rem;color:#637174;font-size:.66rem}.hash-cell strong{display:block;padding:.48rem .2rem;font-size:1.15rem;min-height:2.6rem}
+    .hash-cell[data-state="probe"]{border-color:#e86a33;background:#fbe9df;box-shadow:inset 0 -4px #e86a33}
+    .hash-cell[data-state="visited"]{border-color:#27836d;background:#e5f4ed}
+    .hash-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;margin-top:.85rem}
+    .hash-stat{border-top:2px solid #172a2a;padding-top:.35rem}.hash-stat small{display:block;color:#637174;font-size:.65rem;text-transform:uppercase}.hash-stat strong{font-size:1.3rem;overflow-wrap:anywhere}
+    .hash-insight{padding:.8rem 1rem;border-left:4px solid #27836d;background:#e5f4ed;margin:1.2rem 0}
+    .hash-note{font-size:.83rem;color:#637174;margin:.8rem 0 0}
+    @media(max-width:700px){.hash-stage{grid-template-columns:1fr}.hash-cell{min-width:2.7rem;flex-basis:2.7rem}.hash-stat strong{font-size:1.1rem}}
+  </style>
+</head>
+<body>
+  <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Guided path / 12 of 17</span></div></header>
+  <main class="site">
+    <section class="chapter-hero grid"><p class="eyebrow">The next idea · After stacks and queues</p><h1>Hashing.</h1><p class="lede">Let a key suggest a place to look. Then make a rule for the times it guesses the same place as another key.</p><p class="read-time">About 11 minutes · Change the keys and lookup target</p></section>
+    <div class="grid"><article class="prose">
+      <p>Suppose you keep student records by ID. If the IDs are in a list, finding one record may require checking every entry. What if the ID itself could suggest where to look? With five slots, a toy rule is <code>slot = ID % 5</code>, the remainder after division by five. ID 12 begins at slot 2.</p>
+      <div class="example"><pre>12 % 5 = 2
+ 7 % 5 = 2</pre></div>
+      <p>Both IDs ask for slot 2. This is a <em>collision</em>, not a broken hash function. There are more possible IDs than slots, so some IDs must meet. A hash table needs a collision rule. Here we use <em>linear probing</em>: if the starting slot is occupied by a different key, try the next slot, wrapping around after the last slot. ID 7 goes to slot 3 when 12 owns slot 2.</p>
+      <p>Notice what the table stores: the <em>key itself</em>, or a record containing it, so a later lookup can compare keys. A matching hash result does not prove the keys match. The hash tells us where to start, and comparison tells us when to stop.</p>
+      <h2>Lookup must retrace insertion.</h2>
+      <p>To find 7, calculate <code>7 % 5 = 2</code>. Slot 2 holds 12, so continue to slot 3. There is 7. If the target is absent, you can stop at the first slot that has always been empty: insertion would have placed the target there if it had followed the same path. Try an absent target in the lab and watch the search stop.</p>
+      <p>The same rule also explains a subtle deletion bug. If 12 is removed by turning slot 2 into an ordinary empty slot, a lookup for 7 would stop there and falsely report “absent.” A probing table leaves a special <em>tombstone</em> so lookups continue across deleted positions, or it repairs the probe cluster. We use no deletion in the figure, but its invariant depends on this detail.</p>
+      <p>Probing wraps around. In five slots, if key 19 starts at slot 4 and that slot is occupied, the next candidate is slot 0, then 1. The formula for the <code>j</code>th candidate is <code>(hash(key) + j) % 5</code>. This is why insertion and lookup must agree on both the hash function and the probe order. Changing either rule while entries remain in the table makes old keys unreachable unless the table is rebuilt.</p>
+    </article></div>
+    <section class="figure grid" id="hash-figure" aria-label="Build and search a hash table with chosen keys">
+      <h2 class="figure-title">Explore / Follow the probe</h2><div class="figure-body">
+        <div class="hash-inputs"><label for="hash-keys">Keys, separated by commas<input id="hash-keys" type="text" value="12, 7, 19" spellcheck="false"></label><label for="hash-size">Slots<input id="hash-size" type="number" min="5" max="11" step="1" value="5"></label><label for="hash-query">Find key<input id="hash-query" type="number" min="0" max="99" step="1" value="7"></label><button id="hash-apply" type="button">Build and trace</button></div><p class="hash-error" id="hash-error" role="alert"></p>
+        <div class="figure-panel"><div class="hash-stage"><div><h3>Current operation</h3><div class="hash-rule"><span data-operation>Ready</span><strong data-equation>key % slots</strong></div><p class="hash-note">A probe checks a slot, then advances one step if it holds another key.</p></div><div><h3>Table slots</h3><div class="hash-table" data-table></div><div class="hash-stats"><div class="hash-stat"><small>Phase</small><strong data-phase>—</strong></div><div class="hash-stat"><small>Probes</small><strong data-probes>0</strong></div><div class="hash-stat"><small>Load factor</small><strong data-load>0 / 5</strong></div></div></div></div></div>
+        <p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>← Previous</button><button type="button" data-next>Next →</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Try keys 4, 9, 14 with five slots. Then search for 19.</p>
+      </div>
+    </section>
+    <div class="grid"><article class="prose">
+      <h2>When does the shortcut stay short?</h2>
+      <p>The <em>load factor</em> is stored entries divided by slot count, written <code>α = n / m</code>. As a probing table gets crowded, empty slots are harder to find and clusters lengthen. Real implementations choose a hash function that distributes common keys well and grow and rehash the table before it becomes too full. Our modulo rule is only a transparent teaching example: keys with the same remainder collide by design.</p>
+      <p>Under suitable assumptions about the hash distribution and a controlled load factor, lookup and insertion take expected constant time, <code>O(1)</code>. A worst-case run can still inspect many slots, <code>O(n)</code>. Those are different claims: “expected” needs a distribution or randomized hash choice; it is not a guarantee that every lookup is fast. Space grows with the table, <code>O(m)</code>. A rebuild costs <code>O(n)</code> at that moment, but an occasional rebuild can have a small amortized cost across many insertions.</p>
+      <div class="hash-insight"><strong>Probe invariant:</strong> every key is reachable by starting at its hashed slot and following the probe sequence without crossing a never-used empty slot.</div>
+      <p>Another collision strategy is <em>separate chaining</em>: each slot points to a small collection of keys with that hash value. It trades probing and tombstones for extra links or buckets. The idea beneath both designs stays the same: a hash narrows where to look; a collision policy preserves correctness when many keys share a destination.</p>
+      <p>Integer remainder is easy to draw, but keys are often words, objects, or compound records. A real hash function converts a key into an integer while respecting equality: if two keys are considered equal, they must produce the same hash. The reverse is impossible to promise—unequal keys can share a hash. A hash table must therefore check equality after it reaches a candidate slot. In JavaScript, <code>Map</code> offers key-based lookup without making you choose a table size or collision scheme; our lab exposes those hidden decisions so their costs are understandable.</p>
+      <p>Linear probing tends to create <em>clusters</em>. Once a run of occupied slots forms, a new key landing anywhere in or just before that run extends it. This is one reason implementations keep spare capacity and choose their collision strategy carefully. If a hash function sends nearly every key to the same start, even a low overall load factor may be unhelpful. Expected constant time rests on assumptions about both distribution and occupancy.</p>
+      <p>A hash table is useful when you need exact membership or lookup by key. It gives up sorted order. If you need the smallest key, all keys in a range, or the next larger key, an ordered tree may serve the workload better. The data structure is chosen for the questions you ask of it.</p>
+    </article></div>
+    <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice on paper</h2></div><ol class="grid"><li>Use seven slots and <code>key % 7</code>. Insert 15, 22, 8, and 29 by linear probing. Show each checked slot, including any wraparound.</li><li>Keys 12 and 7 are stored in five slots as in the example. Remove 12 by making its slot ordinary empty. Trace a lookup for 7 and explain the failure. Propose a state that would let lookup continue.</li><li>A table has 8 keys in 10 slots. Compute its load factor, then add one key that collides with an existing cluster. Explain why expected <code>O(1)</code> is a qualified claim rather than a promise about your specific probe.</li></ol></section>
+  </main>
+  <footer class="chapter-footer"><div class="site grid"><a class="prev" href="08-stacks-and-queues.html"><small>Previous · Stacks and queues</small>← Restrict the ends</a><a class="next" href="10-recursion.html"><small>Next · Recursion</small>Follow a call →</a></div></footer>
+  <script src="../js/figure.js"></script>
+  <script>
+    (function(){
+      'use strict';
+      var root=document.getElementById('hash-figure');
+      var table=root.querySelector('[data-table]'),operation=root.querySelector('[data-operation]'),equation=root.querySelector('[data-equation]');
+      var phase=root.querySelector('[data-phase]'),probes=root.querySelector('[data-probes]'),load=root.querySelector('[data-load]');
+      var input=document.getElementById('hash-keys'),sizeInput=document.getElementById('hash-size'),queryInput=document.getElementById('hash-query'),error=document.getElementById('hash-error');
+      function makeFrames(keys,size,query){
+        var slots=Array(size).fill(null),frames=[],count=0;
+        function frame(stage,key,hot,seen,tries,caption){frames.push({slots:slots.slice(),size:size,count:count,stage:stage,key:key,hot:hot,seen:seen.slice(),tries:tries,caption:caption});}
+        frame('Ready',null,-1,[],0,'Start with '+size+' empty slots. The teaching hash is key % '+size+'.');
+        keys.forEach(function(key){
+          var start=key%size,seen=[];
+          for(var offset=0;offset<size;offset++){
+            var at=(start+offset)%size;seen.push(at);
+            frame('Insert',key,at,seen,offset+1,'Key '+key+' starts at '+start+'. Check slot '+at+(slots[at]===null?', which is empty.':', which holds '+slots[at]+'.'));
+            if(slots[at]===null){slots[at]=key;count++;frame('Insert',key,at,seen,offset+1,'Place '+key+' in slot '+at+'. The same sequence will be used to find it later.');break;}
+          }
+        });
+        var start=query%size,seen=[],found=false;
+        for(var offset=0;offset<size;offset++){
+          var at=(start+offset)%size;seen.push(at);
+          frame('Find',query,at,seen,offset+1,'Look for '+query+' at slot '+at+'. It '+(slots[at]===null?'has never been used.':slots[at]===query?'holds the requested key.':'holds another key, '+slots[at]+'.'));
+          if(slots[at]===query){frame('Found',query,at,seen,offset+1,'Found '+query+' after '+(offset+1)+' probe'+(offset?'s':'')+'.');found=true;break;}
+          if(slots[at]===null){frame('Absent',query,at,seen,offset+1,'The first never-used empty slot proves '+query+' is absent.');break;}
+        }
+        if(!found&&slots.every(function(value){return value!==null;}))frame('Absent',query,-1,seen,size,'Every slot was checked. The key is absent.');
+        return frames;
+      }
+      function draw(f){
+        operation.textContent=f.key===null?'Empty table':f.stage+' '+f.key;
+        equation.textContent=f.key===null?'key % '+f.size:f.key+' % '+f.size+' = '+(f.key%f.size);
+        phase.textContent=f.stage;probes.textContent=String(f.tries);load.textContent=f.count+' / '+f.size;
+        table.innerHTML=f.slots.map(function(value,i){var state=i===f.hot?'probe':f.seen.indexOf(i)>=0?'visited':'idle';return '<div class="hash-cell" data-state="'+state+'"><small>slot '+i+'</small><strong>'+(value===null?'—':value)+'</strong></div>';}).join('');
+      }
+      var stepper=FigureStepper({root:'#hash-figure',frames:makeFrames([12,7,19],5,7),draw:draw});
+      function apply(){
+        var size=Number(sizeInput.value),query=Number(queryInput.value),source=input.value.trim();
+        if(!Number.isInteger(size)||size<5||size>11){error.textContent='Choose 5 to 11 slots.';return;}
+        if(!Number.isInteger(query)||query<0||query>99){error.textContent='Search for a whole-number key from 0 to 99.';return;}
+        var tokens=source?source.split(','):[],keys=[];
+        if(tokens.length>=size){error.textContent='Use fewer keys than slots so a never-used empty slot remains.';return;}
+        for(var i=0;i<tokens.length;i++){var t=tokens[i].trim();if(!/^\d+$/.test(t)||Number(t)>99){error.textContent='Keys must be whole numbers from 0 to 99, separated by commas.';return;}var key=Number(t);if(keys.indexOf(key)!==-1){error.textContent='Use distinct keys; this lab stores one record per key.';return;}keys.push(key);}
+        error.textContent='';stepper.setFrames(makeFrames(keys,size,query));
+      }
+      document.getElementById('hash-apply').addEventListener('click',apply);
+      [input,sizeInput,queryInput].forEach(function(el){el.addEventListener('input',function(){error.textContent='';});el.addEventListener('keydown',function(event){if(event.key==='Enter'){event.preventDefault();apply();}});});
+    }());
+  </script>
+</body>
+</html>

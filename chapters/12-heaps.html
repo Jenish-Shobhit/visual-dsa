@@ -1,30 +1,92 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Keep the highest-priority value at the top by repairing one path at a time."><meta name="theme-color" content="#ffffff"><title>12 — Heaps · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
-<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">12 / 14 · After trees</span></div></header>
-<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 12 · After trees</p><h1>Heaps.</h1><p class="lede">Keep the highest-priority value at the top by repairing one path at a time.</p><p class="read-time">About 7 minutes · Use ← → in the figure</p></section>
-<div class="grid"><div class="prose">
-<p>You have tasks with priorities <code>[8, 5, 7, 2, 4, 6]</code>. The highest number should be easy to get. A <strong>max heap</strong> keeps a simple rule: each parent is at least as large as its children. Here, 8 is at the top.</p>
-<div class="example"><pre>index:  0  1  2  3  4  5
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Trace insertion and removal in a binary max heap, seeing both the complete tree and its array layout.">
+  <meta name="theme-color" content="#f8f5ee"><title>Heaps · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css">
+  <style>
+    .heap-modes,.heap-inputs{display:flex;gap:.55rem;align-items:end;flex-wrap:wrap;margin:0 0 .7rem}.heap-modes button,.heap-inputs button{min-height:2.5rem;padding:.5rem .85rem;border:1px solid #172a2a;background:transparent;color:#172a2a;cursor:pointer}.heap-modes button[aria-pressed="true"]{background:#172a2a;color:#fff}.heap-modes button:hover,.heap-inputs button:hover{border-color:#e86a33}
+    .heap-inputs label{font-size:.8rem;font-weight:700;min-width:6rem}.heap-inputs label:first-child{flex:1 1 15rem}.heap-inputs input{display:block;width:100%;margin-top:.25rem;padding:.5rem;border:1px solid #84938d;background:#fff;color:#172a2a;font:inherit}.heap-inputs [hidden]{display:none!important}.heap-error{min-height:1.3rem;margin:0 0 .6rem;color:#a83b21;font-size:.85rem}
+    .heap-lab h3{margin:0 0 .55rem;color:#637174;text-transform:uppercase;letter-spacing:.1em;font-size:.74rem}.heap-tree{border:1px solid #a9b9b4;background:#fff;overflow:hidden}.heap-tree svg{display:block;width:100%;height:auto}.heap-array{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.7rem}.heap-cell{flex:1 1 3rem;max-width:4.5rem;min-width:3rem;border:1px solid #a9b9b4;text-align:center;background:#fff}.heap-cell[data-hot="true"]{border-color:#e86a33;background:#fbe9df;box-shadow:inset 0 -4px #e86a33}.heap-cell small{display:block;color:#637174;padding:.1rem;font-size:.64rem}.heap-cell strong{display:block;padding:.3rem;font-size:1.08rem}
+    .heap-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;margin:.85rem 0}.heap-stat{border-top:2px solid #172a2a;padding-top:.3rem}.heap-stat small{display:block;color:#637174;font-size:.64rem;text-transform:uppercase}.heap-stat strong{font-size:1.2rem;overflow-wrap:anywhere}.heap-invariant{border-left:4px solid #27836d;background:#e5f4ed;padding:.7rem .85rem;margin:.6rem 0 0;font-size:.86rem}.heap-rule{border-left:4px solid #27836d;background:#e5f4ed;padding:.75rem .9rem;margin:1.1rem 0}
+    @media(max-width:700px){.heap-cell{min-width:2.6rem;flex-basis:2.6rem}.heap-stat strong{font-size:1.05rem}}
+  </style>
+</head>
+<body>
+  <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Guided path / 15 of 17</span></div></header>
+  <main class="site">
+    <section class="chapter-hero grid"><p class="eyebrow">The next idea · After search trees</p><h1>Heaps.</h1><p class="lede">Keep the one value you need most at the top. Leave the rest only partly ordered.</p><p class="read-time">About 11 minutes · Try inserting and removing priorities</p></section>
+    <div class="grid"><article class="prose">
+      <p>Imagine a task queue where the largest number means the most urgent task. You do not need every task sorted; you need the largest one <em>now</em>, and then the largest among those left. A <em>priority queue</em> is the behavior we want. A binary <em>max heap</em> is one way to build it.</p>
+      <p>A max heap keeps two independent promises. Its <em>shape rule</em> says the tree is complete: every level is filled before the next, and the final level fills from left to right. Its <em>order rule</em> says each parent is at least as large as each child. By repeatedly following parent links upward, every node is at most the root. So the maximum is always at a known position.</p>
+      <div class="example"><pre>index:  0  1  2  3  4  5
 value:  8  5  7  2  4  6</pre></div>
-<p>The heap is a complete binary tree, filled level by level from left to right. Its array form avoids storing explicit links. For an item at index <code>i</code>, its parent is at <code>floor((i - 1) / 2)</code>; its children are at <code>2i + 1</code> and <code>2i + 2</code>.</p>
-<p>Insert 9 at the next free position, index 6. Its parent at index 2 holds 7, so swap them. Its new parent at index 0 holds 8, so swap again. Now 9 is at the top. Step through the figure and check the parent rule after each move.</p>
-<h2>Only the top is guaranteed.</h2>
-<p>A heap is not a fully sorted array. Siblings 5 and 8 can be in either order while the parent rule holds. Reading the top takes <code>O(1)</code>. Inserting or removing the top may move a value along the tree's height, <code>O(log n)</code> steps.</p>
-<p>To remove the maximum, replace the root with the last value, remove the last slot, then sift that value down by swapping with its larger child until the rule returns. A priority queue uses this to serve the most urgent item next. Heap sort uses repeated removals to order all values.</p></div></div>
-<section class="figure grid" id="chapter-figure" aria-label="Step through inserting nine into a max heap"><h2 class="figure-title">Figure 12 / Sift a new value upward</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="Heap stored in array positions with highlighted swaps"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
-<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>Insert 10 into the final heap in the figure. Which indices does it visit while sifting up?</li><li>Is <code>[9, 7, 8, 3, 6, 5, 4]</code> a valid max heap? Check each parent against its children.</li><li>Remove the root from <code>[9, 5, 8, 2, 4, 6, 7]</code>. Draw the array after moving the last value to the root and after each sift-down swap.</li></ol></section>
-</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="11-trees.html"><small>Previous / 11</small>← Trees</a><a class="next" href="13-graphs.html"><small>Next / 13</small>Graphs →</a></div></footer>
-<script src="../js/figure.js"></script><script>(function(){
-
-var svg=document.getElementById('chapter-svg');
-var frames=[
- {a:[8,5,7,2,4,6],hot:[],label:'A VALID MAX HEAP',caption:'Every parent is at least as large as its children. The root 8 is the maximum.'},
- {a:[8,5,7,2,4,6,9],hot:[6],label:'APPEND 9 AT INDEX 6',caption:'Add 9 at the next open slot, index 6. Its parent is index 2, value 7.'},
- {a:[8,5,7,2,4,6,9],hot:[2,6],label:'COMPARE 9 WITH 7',caption:'9 is larger than its parent 7, so the max-heap rule is broken along this link.'},
- {a:[8,5,9,2,4,6,7],hot:[2,6],label:'SWAP WITH PARENT',caption:'Swap 9 and 7. Now compare 9 at index 2 with its parent at index 0, value 8.'},
- {a:[8,5,9,2,4,6,7],hot:[0,2],label:'COMPARE 9 WITH 8',caption:'9 is still larger than its parent 8. One more swap is needed.'},
- {a:[9,5,8,2,4,6,7],hot:[0],label:'HEAP RULE RESTORED',caption:'9 reaches the root. Each parent is again at least as large as its children.'}
-];
-function draw(f){var cells=f.a.map(function(v,i){var x=5+i*50,hot=f.hot.indexOf(i)>=0;return '<text x="'+(x+22)+'" y="73" text-anchor="middle" font-size="11" fill="#686868">'+i+'</text><rect x="'+x+'" y="85" width="44" height="68" fill="'+(hot?'#e2001a':'#fff')+'" stroke="'+(hot?'#e2001a':'#d5d5d5')+'"/><text x="'+(x+22)+'" y="128" text-anchor="middle" font-size="20" font-weight="700" fill="'+(hot?'#fff':'#111')+'">'+v+'</text>';}).join('');svg.innerHTML='<text x="5" y="20" font-size="12" font-weight="700">'+f.label+'</text><text x="5" y="49" font-size="11" fill="#686868">ARRAY INDEX</text>'+cells+'<line x1="5" y1="174" x2="350" y2="174" stroke="#d5d5d5"/><text x="5" y="201" font-size="12" fill="#686868">PARENT(i) = floor((i − 1) / 2)</text>';}
-FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
-}());</script></body></html>
+      <p>Read this as a tree: 8 is the root, with children 5 and 7; 5 has children 2 and 4; 7 has child 6. The shape rule lets us store it in an array without explicit pointers. For index <code>i</code>, the children are <code>2i + 1</code> and <code>2i + 2</code>; except at the root, the parent is <code>floor((i - 1) / 2)</code>. These formulas are consequences of filling levels left to right.</p>
+      <div class="heap-rule"><strong>Heap invariant:</strong> the array represents a complete tree, and for every child index <code>i &gt; 0</code>, <code>heap[parent(i)] ≥ heap[i]</code>.</div>
+      <h2>Repair only the path you disturbed.</h2>
+      <p>To insert 9, append it at the next free array slot. This preserves the complete shape, but 9 is larger than its parent 7, breaking one order relation. Swap them. Now 9 is above 7 but still larger than its new parent 8, so swap once more. At the root, the rule is restored everywhere. This is <em>sift up</em>. Each swap moves one level closer to the root; no other branch needs repair.</p>
+      <p>To remove the maximum, save the root value, move the last array value to the root, and shorten the array. The shape remains complete. Only the moved value might violate parent-child order. Compare it with both children and swap it with the <em>larger</em> child if that child is bigger. Repeat until the value is large enough or reaches a leaf. This is <em>sift down</em>. Choosing the smaller child could leave the larger child above its parent and fail to repair the heap.</p>
+    </article></div>
+    <section class="figure grid" id="heap-figure" aria-label="Trace insertion or removal in a custom max heap">
+      <h2 class="figure-title">Explore / Repair one path</h2><div class="figure-body"><div class="heap-modes" role="group" aria-label="Choose a heap operation"><button type="button" data-mode="insert" aria-pressed="true">Insert a value</button><button type="button" data-mode="remove" aria-pressed="false">Remove maximum</button></div>
+        <div class="heap-inputs"><label for="heap-values">Starting max heap, array order<input id="heap-values" type="text" value="8, 5, 7, 2, 4, 6" spellcheck="false"></label><label data-insert-input for="heap-new">New value<input id="heap-new" type="number" min="0" max="99" step="1" value="9"></label><button id="heap-apply" type="button">Trace operation</button></div><p class="heap-error" id="heap-error" role="alert"></p>
+        <div class="figure-panel"><div class="heap-lab"><h3>Complete tree</h3><div class="heap-tree"><svg data-svg viewBox="0 0 650 375" role="img" aria-label="Heap tree with the active repair path"></svg></div><h3 style="margin-top:.75rem">The same tree as an array</h3><div class="heap-array" data-array></div><div class="heap-stats"><div class="heap-stat"><small>Phase</small><strong data-phase>Ready</strong></div><div class="heap-stat"><small>Root / max</small><strong data-root>8</strong></div><div class="heap-stat"><small>Removed value</small><strong data-removed>—</strong></div></div><p class="heap-invariant" data-invariant>The complete shape is intact. Every parent is at least as large as its children.</p></div></div>
+        <p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>← Previous</button><button type="button" data-next>Next →</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">The input must already satisfy the max-heap rule. Try 9, 5, 8, 2, 4, 6, 7, then remove its maximum.</p>
+      </div>
+    </section>
+    <div class="grid"><article class="prose">
+      <h2>Partial order is enough.</h2>
+      <p>A max heap is not a sorted array or a binary search tree. The root is guaranteed largest, but the left and right subtrees have no less-than or greater-than relationship with each other. For example, both <code>[9, 5, 8, 2, 4, 6, 7]</code> and <code>[9, 8, 5, 7, 6, 4, 2]</code> can satisfy the heap rule. You cannot find an arbitrary value by choosing left or right as in a BST. An arbitrary search may need to inspect many nodes.</p>
+      <p>The complete shape has height proportional to <code>log n</code>. Peeking at the maximum reads index 0 in <code>O(1)</code>. Insertion and removal repair at most one root-to-leaf path, <code>O(log n)</code> comparisons and swaps. The array itself stores <code>n</code> values; the sift loop needs only a fixed number of extra variables. If the backing array grows, an occasional append may also trigger a resize, as in the arrays chapter.</p>
+      <p>Building a heap from an arbitrary array can be faster than inserting values one by one. Start at the last internal node and sift down, working backward to the root. Many nodes are leaves and need no work; the more expensive sifts occur at fewer nodes near the top. Adding those costs gives <code>O(n)</code> total work for bottom-up heap construction, even though a single sift can take <code>O(log n)</code>.</p>
+      <p>It is tempting to multiply <code>n</code> nodes by the worst possible <code>log n</code> sift and conclude that construction takes <code>O(n log n)</code>. That overcharges nearly every node. About half the nodes are leaves and move zero levels; about a quarter can move at most one; about an eighth can move at most two. The weighted sum is proportional to <code>n(0/2 + 1/4 + 2/8 + 3/16 + …)</code>, and the parenthesized series has a fixed bound. Counting <em>how many</em> nodes can pay each height cost reveals the linear result.</p>
+      <p>Repeatedly removing the maximum yields a sorted sequence, which is the idea behind heapsort. In a scheduling system, you instead remove one urgent task, let new tasks arrive, and keep the next urgent task easy to reach. The structure is useful precisely because it maintains <em>only</em> the order your next question needs.</p>
+      <p>A <em>min heap</em> flips the inequality: each parent is at most its children, so the smallest priority is at the root. The same complete shape, index formulas, and sift paths still work. A shortest-path algorithm will use a min-priority queue to choose the next nearest candidate. If equal priorities must leave in arrival order, the heap rule alone does not supply that stability; store an arrival number alongside each priority and compare the pair.</p>
+      <p>Check edge cases explicitly. A single-value heap is valid and removal leaves it empty. Equal priorities are valid because the invariant uses <code>≥</code>. A parent with only a left child is normal on the final level. If you insert into an empty heap, the new value simply becomes the root. The lab accepts an empty starting heap for insertion and requires a nonempty one for removal.</p>
+    </article></div>
+    <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice on paper</h2></div><ol class="grid"><li>Decide whether <code>[9, 7, 8, 3, 6, 5, 4]</code> is a valid max heap. Check the parent rule at every child index, then identify its root, height, and leaves.</li><li>Insert 10 into <code>[9, 5, 8, 2, 4, 6, 7]</code>. List each array index the new value visits and the array after every swap. State which invariant may be temporarily broken.</li><li>Remove the maximum from <code>[9, 5, 8, 2, 4, 6, 7]</code>. Show the root replacement and each sift-down choice. Explain why choosing the larger child matters.</li></ol></section>
+  </main>
+  <footer class="chapter-footer"><div class="site grid"><a class="prev" href="11-trees.html"><small>Previous · Trees</small>← Keep keys ordered</a><a class="next" href="13-graphs.html"><small>Next · Graphs</small>Follow any connection →</a></div></footer>
+  <script src="../js/figure.js"></script>
+  <script>
+    (function(){
+      'use strict';
+      var root=document.getElementById('heap-figure'),svg=root.querySelector('[data-svg]'),array=root.querySelector('[data-array]');
+      var phase=root.querySelector('[data-phase]'),rootValue=root.querySelector('[data-root]'),removedView=root.querySelector('[data-removed]'),invariant=root.querySelector('[data-invariant]');
+      var valuesInput=document.getElementById('heap-values'),newInput=document.getElementById('heap-new'),error=document.getElementById('heap-error'),mode='insert';
+      function parent(i){return Math.floor((i-1)/2);}
+      function valid(a){for(var i=1;i<a.length;i++)if(a[parent(i)]<a[i])return i;return -1;}
+      function makeFrames(values,operation,newValue){
+        var a=values.slice(),frames=[],removed=null;
+        function add(stage,hot,caption,broken){frames.push({a:a.slice(),stage:stage,hot:hot.slice(),removed:removed,broken:!!broken,caption:caption});}
+        add('Ready',[],a.length?'Start with a valid max heap. The root '+a[0]+' is the maximum.':'The heap is empty. An insertion will create its root.',false);
+        if(operation==='insert'){
+          a.push(newValue);var i=a.length-1;
+          add('Append',[i],'Append '+newValue+' at index '+i+'. The complete shape remains intact.',i>0&&a[parent(i)]<a[i]);
+          while(i>0){var p=parent(i);add('Compare',[p,i],'Compare '+a[i]+' at index '+i+' with parent '+a[p]+' at index '+p+'.',a[p]<a[i]);if(a[p]>=a[i])break;var t=a[p];a[p]=a[i];a[i]=t;add('Swap',[p,i],'Swap the new value with its smaller parent. Only the path toward the root may still need repair.',p>0&&a[parent(p)]<a[p]);i=p;}
+          add('Done',[i],'The inserted value has reached a valid position. The maximum is '+a[0]+'.',false);
+        }else{
+          removed=a[0];if(a.length===1){a.pop();add('Done',[],'Remove the only value, '+removed+'. The heap is empty.',false);return frames;}
+          a[0]=a.pop();var i=0;add('Replace root',[0],'Save maximum '+removed+', move the last value to the root, and shorten the array.',valid(a)!==-1);
+          while(true){var left=2*i+1,right=left+1;if(left>=a.length)break;var larger=right<a.length&&a[right]>a[left]?right:left;add('Compare',[i,larger],'Compare '+a[i]+' with its larger child '+a[larger]+' at index '+larger+'.',a[i]<a[larger]);if(a[i]>=a[larger])break;var t=a[i];a[i]=a[larger];a[larger]=t;add('Swap',[i,larger],'Swap down one level. The moved value may still be smaller than a child.',valid(a)!==-1);i=larger;}
+          add('Done',[i],'The max-heap rule is restored. '+removed+' was removed; the new root is '+a[0]+'.',false);
+        }
+        return frames;
+      }
+      function nodePosition(i){var level=Math.floor(Math.log2(i+1)),first=Math.pow(2,level)-1,position=i-first,slots=Math.pow(2,level);return {x:(position+.5)*650/slots,y:43+level*88};}
+      function draw(f){
+        var links=f.a.map(function(_,i){if(i===0)return '';var p=nodePosition(parent(i)),child=nodePosition(i);return '<line x1="'+p.x+'" y1="'+(p.y+18)+'" x2="'+child.x+'" y2="'+(child.y-18)+'" stroke="#84938d" stroke-width="2"/>';}).join('');
+        var nodes=f.a.map(function(v,i){var at=nodePosition(i),hot=f.hot.indexOf(i)!==-1;return '<circle cx="'+at.x+'" cy="'+at.y+'" r="20" fill="'+(hot?'#e86a33':'#fff')+'" stroke="'+(hot?'#e86a33':'#172a2a')+'" stroke-width="2"/><text x="'+at.x+'" y="'+(at.y+5)+'" text-anchor="middle" font-size="16" font-weight="700" fill="'+(hot?'#fff':'#172a2a')+'">'+v+'</text><text x="'+at.x+'" y="'+(at.y-29)+'" text-anchor="middle" font-size="10" fill="#637174">'+i+'</text>';}).join('');
+        svg.innerHTML=f.a.length?links+nodes:'<text x="325" y="160" text-anchor="middle" font-size="22" fill="#637174">Empty heap</text>';
+        array.innerHTML=f.a.length?f.a.map(function(v,i){return '<div class="heap-cell" data-hot="'+(f.hot.indexOf(i)!==-1)+'"><small>index '+i+'</small><strong>'+v+'</strong></div>';}).join(''):'<span>No values remain.</span>';
+        phase.textContent=f.stage;rootValue.textContent=f.a.length?String(f.a[0]):'—';removedView.textContent=f.removed===null?'—':String(f.removed);
+        invariant.textContent=f.broken?'The complete shape is intact; one parent-child relation on the active path needs repair.':'The complete shape is intact, and every parent is at least as large as its children.';
+      }
+      var stepper=FigureStepper({root:'#heap-figure',frames:makeFrames([8,5,7,2,4,6],'insert',9),draw:draw});
+      function apply(){var source=valuesInput.value.trim(),tokens=source?source.split(','):[],a=[],newValue=Number(newInput.value);if(tokens.length>8){error.textContent='Use at most eight starting values.';return;}for(var i=0;i<tokens.length;i++){var token=tokens[i].trim();if(!/^\d+$/.test(token)||Number(token)>99){error.textContent='Use whole-number priorities from 0 to 99, separated by commas.';return;}a.push(Number(token));}var bad=valid(a);if(bad!==-1){error.textContent='The starting array is not a max heap: child index '+bad+' is larger than its parent at index '+parent(bad)+'.';return;}if(mode==='insert'&&a.length>=8){error.textContent='Use at most seven starting values so insertion fits the diagram.';return;}if(mode==='insert'&&(!Number.isInteger(newValue)||newValue<0||newValue>99)){error.textContent='Choose a new priority from 0 to 99.';return;}if(mode==='remove'&&!a.length){error.textContent='Add at least one value before removing the maximum.';return;}error.textContent='';stepper.setFrames(makeFrames(a,mode,newValue));}
+      root.querySelectorAll('[data-mode]').forEach(function(button){button.addEventListener('click',function(){mode=button.dataset.mode;root.querySelectorAll('[data-mode]').forEach(function(other){other.setAttribute('aria-pressed',String(other===button));});root.querySelector('[data-insert-input]').hidden=mode!=='insert';apply();});});
+      document.getElementById('heap-apply').addEventListener('click',apply);[valuesInput,newInput].forEach(function(input){input.addEventListener('input',function(){error.textContent='';});input.addEventListener('keydown',function(event){if(event.key==='Enter'){event.preventDefault();apply();}});});
+    }());
+  </script>
+</body>
+</html>

@@ -1,34 +1,90 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Finish a smaller version of the same task, then use its answer to finish this one."><meta name="theme-color" content="#ffffff"><title>10 — Recursion · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
-<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">10 / 14 · After hashing</span></div></header>
-<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 10 · After hashing</p><h1>Recursion.</h1><p class="lede">Finish a smaller version of the same task, then use its answer to finish this one.</p><p class="read-time">About 8 minutes · Use ← → in the figure</p></section>
-<div class="grid"><div class="prose">
-<p>You want <code>4 × 3 × 2 × 1</code>. Instead of writing the whole product, ask for a smaller answer: <code>factorial(4) = 4 × factorial(3)</code>. The same question repeats with a smaller number until it reaches 1.</p>
-<div class="example"><pre>factorial(n):
-    if n == 1: return 1
-    return n * factorial(n - 1)</pre></div>
-<p>This version expects a positive input. At <code>factorial(1)</code>, the answer is already known. A version accepting zero would also return 1 for <code>factorial(0)</code>. That is the <strong>base case</strong>. Without it, calls keep making smaller calls with no way to finish. Step through the figure: first the pending calls stack up, then answers travel back outward.</p>
-<h2>Each call has its own place to wait.</h2>
-<p>When <code>factorial(4)</code> calls <code>factorial(3)</code>, the first call waits with its own <code>n = 4</code>. The call for 3 waits for 2, and 2 waits for 1. Once 1 returns, 2 computes <code>2 × 1</code>, then 3 computes <code>3 × 2</code>, then 4 computes <code>4 × 6</code>. The call stack holds these unfinished moments.</p>
-<p>For this example, the number of calls grows with <code>n</code>, so time is <code>O(n)</code>. The stack also holds up to <code>n</code> calls, so extra space is <code>O(n)</code>. Recursion is a way to organize a solution, not a promise of speed.</p>
-<h2>Ask two questions.</h2>
-<p>What input can be answered directly? How does every other call get closer to that input? If either answer is unclear, the recursion may never stop. Later, tree traversal will use recursion because each child is a smaller tree. Dynamic programming will reuse answers when the same smaller question is asked more than once.</p></div></div>
-<section class="figure grid" id="chapter-figure" aria-label="Expand and unwind recursive factorial calls"><h2 class="figure-title">Figure 10 / Calls go down, answers come up</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="A call stack for factorial four and the returned values"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
-<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>Trace <code>sum(n) = n + sum(n-1)</code> with <code>sum(0) = 0</code> for <code>sum(4)</code>. Write calls and returns.</li><li>A function calls itself with <code>n + 1</code> and stops only at <code>n == 0</code>. Starting at 3, will it stop? What change would make progress?</li><li>Write the base case and smaller call for counting down from a positive integer to zero. What is the maximum number of waiting calls?</li></ol></section>
-</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="09-hashing.html"><small>Previous / 09</small>← Hashing</a><a class="next" href="11-trees.html"><small>Next / 11</small>Trees →</a></div></footer>
-<script src="../js/figure.js"></script><script>(function(){
-
-var svg=document.getElementById('chapter-svg');
-var frames=[
- {stack:[],result:'—',caption:'No call has started. We want factorial(4).'},
- {stack:[4],result:'—',caption:'factorial(4) waits for factorial(3).'},
- {stack:[4,3],result:'—',caption:'factorial(3) waits for factorial(2).'},
- {stack:[4,3,2],result:'—',caption:'factorial(2) waits for factorial(1).'},
- {stack:[4,3,2,1],result:'1',caption:'factorial(1) is the base case and returns 1.'},
- {stack:[4,3,2],result:'2',caption:'factorial(2) receives 1 and returns 2 × 1 = 2.'},
- {stack:[4,3],result:'6',caption:'factorial(3) receives 2 and returns 3 × 2 = 6.'},
- {stack:[4],result:'24',caption:'factorial(4) receives 6 and returns 4 × 6 = 24.'}
-];
-function draw(f){var calls=f.stack.map(function(n,i){var y=27+i*37,active=i===f.stack.length-1;return '<rect x="9" y="'+y+'" width="206" height="31" fill="'+(active?'#e2001a':'#fff')+'" stroke="'+(active?'#e2001a':'#d5d5d5')+'"/><text x="20" y="'+(y+21)+'" font-size="14" fill="'+(active?'#fff':'#111')+'">factorial('+n+')</text>';}).join('');svg.innerHTML='<text x="9" y="17" font-size="10" fill="#686868">CALL STACK / NEWEST AT BOTTOM</text>'+calls+'<line x1="230" y1="8" x2="230" y2="190" stroke="#d5d5d5"/><text x="246" y="27" font-size="11" fill="#686868">RETURN</text><text x="246" y="104" font-size="43" font-weight="700" fill="#e2001a">'+f.result+'</text><text x="9" y="211" font-size="11" fill="#686868">EACH WAITING CALL KEEPS ITS OWN n</text>';}
-FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
-}());</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="See recursive calls enter, wait on the call stack, reach a base case, and return.">
+  <meta name="theme-color" content="#f8f5ee"><title>Recursion · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css">
+  <style>
+    .recur-inputs{display:flex;align-items:end;gap:.7rem;flex-wrap:wrap;margin:0 0 .8rem}.recur-inputs label{font-size:.8rem;font-weight:700}.recur-inputs input{display:block;width:7rem;margin-top:.25rem;padding:.5rem;border:1px solid #84938d;background:#fff;color:#172a2a}
+    .recur-inputs button{min-height:2.5rem;padding:.5rem .8rem;border:1px solid #172a2a;background:transparent;color:#172a2a;cursor:pointer}.recur-inputs button:hover{border-color:#e86a33}
+    .recur-error{min-height:1.3rem;color:#a83b21;font-size:.85rem;margin:0 0 .6rem}
+    .recur-stage{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:1rem}.recur-stage h3{margin:0 0 .55rem;color:#637174;text-transform:uppercase;letter-spacing:.1em;font-size:.74rem}
+    .recur-code{margin:0;padding:1rem;list-style:none;background:#172a2a;color:#fff;font:clamp(.74rem,1.6vw,.92rem)/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;overflow-x:auto}.recur-code li{border-left:3px solid transparent;padding:0 .4rem}.recur-code li.is-active{background:#284343;border-color:#e86a33}
+    .recur-stack{display:flex;flex-direction:column;gap:.32rem;min-height:5rem}.recur-frame{border:1px solid #a9b9b4;background:#fff;padding:.5rem .65rem;display:flex;justify-content:space-between;gap:.4rem;font:700 .9rem ui-monospace,SFMono-Regular,Consolas,monospace}.recur-frame[data-active="true"]{border-color:#e86a33;background:#fbe9df}.recur-frame small{color:#637174;font-size:.72rem;font-weight:400}.recur-frame .pending{color:#a83b21}
+    .recur-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55rem;margin-top:.8rem}.recur-stat{border-top:2px solid #172a2a;padding-top:.35rem}.recur-stat small{display:block;color:#637174;font-size:.63rem;text-transform:uppercase}.recur-stat strong{font-size:1.25rem;overflow-wrap:anywhere}
+    .recur-note{font-size:.83rem;color:#637174;margin:.6rem 0 0}.recur-insight{border-left:4px solid #27836d;background:#e5f4ed;padding:.75rem .9rem;margin:1.1rem 0}
+    @media(max-width:700px){.recur-stage{grid-template-columns:1fr}.recur-code{font-size:.8rem}}
+  </style>
+</head>
+<body>
+  <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Guided path / 13 of 17</span></div></header>
+  <main class="site">
+    <section class="chapter-hero grid"><p class="eyebrow">The next idea · After lookup</p><h1>Recursion.</h1><p class="lede">A function can pause while a smaller version of itself finishes. The waiting calls are part of the computation.</p><p class="read-time">About 10 minutes · Choose a number and follow every call</p></section>
+    <div class="grid"><article class="prose">
+      <p>To multiply the whole numbers from 1 through 4, you could write <code>4 × 3 × 2 × 1</code>. Notice that the part after 4 is the same kind of task, just smaller: multiply 1 through 3. Name that task <code>factorial(3)</code>, and the larger answer becomes <code>4 × factorial(3)</code>.</p>
+      <div class="example"><pre>function factorial(n) {
+  if (n === 0) return 1;
+  return n * factorial(n - 1);
+}
+show(factorial(4));  // 24</pre></div>
+      <p>This is <em>recursion</em>: a function calls itself. It has two essential pieces. The <em>base case</em> answers a small input directly: <code>factorial(0)</code> is 1, the empty product. The <em>recursive case</em> reduces every positive input by one. For nonnegative integers, repeated subtraction must reach zero. Without the base case, or if the recursive input moves away from it, calls continue until the machine runs out of stack space.</p>
+      <p>Why is <code>factorial(0) = 1</code> useful rather than 0? It lets <code>factorial(1)</code> compute <code>1 × factorial(0) = 1</code>. A product of no factors has the value that leaves multiplication unchanged. This choice makes the rule work cleanly at the boundary.</p>
+      <h2>A call does not vanish while it waits.</h2>
+      <p>When <code>factorial(4)</code> asks for <code>factorial(3)</code>, the call for 4 is unfinished. It must remember its own <code>n = 4</code> and the multiplication it still owes. A new <em>call frame</em> holds <code>n = 3</code>. Frames collect on a stack: 4 waits for 3, which waits for 2, then 1, then 0. The most recent call runs first.</p>
+      <p>At zero, the base case returns 1. Then the waiting frames finish in reverse order: 1 returns <code>1 × 1</code>; 2 returns <code>2 × 1</code>; 3 returns <code>3 × 2</code>; 4 returns <code>4 × 6</code>. The lab shows the descent and the unwind separately. Moving down creates obligations; moving up pays them.</p>
+      <p>Each frame remembers a separate local <code>n</code>. The <code>n</code> in the call for 4 does not change to 3 when it calls <code>factorial(3)</code>; instead, a new frame is created with its own parameter. This is the same local-name rule from functions and references, repeated at several depths. The call stack is last-in-first-out: the last frame created must return before an older waiting frame can resume.</p>
+    </article></div>
+    <section class="figure grid" id="recursion-figure" aria-label="Trace factorial calls and returns for a chosen input">
+      <h2 class="figure-title">Explore / Calls and returns</h2><div class="figure-body">
+        <div class="recur-inputs"><label for="recursion-n">Calculate factorial of<input id="recursion-n" type="number" min="0" max="7" step="1" value="4"></label><button id="recursion-apply" type="button">Trace this call</button></div><p class="recur-error" id="recursion-error" role="alert"></p>
+        <div class="figure-panel"><div class="recur-stage"><div><h3>Function</h3><ol class="recur-code" aria-label="Factorial function"><li data-line="0">function factorial(n) {</li><li data-line="1">  if (n === 0) return 1;</li><li data-line="2">  return n * factorial(n - 1);</li><li data-line="3">}</li></ol><p class="recur-note">Each frame has its own local <code>n</code>. The newest frame appears at the bottom.</p></div><div><h3>Call stack · newest at bottom</h3><div class="recur-stack" data-stack></div><div class="recur-stats"><div class="recur-stat"><small>Phase</small><strong data-phase>Ready</strong></div><div class="recur-stat"><small>Frames</small><strong data-depth>0</strong></div><div class="recur-stat"><small>Value returning</small><strong data-value>—</strong></div></div></div></div></div>
+        <p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>← Previous</button><button type="button" data-next>Next →</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Try 0, then 1, then 5. Watch which frames exist before any multiplication happens.</p>
+      </div>
+    </section>
+    <div class="grid"><article class="prose">
+      <h2>Why this rule is correct.</h2>
+      <p>Assume <code>factorial(n - 1)</code> correctly multiplies 1 through <code>n - 1</code>. Multiplying that result by <code>n</code> gives the product 1 through <code>n</code>. The base case is correct for zero, so the argument climbs from 0 to every nonnegative integer. This is an <em>inductive proof</em> that mirrors the returning calls. The progress argument explains why the calls reach the base; the inductive argument explains why the returned answer is right.</p>
+      <div class="recur-insight"><strong>Two obligations:</strong> every non-base call must move toward a base case, and the returned smaller answer must be enough to build the current answer.</div>
+      <p>Each call does a constant amount of work besides its one smaller call. There are <code>n + 1</code> calls, so the total time is <code>O(n)</code>. At the deepest point, <code>n + 1</code> frames wait on the stack, so extra space is <code>O(n)</code>. An iterative multiplication loop can use <code>O(1)</code> extra space for this particular task. Recursion expresses structure; it is not automatically faster.</p>
+      <p>Some recursive definitions branch into more than one smaller call. A tree traversal naturally calls itself on each child subtree. A naïve Fibonacci function asks for overlapping smaller values repeatedly, which can waste enormous work; dynamic programming will save those repeated answers. A <em>recursion tree</em> describes all calls made, while the <em>call stack</em> shows only the calls waiting at one moment. Keep those two pictures distinct.</p>
+      <p>Recursion can also consume a sequence one piece at a time. To sum an array, you might define <code>sumFrom(i)</code> as the value at index <code>i</code> plus <code>sumFrom(i + 1)</code>, with zero when <code>i</code> reaches the array length. The measure that moves toward the base case is now “positions remaining,” rather than <code>n</code> itself. This broader view is useful: find a quantity that strictly shrinks on every path through the recursive calls, then show that the smallest case can be answered without another call.</p>
+      <p>For a branching recursion, termination needs that progress argument on <em>every</em> branch. Correctness then needs a contract for the smaller calls. If a function merges two sorted halves, for example, assume both recursive calls return sorted halves and show the merge produces one sorted whole. The shape of the proof follows the shape of the computation.</p>
+      <p>Our input control stops at 7 to keep the trace readable. The mathematical definition works for all nonnegative integers, but large recursive inputs can exceed JavaScript's call-stack limit, and ordinary JavaScript numbers eventually lose integer precision. A correct mathematical recurrence still needs an appropriate machine representation.</p>
+      <p>The accepted input domain is part of the contract. With the code above, a negative input such as <code>-1</code> moves to <code>-2</code>, then <code>-3</code>, never reaching the base case at zero. A production function should reject such an input before recursing. State the domain whenever a termination proof depends on it.</p>
+    </article></div>
+    <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice on paper</h2></div><ol class="grid"><li>Define <code>sumTo(n)</code> as the sum from 0 through <code>n</code>. Write a base case and recursive case, then trace the calls and returns for <code>sumTo(4)</code>.</li><li>A function stops when <code>n === 0</code> but otherwise calls itself with <code>n + 1</code>. Starting from 3, explain what happens. State a measure that a repaired version would decrease.</li><li>A naïve function computes <code>fib(n)</code> by calling <code>fib(n - 1)</code> and <code>fib(n - 2)</code>. Draw the call tree for <code>fib(4)</code>. Which input values are computed more than once, and how is that different from the maximum call-stack depth?</li></ol></section>
+  </main>
+  <footer class="chapter-footer"><div class="site grid"><a class="prev" href="09-hashing.html"><small>Previous · Hashing</small>← Find by key</a><a class="next" href="11-trees.html"><small>Next · Trees</small>Explore branches →</a></div></footer>
+  <script src="../js/figure.js"></script>
+  <script>
+    (function(){
+      'use strict';
+      var root=document.getElementById('recursion-figure'),stack=root.querySelector('[data-stack]');
+      var phase=root.querySelector('[data-phase]'),depth=root.querySelector('[data-depth]'),value=root.querySelector('[data-value]');
+      var lines=Array.prototype.slice.call(root.querySelectorAll('[data-line]'));
+      var input=document.getElementById('recursion-n'),error=document.getElementById('recursion-error');
+      function makeFrames(n){
+        var frames=[{stack:[],line:0,phase:'Ready',value:null,active:null,caption:'Call factorial('+n+'). No frame has been created yet.'}],pending=[];
+        for(var k=n;k>=0;k--){pending.push(k);frames.push({stack:pending.slice(),line:k===0?1:2,phase:k===0?'Base case':'Call',value:k===0?1:null,active:k,caption:k===0?'factorial(0) answers directly: 1. No smaller call is needed.':'factorial('+k+') must wait for factorial('+(k-1)+'). Its frame keeps n = '+k+'.'});}
+        var result=1;
+        for(var j=0;j<=n;j++){
+          if(j>0)result*=j;
+          frames.push({stack:pending.slice(),line:j===0?1:2,phase:'Return',value:result,active:j,caption:j===0?'The base call returns 1 to its waiting caller.':'factorial('+j+') receives the smaller answer and returns '+j+' × '+(result/j)+' = '+result+'.'});
+          pending.pop();
+        }
+        frames.push({stack:[],line:3,phase:'Done',value:result,active:null,caption:'All frames have returned. factorial('+n+') is '+result+'.'});
+        return frames;
+      }
+      function draw(f){
+        stack.innerHTML=f.stack.length?f.stack.map(function(n,i){var active=n===f.active&&i===f.stack.length-1;return '<div class="recur-frame" data-active="'+active+'"><span>factorial('+n+')</span><small class="'+(f.phase==='Call'&&active?'pending':'')+'">'+(f.phase==='Call'&&active?'waiting for '+(n-1):n===0?'base':'n = '+n)+'</small></div>';}).join(''):'<span>No active frames.</span>';
+        phase.textContent=f.phase;depth.textContent=String(f.stack.length);value.textContent=f.value===null?'—':String(f.value);
+        lines.forEach(function(line){line.classList.toggle('is-active',Number(line.dataset.line)===f.line);});
+      }
+      var stepper=FigureStepper({root:'#recursion-figure',frames:makeFrames(4),draw:draw});
+      function apply(){var n=Number(input.value);if(!Number.isInteger(n)||n<0||n>7){error.textContent='Choose a whole number from 0 to 7.';return;}error.textContent='';stepper.setFrames(makeFrames(n));}
+      document.getElementById('recursion-apply').addEventListener('click',apply);
+      input.addEventListener('input',function(){error.textContent='';});input.addEventListener('keydown',function(event){if(event.key==='Enter'){event.preventDefault();apply();}});
+    }());
+  </script>
+</body>
+</html>

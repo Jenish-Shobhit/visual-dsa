@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Learn how a program chooses a path, repeats work, and knows when to stop.">
+  <meta name="theme-color" content="#f8f5ee">
+  <title>Decisions and loops · Visual DSA</title>
+  <link rel="stylesheet" href="../css/atlas.css">
+  <style>
+    .control-lab{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem;align-items:start}
+    .control-lab>div{min-width:0}
+    .control-lab h3{margin:0 0 .65rem;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:#637174}
+    .control-code{margin:0;padding:1rem;background:#172a2a;color:#f8f5ee;list-style:none;font:clamp(.75rem,1.7vw,.95rem)/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;overflow-x:auto}
+    .control-code li{padding:0 .45rem;border-left:3px solid transparent}
+    .control-code li.is-active{border-color:#e86a33;background:#284343}
+    .control-state{display:grid;gap:.7rem}
+    .control-state-row{border:1px solid #bcc8c4;padding:.7rem .85rem;min-height:3.7rem}
+    .control-state-row small{display:block;color:#637174;text-transform:uppercase;font-size:.68rem;letter-spacing:.08em}
+    .control-state-row strong{display:block;font-size:1.4rem;line-height:1.25;color:#172a2a}
+    .control-state-row[data-tone="true"]{background:#e5f4ed;border-color:#27836d}
+    .control-state-row[data-tone="false"]{background:#fbe9df;border-color:#e86a33}
+    .ticket-row{display:flex;flex-wrap:wrap;gap:.35rem;min-height:2.7rem;align-items:center}
+    .ticket-row i{display:grid;place-items:center;width:2rem;height:2rem;background:#e86a33;color:#fff;font-style:normal;font-weight:700}
+    .ticket-row em{font-size:.9rem;color:#637174}
+    .output-row{display:flex;flex-wrap:wrap;gap:.4rem;min-height:2rem;align-items:center}
+    .output-row span{display:grid;place-items:center;min-width:2rem;height:2rem;border:1px solid #172a2a;font-weight:700}
+    .lab-inputs{display:flex;align-items:end;gap:.7rem;flex-wrap:wrap;margin:0 0 1rem}
+    .lab-inputs label{font-size:.8rem;font-weight:700}
+    .lab-inputs input{display:block;margin-top:.25rem;width:5.5rem;padding:.5rem;border:1px solid #84938d;background:#fff;color:#172a2a}
+    .lab-inputs button,.prediction button{min-height:2.5rem;padding:.5rem .85rem;border:1px solid #172a2a;background:transparent;color:#172a2a;cursor:pointer}
+    .lab-inputs button:hover,.prediction button:hover{background:#172a2a;color:#fff}
+    .prediction-options{display:flex;gap:.5rem;flex-wrap:wrap;margin:.7rem 0}
+    .prediction-feedback{min-height:1.8rem;font-weight:700}
+    @media(max-width:700px){.control-lab{grid-template-columns:1fr}.control-code{font-size:.8rem}}
+  </style>
+</head>
+<body>
+  <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Foundations / 04</span></div></header>
+  <main class="site">
+    <section class="chapter-hero grid">
+      <p class="eyebrow">The next idea · After variables</p>
+      <h1>Decisions<br>and loops.</h1>
+      <p class="lede">A program can choose one path, then keep choosing whether to take it again.</p>
+      <p class="read-time">About 9 minutes · Try a new starting value</p>
+    </section>
+
+    <div class="grid"><article class="prose">
+      <p>Suppose you have three tickets to hand out. You can write an instruction to hand out one ticket. But how should a program repeat that action exactly three times, then stop? The answer needs only two new tools: a <em>condition</em> that can be true or false, and a way to revisit an instruction.</p>
+      <div class="example"><pre>let tickets = 3;
+if (tickets &gt; 0) {
+  show(tickets);
+}</pre></div>
+      <p>Read the condition aloud: “Is the current value of <code>tickets</code> greater than zero?” With three tickets it is true, so the instruction inside the braces runs and shows <code>3</code>. With zero tickets it is false, so that instruction is skipped. The braces mark the instructions controlled by the decision. We use <code>show</code> as the same simple output command from the first lesson; in JavaScript you would usually use <code>console.log</code>.</p>
+      <p>An <code>if</code> makes a choice <em>once</em>. It does not wait for <code>tickets</code> to change, and it does not return to check again. An <code>else</code> can provide a different path when the condition is false, but exactly one of the two paths runs.</p>
+
+      <h2>Let the decision repeat.</h2>
+      <p>A <code>while</code> loop returns to its condition after running the body. As long as the condition is true, it enters the body again. Here is the complete ticket program:</p>
+      <div class="example"><pre>let tickets = 3;
+while (tickets &gt; 0) {
+  show(tickets);
+  tickets = tickets - 1;
+}
+show(tickets);</pre></div>
+      <p>Before its first test, <code>tickets</code> is 3. The test succeeds, so the program shows 3 and stores 2. Then it goes <em>back</em> to the test. It shows 2, then 1. After subtracting from 1, it stores 0. The next test fails, so it skips the loop body and reaches the final <code>show</code>. The complete output is <code>3, 2, 1, 0</code>.</p>
+      <p>Notice the order. The loop tests <em>before</em> every trip through the body, including the first. The subtraction changes the value used by the next test. Without it, a start of 3 would leave the condition true forever: an infinite loop. The loop does not “know” that three trips were intended. It simply follows the condition and updates you wrote.</p>
+    </article></div>
+
+    <section class="figure grid" id="ticket-figure" aria-label="Step through the ticket loop with a chosen starting value">
+      <h2 class="figure-title">Explore / A repeated decision</h2>
+      <div class="figure-body">
+        <div class="lab-inputs"><label for="ticket-start">Starting tickets<input id="ticket-start" type="number" min="0" max="6" step="1" value="3"></label><button id="ticket-apply" type="button">Use this value</button></div>
+        <div class="figure-panel">
+          <div class="control-lab">
+            <div><h3>Instruction being executed</h3><ol class="control-code" aria-label="Ticket program">
+              <li data-line="0">let tickets = start;</li>
+              <li data-line="1">while (tickets &gt; 0) {</li>
+              <li data-line="2">  show(tickets);</li>
+              <li data-line="3">  tickets = tickets - 1;</li>
+              <li data-line="4">}</li>
+              <li data-line="5">show(tickets);</li>
+            </ol></div>
+            <div class="control-state"><div class="control-state-row"><small>Tickets still held</small><strong data-remaining>3</strong><div class="ticket-row" data-ticket-row></div></div><div class="control-state-row" data-condition-row><small>Condition · tickets &gt; 0</small><strong data-condition>Not tested yet</strong></div><div class="control-state-row"><small>Output so far</small><div class="output-row" data-output></div></div></div>
+          </div>
+        </div>
+        <p class="figure-caption" data-caption aria-live="polite"></p>
+        <div class="figure-controls"><button type="button" data-prev>← Previous</button><button type="button" data-next>Next →</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div>
+        <p class="figure-hint">Change the start, then step through the test, body, and exit. Arrows work while this figure is active.</p>
+      </div>
+    </section>
+
+    <div class="grid"><article class="prose">
+      <h2>What changes, and what stays true?</h2>
+      <p>At the top of each loop trip, the current ticket count is a nonnegative whole number. Each completed trip makes it smaller by exactly one. That gives us two useful facts: the output counts down without skipping a number, and the loop must eventually reach zero. This repeated truth is an early example of a <em>loop invariant</em>. We will learn to use invariants to explain why algorithms work, not merely to watch them work.</p>
+      <p>Try a start of 0 in the figure. The body runs zero times because the first test is already false; the final instruction still shows 0. Try 1 and compare. A boundary input often reveals what the code really says more clearly than an ordinary input does.</p>
+      <p>A loop can also count upward. If you start at <code>i = 0</code>, test <code>i &lt; 4</code>, and add one each trip, the body sees <code>0, 1, 2, 3</code>. It never sees 4: the condition is false when <code>i</code> reaches 4. That “one past the last position” boundary will matter when we visit every position in an array.</p>
+      <p><strong>Keep the mental picture:</strong> condition → perhaps enter → do one body → update state → return to condition. The condition controls whether another trip begins; it is not an instruction that runs only at the start.</p>
+    </article></div>
+
+    <section class="prediction" aria-labelledby="ticket-prediction-title"><div class="section-head grid"><span class="number">PREDICT</span><h2 id="ticket-prediction-title">Test the boundary</h2></div><div class="grid"><div class="prose"><p>If <code>tickets</code> starts at 0, how many times does the <code>while</code> body run?</p><div class="prediction-options" role="group" aria-label="Choose the number of loop trips"><button type="button" data-predict="0">Zero</button><button type="button" data-predict="1">Once</button><button type="button" data-predict="forever">Forever</button></div><p class="prediction-feedback" id="ticket-feedback" aria-live="polite"></p></div></div></section>
+
+    <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice on paper</h2></div><ol class="grid"><li>Start with <code>n = 4</code>. Trace the output of <code>while (n &gt; 1) { show(n); n = n - 2; }</code>. What is <code>n</code> when the loop ends?</li><li>A loop starts at <code>i = 0</code> and adds 1 each trip. Write a condition that lets the body run exactly five times. List the values of <code>i</code> the body sees.</li><li>The ticket loop accidentally says <code>tickets = tickets + 1</code>. For a start of 2, explain why it does not stop. Give one change that repairs it.</li></ol></section>
+  </main>
+  <footer class="chapter-footer"><div class="site grid"><a class="prev" href="02-memory-and-variables.html"><small>Previous · Memory and variables</small>← What a name holds</a><a class="next" href="05-functions-and-references.html"><small>Next · Functions and references</small>Give a task a name →</a></div></footer>
+  <script src="../js/figure.js"></script>
+  <script>
+    (function(){
+      'use strict';
+      var root=document.getElementById('ticket-figure');
+      var input=document.getElementById('ticket-start');
+      var remaining=root.querySelector('[data-remaining]');
+      var ticketRow=root.querySelector('[data-ticket-row]');
+      var condition=root.querySelector('[data-condition]');
+      var conditionRow=root.querySelector('[data-condition-row]');
+      var output=root.querySelector('[data-output]');
+      var lines=Array.prototype.slice.call(root.querySelectorAll('[data-line]'));
+      var appliedStart=3;
+      function framesFor(start){
+        var frames=[{line:0,n:start,test:null,out:[],caption:'Store '+start+' under tickets. The loop has not tested its condition yet.'}];
+        var n=start,out=[];
+        while(n>0){
+          frames.push({line:1,n:n,test:true,out:out.slice(),caption:n+' is greater than 0, so enter the loop body.'});
+          out.push(n);
+          frames.push({line:2,n:n,test:true,out:out.slice(),caption:'Show '+n+'. The stored ticket count has not changed yet.'});
+          n--;
+          frames.push({line:3,n:n,test:true,out:out.slice(),caption:'Subtract 1 and store '+n+'. Return to the condition before another trip.'});
+        }
+        frames.push({line:1,n:0,test:false,out:out.slice(),caption:'0 is not greater than 0. Skip the body and leave the loop.'});
+        out.push(0);
+        frames.push({line:5,n:0,test:false,out:out.slice(),caption:'The instruction after the loop shows 0. The program is finished.'});
+        return frames;
+      }
+      function draw(frame){
+        lines[0].textContent='let tickets = '+appliedStart+';';
+        remaining.textContent=String(frame.n);
+        ticketRow.innerHTML=frame.n?Array.from({length:frame.n},function(_,i){return '<i aria-hidden="true">'+(i+1)+'</i>';}).join(''):'<em>No tickets remain.</em>';
+        condition.textContent=frame.test===null?'Not tested yet':frame.test?'True · enter':'False · leave';
+        conditionRow.dataset.tone=frame.test===null?'':String(frame.test);
+        output.innerHTML=frame.out.length?frame.out.map(function(value){return '<span>'+value+'</span>';}).join(''):'<em>Nothing shown yet.</em>';
+        lines.forEach(function(line){line.classList.toggle('is-active',Number(line.dataset.line)===frame.line);});
+      }
+      var stepper=FigureStepper({root:'#ticket-figure',frames:framesFor(3),draw:draw});
+      document.getElementById('ticket-apply').addEventListener('click',function(){
+        var n=Number(input.value);
+        if(input.value.trim()===''||!Number.isInteger(n)||n<0||n>6){input.setCustomValidity('Choose a whole number from 0 to 6.');input.reportValidity();return;}
+        input.setCustomValidity('');
+        appliedStart=n;
+        stepper.setFrames(framesFor(n));
+      });
+      input.addEventListener('input',function(){input.setCustomValidity('');});
+      document.querySelectorAll('[data-predict]').forEach(function(button){button.addEventListener('click',function(){
+        var right=button.dataset.predict==='0';
+        document.getElementById('ticket-feedback').textContent=right?'Yes. The condition fails before the first trip, so the body is skipped. The final show still runs.':'Try the first condition: is 0 greater than 0? The loop tests before entering.';
+      });});
+    }());
+  </script>
+</body>
+</html>

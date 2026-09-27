@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="See what happens when a function is called, returns, and receives a reference to a shared collection.">
+  <meta name="theme-color" content="#f8f5ee">
+  <title>Functions and references · Visual DSA</title>
+  <link rel="stylesheet" href="../css/atlas.css">
+  <style>
+    .function-modes,.function-inputs{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1rem;align-items:end}
+    .function-modes button,.function-inputs button,.prediction button{min-height:2.5rem;padding:.5rem .8rem;border:1px solid #172a2a;background:transparent;color:#172a2a;cursor:pointer}
+    .function-modes button[aria-pressed="true"]{background:#172a2a;color:#fff}
+    .function-inputs label{font-size:.8rem;font-weight:700}
+    .function-inputs input{display:block;width:5rem;margin-top:.25rem;padding:.5rem;border:1px solid #84938d;background:#fff;color:#172a2a}
+    .function-inputs [hidden]{display:none!important}
+    .function-stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem}
+    .function-stage>div{min-width:0}
+    .function-code{min-width:0}
+    .function-code h3,.memory-board h3{margin:0 0 .55rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:#637174}
+    .function-code ol{margin:0;padding:1rem;list-style:none;background:#172a2a;color:#f8f5ee;font:clamp(.74rem,1.65vw,.9rem)/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;overflow-x:auto}
+    .function-code li{padding:0 .4rem;border-left:3px solid transparent}
+    .function-code li.is-active{border-color:#e86a33;background:#284343}
+    .memory-board{display:grid;gap:.65rem}
+    .memory-frame{border:1px solid #aebfba;padding:.7rem .85rem;background:#fff}
+    .memory-frame[data-active="true"]{border-color:#e86a33;box-shadow:inset 4px 0 #e86a33}
+    .memory-frame small{display:block;margin-bottom:.35rem;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#637174}
+    .memory-frame p{margin:.15rem 0;font:700 .95rem/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
+    .heap-row{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center}
+    .heap-object{border:1px solid #2563a6;background:#e8f1fb;padding:.45rem .6rem;font:700 .85rem ui-monospace,SFMono-Regular,Consolas,monospace}
+    .heap-object b{display:inline-block;margin-right:.5rem;color:#2563a6}
+    .heap-object span{display:inline-block;padding:.2rem .45rem;background:#fff;border:1px solid #a9c7e5;margin-left:.18rem}
+    .heap-object[data-unreachable="true"]{opacity:.45}
+    .function-note{font-size:.8rem;color:#637174;margin:.2rem 0 0}
+    .prediction-options{display:flex;gap:.5rem;flex-wrap:wrap;margin:.7rem 0}
+    .prediction-feedback{min-height:1.8rem;font-weight:700}
+    @media(max-width:700px){.function-stage{grid-template-columns:1fr}.function-code ol{font-size:.8rem}}
+  </style>
+</head>
+<body>
+  <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Foundations / 05</span></div></header>
+  <main class="site">
+    <section class="chapter-hero grid"><p class="eyebrow">The next idea · After loops</p><h1>Functions<br>and references.</h1><p class="lede">A call pauses one task to do another. What travels into that task matters.</p><p class="read-time">About 10 minutes · Two connected experiments</p></section>
+
+    <div class="grid"><article class="prose">
+      <p>The ticket program repeats one action. What if you need the same calculation in several places? Give that task a name. A <em>function</em> is a reusable group of instructions; calling it runs those instructions and then returns to where the call was made.</p>
+      <div class="example"><pre>function double(n) {
+  return n * 2;
+}
+
+let price = 4;
+let total = double(price);
+show(price);  // 4
+show(total);  // 8</pre></div>
+      <p>Defining <code>double</code> does not run its body. The run begins at <code>double(price)</code>. The expression in parentheses supplies an <em>argument</em>, the current value of <code>price</code>. The function creates a local name, the <em>parameter</em> <code>n</code>, and gives it that value: 4. Inside the function, <code>return n * 2</code> sends 8 back to the waiting call. The caller stores 8 in <code>total</code>.</p>
+      <p>Imagine two work surfaces. The caller has <code>price</code> and <code>total</code>. While the call runs, a fresh surface holds <code>n</code>. The caller pauses; the function uses its own local names. When it returns, that temporary surface disappears and the caller continues. This is a <em>call frame</em>. Later, when functions call themselves, many frames can wait at once.</p>
+      <p>Changing local <code>n</code> does not rewrite <code>price</code>. The argument's numeric value was copied into a new local name. If <code>double</code> omitted <code>return</code>, the call would finish without producing the number 8; in JavaScript its result would be <code>undefined</code>.</p>
+
+      <h2>Now share a collection.</h2>
+      <p>A number like 4 fits in a name's value. A collection has its own place in memory. We will study indexed collections fully in the next chapter; for now, read <code>[4, 7]</code> as a two-slot collection and <code>[0]</code> as its first slot. A name can hold a <em>reference</em> that locates that collection. Copying the reference gives another name a route to the <em>same</em> collection.</p>
+      <div class="example"><pre>function touch(items) {
+  items[0] = 9;
+  items = [1, 2];
+}
+
+let first = [4, 7];
+touch(first);
+show(first[0]);  // 9</pre></div>
+      <p>The call copies the reference in <code>first</code> into local <code>items</code>. Both names now locate one collection, shown as A1 in the figure. <code>items[0] = 9</code> changes A1 itself, so the caller can see the change through <code>first</code>. Then <code>items = [1, 2]</code> makes a <em>new</em> collection, A2, and changes only the local name to point there. It does not undo the edit to A1, and it does not change where <code>first</code> points.</p>
+    </article></div>
+
+    <section class="figure grid" id="function-figure" aria-label="Compare a number passed to a function with a shared collection reference">
+      <h2 class="figure-title">Explore / A call and its memory</h2>
+      <div class="figure-body">
+        <div class="function-modes" role="group" aria-label="Choose an experiment"><button type="button" data-mode="number" aria-pressed="true">01 · A number</button><button type="button" data-mode="reference" aria-pressed="false">02 · A shared collection</button></div>
+        <div class="function-inputs"><label data-number-input>Starting price<input id="function-price" type="number" min="-9" max="9" step="1" value="4"></label><label data-reference-input hidden>First slot<input id="function-first" type="number" min="-9" max="9" step="1" value="4"></label><label data-reference-input hidden>Replace it with<input id="function-replace" type="number" min="-9" max="9" step="1" value="9"></label><button id="function-apply" type="button">Use these values</button></div>
+        <div class="figure-panel"><div class="function-stage">
+          <div class="function-code"><h3 data-code-title>Program</h3><ol data-code aria-label="Current program"></ol></div>
+          <div class="memory-board"><div class="memory-frame" data-caller-card><small>Caller · waiting or running</small><div data-caller-state></div></div><div class="memory-frame" data-local-card><small>Function's local frame</small><div data-local-state></div></div><div class="memory-frame"><small>Collections in memory</small><div class="heap-row" data-heap-state></div></div><p class="function-note" data-memory-note></p></div>
+        </div></div>
+        <p class="figure-caption" data-caption aria-live="polite"></p>
+        <div class="figure-controls"><button type="button" data-prev>← Previous</button><button type="button" data-next>Next →</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div>
+        <p class="figure-hint">Switch experiments, choose values, and watch which name or collection changes.</p>
+      </div>
+    </section>
+
+    <div class="grid"><article class="prose">
+      <h2>The distinction that prevents many bugs.</h2>
+      <p>There are two different actions here. <em>Mutating</em> a collection changes the thing at the end of a reference; every name that still reaches it sees the change. <em>Rebinding</em> a name changes which thing that one name reaches. The second action does not move every other name. In JavaScript, arguments are passed as values. For a collection, the value being copied is a reference. Saying “the whole collection was copied” would predict the wrong result.</p>
+      <p>This memory picture is deliberately simple. A real engine manages objects, addresses, and storage in more complicated ways. The useful contract for ordinary JavaScript code is stable: two names may refer to one mutable object, and assigning a new object to one name does not retarget the other.</p>
+      <p>Try changing <code>First slot</code> and <code>Replace it with</code> in the lab. The exact numbers change, but the relationship does not. The caller's <code>first</code> still points to A1 after <code>touch</code> returns. A2 was created during the call and no surviving name points to it in this example.</p>
+      <p>Functions make a program easier to reason about when each has a clear promise: what inputs it reads, what value it returns, and what shared objects it may change. A function like <code>double</code> only returns a value. A function like <code>touch</code> also changes an input object. When you read a call, ask which kind of effect to expect.</p>
+    </article></div>
+
+    <section class="prediction" aria-labelledby="function-prediction-title"><div class="section-head grid"><span class="number">PREDICT</span><h2 id="function-prediction-title">Follow the original reference</h2></div><div class="grid"><div class="prose"><p>For the printed <code>touch</code> program above, what does <code>show(first[0])</code> display after the function returns?</p><div class="prediction-options" role="group" aria-label="Choose the displayed value"><button type="button" data-predict="4">4</button><button type="button" data-predict="9">9</button><button type="button" data-predict="1">1</button></div><p class="prediction-feedback" id="function-feedback" aria-live="polite"></p></div></div></section>
+
+    <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice on paper</h2></div><ol class="grid"><li>Write a function <code>triple(n)</code> that returns three times its input. Trace <code>let x = 2; let y = triple(x);</code>. What does each name hold afterward?</li><li>Suppose <code>a = [2, 5]</code> and <code>b = a</code>. After <code>b[1] = 8</code>, draw the two names and the collection. What is <code>a[1]</code>?</li><li>In <code>touch</code>, move <code>items = [1, 2]</code> before <code>items[0] = 9</code>. Which collection changes now? What will <code>first[0]</code> be?</li></ol></section>
+  </main>
+  <footer class="chapter-footer"><div class="site grid"><a class="prev" href="04-decisions-and-loops.html"><small>Previous · Decisions and loops</small>← Choose and repeat</a><a class="next" href="03-arrays-and-strings.html"><small>Next · Arrays and strings</small>Explore the collection →</a></div></footer>
+  <script src="../js/figure.js"></script>
+  <script>
+    (function(){
+      'use strict';
+      var root=document.getElementById('function-figure');
+      var mode='number';
+      var numberCode=['function double(n) {','  return n * 2;','}','let price = start;','let total = double(price);','show(price); show(total);'];
+      var refCode=['function touch(items) {','  items[0] = replacement;','  items = [1, 2];','}','let first = [start, 7];','touch(first);','show(first[0]);'];
+      var code=root.querySelector('[data-code]');
+      var caller=root.querySelector('[data-caller-state]');
+      var local=root.querySelector('[data-local-state]');
+      var heap=root.querySelector('[data-heap-state]');
+      var note=root.querySelector('[data-memory-note]');
+      var callerCard=root.querySelector('[data-caller-card]');
+      var localCard=root.querySelector('[data-local-card]');
+      function numberFrames(n){return [
+        {mode:'number',line:3,caller:['price = '+n,'total = —'],local:[],heap:[],active:'caller',caption:'The caller stores '+n+' in price. The function body has only been defined, not run.'},
+        {mode:'number',line:4,caller:['price = '+n,'total = —'],local:['n = '+n],heap:[],active:'local',caption:'Calling double copies the value '+n+' into the new local parameter n. The caller waits.'},
+        {mode:'number',line:1,caller:['price = '+n,'total = —'],local:['n = '+n,'return value = '+(n*2)],heap:[],active:'local',caption:'Inside the call, n × 2 produces '+(n*2)+'. return sends that value back.'},
+        {mode:'number',line:4,caller:['price = '+n,'total = '+(n*2)],local:[],heap:[],active:'caller',caption:'The local frame is gone. The caller stores '+(n*2)+' in total; price is still '+n+'.'},
+        {mode:'number',line:5,caller:['price = '+n,'total = '+(n*2)],local:[],heap:[],active:'caller',caption:'The two output values are '+n+' and '+(n*2)+'.'}
+      ].map(function(frame){frame.start=n;return frame;});}
+      function referenceFrames(start,replacement){return [
+        {mode:'reference',line:4,caller:['first → A1'],local:[],heap:[['A1',start,7]],active:'caller',caption:'The caller creates collection A1 and stores a reference to it in first.'},
+        {mode:'reference',line:5,caller:['first → A1'],local:['items → A1'],heap:[['A1',start,7]],active:'local',caption:'Calling touch copies the A1 reference into local items. Both names reach the same collection.'},
+        {mode:'reference',line:1,caller:['first → A1'],local:['items → A1'],heap:[['A1',replacement,7]],active:'local',caption:'items[0] changes A1’s first slot from '+start+' to '+replacement+'. first still reaches A1, so it sees the edit.'},
+        {mode:'reference',line:2,caller:['first → A1'],local:['items → A2'],heap:[['A1',replacement,7],['A2',1,2]],active:'local',caption:'A new collection A2 appears. Only local items is rebound to A2. first still reaches A1.'},
+        {mode:'reference',line:5,caller:['first → A1'],local:[],heap:[['A1',replacement,7],['A2',1,2]],active:'caller',caption:'The function returns. Its local name disappears; the caller still points to edited A1. A2 is now unreachable.'},
+        {mode:'reference',line:6,caller:['first → A1','output = '+replacement],local:[],heap:[['A1',replacement,7],['A2',1,2]],active:'caller',caption:'Reading first[0] follows the reference to A1 and shows '+replacement+'. A2 may be reclaimed later.'}
+      ].map(function(frame){frame.start=start;frame.replacement=replacement;return frame;});}
+      function paintLines(lines,active){code.innerHTML=lines.map(function(line,i){var escaped=line.replace(/&/g,'&amp;').replace(/</g,'&lt;');return '<li'+(i===active?' class="is-active"':'')+'>'+escaped+'</li>';}).join('');}
+      function paintFrame(target,items){target.innerHTML=items.length?items.map(function(item){return '<p>'+item+'</p>';}).join(''):'<p>—</p>';}
+      function draw(frame){
+        var source=(frame.mode==='number'?numberCode:refCode).map(function(line){return line.replace('start',String(frame.start)).replace('replacement',String(frame.replacement));});
+        paintLines(source,frame.line);
+        paintFrame(caller,frame.caller);paintFrame(local,frame.local);
+        heap.innerHTML=frame.heap.length?frame.heap.map(function(obj){var unreachable=frame.mode==='reference'&&obj[0]==='A2'&&!frame.local.length;return '<div class="heap-object" data-unreachable="'+unreachable+'"><b>'+obj[0]+'</b><span>'+obj[1]+'</span><span>'+obj[2]+'</span></div>';}).join(''):'<span>No collection is involved.</span>';
+        callerCard.dataset.active=String(frame.active==='caller');localCard.dataset.active=String(frame.active==='local');
+        note.textContent=frame.mode==='number'?'The number is copied into n.':'The reference is copied; A1 itself is shared.';
+      }
+      var stepper=FigureStepper({root:'#function-figure',frames:numberFrames(4),draw:draw});
+      function readNumber(id){var input=document.getElementById(id),n=Number(input.value);if(input.value.trim()===''||!Number.isInteger(n)||n< -9||n>9){input.setCustomValidity('Choose a whole number from −9 to 9.');input.reportValidity();return null;}input.setCustomValidity('');return n;}
+      function refresh(){var n=readNumber(mode==='number'?'function-price':'function-first');if(n===null)return;var replacement=mode==='reference'?readNumber('function-replace'):null;if(mode==='reference'&&replacement===null)return;stepper.setFrames(mode==='number'?numberFrames(n):referenceFrames(n,replacement));}
+      root.querySelectorAll('[data-mode]').forEach(function(button){button.addEventListener('click',function(){mode=button.dataset.mode;root.querySelectorAll('[data-mode]').forEach(function(b){b.setAttribute('aria-pressed',String(b===button));});root.querySelectorAll('[data-number-input]').forEach(function(el){el.hidden=mode!=='number';});root.querySelectorAll('[data-reference-input]').forEach(function(el){el.hidden=mode!=='reference';});refresh();});});
+      document.getElementById('function-apply').addEventListener('click',refresh);
+      root.querySelectorAll('input').forEach(function(input){input.addEventListener('input',function(){input.setCustomValidity('');});});
+      document.querySelectorAll('[data-predict]').forEach(function(button){button.addEventListener('click',function(){document.getElementById('function-feedback').textContent=button.dataset.predict==='9'?'Yes. The mutation to A1 remains visible through first; rebinding items later only changes the local name.':'Follow first → A1. A1 was edited to [9, 7]; the later new collection A2 belongs only to local items.';});});
+    }());
+  </script>
+</body>
+</html>

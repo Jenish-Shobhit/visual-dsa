@@ -1,33 +1,80 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Branching links turn one starting point into many paths."><meta name="theme-color" content="#ffffff"><title>11 — Trees · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
-<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">11 / 14 · After recursion</span></div></header>
-<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 11 · After recursion</p><h1>Trees.</h1><p class="lede">Branching links turn one starting point into many paths.</p><p class="read-time">About 8 minutes · Use ← → in the figure</p></section>
-<div class="grid"><div class="prose">
-<p>Suppose you keep the numbers 8, 3, 10, 1, 6, and 14 so that each node has up to two children. Put smaller values to a node's left and larger values to its right:</p>
-<div class="example"><pre>        8
-      /   \ 
-     3     10
-    / \      \ 
-   1   6      14</pre></div>
-<p>To find 6, compare with 8: go left. Compare with 3: go right. The next node is 6. This is a <strong>binary search tree</strong>. The rule narrows the path in the same spirit as binary search, but links rather than array indices lead to the next candidate.</p>
-<h2>Use the family words precisely.</h2>
-<p>The top node is the <em>root</em>. A node immediately below another is its <em>child</em>; the one above is its <em>parent</em>. A node without children is a <em>leaf</em>. A tree has one path from the root to each node, unlike a general graph that can contain cycles.</p>
-<p>To visit every node, choose an order. <em>Preorder</em> visits a node before its children. <em>Inorder</em> visits left subtree, node, then right subtree; in a binary search tree this reads values in order. <em>Postorder</em> visits children before their parent. A recursive function fits because each child roots a smaller tree.</p>
-<h2>Shape decides speed.</h2>
-<p>A fairly balanced search tree has height near <code>log n</code>, so a search follows about <code>O(log n)</code> links. Insert already sorted values into a plain unbalanced tree and it may become a chain: search can take <code>O(n)</code>. The search rule alone does not guarantee balance.</p></div></div>
-<section class="figure grid" id="chapter-figure" aria-label="Trace a search through a binary search tree"><h2 class="figure-title">Figure 11 / Follow a search path</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="Tree nodes with highlighted comparisons on a path to six"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
-<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>For the tree in the figure, name the root, the parent of 6, and every leaf.</li><li>Write the inorder and preorder visits of the tree in the figure. Why is one of those orders sorted?</li><li>Insert 4 into the figure’s binary search tree. Which comparisons lead to its new parent?</li></ol></section>
-</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="10-recursion.html"><small>Previous / 10</small>← Recursion</a><a class="next" href="12-heaps.html"><small>Next / 12</small>Heaps →</a></div></footer>
-<script src="../js/figure.js"></script><script>(function(){
-
-var svg=document.getElementById('chapter-svg');
-var nodes=[{v:8,x:180,y:33},{v:3,x:90,y:100},{v:10,x:270,y:100},{v:1,x:48,y:175},{v:6,x:132,y:175},{v:14,x:312,y:175}];
-var frames=[
- {path:[],active:-1,caption:'Find 6. Start at the root, 8.'},
- {path:[8],active:8,caption:'6 is smaller than 8, so the only possible path is left.'},
- {path:[8,3],active:3,caption:'6 is larger than 3, so take the right child.'},
- {path:[8,3,6],active:6,caption:'The value is 6. The search followed three nodes.'}
-];
-function draw(f){var edges=[[0,1],[0,2],[1,3],[1,4],[2,5]].map(function(pair){var a=nodes[pair[0]],b=nodes[pair[1]];return '<line x1="'+a.x+'" y1="'+(a.y+18)+'" x2="'+b.x+'" y2="'+(b.y-18)+'" stroke="#bdbdbd" stroke-width="2"/>';}).join('');var circles=nodes.map(function(n){var active=n.v===f.active,seen=f.path.indexOf(n.v)>=0;return '<circle cx="'+n.x+'" cy="'+n.y+'" r="21" fill="'+(active?'#e2001a':seen?'#111':'#fff')+'" stroke="'+(active?'#e2001a':'#111')+'"/><text x="'+n.x+'" y="'+(n.y+6)+'" text-anchor="middle" font-size="17" font-weight="700" fill="'+(active||seen?'#fff':'#111')+'">'+n.v+'</text>';}).join('');svg.innerHTML='<text x="9" y="16" font-size="11" fill="#686868">TARGET / 6</text>'+edges+circles;}
-FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
-}());</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Build a binary search tree from chosen values and see how its ordering rule and height control search.">
+  <meta name="theme-color" content="#f8f5ee"><title>Trees · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css">
+  <style>
+    .tree-inputs{display:flex;gap:.65rem;align-items:end;flex-wrap:wrap;margin:0 0 .5rem}.tree-inputs label{font-size:.8rem;font-weight:700}.tree-inputs label:first-child{flex:1 1 17rem}.tree-inputs input{display:block;width:100%;margin-top:.25rem;padding:.5rem;border:1px solid #84938d;background:#fff;color:#172a2a;font:inherit}
+    .tree-inputs button{min-height:2.5rem;padding:.5rem .8rem;border:1px solid #172a2a;background:transparent;color:#172a2a;cursor:pointer}.tree-inputs button:hover{border-color:#e86a33}.tree-error{min-height:1.35rem;margin:0 0 .6rem;color:#a83b21;font-size:.85rem}
+    .tree-stage{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.6fr);gap:1rem;align-items:start}.tree-stage h3{margin:0 0 .55rem;color:#637174;text-transform:uppercase;letter-spacing:.1em;font-size:.74rem}
+    .tree-canvas{border:1px solid #a9b9b4;background:#fff;min-height:18rem;overflow:hidden}.tree-canvas svg{display:block;width:100%;height:auto}
+    .tree-stats{display:grid;gap:.5rem}.tree-stat{border-top:2px solid #172a2a;padding-top:.35rem}.tree-stat small{display:block;color:#637174;text-transform:uppercase;font-size:.65rem}.tree-stat strong{font-size:1.35rem;line-height:1.25;overflow-wrap:anywhere}
+    .tree-path{border-left:4px solid #27836d;background:#e5f4ed;padding:.65rem .75rem;font:700 .85rem/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}.tree-note{font-size:.8rem;color:#637174;margin:.7rem 0 0}
+    .tree-rule{border-left:4px solid #27836d;background:#e5f4ed;padding:.75rem .9rem;margin:1.1rem 0}.tree-mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin:1.1rem 0}.tree-mini div{border-top:2px solid #172a2a;padding-top:.5rem}.tree-mini strong{display:block;font-size:1.1rem}.tree-mini span{font-size:.9rem;color:#637174}
+    @media(max-width:700px){.tree-stage{grid-template-columns:1fr}.tree-canvas{min-height:12rem}.tree-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.tree-path{grid-column:1/-1}}
+  </style>
+</head>
+<body>
+  <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Guided path / 14 of 17</span></div></header>
+  <main class="site">
+    <section class="chapter-hero grid"><p class="eyebrow">The next idea · After recursion</p><h1>Trees.</h1><p class="lede">A tree makes choices branch. A search rule can throw away a whole branch after one comparison.</p><p class="read-time">About 11 minutes · Build a tree in a different order</p></section>
+    <div class="grid"><article class="prose">
+      <p>A linked list gives each item one route forward. What if each item can lead to two smaller collections? Begin with a value called the <em>root</em>; below it are children, and each child can root another tree. A node with no children is a <em>leaf</em>. A tree has one path from its root to each node. There are no cycles and no second parent leading to the same node.</p>
+      <p>The branch choice can carry information. In a <em>binary search tree</em>, every value in a node's left subtree is smaller than that node, and every value in its right subtree is larger. “Subtree” matters: the rule applies to all descendants, not merely the two direct children.</p>
+      <div class="example"><pre>          8
+        /   \
+       3     10
+      / \      \
+     1   6      14</pre></div>
+      <p>To find 6, compare with 8 and go left; compare with 3 and go right; then find 6. At 8, the entire right subtree can be ignored because every value there is greater than 8 and therefore cannot be 6. At 3, the entire left subtree can be ignored. The comparisons are doing more than matching values: they are certifying which links cannot help.</p>
+      <div class="tree-rule"><strong>Ordering invariant:</strong> for every node, all values reachable through its left link are smaller, and all values reachable through its right link are larger.</div>
+      <h2>Insertion keeps the rule true.</h2>
+      <p>Start at the root and compare the new value. Go left if smaller, right if larger, repeating until the appropriate link is empty. Put the new node there. Every comparison follows a constraint the new node must satisfy, so the final location preserves the ordering rule. In this guide's example, duplicate values need an explicit policy: a set may reject them; a multiset may store a count in the matching node. The lab uses distinct values and rejects duplicates.</p>
+      <p>The shape depends on <em>insertion order</em>. Insert 8, 3, 10, 1, 6, 14 and the tree branches. Insert 1, 3, 6, 8, 10, 14 into an ordinary, unbalanced BST and every new value follows the rightmost link. The result is a chain, even though the ordering invariant remains perfectly true. Try both input orders in the figure.</p>
+    </article></div>
+    <section class="figure grid" id="tree-figure" aria-label="Build and search a binary search tree from chosen values">
+      <h2 class="figure-title">Explore / Order changes the shape</h2><div class="figure-body"><div class="tree-inputs"><label for="tree-values">Insert values in this order<input id="tree-values" type="text" value="8, 3, 10, 1, 6, 14" spellcheck="false"></label><label for="tree-target">Find value<input id="tree-target" type="number" min="0" max="99" step="1" value="6"></label><button id="tree-apply" type="button">Build and search</button></div><p class="tree-error" id="tree-error" role="alert"></p>
+        <div class="figure-panel"><div class="tree-stage"><div><h3>Links and comparisons</h3><div class="tree-canvas"><svg data-svg viewBox="0 0 650 380" role="img" aria-label="Binary search tree with highlighted search path"></svg></div><p class="tree-note">Nodes are placed in sorted horizontal order. Each new row is one link deeper.</p></div><div><h3>Search state</h3><div class="tree-stats"><div class="tree-stat"><small>Target</small><strong data-target>6</strong></div><div class="tree-stat"><small>Compared nodes</small><strong data-comparisons>0</strong></div><div class="tree-stat"><small>Tree height · edges</small><strong data-height>—</strong></div><div class="tree-stat"><small>Outcome</small><strong data-outcome>Ready</strong></div><div class="tree-path" data-path>Path: —</div></div></div></div></div>
+        <p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>← Previous</button><button type="button" data-next>Next →</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Try ascending input 1, 3, 6, 8, 10, 14. Search for 14, then 7.</p>
+      </div>
+    </section>
+    <div class="grid"><article class="prose">
+      <h2>Height is the price of a search.</h2>
+      <p>A search follows only one path. If the longest root-to-leaf path has <code>h</code> edges, search takes at most <code>h + 1</code> node comparisons; insertion has the same path cost. The tree in the figure reports its height. A fairly balanced tree has height proportional to <code>log n</code>, because each level can hold roughly twice as many nodes as the previous level. A chain has height <code>n - 1</code>, so the same search rule may take <code>O(n)</code> time. The invariant guarantees correctness, but shape determines speed.</p>
+      <div class="tree-mini"><div><strong>Balanced shape</strong><span>About <code>O(log n)</code> links to a value.</span></div><div><strong>Chain shape</strong><span>Up to <code>O(n)</code> links to a value.</span></div></div>
+      <p>Self-balancing search trees add a second invariant to control height. AVL trees tightly limit the height difference between child subtrees; red-black trees use color rules with a looser bound. Both use <em>rotations</em> that change links locally while preserving the left-before-node-before-right order. They pay maintenance work during updates to guarantee logarithmic height. A plain BST does not get that guarantee merely by being a tree.</p>
+      <p>Why can a rotation change shape without scrambling sorted order? Suppose a node <code>x</code> has a right child <code>y</code>. Every key in <code>y</code>'s left subtree lies between <code>x</code> and <code>y</code>. A left rotation makes <code>y</code> the parent, moves that middle subtree to become <code>x</code>'s right subtree, and makes <code>x</code> the left child of <code>y</code>. The inorder sequence stays the same. A balancing policy decides <em>when</em> to rotate; the BST invariant explains <em>why</em> the rotation is safe.</p>
+      <h2>One shape, several visit orders.</h2>
+      <p>A recursive traversal works because each child roots a smaller tree. In <em>preorder</em>, visit the node before its subtrees. In <em>inorder</em>, visit left subtree, node, then right subtree. The ordering invariant makes an inorder traversal of a BST produce sorted values. In <em>postorder</em>, visit children before the parent, useful when a parent should be processed only after its descendants.</p>
+      <p>For the six-node example, inorder reads <code>1, 3, 6, 8, 10, 14</code>. A hash table can offer quick expected lookup, but it does not give this sorted traversal or efficient range walk. An ordered tree earns its place when you need queries such as “next larger key” or “all keys from 5 to 12.” Choosing a structure means choosing which questions should be cheap.</p>
+      <p>That order also guides deletion. A leaf can simply be detached. A node with one child can be replaced by that child. A node with two children needs a value that fits between its left and right subtrees: the smallest value in its right subtree, called its <em>inorder successor</em>, is one choice. Copy or move that successor into the deleted node's position, then remove the successor from its old location. The details of ownership and rebalancing vary by implementation, but every case has the same goal: leave the ordering invariant true.</p>
+      <p>Boundary cases still count. The empty tree has no root, so a search returns absent without comparisons. Searching for a missing value reaches an empty child link. A duplicate policy must be chosen before insertion. These cases are easiest to reason about when the ordering invariant is stated first.</p>
+    </article></div>
+    <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice on paper</h2></div><ol class="grid"><li>Insert <code>8, 3, 10, 1, 6, 14, 4</code> into an empty plain BST. Draw the links, then list its inorder and preorder traversals. Which comparison leads to 4's parent?</li><li>Insert <code>1, 2, 3, 4, 5, 6</code> in that order. State the height in edges and the number of node comparisons needed to find 6. Explain why the BST rule alone cannot give logarithmic time.</li><li>Design a duplicate policy for a BST storing student scores. Decide whether equal values are rejected, counted in a node, or placed consistently on one side. Explain how your choice changes search and inorder output.</li></ol></section>
+  </main>
+  <footer class="chapter-footer"><div class="site grid"><a class="prev" href="10-recursion.html"><small>Previous · Recursion</small>← Smaller calls</a><a class="next" href="12-heaps.html"><small>Next · Heaps</small>Keep one extreme →</a></div></footer>
+  <script src="../js/figure.js"></script>
+  <script>
+    (function(){
+      'use strict';
+      var root=document.getElementById('tree-figure'),svg=root.querySelector('[data-svg]');
+      var targetView=root.querySelector('[data-target]'),comparisons=root.querySelector('[data-comparisons]'),heightView=root.querySelector('[data-height]'),outcome=root.querySelector('[data-outcome]'),pathView=root.querySelector('[data-path]');
+      var valuesInput=document.getElementById('tree-values'),targetInput=document.getElementById('tree-target'),error=document.getElementById('tree-error');
+      function build(values){var rootNode=null;values.forEach(function(value){var item={value:value,left:null,right:null,x:0,y:0,depth:0};if(!rootNode){rootNode=item;return;}var node=rootNode;while(true){var side=value<node.value?'left':'right';if(!node[side]){node[side]=item;break;}node=node[side];}});return rootNode;}
+      function layout(tree){var ordered=[],links=[],height=-1;function walk(node,depth){if(!node)return;node.depth=depth;height=Math.max(height,depth);walk(node.left,depth+1);ordered.push(node);walk(node.right,depth+1);}walk(tree,0);ordered.forEach(function(node,i){node.x=ordered.length===1?325:55+i*540/(ordered.length-1);node.y=42+node.depth*47;});ordered.forEach(function(node){if(node.left)links.push([node,node.left]);if(node.right)links.push([node,node.right]);});return {nodes:ordered,links:links,height:height};}
+      function makeFrames(values,target){var tree=build(values),shape=layout(tree),frames=[],path=[];function add(active,stage,caption){frames.push({shape:shape,target:target,path:path.slice(),active:active,stage:stage,caption:caption});}add(null,'Ready',values.length?'The tree was built in the entered order. Start searching at the root.':'The tree is empty. There is no root to compare.');if(!tree){add(null,'Absent','The target is absent; an empty tree needs no comparisons.');return frames;}var node=tree;while(node){path.push(node.value);if(node.value===target){add(node.value,'Found','Compare with '+node.value+'. The target matches after '+path.length+' node comparison'+(path.length===1?'':'s')+'.');return frames;}var side=target<node.value?'left':'right';add(node.value,'Compare','At '+node.value+', '+target+' is '+(side==='left'?'smaller':'larger')+'. The ordering invariant discards the other subtree.');node=node[side];}add(null,'Absent','The chosen child link is empty. The target is absent after '+path.length+' comparisons.');return frames;}
+      function draw(f){
+        var shape=f.shape,seen=f.path;
+        var edges=shape.links.map(function(pair){return '<line x1="'+pair[0].x+'" y1="'+(pair[0].y+17)+'" x2="'+pair[1].x+'" y2="'+(pair[1].y-17)+'" stroke="#84938d" stroke-width="2"/>';}).join('');
+        var nodes=shape.nodes.map(function(node){var active=node.value===f.active,visited=seen.indexOf(node.value)!==-1;return '<circle cx="'+node.x+'" cy="'+node.y+'" r="19" fill="'+(active?'#e86a33':visited?'#27836d':'#fff')+'" stroke="'+(active?'#e86a33':'#172a2a')+'" stroke-width="2"/><text x="'+node.x+'" y="'+(node.y+5)+'" text-anchor="middle" font-size="16" font-weight="700" fill="'+(active||visited?'#fff':'#172a2a')+'">'+node.value+'</text>';}).join('');
+        svg.innerHTML=shape.nodes.length?edges+nodes:'<text x="325" y="160" text-anchor="middle" font-size="22" fill="#637174">Empty tree</text>';
+        targetView.textContent=String(f.target);comparisons.textContent=String(seen.length);heightView.textContent=shape.height<0?'—':String(shape.height);outcome.textContent=f.stage;pathView.textContent='Path: '+(seen.length?seen.join(' → '):'—');
+      }
+      var stepper=FigureStepper({root:'#tree-figure',frames:makeFrames([8,3,10,1,6,14],6),draw:draw});
+      function apply(){var source=valuesInput.value.trim(),tokens=source?source.split(','):[],values=[],target=Number(targetInput.value);if(tokens.length>7){error.textContent='Use at most seven values so every branch stays readable.';return;}if(!Number.isInteger(target)||target<0||target>99){error.textContent='Search for a whole number from 0 to 99.';return;}for(var i=0;i<tokens.length;i++){var token=tokens[i].trim();if(!/^\d+$/.test(token)||Number(token)>99){error.textContent='Enter whole numbers from 0 to 99, separated by commas.';return;}var value=Number(token);if(values.indexOf(value)!==-1){error.textContent='Use distinct values; this lab models a set.';return;}values.push(value);}error.textContent='';stepper.setFrames(makeFrames(values,target));}
+      document.getElementById('tree-apply').addEventListener('click',apply);[valuesInput,targetInput].forEach(function(input){input.addEventListener('input',function(){error.textContent='';});input.addEventListener('keydown',function(event){if(event.key==='Enter'){event.preventDefault();apply();}});});
+    }());
+  </script>
+</body>
+</html>

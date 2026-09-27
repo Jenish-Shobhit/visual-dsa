@@ -1,33 +1,73 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="A visual guide to data structures and algorithms, beginning with what code does.">
-<meta name="theme-color" content="#ffffff"><title>Visual DSA</title>
-<link rel="stylesheet" href="css/atlas.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A visual field guide to data structures and algorithms, from your first line of code to proofs and advanced algorithms.">
+  <meta name="theme-color" content="#f8f5ee">
+  <title>Visual DSA — See the idea. Change the input. Understand why.</title>
+  <link rel="stylesheet" href="css/atlas.css">
+  <style>
+    .home-hero{padding:clamp(68px,9vw,120px) 0 70px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:0 22px}
+    .home-hero .eyebrow{grid-column:1/-1;margin:0 0 22px}
+    .home-hero h1{grid-column:1/span 8;max-width:850px;margin:0;font:700 clamp(64px,9vw,132px)/.92 Georgia,serif;letter-spacing:-.075em}
+    .home-hero .intro{grid-column:9/span 4;align-self:end;margin:0 0 8px;font-size:clamp(19px,2vw,26px);line-height:1.38;letter-spacing:-.025em}
+    .home-hero .actions{grid-column:1/-1;display:flex;gap:15px;align-items:center;flex-wrap:wrap;margin-top:43px}
+    .home-hero .actions span{color:var(--muted);font-size:13px;font-weight:650}
+    .home-demo{margin:0 0 100px;padding:clamp(20px,4vw,46px);border-radius:18px;background:var(--navy);color:#e9f5ee;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:25px}
+    .demo-intro{grid-column:1/span 4}.demo-intro .eyebrow{color:#ffc18e}.demo-intro h2{font:700 clamp(28px,3.5vw,46px)/1.12 Georgia,serif;letter-spacing:-.045em;margin:17px 0}.demo-intro p{color:#b6ccc4;font-size:17px;margin:0 0 27px}.demo-intro button{border:1px solid #7f9a90;border-radius:8px;background:transparent;color:#f6fff8;padding:11px 16px;font-weight:800}.demo-intro button:hover{background:#e86a33;border-color:#e86a33}.demo-board{grid-column:5/span 8;display:grid;grid-template-columns:1fr 1fr;gap:12px}.demo-card{min-height:154px;border:1px solid #49655c;border-radius:12px;padding:16px 18px;background:#1a3531}.demo-card h3{margin:0 0 16px;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#b6ccc4}.demo-code{font:15px/1.8 ui-monospace,SFMono-Regular,Consolas,monospace}.demo-code span{display:block;padding:0 8px;border-radius:5px}.demo-code .active{background:#e86a33;color:white}.demo-value{font:700 65px/1 Georgia,serif}.demo-output{font:700 30px/1.2 Georgia,serif}.demo-caption{grid-column:5/-1;min-height:27px;color:#c4d8d0;font-size:14px}
+    .promise{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px;margin:0 0 105px}.promise article{border-top:3px solid var(--orange);padding:18px 10px 0 0}.promise .icon{font:700 42px/1 Georgia,serif;color:var(--orange)}.promise h3{font:700 24px/1.2 Georgia,serif;margin:16px 0 8px}.promise p{color:var(--muted);margin:0;font-size:15px}
+    .path-head{display:grid;grid-template-columns:2fr 1fr;gap:30px;margin:0 0 20px;align-items:end}.path-head h2{font:700 clamp(36px,5vw,64px)/1 Georgia,serif;letter-spacing:-.05em;margin:0}.path-head p{color:var(--muted);margin:0}
+    .track{margin:0 0 69px}.track-label{border-top:1px solid var(--ink);display:flex;justify-content:space-between;gap:15px;padding:11px 0 16px;text-transform:uppercase;font-size:12px;font-weight:850;letter-spacing:.12em}.track-label small{font-size:12px;color:var(--muted);font-weight:650;letter-spacing:0;text-transform:none}.path-list{list-style:none;padding:0;margin:0}.path-list li{border-top:1px solid var(--line)}.path-list li:last-child{border-bottom:1px solid var(--line)}.path-list a{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(150px,300px) 24px;gap:18px;align-items:baseline;text-decoration:none;padding:16px 0}.path-list a:hover,.path-list a:focus-visible{color:var(--orange)}.path-list .num{font-size:13px;color:var(--orange);font-weight:850}.path-list .title{font:700 clamp(22px,2.8vw,34px)/1.1 Georgia,serif;letter-spacing:-.035em}.path-list .question{font-size:13px;color:var(--muted);line-height:1.4}.path-list .arrow{font-size:21px;text-align:right}.path-list .done{margin-left:8px;color:var(--green);font:800 11px Arial,sans-serif;vertical-align:middle}
+    .deep-banner{margin:95px 0 115px;padding:clamp(25px,5vw,60px);border-radius:18px;background:#dfebe3;display:grid;grid-template-columns:7fr 4fr;gap:30px}.deep-banner h2{font:700 clamp(36px,4.5vw,60px)/1.08 Georgia,serif;letter-spacing:-.05em;margin:0 0 20px}.deep-banner p{max-width:610px;font-size:18px;margin:0}.deep-banner .deep-action{align-self:end}.deep-banner .deep-action a{display:inline-flex;padding:13px 20px;border-radius:99px;background:var(--ink);color:white;text-decoration:none;font-weight:800}.deep-banner .deep-action a:hover{background:var(--orange)}.deep-banner .deep-action small{display:block;margin-top:12px;color:var(--muted)}
+    @media(max-width:850px){.home-hero h1{grid-column:1/-1}.home-hero .intro{grid-column:3/span 8;margin-top:30px}.demo-intro{grid-column:1/-1}.demo-board,.demo-caption{grid-column:1/-1}}
+    @media(max-width:650px){.home-hero{padding-top:55px}.home-hero h1{font-size:clamp(59px,15vw,88px)}.home-hero .intro{grid-column:1/-1}.home-demo{padding:22px;margin-bottom:75px}.demo-board{grid-template-columns:1fr 1fr}.demo-card{min-height:132px;padding:13px}.demo-card:first-child{grid-column:1/-1}.demo-value{font-size:49px}.promise{grid-template-columns:1fr;margin-bottom:80px}.promise article{padding-bottom:8px}.path-head{grid-template-columns:1fr}.path-list a{grid-template-columns:32px minmax(0,1fr) 20px;gap:10px}.path-list .question{grid-column:2;grid-row:2}.path-list .arrow{grid-column:3;grid-row:1}.deep-banner{grid-template-columns:1fr;margin:70px 0}.deep-banner p{font-size:17px}}
+  </style>
 </head>
 <body>
-<header class="masthead"><div class="site grid"><a class="brand" href="index.html">Visual DSA</a><span class="masthead-note">An atlas of ideas, built one step at a time.</span></div></header>
+<header class="masthead"><div class="site grid"><a class="brand" href="index.html"><span class="brand-mark">V</span>Visual DSA</a><nav class="masthead-links" aria-label="Main navigation"><a href="#path">Learn</a><a href="studies/index.html">Deep studies</a><a href="README.md">About</a></nav></div></header>
 <main class="site">
-<section class="hero grid"><p class="eyebrow">Start at the beginning</p><h1>Visual<br>DSA.</h1><p class="deck">See what a program does, then build toward the structures and algorithms that make it useful.</p></section>
-<div class="section-head grid"><span class="number">14 / 14</span><h2>Chapters</h2></div>
-<ol class="chapter-list">
-<li><a class="chapter-row" href="chapters/01-what-is-code.html"><span class="index">01</span><span class="name">What is code</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/02-memory-and-variables.html"><span class="index">02</span><span class="name">Memory and variables</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/03-arrays-and-strings.html"><span class="index">03</span><span class="name">Arrays and strings</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/04-complexity.html"><span class="index">04</span><span class="name">Complexity</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/05-sorting.html"><span class="index">05</span><span class="name">Sorting</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/06-searching.html"><span class="index">06</span><span class="name">Searching</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/07-linked-lists.html"><span class="index">07</span><span class="name">Linked lists</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/08-stacks-and-queues.html"><span class="index">08</span><span class="name">Stacks and queues</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/09-hashing.html"><span class="index">09</span><span class="name">Hashing</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/10-recursion.html"><span class="index">10</span><span class="name">Recursion</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/11-trees.html"><span class="index">11</span><span class="name">Trees</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/12-heaps.html"><span class="index">12</span><span class="name">Heaps</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/13-graphs.html"><span class="index">13</span><span class="name">Graphs</span><span class="status">Read ↗</span></a></li>
-<li><a class="chapter-row" href="chapters/14-dynamic-programming.html"><span class="index">14</span><span class="name">Dynamic programming</span><span class="status">Read ↗</span></a></li>
-</ol>
+  <section class="home-hero" aria-labelledby="title"><p class="eyebrow">The interactive field guide · from first principles</p><h1 id="title">Ideas you can see.</h1><p class="intro">Start with one instruction. Follow every change. Then discover the structures, algorithms, and proofs that make programs work.</p><div class="actions"><a class="hero-action" href="chapters/01-what-is-code.html">Start at the beginning <span aria-hidden="true">↗</span></a><span>Free · no account · works on a phone</span></div></section>
+  <section class="home-demo" aria-labelledby="demo-title"><div class="demo-intro"><span class="eyebrow">A tiny taste</span><h2 id="demo-title">A program is a changing state.</h2><p>Predict the next value, then run one line. This way of seeing code carries through every lesson.</p><button type="button" id="demo-next">Run one line →</button></div><div class="demo-board"><div class="demo-card"><h3>Instructions</h3><div class="demo-code" id="demo-code"><span>count = 2</span><span>count = count + 3</span><span>show(count)</span></div></div><div class="demo-card"><h3>Memory</h3><div class="demo-value" id="demo-value">?</div></div><div class="demo-card"><h3>Output</h3><div class="demo-output" id="demo-output">—</div></div></div><div class="demo-caption" id="demo-caption" aria-live="polite">Before the first line, count has no value.</div></section>
+  <section class="promise" aria-label="How the guide teaches"><article><span class="icon" aria-hidden="true">①</span><h3>Predict</h3><p>Make a guess before the next step is revealed. An animation becomes a question you can answer.</p></article><article><span class="icon" aria-hidden="true">②</span><h3>Change the input</h3><p>Try the awkward cases: empty, repeated, reversed, or enormous. See where an idea holds and where it breaks.</p></article><article><span class="icon" aria-hidden="true">③</span><h3>Explain why</h3><p>Connect the picture to an invariant, a cost, and eventually a proof you could reconstruct yourself.</p></article></section>
+  <section id="path" aria-labelledby="path-title"><div class="path-head"><h2 id="path-title">Follow the path.</h2><p>The short lessons form a continuous route. Read in order if you are new; jump to a topic if you have a question.</p></div>
+    <div class="track"><div class="track-label"><span>01 / Learn to read a program</span><small>State → decisions → functions → sequences</small></div><ol class="path-list">
+      <li><a href="chapters/01-what-is-code.html"><span class="num">01</span><span class="title">What is code</span><span class="question">What actually changes when a line runs?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/02-memory-and-variables.html"><span class="num">02</span><span class="title">Memory and variables</span><span class="question">Where does a result live until it is needed?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/04-decisions-and-loops.html"><span class="num">03</span><span class="title">Decisions and loops</span><span class="question">How can a fixed program respond and repeat?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/05-functions-and-references.html"><span class="num">04</span><span class="title">Functions and references</span><span class="question">What travels into a call, and what comes back?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/03-arrays-and-strings.html"><span class="num">05</span><span class="title">Arrays and strings</span><span class="question">How does one name organize many values?</span><span class="arrow">↗</span></a></li>
+    </ol></div>
+    <div class="track"><div class="track-label"><span>02 / Learn to reason</span><small>Correctness → cost → choosing an algorithm</small></div><ol class="path-list">
+      <li><a href="chapters/06-how-to-reason.html"><span class="num">06</span><span class="title">How to reason about a loop</span><span class="question">How can you know it is right for every input?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/04-complexity.html"><span class="num">07</span><span class="title">Complexity</span><span class="question">What happens to the work when the input grows?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/05-sorting.html"><span class="num">08</span><span class="title">Sorting</span><span class="question">Six ways to create order; which work must each do?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/06-searching.html"><span class="num">09</span><span class="title">Searching</span><span class="question">What can one comparison rule out?</span><span class="arrow">↗</span></a></li>
+    </ol></div>
+    <div class="track"><div class="track-label"><span>03 / Choose a structure</span><small>Representation changes the operations you can afford</small></div><ol class="path-list">
+      <li><a href="chapters/07-linked-lists.html"><span class="num">10</span><span class="title">Linked lists</span><span class="question">Can order live in links instead of slots?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/08-stacks-and-queues.html"><span class="num">11</span><span class="title">Stacks and queues</span><span class="question">What changes when removal is restricted?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/09-hashing.html"><span class="num">12</span><span class="title">Hashing</span><span class="question">How can a key lead straight to a candidate location?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/10-recursion.html"><span class="num">13</span><span class="title">Recursion</span><span class="question">How does a call solve a smaller version of itself?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/11-trees.html"><span class="num">14</span><span class="title">Trees</span><span class="question">How does branching organize a search?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/12-heaps.html"><span class="num">15</span><span class="title">Heaps</span><span class="question">How can the most urgent item stay accessible?</span><span class="arrow">↗</span></a></li>
+    </ol></div>
+    <div class="track"><div class="track-label"><span>04 / Connect and optimize</span><small>Reachability → overlapping work</small></div><ol class="path-list">
+      <li><a href="chapters/13-graphs.html"><span class="num">16</span><span class="title">Graphs</span><span class="question">How do you explore connections without getting lost?</span><span class="arrow">↗</span></a></li>
+      <li><a href="chapters/14-dynamic-programming.html"><span class="num">17</span><span class="title">Dynamic programming</span><span class="question">What if the same smaller question keeps returning?</span><span class="arrow">↗</span></a></li>
+    </ol></div>
+  </section>
+  <aside class="deep-banner"><div><span class="eyebrow">Beyond the path</span><h2>Keep going until the ideas get difficult.</h2><p>Twenty-four deep studies take you through amortization, balanced trees, range queries, shortest paths, flow, tries, lower bounds, randomness, and the limits of efficient computation.</p></div><div class="deep-action"><a href="studies/index.html">Explore deep studies ↗</a><small>Long-form reasoning and problem sets</small></div></aside>
 </main>
-<footer class="site-footer"><div class="site grid"><p>© 2026 Jenish Shobhit · MIT License</p></div></footer>
+<footer class="site-footer"><div class="site grid"><p>© 2026 Jenish Shobhit · Open source under the MIT License</p></div></footer>
+<script>
+(function(){
+  var states=[{line:-1,value:'?',output:'—',caption:'Before the first line, count has no value.'},{line:0,value:'2',output:'—',caption:'The first line stores 2 under count.'},{line:1,value:'5',output:'—',caption:'Read the old 2, add 3, then store 5.'},{line:2,value:'5',output:'5',caption:'The last line reads 5 and shows it.'}];
+  var at=0,button=document.getElementById('demo-next'),lines=document.querySelectorAll('#demo-code span');
+  function show(){var s=states[at];document.getElementById('demo-value').textContent=s.value;document.getElementById('demo-output').textContent=s.output;document.getElementById('demo-caption').textContent=s.caption;lines.forEach(function(line,i){line.classList.toggle('active',i===s.line)});button.textContent=at===states.length-1?'Reset ↺':'Run one line →'}
+  button.addEventListener('click',function(){at=at===states.length-1?0:at+1;show()});
+  try{var visited=JSON.parse(localStorage.getItem('visual-dsa-visited')||'[]');document.querySelectorAll('.path-list a').forEach(function(link){if(visited.indexOf(link.getAttribute('href').split('/').pop())!==-1){var badge=document.createElement('span');badge.className='done';badge.textContent='✓ visited';link.querySelector('.title').appendChild(badge)}})}catch(e){}
+}());
+</script>
 </body>
 </html>

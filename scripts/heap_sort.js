@@ -1,103 +1,34 @@
-/*
-    *****************
-    DONE BY:- JENISH SHOBHIT
-    *****************
-*/
-
-function Heap()
-{
-    //Setting Time complexities
-    document.getElementById("Time_Worst").innerText="O(N log N)";
-    document.getElementById("Time_Average").innerText="Θ(N log N)";
-    document.getElementById("Time_Best").innerText="Ω(N log N)";
-
-    //Setting Space complexity
-    document.getElementById("Space_Worst").innerText="O(1)";
-
-    c_delay=0;
-
-    heap_sort();
-    
-    enable_buttons();
-}
-
-function swap(i,j)
-{
-    div_update(divs[i],div_sizes[i],"red");//Color update
-    div_update(divs[j],div_sizes[j],"red");//Color update
-
-    var temp=div_sizes[i];
-    div_sizes[i]=div_sizes[j];
-    div_sizes[j]=temp;
-
-    div_update(divs[i],div_sizes[i],"red");//Height update
-    div_update(divs[j],div_sizes[j],"red");//Height update
-
-    div_update(divs[i],div_sizes[i],"blue");//Color update
-    div_update(divs[j],div_sizes[j],"blue");//Color update
-}
-
-function max_heapify(n,i)
-{
-    var largest=i;
-    var l=2*i+1;
-    var r=2*i+2;
-
-    if(l<n && div_sizes[l]>div_sizes[largest])
-    {
-        if(largest!=i)
-        {
-            div_update(divs[largest],div_sizes[largest],"blue");//Color update
+/* Iterative sift-down keeps the sorting algorithm's extra space O(1). */
+SortLab.register('heap', {
+  title: 'Heap sort',
+  idea: 'Build a max heap, move its root to the right edge, and restore the heap on what remains.',
+  invariant: 'The unsorted prefix is a max heap; the settled suffix contains final values.',
+  best: 'Θ(n log n)', average: 'Θ(n log n)', worst: 'Θ(n log n)', space: 'O(1)', stable: 'No',
+  detail: 'The sift-down loop is iterative. The visualization stores frames separately; that is not algorithm working space.',
+  sort: function (t) {
+    function siftDown(start, size) {
+      var root = start;
+      while (2 * root + 1 < size) {
+        var left = 2 * root + 1;
+        var right = left + 1;
+        var largest = root;
+        if (t.compare(left, largest, 'Compare parent and left child in the heap.') > 0) largest = left;
+        if (right < size && t.compare(right, largest, 'Compare the right child with the largest seen.') > 0) largest = right;
+        if (largest === root) {
+          t.note('The parent is at least as large as its children. Stop sifting here.', [root]);
+          return;
         }
-
-        largest=l;
-
-        div_update(divs[largest],div_sizes[largest],"red");//Color update
+        t.swap(root, largest, 'Swap the parent with its larger child to restore the heap rule.');
+        root = largest;
+      }
     }
-
-    if(r<n && div_sizes[r]>div_sizes[largest])
-    {
-        if(largest!=i)
-        {
-            div_update(divs[largest],div_sizes[largest],"blue");//Color update
-        }
-
-        largest=r;
-
-        div_update(divs[largest],div_sizes[largest],"red");//Color update
+    for (var i = Math.floor(t.length / 2) - 1; i >= 0; i--) siftDown(i, t.length);
+    t.note('The array prefix is now a max heap: its root is the largest value.', [0]);
+    for (var end = t.length - 1; end > 0; end--) {
+      t.swap(0, end, 'Move the maximum to final position ' + end + '.');
+      t.mark([end], 'Position ' + end + ' is final; the heap is one value shorter.');
+      siftDown(0, end);
     }
-
-    if(largest!=i)
-    {
-        swap(i,largest);
-
-        max_heapify(n,largest);
-    }
-}
-
-function heap_sort()
-{
-    for(var i=Math.floor(array_size/2)-1;i>=0;i--)
-    {
-        max_heapify(array_size,i);
-    }
-
-    for(var i=array_size-1;i>0;i--)
-    {
-        swap(0,i);
-        div_update(divs[i],div_sizes[i],"green");//Color update
-        div_update(divs[i],div_sizes[i],"yellow");//Color update
-
-        max_heapify(i,0);
-
-        div_update(divs[i],div_sizes[i],"blue");//Color update
-        div_update(divs[i],div_sizes[i],"green");//Color update
-    }
-    div_update(divs[i],div_sizes[i],"green");//Color update
-}
-
-/*
-    *****************
-    DONE BY:- JENISH SHOBHIT
-    *****************
-*/
+    t.mark([0], 'The final root is the smallest remaining value.');
+  }
+});

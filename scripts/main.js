@@ -36,7 +36,7 @@ function generate_array()
         divs[i]=document.createElement("div");
         cont.appendChild(divs[i]);
         margin_size=0.1;
-        divs[i].style=" margin:0% " + margin_size + "%; background-color:blue; width:" + (100/array_size-(2*margin_size)) + "%; height:" + (div_sizes[i]) + "%;";
+        divs[i].style=" margin:0% " + margin_size + "%; background-color:#bdbdbd; width:" + (100/array_size-(2*margin_size)) + "%; height:" + (div_sizes[i]) + "%;";
     }
 }
 
@@ -44,6 +44,7 @@ function update_array_size()
 {
     array_size=inp_as.value;
     generate_array();
+    if (typeof vis_speed === "function") vis_speed();
 }
 
 window.onload=function(){

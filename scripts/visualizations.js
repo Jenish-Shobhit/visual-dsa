@@ -30,7 +30,8 @@ var c_delay = 0;
 
 function div_update(cont, height, color) {
     window.setTimeout(function() {
-        cont.style = "margin:0% " + margin_size + "%; width:" + (100/array_size-(2*margin_size)) + "%; height:" + height + "%; background-color:" + color + ";";
+        var palette = { blue: "#bdbdbd", green: "#111", yellow: "#e2001a", red: "#e2001a" };
+        cont.style = "margin:0% " + margin_size + "%; width:" + (100/array_size-(2*margin_size)) + "%; height:" + height + "%; background-color:" + (palette[color] || color) + ";";
     }, c_delay+=delay_time);
 }
 

@@ -60,7 +60,7 @@ function quick_partition (start, end)
     div_update(divs[start],div_sizes[start],"red");//Height update
     div_update(divs[i-1],div_sizes[i-1],"red");//Height update
 
-    for(var t=start;t<=i;t++)
+    for(var t=start;t<=i && t<=end;t++)
     {
         div_update(divs[t],div_sizes[t],"green");//Color update
     }

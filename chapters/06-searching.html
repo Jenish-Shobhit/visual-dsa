@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Order gives a clue: every comparison can rule out part of the search."><meta name="theme-color" content="#ffffff"><title>06 — Searching · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
+<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">06 / 14 · After sorting</span></div></header>
+<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 06 · After sorting</p><h1>Searching.</h1><p class="lede">Order gives a clue: every comparison can rule out part of the search.</p><p class="read-time">About 7 minutes · Use ← → in the figure</p></section>
+<div class="grid"><div class="prose">
+<p>You are looking for 23 in a sorted row: <code>[3, 8, 12, 17, 23, 29, 35]</code>. You could start at the left and read each value. That works even if the row is unsorted, but it can take seven reads.</p>
+<div class="example"><pre>look at the middle: 17
+23 is larger, so ignore 17 and everything left of it
+look at the middle of what remains: 29
+23 is smaller, so ignore 29 and everything right of it
+look at 23</pre></div>
+<p>Only three comparisons were needed. The order made each rejected half impossible: if 23 is larger than 17, no value to the left of 17 can be 23. Step the figure and watch the candidate range shrink.</p>
+<h2>Keep a valid range.</h2>
+<p>Binary search tracks a low and high index. While <code>low ≤ high</code>, inspect the middle index. If its value is too small, make <code>low = middle + 1</code>. If too large, make <code>high = middle - 1</code>. If equal, the target is found. When low passes high, the target is absent.</p>
+<p>Each comparison leaves at most half the previous candidates, so the worst case is <code>O(log n)</code> comparisons. A linear scan is <code>O(n)</code>. Binary search needs sorted data and direct access to the middle, which arrays provide. Sorting just to answer one search may cost more than a scan; the benefit grows when many searches share the sorted data.</p>
+<h2>Decide what “found” means.</h2>
+<p>If values repeat, a basic binary search may return any matching index. To find the first match, remember a match and keep searching left. Be explicit about this requirement before writing the loop. Also test an empty array, a missing target, and a one-item array.</p></div></div>
+<section class="figure grid" id="chapter-figure" aria-label="Step through a binary search for 23"><h2 class="figure-title">Figure 06 / Halve the candidates</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="Sorted array with current search range and midpoint"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
+<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>Search <code>[2, 5, 8, 11, 14, 17, 20]</code> for 13. Which indices are inspected, and when does the search stop?</li><li>A sorted array contains <code>[1, 4, 4, 4, 9]</code>. Adapt the binary search rule to return the first index holding 4.</li><li>You must answer one search in an unsorted array of 100 values. Would you scan or sort then search? Explain the work each choice needs.</li></ol></section>
+</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="05-sorting.html"><small>Previous / 05</small>← Sorting</a><a class="next" href="07-linked-lists.html"><small>Next / 07</small>Linked lists →</a></div></footer>
+<script src="../js/figure.js"></script><script>(function(){
+
+var svg=document.getElementById('chapter-svg');
+var values=[3,8,12,17,23,29,35];
+var frames=[
+ {lo:0,hi:6,mid:-1,caption:'All seven positions are candidates. The target is 23; low is 0 and high is 6.'},
+ {lo:0,hi:6,mid:3,caption:'The middle is index 3, value 17. Since 23 is larger, positions 0 through 3 can go.'},
+ {lo:4,hi:6,mid:5,caption:'Now search indices 4 through 6. The middle value 29 is too large, so index 5 and everything right can go.'},
+ {lo:4,hi:4,mid:4,caption:'Only index 4 remains. Its value is 23: target found in three comparisons.'}
+];
+function draw(f){
+ var cells=values.map(function(v,i){var x=7+i*50,active=i===f.mid,possible=i>=f.lo&&i<=f.hi;return '<text x="'+(x+22)+'" y="36" text-anchor="middle" font-size="11" fill="#686868">'+i+'</text><rect x="'+x+'" y="50" width="44" height="72" fill="'+(active?'#e2001a':possible?'#fff':'#f4f4f4')+'" stroke="#d5d5d5"/><text x="'+(x+22)+'" y="95" text-anchor="middle" font-size="18" font-weight="700" fill="'+(active?'#fff':possible?'#111':'#aaa')+'">'+v+'</text>';}).join('');
+ svg.innerHTML='<text x="7" y="17" font-size="11" fill="#686868">TARGET / 23</text>'+cells+'<line x1="7" y1="143" x2="350" y2="143" stroke="#d5d5d5"/><text x="7" y="170" font-size="13">LOW  '+f.lo+'</text><text x="120" y="170" font-size="13">HIGH  '+f.hi+'</text><text x="350" y="170" text-anchor="end" font-size="13" fill="#e2001a">'+(f.mid<0?'START':f.mid===4?'FOUND':'COMPARE')+'</text>';
+}
+FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
+}());</script></body></html>

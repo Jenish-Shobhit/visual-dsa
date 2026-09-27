@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="A small rule about which end to use changes the order of everything that leaves."><meta name="theme-color" content="#ffffff"><title>08 — Stacks and queues · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
+<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">08 / 14 · After linked lists</span></div></header>
+<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 08 · After linked lists</p><h1>Stacks and<br>queues.</h1><p class="lede">A small rule about which end to use changes the order of everything that leaves.</p><p class="read-time">About 6 minutes · Use ← → in the figure</p></section>
+<div class="grid"><div class="prose">
+<p>Three people arrive: Ana, Bo, then Cy. If you put their plates in a stack, the last plate added is the first plate you can lift. If they join a line, the first person who arrived is served first.</p>
+<div class="example"><pre>arrive: A, B, C
+stack removal: C
+queue removal: A</pre></div>
+<p>A <strong>stack</strong> permits <code>push</code> at its top and <code>pop</code> from that same end: last in, first out. A <strong>queue</strong> permits <code>enqueue</code> at its back and <code>dequeue</code> from its front: first in, first out. Step the figure after each arrival, then compare the one removal.</p>
+<h2>Why restrict access?</h2>
+<p>The rule makes behavior predictable. An undo history uses a stack because the latest change should be undone first. A waiting line uses a queue because older requests should leave first. Recursion also uses a call stack: each unfinished call waits beneath the one it started.</p>
+<p>Both can be built from arrays or linked nodes. With a suitable implementation, adding and removing at the allowed ends takes <code>O(1)</code> work. A queue backed by a plain array should not repeatedly shift every item left; keep front and back positions or use linked nodes instead.</p>
+<h2>Know the empty case.</h2>
+<p>What should <code>pop</code> or <code>dequeue</code> do when nothing is there? Choose an explicit result or error. For a queue, also track the front correctly when the last item leaves. These cases are small but reveal whether the access rule is truly implemented.</p></div></div>
+<section class="figure grid" id="chapter-figure" aria-label="Compare a stack and queue after the same arrivals"><h2 class="figure-title">Figure 08 / Same arrivals, different exits</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="Two rows of cards showing stack and queue order"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
+<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>Push 2, then 5, then 8 onto a stack. Pop twice, then push 3. What remains from bottom to top?</li><li>Enqueue A, B, C. Dequeue once, enqueue D, then dequeue again. What is left from front to back?</li><li>For each task, choose a stack or queue and explain why: undoing edits; serving print jobs in arrival order; exploring the most recently discovered path first.</li></ol></section>
+</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="07-linked-lists.html"><small>Previous / 07</small>← Linked lists</a><a class="next" href="09-hashing.html"><small>Next / 09</small>Hashing →</a></div></footer>
+<script src="../js/figure.js"></script><script>(function(){
+
+var svg=document.getElementById('chapter-svg');
+var frames=[
+ {stack:[],queue:[],caption:'Both structures start empty.'},
+ {stack:['A'],queue:['A'],caption:'A arrives. It is both the stack top and queue front.'},
+ {stack:['A','B'],queue:['A','B'],caption:'B arrives. B becomes the stack top, while A stays at the queue front.'},
+ {stack:['A','B','C'],queue:['A','B','C'],caption:'C arrives. The next stack removal will be C; the next queue removal will be A.'},
+ {stack:['A','B'],queue:['B','C'],caption:'Remove once: pop takes C from the stack; dequeue takes A from the queue.'}
+];
+function row(items,y,kind){var cards=items.map(function(v,i){var x=10+i*109,active=kind==='stack'?i===items.length-1:i===0;return '<rect x="'+x+'" y="'+y+'" width="95" height="51" fill="'+(active?'#e2001a':'#fff')+'" stroke="'+(active?'#e2001a':'#111')+'"/><text x="'+(x+47)+'" y="'+(y+35)+'" text-anchor="middle" font-size="25" font-weight="700" fill="'+(active?'#fff':'#111')+'">'+v+'</text>';}).join('');return cards||'<text x="10" y="'+(y+34)+'" font-size="17" fill="#aaa">empty</text>';}
+function draw(f){svg.innerHTML='<text x="10" y="18" font-size="11" fill="#686868">STACK / TOP IS RIGHT</text>'+row(f.stack,32,'stack')+'<line x1="10" y1="104" x2="350" y2="104" stroke="#d5d5d5"/><text x="10" y="126" font-size="11" fill="#686868">QUEUE / FRONT IS LEFT</text>'+row(f.queue,140,'queue')+'<text x="10" y="215" font-size="11" fill="#686868">RED = NEXT TO LEAVE</text>';}
+FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
+}());</script></body></html>

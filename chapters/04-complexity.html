@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="When the input grows, count the work that grows with it."><meta name="theme-color" content="#ffffff"><title>04 — Complexity · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
+<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">04 / 14 · After arrays</span></div></header>
+<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 04 · After arrays</p><h1>Complexity.</h1><p class="lede">When the input grows, count the work that grows with it.</p><p class="read-time">About 7 minutes · Use ← → in the figure</p></section>
+<div class="grid"><div class="prose">
+<p>Suppose you have a row of names and need to find one name. With 4 names, you might check 4. With 40 names, you might check 40. The work grows with the row.</p>
+<div class="example"><pre>for each name in names:
+    check(name)</pre></div>
+<p>If the name is last, the loop makes one check per item. For <code>n</code> items, that is <code>n</code> checks. Now imagine comparing every name with every name:</p>
+<div class="example"><pre>for each first in names:
+    for each second in names:
+        compare(first, second)</pre></div>
+<p>Each of the <code>n</code> outer visits starts <code>n</code> inner visits, so there are <code>n × n</code> comparisons. At 10 items that is 100; at 100 items it is 10,000. Step the figure to see the gap open.</p>
+<h2>Describe growth, not seconds.</h2>
+<p>One computer may run a loop faster than another. Growth describes the shape of the work as input size changes. We write <code>O(n)</code> for an upper bound proportional to <code>n</code>, and <code>O(n²)</code> for an upper bound proportional to <code>n²</code>. A fixed number of steps is <code>O(1)</code>. Big O is an upper bound; <code>Θ</code> names a tight bound when both upper and lower growth match.</p>
+<p>When counting, keep the part that grows fastest. A loop doing <code>3n + 8</code> simple steps is <code>O(n)</code>; constants still affect real runs, but they do not change that growth category. A nested loop over all pairs is <code>O(n²)</code>. An algorithm may also use extra memory, so ask the same growth question about its working space.</p>
+<h2>Be clear about the case.</h2>
+<p>A search may find its target immediately or only after checking every item. State whether you mean best, worst, or average behavior. Input order can matter as much as input length. The sorting chapter uses these counts to compare different plans for the same task.</p></div></div>
+<section class="figure grid" id="chapter-figure" aria-label="Compare one pass with all pairs as the input gets larger"><h2 class="figure-title">Figure 04 / How work grows</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="Input size and number of operations for two approaches"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
+<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>Trace a scan of <code>[8, 3, 5, 1, 9]</code> for the target 9. How many values does it read in the worst case?</li><li>A procedure does <code>2n + 5</code> steps; another does <code>n × n</code>. Count each at <code>n = 10</code> and <code>n = 100</code>. Which grows faster?</li><li>For every item in an array, a program checks every item, including itself. How many comparisons does it make for <code>n</code> items, and what is its growth class?</li></ol></section>
+</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="03-arrays-and-strings.html"><small>Previous / 03</small>← Arrays and strings</a><a class="next" href="05-sorting.html"><small>Next / 05</small>Sorting →</a></div></footer>
+<script src="../js/figure.js"></script><script>(function(){
+
+var svg=document.getElementById('chapter-svg');
+var frames=[
+ {n:2,caption:'Two items take 2 checks in one pass and 4 comparisons across all ordered pairs.'},
+ {n:3,caption:'Three items take 3 checks in one pass and 9 comparisons across all ordered pairs.'},
+ {n:4,caption:'Four items take 4 checks in one pass and 16 comparisons across all ordered pairs.'},
+ {n:6,caption:'Six items take 6 checks in one pass and 36 comparisons across all ordered pairs. The gap grows faster than the input.'}
+];
+function draw(f){
+ var boxes=''; for(var i=0;i<f.n;i++) boxes+='<rect x="'+(8+i*57)+'" y="32" width="48" height="36" fill="#e2001a"/><text x="'+(32+i*57)+'" y="56" text-anchor="middle" font-size="15" fill="#fff">'+(i+1)+'</text>';
+ svg.innerHTML='<text x="8" y="17" font-size="11" fill="#686868">INPUT / '+f.n+' ITEMS</text>'+boxes+'<line x1="8" y1="86" x2="350" y2="86" stroke="#d5d5d5"/><text x="8" y="114" font-size="12" fill="#686868">ONE PASS</text><text x="350" y="130" text-anchor="end" font-size="44" font-weight="700">'+f.n+'</text><line x1="8" y1="145" x2="350" y2="145" stroke="#d5d5d5"/><text x="8" y="172" font-size="12" fill="#686868">ALL PAIRS</text><text x="350" y="205" text-anchor="end" font-size="44" font-weight="700" fill="#e2001a">'+(f.n*f.n)+'</text>';
+}
+FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
+}());</script></body></html>

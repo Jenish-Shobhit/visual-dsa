@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Order can live in links between nodes instead of neighboring positions."><meta name="theme-color" content="#ffffff"><title>07 — Linked lists · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
+<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">07 / 14 · After searching</span></div></header>
+<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 07 · After searching</p><h1>Linked lists.</h1><p class="lede">Order can live in links between nodes instead of neighboring positions.</p><p class="read-time">About 7 minutes · Use ← → in the figure</p></section>
+<div class="grid"><div class="prose">
+<p>You have a chain with values 4 then 9. You want 7 between them. In an array, you may need to shift later values to make a neighboring slot. A linked list keeps a different kind of order:</p>
+<div class="example"><pre>head → [4 | next] → [9 | next] → null</pre></div>
+<p>Each node has a value and a link named <code>next</code>. The <code>head</code> points to the first node. To reach 9, follow the first node's link; its physical memory location does not have to sit beside 4.</p>
+<p>To insert 7, first make its <code>next</code> point to the 9 node. Then change 4's <code>next</code> to point to 7. This order keeps the old path available while you reconnect it. Step through the figure to see which links exist at each moment.</p>
+<h2>What gets cheaper, and what does not?</h2>
+<p>Once you already hold a reference to the node before the insertion point, reconnecting a few links takes <code>O(1)</code> work. Finding that node can still take <code>O(n)</code>: you may need to follow links from the head one by one. There is no direct “jump to index 50” as with an array.</p>
+<p>Removing a node is similar: change the previous node's <code>next</code> to skip it. Handle the head separately because it has no previous node. The last node points to <code>null</code>, marking the end.</p>
+<h2>Keep the chain intact.</h2>
+<p>A lost link can make the rest of the list unreachable. Draw the old and new arrows before changing them. Lists trade fast indexed access for easy local rewiring; which matters depends on the operations your program performs.</p></div></div>
+<section class="figure grid" id="chapter-figure" aria-label="Step through inserting a linked-list node"><h2 class="figure-title">Figure 07 / Insert a node</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="Three nodes and changing next pointers"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
+<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>Trace the values reached from the head in <code>A → C → B → null</code>. Which node is at index 1?</li><li>You have a reference to node 8 in <code>5 → 8 → 12</code>. Show the two link changes needed to insert 10 after 8.</li><li>In <code>head → 2 → 6 → 9</code>, which reference must change to remove the head? What happens if you simply discard the old head first?</li></ol></section>
+</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="06-searching.html"><small>Previous / 06</small>← Searching</a><a class="next" href="08-stacks-and-queues.html"><small>Next / 08</small>Stacks and queues →</a></div></footer>
+<script src="../js/figure.js"></script><script>(function(){
+
+var svg=document.getElementById('chapter-svg');
+var frames=[
+ {ab:false,bc:false,ac:true,b:false,caption:'Start with head → 4 → 9 → null. There is no 7 node yet.'},
+ {ab:false,bc:false,ac:true,b:true,caption:'Create a new node holding 7. It is not part of the chain yet.'},
+ {ab:false,bc:true,ac:true,b:true,caption:'Set 7.next to the 9 node. The original 4 → 9 link still preserves the chain.'},
+ {ab:true,bc:true,ac:false,b:true,caption:'Set 4.next to the 7 node. Following links from head now visits 4, 7, 9.'}
+];
+function node(x,y,label,value,active){return '<rect x="'+x+'" y="'+y+'" width="88" height="57" fill="'+(active?'#e2001a':'#fff')+'" stroke="'+(active?'#e2001a':'#111')+'"/><text x="'+(x+10)+'" y="'+(y+18)+'" font-size="10" fill="'+(active?'#fff':'#686868')+'">'+label+'</text><text x="'+(x+44)+'" y="'+(y+46)+'" text-anchor="middle" font-size="25" font-weight="700" fill="'+(active?'#fff':'#111')+'">'+value+'</text>';}
+function arrow(path){return '<path d="'+path+'" fill="none" stroke="#e2001a" stroke-width="2"/><path d="M0 0"/>';}
+function draw(f){
+ var links='';
+ if(f.ac) links+=arrow('M99 71 H248')+'<path d="M240 65l8 6-8 6" fill="none" stroke="#e2001a" stroke-width="2"/>';
+ if(f.bc) links+=arrow('M219 163 Q246 160 264 123')+'<path d="M257 129l7-6 1 9" fill="none" stroke="#e2001a" stroke-width="2"/>';
+ if(f.ab) links+=arrow('M70 123 Q93 158 129 163')+'<path d="M122 157l7 6-8 4" fill="none" stroke="#e2001a" stroke-width="2"/>';
+ svg.innerHTML='<text x="9" y="18" font-size="11" fill="#686868">HEAD ↓</text>'+node(10,64,'NODE A','4',false)+node(252,64,'NODE C','9',false)+(f.b?node(131,135,'NEW NODE','7',true):'<rect x="131" y="135" width="88" height="57" fill="#f4f4f4" stroke="#d5d5d5" stroke-dasharray="4 4"/><text x="175" y="168" text-anchor="middle" fill="#aaa" font-size="12">EMPTY</text>')+links+'<text x="300" y="142" font-size="11" fill="#686868">null</text>';
+}
+FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
+}());</script></body></html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Keep the highest-priority value at the top by repairing one path at a time."><meta name="theme-color" content="#ffffff"><title>12 — Heaps · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
+<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">12 / 14 · After trees</span></div></header>
+<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 12 · After trees</p><h1>Heaps.</h1><p class="lede">Keep the highest-priority value at the top by repairing one path at a time.</p><p class="read-time">About 7 minutes · Use ← → in the figure</p></section>
+<div class="grid"><div class="prose">
+<p>You have tasks with priorities <code>[8, 5, 7, 2, 4, 6]</code>. The highest number should be easy to get. A <strong>max heap</strong> keeps a simple rule: each parent is at least as large as its children. Here, 8 is at the top.</p>
+<div class="example"><pre>index:  0  1  2  3  4  5
+value:  8  5  7  2  4  6</pre></div>
+<p>The heap is a complete binary tree, filled level by level from left to right. Its array form avoids storing explicit links. For an item at index <code>i</code>, its parent is at <code>floor((i - 1) / 2)</code>; its children are at <code>2i + 1</code> and <code>2i + 2</code>.</p>
+<p>Insert 9 at the next free position, index 6. Its parent at index 2 holds 7, so swap them. Its new parent at index 0 holds 8, so swap again. Now 9 is at the top. Step through the figure and check the parent rule after each move.</p>
+<h2>Only the top is guaranteed.</h2>
+<p>A heap is not a fully sorted array. Siblings 5 and 8 can be in either order while the parent rule holds. Reading the top takes <code>O(1)</code>. Inserting or removing the top may move a value along the tree's height, <code>O(log n)</code> steps.</p>
+<p>To remove the maximum, replace the root with the last value, remove the last slot, then sift that value down by swapping with its larger child until the rule returns. A priority queue uses this to serve the most urgent item next. Heap sort uses repeated removals to order all values.</p></div></div>
+<section class="figure grid" id="chapter-figure" aria-label="Step through inserting nine into a max heap"><h2 class="figure-title">Figure 12 / Sift a new value upward</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="Heap stored in array positions with highlighted swaps"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
+<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>Insert 10 into the final heap in the figure. Which indices does it visit while sifting up?</li><li>Is <code>[9, 7, 8, 3, 6, 5, 4]</code> a valid max heap? Check each parent against its children.</li><li>Remove the root from <code>[9, 5, 8, 2, 4, 6, 7]</code>. Draw the array after moving the last value to the root and after each sift-down swap.</li></ol></section>
+</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="11-trees.html"><small>Previous / 11</small>← Trees</a><a class="next" href="13-graphs.html"><small>Next / 13</small>Graphs →</a></div></footer>
+<script src="../js/figure.js"></script><script>(function(){
+
+var svg=document.getElementById('chapter-svg');
+var frames=[
+ {a:[8,5,7,2,4,6],hot:[],label:'A VALID MAX HEAP',caption:'Every parent is at least as large as its children. The root 8 is the maximum.'},
+ {a:[8,5,7,2,4,6,9],hot:[6],label:'APPEND 9 AT INDEX 6',caption:'Add 9 at the next open slot, index 6. Its parent is index 2, value 7.'},
+ {a:[8,5,7,2,4,6,9],hot:[2,6],label:'COMPARE 9 WITH 7',caption:'9 is larger than its parent 7, so the max-heap rule is broken along this link.'},
+ {a:[8,5,9,2,4,6,7],hot:[2,6],label:'SWAP WITH PARENT',caption:'Swap 9 and 7. Now compare 9 at index 2 with its parent at index 0, value 8.'},
+ {a:[8,5,9,2,4,6,7],hot:[0,2],label:'COMPARE 9 WITH 8',caption:'9 is still larger than its parent 8. One more swap is needed.'},
+ {a:[9,5,8,2,4,6,7],hot:[0],label:'HEAP RULE RESTORED',caption:'9 reaches the root. Each parent is again at least as large as its children.'}
+];
+function draw(f){var cells=f.a.map(function(v,i){var x=5+i*50,hot=f.hot.indexOf(i)>=0;return '<text x="'+(x+22)+'" y="73" text-anchor="middle" font-size="11" fill="#686868">'+i+'</text><rect x="'+x+'" y="85" width="44" height="68" fill="'+(hot?'#e2001a':'#fff')+'" stroke="'+(hot?'#e2001a':'#d5d5d5')+'"/><text x="'+(x+22)+'" y="128" text-anchor="middle" font-size="20" font-weight="700" fill="'+(hot?'#fff':'#111')+'">'+v+'</text>';}).join('');svg.innerHTML='<text x="5" y="20" font-size="12" font-weight="700">'+f.label+'</text><text x="5" y="49" font-size="11" fill="#686868">ARRAY INDEX</text>'+cells+'<line x1="5" y1="174" x2="350" y2="174" stroke="#d5d5d5"/><text x="5" y="201" font-size="12" fill="#686868">PARENT(i) = floor((i − 1) / 2)</text>';}
+FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
+}());</script></body></html>

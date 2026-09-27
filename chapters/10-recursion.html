@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Finish a smaller version of the same task, then use its answer to finish this one."><meta name="theme-color" content="#ffffff"><title>10 — Recursion · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
+<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">10 / 14 · After hashing</span></div></header>
+<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 10 · After hashing</p><h1>Recursion.</h1><p class="lede">Finish a smaller version of the same task, then use its answer to finish this one.</p><p class="read-time">About 8 minutes · Use ← → in the figure</p></section>
+<div class="grid"><div class="prose">
+<p>You want <code>4 × 3 × 2 × 1</code>. Instead of writing the whole product, ask for a smaller answer: <code>factorial(4) = 4 × factorial(3)</code>. The same question repeats with a smaller number until it reaches 1.</p>
+<div class="example"><pre>factorial(n):
+    if n == 1: return 1
+    return n * factorial(n - 1)</pre></div>
+<p>This version expects a positive input. At <code>factorial(1)</code>, the answer is already known. A version accepting zero would also return 1 for <code>factorial(0)</code>. That is the <strong>base case</strong>. Without it, calls keep making smaller calls with no way to finish. Step through the figure: first the pending calls stack up, then answers travel back outward.</p>
+<h2>Each call has its own place to wait.</h2>
+<p>When <code>factorial(4)</code> calls <code>factorial(3)</code>, the first call waits with its own <code>n = 4</code>. The call for 3 waits for 2, and 2 waits for 1. Once 1 returns, 2 computes <code>2 × 1</code>, then 3 computes <code>3 × 2</code>, then 4 computes <code>4 × 6</code>. The call stack holds these unfinished moments.</p>
+<p>For this example, the number of calls grows with <code>n</code>, so time is <code>O(n)</code>. The stack also holds up to <code>n</code> calls, so extra space is <code>O(n)</code>. Recursion is a way to organize a solution, not a promise of speed.</p>
+<h2>Ask two questions.</h2>
+<p>What input can be answered directly? How does every other call get closer to that input? If either answer is unclear, the recursion may never stop. Later, tree traversal will use recursion because each child is a smaller tree. Dynamic programming will reuse answers when the same smaller question is asked more than once.</p></div></div>
+<section class="figure grid" id="chapter-figure" aria-label="Expand and unwind recursive factorial calls"><h2 class="figure-title">Figure 10 / Calls go down, answers come up</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="A call stack for factorial four and the returned values"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
+<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>Trace <code>sum(n) = n + sum(n-1)</code> with <code>sum(0) = 0</code> for <code>sum(4)</code>. Write calls and returns.</li><li>A function calls itself with <code>n + 1</code> and stops only at <code>n == 0</code>. Starting at 3, will it stop? What change would make progress?</li><li>Write the base case and smaller call for counting down from a positive integer to zero. What is the maximum number of waiting calls?</li></ol></section>
+</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="09-hashing.html"><small>Previous / 09</small>← Hashing</a><a class="next" href="11-trees.html"><small>Next / 11</small>Trees →</a></div></footer>
+<script src="../js/figure.js"></script><script>(function(){
+
+var svg=document.getElementById('chapter-svg');
+var frames=[
+ {stack:[],result:'—',caption:'No call has started. We want factorial(4).'},
+ {stack:[4],result:'—',caption:'factorial(4) waits for factorial(3).'},
+ {stack:[4,3],result:'—',caption:'factorial(3) waits for factorial(2).'},
+ {stack:[4,3,2],result:'—',caption:'factorial(2) waits for factorial(1).'},
+ {stack:[4,3,2,1],result:'1',caption:'factorial(1) is the base case and returns 1.'},
+ {stack:[4,3,2],result:'2',caption:'factorial(2) receives 1 and returns 2 × 1 = 2.'},
+ {stack:[4,3],result:'6',caption:'factorial(3) receives 2 and returns 3 × 2 = 6.'},
+ {stack:[4],result:'24',caption:'factorial(4) receives 6 and returns 4 × 6 = 24.'}
+];
+function draw(f){var calls=f.stack.map(function(n,i){var y=27+i*37,active=i===f.stack.length-1;return '<rect x="9" y="'+y+'" width="206" height="31" fill="'+(active?'#e2001a':'#fff')+'" stroke="'+(active?'#e2001a':'#d5d5d5')+'"/><text x="20" y="'+(y+21)+'" font-size="14" fill="'+(active?'#fff':'#111')+'">factorial('+n+')</text>';}).join('');svg.innerHTML='<text x="9" y="17" font-size="10" fill="#686868">CALL STACK / NEWEST AT BOTTOM</text>'+calls+'<line x1="230" y1="8" x2="230" y2="190" stroke="#d5d5d5"/><text x="246" y="27" font-size="11" fill="#686868">RETURN</text><text x="246" y="104" font-size="43" font-weight="700" fill="#e2001a">'+f.result+'</text><text x="9" y="211" font-size="11" fill="#686868">EACH WAITING CALL KEEPS ITS OWN n</text>';}
+FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
+}());</script></body></html>

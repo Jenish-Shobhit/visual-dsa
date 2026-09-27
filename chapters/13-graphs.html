@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="When connections can branch, meet, and circle back, track where you have already been."><meta name="theme-color" content="#ffffff"><title>13 — Graphs · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
+<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">13 / 14 · After heaps</span></div></header>
+<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 13 · After heaps</p><h1>Graphs.</h1><p class="lede">When connections can branch, meet, and circle back, track where you have already been.</p><p class="read-time">About 8 minutes · Use ← → in the figure</p></section>
+<div class="grid"><div class="prose">
+<p>Think of rooms connected by doors. Room A opens to B and C. Those rooms lead to others, and two routes may reach the same room. A tree has one route down to each node; this network is a <strong>graph</strong>.</p>
+<div class="example"><pre>A: B, C
+B: A, D, E
+C: A, D, F
+D: B, C, F</pre></div>
+<p>Each room is a <em>vertex</em>; each door is an <em>edge</em>. To explore nearest rooms first, put A in a queue. Remove the front room, then add its unseen neighbors to the back. The queue makes this a <strong>breadth-first search</strong> (BFS). Step through the figure and watch the queue.</p>
+<h2>Mark before adding.</h2>
+<p>Mark a vertex seen when you enqueue it, not only when you later remove it. Otherwise two neighbors may enqueue the same room. A graph can also contain cycles; without a visited set, the search may keep circling. BFS reaches vertices in layers of edge distance, so it finds a path with the fewest edges in an unweighted graph.</p>
+<p>A <strong>depth-first search</strong> (DFS) follows one route as far as it can before backing up. A stack, explicit or through recursion, produces that order. Both BFS and DFS inspect each reachable vertex and edge at most a constant number of times: <code>O(V + E)</code> work with an adjacency-list representation.</p>
+<h2>Decide what edges mean.</h2>
+<p>Some edges have directions, like a one-way street. Some have weights, like travel time. BFS's fewest-edge path is not necessarily the least-weight path. State whether the graph is directed or weighted before choosing a search. Disconnected vertices also need a new starting point if you want to visit the whole graph.</p></div></div>
+<section class="figure grid" id="chapter-figure" aria-label="Step through breadth-first search on a graph with a cycle"><h2 class="figure-title">Figure 13 / Breadth-first exploration</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="Graph nodes, current visit, visited set, and search queue"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
+<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>Run BFS from A on the figure. At what visit distance from A does F first appear? Write one shortest path.</li><li>Start DFS at A and visit alphabetically named unseen neighbors first. Write the visit order and mark where you backtrack.</li><li>Add a new vertex G with no edges to the figure. Why does BFS from A miss it, and how can you visit every vertex?</li></ol></section>
+</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="12-heaps.html"><small>Previous / 12</small>← Heaps</a><a class="next" href="14-dynamic-programming.html"><small>Next / 14</small>Dynamic programming →</a></div></footer>
+<script src="../js/figure.js"></script><script>(function(){
+
+var svg=document.getElementById('chapter-svg');
+var nodes={A:[180,36],B:[72,96],C:[180,96],D:[288,96],E:[72,158],F:[234,158]};
+var edges=[['A','B'],['A','C'],['B','D'],['B','E'],['C','D'],['C','F'],['D','F']];
+var frames=[
+ {queue:'A',seen:'A',current:'',order:'—',caption:'Put A in the queue and mark it seen.'},
+ {queue:'B C',seen:'A B C',current:'A',order:'A',caption:'Visit A. Add unseen neighbors B and C to the back of the queue.'},
+ {queue:'C D E',seen:'A B C D E',current:'B',order:'A B',caption:'Visit B. A is already seen; add D and E.'},
+ {queue:'D E F',seen:'A B C D E F',current:'C',order:'A B C',caption:'Visit C. D is already seen, so add only F.'},
+ {queue:'E F',seen:'A B C D E F',current:'D',order:'A B C D',caption:'Visit D. Its neighbors are already marked; the queue keeps E and F.'},
+ {queue:'F',seen:'A B C D E F',current:'E',order:'A B C D E',caption:'Visit E. No unseen neighbor remains.'},
+ {queue:'—',seen:'A B C D E F',current:'F',order:'A B C D E F',caption:'Visit F. The queue is empty, so this connected component is complete.'}
+];
+function draw(f){var lines=edges.map(function(e){var a=nodes[e[0]],b=nodes[e[1]];return '<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="#bdbdbd" stroke-width="2"/>';}).join('');var dots=Object.keys(nodes).map(function(k){var p=nodes[k],active=k===f.current,seen=f.seen.split(' ').indexOf(k)>=0;return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="18" fill="'+(active?'#e2001a':seen?'#111':'#fff')+'" stroke="'+(active?'#e2001a':'#111')+'"/><text x="'+p[0]+'" y="'+(p[1]+5)+'" text-anchor="middle" font-size="15" font-weight="700" fill="'+(active||seen?'#fff':'#111')+'">'+k+'</text>';}).join('');svg.innerHTML=lines+dots+'<line x1="8" y1="188" x2="350" y2="188" stroke="#d5d5d5"/><text x="8" y="211" font-size="12" fill="#686868">QUEUE</text><text x="78" y="211" font-size="15" font-weight="700">'+f.queue+'</text><text x="8" y="238" font-size="12" fill="#686868">ORDER</text><text x="78" y="238" font-size="15" font-weight="700">'+f.order+'</text>';}
+FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
+}());</script></body></html>

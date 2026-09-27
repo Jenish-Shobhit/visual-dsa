@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Branching links turn one starting point into many paths."><meta name="theme-color" content="#ffffff"><title>11 — Trees · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css"></head>
+<body><header class="masthead"><div class="site grid"><a class="brand" href="../index.html">Visual DSA</a><span class="masthead-note">11 / 14 · After recursion</span></div></header>
+<main class="site"><section class="chapter-hero grid"><p class="eyebrow">Chapter 11 · After recursion</p><h1>Trees.</h1><p class="lede">Branching links turn one starting point into many paths.</p><p class="read-time">About 8 minutes · Use ← → in the figure</p></section>
+<div class="grid"><div class="prose">
+<p>Suppose you keep the numbers 8, 3, 10, 1, 6, and 14 so that each node has up to two children. Put smaller values to a node's left and larger values to its right:</p>
+<div class="example"><pre>        8
+      /   \ 
+     3     10
+    / \      \ 
+   1   6      14</pre></div>
+<p>To find 6, compare with 8: go left. Compare with 3: go right. The next node is 6. This is a <strong>binary search tree</strong>. The rule narrows the path in the same spirit as binary search, but links rather than array indices lead to the next candidate.</p>
+<h2>Use the family words precisely.</h2>
+<p>The top node is the <em>root</em>. A node immediately below another is its <em>child</em>; the one above is its <em>parent</em>. A node without children is a <em>leaf</em>. A tree has one path from the root to each node, unlike a general graph that can contain cycles.</p>
+<p>To visit every node, choose an order. <em>Preorder</em> visits a node before its children. <em>Inorder</em> visits left subtree, node, then right subtree; in a binary search tree this reads values in order. <em>Postorder</em> visits children before their parent. A recursive function fits because each child roots a smaller tree.</p>
+<h2>Shape decides speed.</h2>
+<p>A fairly balanced search tree has height near <code>log n</code>, so a search follows about <code>O(log n)</code> links. Insert already sorted values into a plain unbalanced tree and it may become a chain: search can take <code>O(n)</code>. The search rule alone does not guarantee balance.</p></div></div>
+<section class="figure grid" id="chapter-figure" aria-label="Trace a search through a binary search tree"><h2 class="figure-title">Figure 11 / Follow a search path</h2><div class="figure-body"><div class="figure-panel"><svg id="chapter-svg" viewBox="0 0 360 250" role="img" aria-label="Tree nodes with highlighted comparisons on a path to six"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>Prev</button><button type="button" data-next>Next</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Arrow keys move between steps. Predict the next state before pressing Next.</p></div></section>
+<section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>For the tree in the figure, name the root, the parent of 6, and every leaf.</li><li>Write the inorder and preorder visits of the tree in the figure. Why is one of those orders sorted?</li><li>Insert 4 into the figure’s binary search tree. Which comparisons lead to its new parent?</li></ol></section>
+</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="10-recursion.html"><small>Previous / 10</small>← Recursion</a><a class="next" href="12-heaps.html"><small>Next / 12</small>Heaps →</a></div></footer>
+<script src="../js/figure.js"></script><script>(function(){
+
+var svg=document.getElementById('chapter-svg');
+var nodes=[{v:8,x:180,y:33},{v:3,x:90,y:100},{v:10,x:270,y:100},{v:1,x:48,y:175},{v:6,x:132,y:175},{v:14,x:312,y:175}];
+var frames=[
+ {path:[],active:-1,caption:'Find 6. Start at the root, 8.'},
+ {path:[8],active:8,caption:'6 is smaller than 8, so the only possible path is left.'},
+ {path:[8,3],active:3,caption:'6 is larger than 3, so take the right child.'},
+ {path:[8,3,6],active:6,caption:'The value is 6. The search followed three nodes.'}
+];
+function draw(f){var edges=[[0,1],[0,2],[1,3],[1,4],[2,5]].map(function(pair){var a=nodes[pair[0]],b=nodes[pair[1]];return '<line x1="'+a.x+'" y1="'+(a.y+18)+'" x2="'+b.x+'" y2="'+(b.y-18)+'" stroke="#bdbdbd" stroke-width="2"/>';}).join('');var circles=nodes.map(function(n){var active=n.v===f.active,seen=f.path.indexOf(n.v)>=0;return '<circle cx="'+n.x+'" cy="'+n.y+'" r="21" fill="'+(active?'#e2001a':seen?'#111':'#fff')+'" stroke="'+(active?'#e2001a':'#111')+'"/><text x="'+n.x+'" y="'+(n.y+6)+'" text-anchor="middle" font-size="17" font-weight="700" fill="'+(active||seen?'#fff':'#111')+'">'+n.v+'</text>';}).join('');svg.innerHTML='<text x="9" y="16" font-size="11" fill="#686868">TARGET / 6</text>'+edges+circles;}
+FigureStepper({root:'#chapter-figure',frames:frames,draw:draw});
+}());</script></body></html>

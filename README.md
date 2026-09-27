@@ -2,6 +2,8 @@
 
 A visual guide to data structures and algorithms that starts with what code does and earns each idea from the one before it. It is for first-time programmers and anyone who wants to see a process before memorizing its name.
 
+[Read Visual DSA online](https://jenish-shobhit.github.io/visual-dsa/).
+
 | # | Chapter | Status |
 |---|---|---|
 | 01 | [What is code](chapters/01-what-is-code.html) | Live |

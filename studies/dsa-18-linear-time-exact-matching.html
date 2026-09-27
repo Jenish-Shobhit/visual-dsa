@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSA · Lesson 18 — Algorithms on Text I: Linear-Time Exact Matching</title>
+<meta name="description" content="A visual study of linear-time exact string matching: the Knuth–Morris–Pratt prefix function, the Z-algorithm, and Rabin–Karp rolling-hash fingerprinting — with KMP's O(n) bound proved as a potential (amortized) argument on the failure-link pointer.">
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+:root{
+  color-scheme: light;                 /* LIGHT ONLY — no dark, no toggle */
+  --h: 27;                             /* Bauhaus red, the binding hue */
+  /* ---- M3 tonal roles (light) ---- */
+  --primary:              oklch(50% 0.205 var(--h));
+  --on-primary:           oklch(99% 0.01 var(--h));
+  --primary-container:    oklch(94% 0.045 var(--h));
+  --on-primary-container: oklch(34% 0.14 var(--h));
+  --secondary:            oklch(48% 0.05 var(--h));
+  --tertiary:             oklch(50% 0.16 256);
+  /* surfaces + elevation tints (warm Bauhaus paper) */
+  --surface:              oklch(98.6% 0.006 80);
+  --surface-1:            oklch(97.4% 0.010 80);
+  --surface-2:            oklch(95.8% 0.013 80);
+  --surface-3:            oklch(94.0% 0.016 80);
+  --surface-variant:      oklch(92%  0.014 80);
+  --on-surface:           oklch(21%  0.02 60);
+  --on-surface-variant:   oklch(41%  0.02 60);
+  --outline:              oklch(58%  0.02 60);
+  --outline-variant:      oklch(85%  0.012 60);
+  /* ---- Bauhaus primaries (Kandinsky's three) ---- */
+  --bau-red:    oklch(57% 0.215 27);
+  --bau-red-ink:oklch(45% 0.18 27);
+  --bau-yellow: oklch(86.5% 0.165 92);
+  --bau-blue:   oklch(50% 0.16 256);
+  --bau-blue-ink:oklch(42% 0.15 256);
+  --bau-ink:    oklch(18% 0.02 60);
+  /* M3 shape scale — kept toward the hard-edged end for Bauhaus */
+  --r-xs:2px; --r-sm:4px; --r-md:8px; --r-lg:12px; --r-xl:16px;
+  --sp:8px;
+  --measure: 66ch;
+  --maxw: 1180px;
+  --serif: "Futura","Avenir Next",-apple-system,system-ui,sans-serif;
+  --geo:   "Futura","Avenir Next","Century Gothic",system-ui,sans-serif;
+  --body:  -apple-system,"SF Pro Text",system-ui,"Segoe UI",sans-serif;
+  --mono:  ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+body{
+  margin:0; background:var(--surface); color:var(--on-surface);
+  font-family:var(--body); font-size:18px; line-height:1.65;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+
+/* ---------- scroll progress hairline (pure CSS) ---------- */
+.scroll-progress{position:fixed;left:0;top:0;height:4px;width:100%;z-index:60;
+  transform-origin:0 50%;
+  background:linear-gradient(90deg,var(--bau-red) 0 33%,var(--bau-yellow) 33% 66%,var(--bau-blue) 66% 100%);}
+@supports (animation-timeline: scroll()){
+  .scroll-progress{transform:scaleX(0);animation:grow auto linear;animation-timeline:scroll(root);}
+  @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+}
+@supports not (animation-timeline: scroll()){ .scroll-progress{transform:scaleX(1)} }
+@media (prefers-reduced-motion: reduce){ .scroll-progress{animation:none;transform:scaleX(1)} }
+
+/* ---------- masthead ---------- */
+.masthead{position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:14px;
+  padding:10px clamp(16px,4vw,40px);
+  background:color-mix(in oklch, var(--surface) 82%, transparent);
+  backdrop-filter:blur(12px) saturate(1.3);
+  border-bottom:2px solid var(--bau-ink);}
+.sigil{flex:0 0 auto;width:38px;height:38px}
+.mast-txt{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--on-surface-variant);display:flex;gap:.6ch;flex-wrap:wrap;align-items:baseline}
+.mast-txt b{color:var(--bau-red-ink);font-weight:700}
+.mast-txt .sep{color:var(--outline)}
+.mast-spacer{flex:1}
+.mast-lec{font-family:var(--geo);font-weight:800;font-size:14px;letter-spacing:.04em;
+  color:var(--on-primary);background:var(--bau-red);padding:3px 10px;border-radius:var(--r-xs)}
+
+/* ---------- shell / grid ---------- */
+.shell{max-width:var(--maxw);margin:0 auto;padding:0 clamp(16px,4vw,40px);
+  display:grid;grid-template-columns:148px minmax(0,1fr);gap:clamp(20px,3vw,48px);}
+@media (max-width:860px){ .shell{grid-template-columns:1fr} .rail{display:none} }
+
+/* left rail */
+.rail{position:sticky;top:64px;align-self:start;height:max-content;
+  padding-top:36px;font-family:var(--mono);font-size:11px;}
+.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.rail a{display:grid;grid-template-columns:14px 1fr;gap:8px;align-items:center;
+  text-decoration:none;color:var(--on-surface-variant);
+  padding:6px 6px;border-radius:var(--r-xs);border-left:2px solid transparent;
+  text-transform:uppercase;letter-spacing:.06em;line-height:1.25}
+.rail a:hover{background:color-mix(in oklch,var(--bau-red) 10%,transparent);color:var(--bau-red-ink);border-left-color:var(--bau-red)}
+.rail .mk{width:11px;height:11px;display:inline-block}
+.rail .num{color:var(--outline);font-size:10px}
+.rail .ti{display:block;font-size:10.5px}
+.mk.sq{background:var(--bau-red)}
+.mk.ci{background:var(--bau-blue);border-radius:50%}
+.mk.tr{width:0;height:0;background:none;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid var(--bau-yellow)}
+
+/* content column */
+.content{min-width:0;padding-bottom:80px}
+section{scroll-margin-top:72px}
+.reveal{opacity:1}
+@media (prefers-reduced-motion: no-preference){
+  .js .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+  .js .reveal.in{opacity:1;transform:none}
+}
+
+/* ---------- hero ---------- */
+.hero{position:relative;padding:48px 0 28px}
+.hero::before{content:"";position:absolute;inset:-40px -30vw auto -10vw;height:380px;z-index:-1;
+  background:radial-gradient(60% 80% at 30% 20%, color-mix(in oklch,var(--bau-red) 16%,transparent), transparent 70%);}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--bau-blue-ink);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+.eyebrow .bar{height:11px;width:30px;background:var(--bau-blue);display:inline-block}
+h1{font-family:var(--geo);font-weight:800;letter-spacing:-.02em;line-height:1.02;
+  font-size:clamp(34px,6vw,62px);margin:0 0 18px;color:var(--bau-ink);max-width:18ch}
+h1 .em{color:var(--bau-red)}
+.standfirst{font-size:clamp(18px,2.3vw,22px);line-height:1.5;max-width:62ch;color:var(--on-surface-variant)}
+.standfirst b{color:var(--on-surface);font-weight:600}
+
+/* stat block */
+.stats{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:2px;margin:34px 0 8px;
+  border:2px solid var(--bau-ink);background:var(--bau-ink)}
+@media (max-width:620px){.stats{grid-template-columns:1fr}}
+.stat{background:var(--surface);padding:18px 20px}
+.stat.lead{background:var(--bau-yellow)}
+.stat .k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--on-surface-variant)}
+.stat.lead .k{color:oklch(34% 0.06 92)}
+.stat .v{font-family:var(--geo);font-weight:800;font-size:clamp(26px,4vw,40px);line-height:1.05;color:var(--bau-ink);margin-top:4px}
+.stat .v small{font-size:.5em;font-weight:700;color:var(--on-surface-variant)}
+
+/* ---------- typography of body ---------- */
+.content h2{font-family:var(--geo);font-weight:800;letter-spacing:-.01em;
+  font-size:clamp(25px,3.4vw,36px);line-height:1.1;margin:64px 0 6px;color:var(--bau-ink);
+  max-width:24ch;}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--bau-red-ink);display:flex;align-items:center;gap:10px;margin:0}
+.kicker .n{display:inline-grid;place-items:center;width:26px;height:26px;background:var(--bau-ink);
+  color:#fff;border-radius:var(--r-xs);font-weight:700;font-size:12px}
+.content h3{font-family:var(--geo);font-weight:700;font-size:21px;margin:34px 0 4px;color:var(--bau-ink)}
+.content h4{font-family:var(--geo);font-weight:700;font-size:16px;margin:24px 0 2px;color:var(--bau-blue-ink);
+  text-transform:uppercase;letter-spacing:.04em}
+.content p{max-width:var(--measure)}
+.content p,.content li{font-size:18px}
+.content a{color:var(--bau-red-ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1.5px}
+.content a:hover{background:color-mix(in oklch,var(--bau-yellow) 55%,transparent)}
+strong{color:var(--bau-ink)}
+em.term{font-style:normal;font-weight:700;color:var(--bau-blue-ink);
+  border-bottom:2px solid color-mix(in oklch,var(--bau-blue) 40%,transparent)}
+ul,ol{max-width:var(--measure);padding-left:1.25em}
+li{margin:6px 0}
+.lede{font-size:20px;line-height:1.55;color:var(--on-surface)}
+
+/* objective / prereq cards */
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:2px;
+  border:2px solid var(--bau-ink);background:var(--bau-ink);margin:22px 0;max-width:var(--maxw)}
+.cardgrid .cell{background:var(--surface);padding:16px 18px}
+.cardgrid .cell .lab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--bau-red-ink);display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.cardgrid .cell p{margin:0;font-size:16px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--bau-blue);display:inline-block}
+
+/* callout bands */
+.band{border:2px solid var(--bau-ink);background:var(--surface-1);padding:20px 22px;margin:26px 0;border-radius:var(--r-sm)}
+.band.blue{border-color:var(--bau-blue);background:color-mix(in oklch,var(--bau-blue) 7%,var(--surface))}
+.band.red{border-color:var(--bau-red);background:color-mix(in oklch,var(--bau-red) 6%,var(--surface))}
+.band.yellow{border-color:oklch(70% 0.16 92);background:color-mix(in oklch,var(--bau-yellow) 24%,var(--surface))}
+.band .bl{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--on-surface-variant);margin:0 0 6px}
+.band p:last-child{margin-bottom:0}
+
+/* pull quote */
+.pq{margin:54px 0;padding:8px 0 8px 26px;border-left:10px solid var(--bau-red);
+  font-family:var(--geo);font-weight:800;font-size:clamp(24px,3.6vw,38px);line-height:1.12;
+  color:var(--bau-ink);max-width:20ch;letter-spacing:-.01em}
+.pq .by{display:block;margin-top:10px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--bau-red-ink)}
+
+/* recipe steps */
+.recipe{counter-reset:step;list-style:none;padding:0;margin:22px 0;max-width:var(--maxw)}
+.recipe>li{counter-increment:step;position:relative;padding:14px 16px 14px 56px;margin:2px 0;
+  background:var(--surface-1);border:1.5px solid var(--outline-variant);border-radius:var(--r-sm)}
+.recipe>li::before{content:counter(step,decimal-leading-zero);position:absolute;left:14px;top:13px;
+  font-family:var(--mono);font-weight:700;font-size:14px;color:#fff;background:var(--bau-ink);
+  width:28px;height:24px;display:grid;place-items:center;border-radius:var(--r-xs)}
+.recipe b{color:var(--bau-blue-ink)}
+
+/* figures */
+figure{margin:30px 0;border:2px solid var(--bau-ink);background:var(--surface);border-radius:var(--r-sm);overflow:hidden}
+figure svg{display:block;width:100%;height:auto;background:var(--surface)}
+figcaption{font-size:14.5px;line-height:1.5;color:var(--on-surface-variant);
+  padding:12px 18px;border-top:1.5px solid var(--outline-variant);background:var(--surface-1)}
+figcaption b{color:var(--bau-ink)}
+.fig-num{font-family:var(--mono);font-weight:700;color:var(--bau-red-ink);letter-spacing:.05em}
+
+/* SVG ink system */
+.dg-stroke{stroke:var(--bau-ink);fill:none}
+.dg-fill-ink{fill:var(--bau-ink)}
+.dg-red{stroke:var(--bau-red)} .dg-red-f{fill:var(--bau-red)}
+.dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+.dg-yel-f{fill:var(--bau-yellow)}
+.dg-faint{stroke:var(--outline-variant);fill:none}
+.dg-lab{font-family:var(--mono);font-size:12px;fill:var(--on-surface)}
+.dg-lab-sm{font-family:var(--mono);font-size:11px;fill:var(--on-surface-variant)}
+.dg-val{font-family:var(--mono);font-size:15px;font-weight:700;fill:var(--bau-ink)}
+.dg-ttl{font-family:var(--geo);font-size:14px;font-weight:800;fill:var(--bau-ink)}
+.dg-white{fill:#fff}
+
+/* math */
+math{font-size:1.06em}
+.mathrow{margin:18px 0;padding:14px 18px;background:var(--surface-2);border-left:6px solid var(--bau-blue);
+  border-radius:var(--r-xs);overflow-x:auto;max-width:var(--maxw)}
+.mathrow .cap{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--on-surface-variant);margin-bottom:8px}
+
+/* code */
+pre{margin:18px 0;background:var(--surface-2);border:1.5px solid var(--outline-variant);
+  border-left:6px solid var(--bau-ink);border-radius:var(--r-xs);
+  padding:16px 18px;overflow-x:auto;max-width:var(--maxw)}
+code{font-family:var(--mono);font-size:13.5px;line-height:1.6}
+p code,li code{background:var(--surface-2);padding:1px 5px;border-radius:var(--r-xs);font-size:.86em;
+  border:1px solid var(--outline-variant)}
+.kw{color:var(--bau-blue-ink);font-weight:700}
+.fn{color:var(--bau-red-ink);font-weight:600}
+.num{color:oklch(45% 0.13 300)}
+.str{color:oklch(42% 0.11 150)}
+.com{color:var(--on-surface-variant);font-style:italic}
+.op{color:var(--bau-red-ink)}
+
+/* table */
+.tablewrap{overflow-x:auto;margin:24px 0;border:2px solid var(--bau-ink);border-radius:var(--r-sm)}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:620px;background:var(--surface)}
+caption{caption-side:top;text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--on-surface-variant);padding:12px 14px 10px;background:var(--surface-1)}
+thead th{position:sticky;top:0;background:var(--bau-ink);color:#fff;font-family:var(--geo);font-weight:700;
+  text-align:left;padding:10px 14px;font-size:13px;letter-spacing:.02em;z-index:1}
+tbody th{text-align:left;font-weight:700;color:var(--bau-ink);font-family:var(--geo)}
+td,tbody th{padding:9px 14px;border-top:1px solid var(--outline-variant);vertical-align:top}
+tbody tr:nth-child(even){background:var(--surface-1)}
+td .mono,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+tfoot td{background:var(--surface-2);font-size:13px;color:var(--on-surface-variant);font-style:italic}
+
+/* details */
+details{margin:18px 0;border:1.5px solid var(--outline-variant);border-radius:var(--r-sm);
+  background:var(--surface-1);max-width:var(--maxw)}
+details[open]{border-color:var(--bau-blue)}
+summary{cursor:pointer;padding:12px 16px;font-family:var(--geo);font-weight:700;font-size:15px;color:var(--bau-blue-ink);
+  list-style:none;display:flex;align-items:center;gap:10px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);font-weight:700;color:#fff;background:var(--bau-blue);
+  width:20px;height:20px;display:grid;place-items:center;border-radius:var(--r-xs);font-size:14px}
+details[open] summary::before{content:"\2212"}
+details .inner{padding:0 16px 16px}
+:focus-visible{outline:3px solid var(--bau-blue);outline-offset:2px}
+
+/* practice */
+.prob{border:2px solid var(--bau-ink);border-radius:var(--r-sm);margin:18px 0;background:var(--surface);max-width:var(--maxw)}
+.prob .head{display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--bau-ink);color:#fff}
+.prob .pn{font-family:var(--mono);font-weight:700;font-size:13px;background:var(--bau-yellow);color:var(--bau-ink);
+  padding:2px 9px;border-radius:var(--r-xs)}
+.prob .pt{font-family:var(--geo);font-weight:800;font-size:17px}
+.prob .lc{margin-left:auto;font-family:var(--mono);font-size:11px;color:#fff;opacity:.8;letter-spacing:.05em}
+.prob .body{padding:14px 18px}
+.prob .body p{margin:8px 0}
+.prob .sig{font-family:var(--mono);font-size:13px;background:var(--surface-2);border:1px solid var(--outline-variant);
+  padding:8px 12px;border-radius:var(--r-xs);display:inline-block;color:var(--bau-blue-ink)}
+.prob .ex{font-family:var(--mono);font-size:12.5px;color:var(--on-surface-variant);white-space:pre-wrap}
+
+/* next / recap */
+.recap{border:2px solid var(--bau-red);background:color-mix(in oklch,var(--bau-red) 6%,var(--surface));
+  padding:22px 24px;border-radius:var(--r-sm);margin:26px 0}
+.nextcard{display:flex;gap:16px;align-items:center;border:2px solid var(--bau-ink);border-radius:var(--r-sm);
+  padding:18px 20px;margin:22px 0;background:var(--bau-yellow)}
+.nextcard .meta{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:oklch(34% 0.06 92)}
+.nextcard .t{font-family:var(--geo);font-weight:800;font-size:19px;color:var(--bau-ink);line-height:1.1;margin-top:3px}
+.nextcard .arrow{margin-left:auto;font-family:var(--geo);font-weight:800;font-size:30px;color:var(--bau-red)}
+
+/* colophon */
+.colophon{margin-top:60px;border-top:2px solid var(--bau-ink);padding-top:20px;
+  font-family:var(--mono);font-size:12px;color:var(--on-surface-variant);line-height:1.7}
+.colophon b{color:var(--bau-red-ink)}
+.colophon .shapes{display:inline-flex;gap:6px;vertical-align:middle;margin-right:8px}
+.colophon .s{width:12px;height:12px;display:inline-block}
+
+hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:var(--maxw)}
+.note{font-size:14px;color:var(--on-surface-variant)}
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">18 / 23</span></nav>
+<div class="scroll-progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" viewBox="0 0 40 40" role="img" aria-label="Bauhaus sigil: blue circle, yellow triangle, red square">
+    <rect x="1" y="1" width="38" height="38" fill="none" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="12" cy="12" r="8" fill="var(--bau-blue)"/>
+    <polygon points="28,4 38,22 18,22" fill="var(--bau-yellow)"/>
+    <rect x="20" y="22" width="16" height="16" fill="var(--bau-red)"/>
+  </svg>
+  <div class="mast-txt">
+    <b>DSA</b><span class="sep">·</span>Visual DSA<span class="sep">·</span>read the text once
+  </div>
+  <div class="mast-spacer"></div>
+  <div class="mast-lec">LESSON 18</div>
+</header>
+
+<div class="shell">
+  <!-- LEFT RAIL -->
+  <nav class="rail" aria-label="Lesson sections">
+    <ol>
+      <li><a href="#hook"><span class="mk sq"></span><span><span class="num">01</span><span class="ti">The hook</span></span></a></li>
+      <li><a href="#setup"><span class="mk ci"></span><span><span class="num">02</span><span class="ti">Objectives</span></span></a></li>
+      <li><a href="#first"><span class="mk tr"></span><span><span class="num">03</span><span class="ti">The waste</span></span></a></li>
+      <li><a href="#pi"><span class="mk sq"></span><span><span class="num">04</span><span class="ti">Prefix function</span></span></a></li>
+      <li><a href="#kmp"><span class="mk ci"></span><span><span class="num">05</span><span class="ti">KMP &amp; potential</span></span></a></li>
+      <li><a href="#zalgo"><span class="mk tr"></span><span><span class="num">06</span><span class="ti">Z-algorithm</span></span></a></li>
+      <li><a href="#rk"><span class="mk sq"></span><span><span class="num">07</span><span class="ti">Rabin–Karp</span></span></a></li>
+      <li><a href="#breaks"><span class="mk ci"></span><span><span class="num">08</span><span class="ti">Where it breaks</span></span></a></li>
+      <li><a href="#practice"><span class="mk tr"></span><span><span class="num">09</span><span class="ti">Practice</span></span></a></li>
+      <li><a href="#recap"><span class="mk sq"></span><span><span class="num">10</span><span class="ti">Recap &amp; next</span></span></a></li>
+    </ol>
+  </nav>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- 01 HOOK -->
+    <section id="hook" class="hero reveal">
+      <p class="eyebrow"><span class="bar"></span>Algorithms on Text · Lecture 18</p>
+      <h1>Linear-time exact <span class="em">matching</span></h1>
+      <p class="standfirst">Search a million-character log for a thousand-character pattern with the loop you wrote by instinct, and on the wrong input it performs <b>a billion</b> character comparisons. The honest answer needs about <b>two million</b> — it reads the text once and never looks back. The whole of this lecture is the single idea that closes that gap: <em class="term">the pattern already knows where it can fail, so precompute that and stop re-reading what you have already understood.</em></p>
+
+      <div class="stats" role="group" aria-label="The matching gap">
+        <div class="stat lead">
+          <div class="k">Naïve compares · n=10⁶, m=10³ (worst case)</div>
+          <div class="v">1,000,000,000</div>
+        </div>
+        <div class="stat">
+          <div class="k">KMP / Z character reads</div>
+          <div class="v">≤ 2 × 10<small>6</small></div>
+        </div>
+        <div class="stat">
+          <div class="k">Text chars KMP re-reads</div>
+          <div class="v">0</div>
+        </div>
+      </div>
+      <p class="note">Same alphabet, same answer set. The difference is purely organisational: a matcher that <em>forgets</em> what it just matched versus one that <em>remembers</em>. This lecture is about that memory — and it is a small, precomputable, finite object.</p>
+    </section>
+
+    <!-- 02 OBJECTIVES + PREREQS -->
+    <section id="setup" class="reveal">
+      <p class="kicker"><span class="n">02</span> What you will be able to do</p>
+      <h2>Objectives &amp; prerequisites</h2>
+      <p class="lede">By the end of this page you should be able to take “does pattern <code>P</code> occur in text <code>T</code>, and where?” and answer it in <code>O(n+m)</code> three different ways — and say precisely <em>why</em> each is linear, not merely that it is.</p>
+
+      <h4>After this you can…</h4>
+      <ul>
+        <li><strong>State the exact-matching problem</strong> as a transformation between formal spaces, and show exactly which comparisons the naïve scanner throws away.</li>
+        <li><strong>Define and compute the KMP prefix function</strong> <code>π</code> — the longest-proper-border table — and use it to match in one forward pass that never moves the text pointer backward.</li>
+        <li><strong>Prove KMP runs in <code>O(n)</code></strong> with a <em>potential argument</em>: the failure-link pointer is the bank balance, and following links spends credit that matching banked.</li>
+        <li><strong>Build the Z-array</strong> with the Z-box reuse trick, and turn matching into a single Z-computation over <code>P # T</code>.</li>
+        <li><strong>Fingerprint with a rolling hash (Rabin–Karp)</strong>: evaluate a string as a polynomial mod a prime, slide the window in <code>O(1)</code>, and bound the spurious-collision probability.</li>
+        <li><strong>Diagnose the failure modes</strong>: the off-by-one border, the missing separator, integer overflow, the adversarial hash, and when randomness is the wrong tool.</li>
+      </ul>
+
+      <h4>Bring these with you</h4>
+      <div class="cardgrid">
+        <div class="cell">
+          <div class="lab"><span class="dot"></span>Arrays &amp; strings</div>
+          <p>Indexing, prefixes, suffixes, and substrings as half-open ranges. (<a href="dsa-01-linear-layouts-and-access-disciplines.html">Lesson 01</a>.)</p>
+        </div>
+        <div class="cell">
+          <div class="lab"><span class="dot"></span>Hashing</div>
+          <p>Mapping data to a small fingerprint; collisions and load. Powers Rabin–Karp. (<a href="dsa-08-hashing-and-expected-constant-access.html">Lesson 08</a>.)</p>
+        </div>
+        <div class="cell">
+          <div class="lab"><span class="dot"></span>Amortized analysis</div>
+          <p>The potential method: <code>amortized = actual + ΔΦ</code>. This is the engine of the KMP proof. (<a href="dsa-02-amortized-cost-aggregate-accounting-potential.html">Lesson 02</a>.)</p>
+        </div>
+        <div class="cell">
+          <div class="lab"><span class="dot"></span>Modular arithmetic</div>
+          <p>Addition and multiplication mod a prime <code>q</code>, and why a prime modulus behaves well.</p>
+        </div>
+      </div>
+      <p class="note">The deepest tie is to Lesson 02. KMP's linearity is <em>not</em> obvious line-by-line — a single text character can trigger many failure-link jumps. The potential method is exactly the tool that makes “rare expensive steps, paid for in advance” into a clean <code>O(n)</code>.</p>
+    </section>
+
+    <hr class="rule">
+
+    <!-- 03 FIRST PRINCIPLES -->
+    <section id="first" class="reveal">
+      <p class="kicker"><span class="n">03</span> Build it from first principles</p>
+      <h2>The naïve scan forgets; that is the whole bug</h2>
+
+      <p>Strip the problem of its costume. <em class="term">Exact matching</em> is a transformation: the input space is a pair of strings over an alphabet <code>Σ</code> — a text <code>T</code> of length <code>n</code> and a pattern <code>P</code> of length <code>m</code> — and the output is the set of <em>shifts</em> <code>{ s : T[s … s+m−1] = P }</code>. Nothing more. The obvious method repeats work. Finding that redundancy gives us the algorithm.</p>
+
+      <p>The obvious method tries every shift <code>s</code> from <code>0</code> to <code>n−m</code> and, at each, compares <code>P</code> against the window character by character until a mismatch or a full match. It is correct. It is also <strong>forgetful</strong>: after it discovers a mismatch at shift <code>s</code>, it slides to <code>s+1</code> and begins comparing <em>from scratch</em> — re-reading text characters it already inspected one step earlier. On a benign input the forgetting is cheap. On an adversarial one it is fatal.</p>
+
+      <div class="band red">
+        <p class="bl">The input that kills it</p>
+        <p>Let <code>T = aaaa…a</code> (<code>n</code> copies) and <code>P = aaa…ab</code> (<code>m−1</code> copies of <code>a</code>, then one <code>b</code>). At <em>every</em> one of the <code>n−m+1</code> shifts, the scanner matches all <code>m−1</code> leading <code>a</code>s and only then hits the <code>b</code> and fails. That is <code>(n−m+1)(m)</code> comparisons — <code>Θ(nm)</code>. With <code>n = 10⁶, m = 10³</code> it is a billion. The pattern <em>told us</em> at the first shift that the window was all <code>a</code>s; the scanner refused to remember.</p>
+      </div>
+
+      <p>So the design question is forced, and it is the right question: <em>what is the minimal precomputed object that lets the matcher never re-read a text character?</em> The answer is a table of the pattern's own <strong>self-similarity</strong>. When we have matched a prefix of <code>P</code> against the text and then mismatch, the characters we just consumed are <em>known</em> — they equal that prefix of <code>P</code>. If some suffix of what we matched is also a prefix of <code>P</code>, we may slide the pattern so that this shorter prefix lines up, and continue <em>without moving the text pointer back at all</em>. The amount we can keep is the length of the longest <em class="term">border</em> — a string that is simultaneously a proper prefix and a proper suffix — of the part we matched.</p>
+
+      <figure>
+        <svg viewBox="0 0 900 380" role="img" aria-labelledby="fig1t fig1d">
+          <title id="fig1t">Figure 1 — a mismatch, and the smart shift that reuses the matched border</title>
+          <desc id="fig1d">The text shows the characters a b a b a then a mismatching b. The pattern a b a b a c a is aligned at shift zero and fails where its c meets the text's b. A faint dashed copy shows the naive shift of one, which re-reads four characters. Below it the KMP shift of two re-aligns the border a b a under the text's already-matched a b a, and resumes the comparison at the text's mismatch position without moving the text pointer back.</desc>
+
+          <!-- column geometry: colX(c)=150+62*c, width 54, center +27 -->
+          <text x="24" y="30" class="dg-ttl">MATCHED 5, THEN MISMATCH — WHERE DOES THE PATTERN GO?</text>
+
+          <!-- TEXT ROW (y=58) -->
+          <text x="24" y="80" class="dg-lab-sm">TEXT</text>
+          <g font-family="var(--mono)" font-size="17" font-weight="700" text-anchor="middle">
+            <!-- matched run cols 0..4 (yellow) -->
+            <g><rect x="150" y="58" width="54" height="42" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="177" y="86" class="dg-fill-ink">a</text></g>
+            <g><rect x="212" y="58" width="54" height="42" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="239" y="86" class="dg-fill-ink">b</text></g>
+            <g><rect x="274" y="58" width="54" height="42" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="301" y="86" class="dg-fill-ink">a</text></g>
+            <g><rect x="336" y="58" width="54" height="42" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="363" y="86" class="dg-fill-ink">b</text></g>
+            <g><rect x="398" y="58" width="54" height="42" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="425" y="86" class="dg-fill-ink">a</text></g>
+            <!-- mismatch char col5 (red) -->
+            <g><rect x="460" y="58" width="54" height="42" class="dg-red-f" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="487" y="86" fill="#fff">b</text></g>
+            <!-- unread cols 6,7 (faint) -->
+            <g><rect x="522" y="58" width="54" height="42" class="dg-white" stroke="var(--outline-variant)" stroke-width="1.4"/><text x="549" y="86" class="dg-lab-sm">?</text></g>
+            <g><rect x="584" y="58" width="54" height="42" class="dg-white" stroke="var(--outline-variant)" stroke-width="1.4"/><text x="611" y="86" class="dg-lab-sm">?</text></g>
+          </g>
+          <text x="487" y="120" text-anchor="middle" class="dg-lab-sm" fill="var(--bau-red-ink)">text pointer is HERE — it must not move left</text>
+
+          <!-- PATTERN @0 (failed), y=150 -->
+          <text x="24" y="172" class="dg-lab-sm">P @ s=0</text>
+          <g font-family="var(--mono)" font-size="16" font-weight="700" text-anchor="middle">
+            <g><rect x="150" y="150" width="54" height="40" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.2"/><text x="177" y="177" class="dg-fill-ink">a</text></g>
+            <g><rect x="212" y="150" width="54" height="40" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.2"/><text x="239" y="177" class="dg-fill-ink">b</text></g>
+            <g><rect x="274" y="150" width="54" height="40" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.2"/><text x="301" y="177" class="dg-fill-ink">a</text></g>
+            <g><rect x="336" y="150" width="54" height="40" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.2"/><text x="363" y="177" class="dg-fill-ink">b</text></g>
+            <g><rect x="398" y="150" width="54" height="40" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.2"/><text x="425" y="177" class="dg-fill-ink">a</text></g>
+            <g><rect x="460" y="150" width="54" height="40" class="dg-white" stroke="var(--bau-red)" stroke-width="2.4"/><text x="487" y="177" class="dg-red-f">c</text></g>
+            <g><rect x="522" y="150" width="54" height="40" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.2"/><text x="549" y="177" class="dg-fill-ink">a</text></g>
+          </g>
+          <!-- mismatch X -->
+          <g class="dg-red" stroke-width="2.4"><line x1="468" y1="128" x2="506" y2="146"/><line x1="506" y1="128" x2="468" y2="146"/></g>
+          <text x="600" y="177" class="dg-lab-sm">P[5]=c ≠ T=b ✗</text>
+
+          <!-- naive ghost @1, y=216 -->
+          <text x="24" y="238" class="dg-lab-sm" fill="var(--outline)">naïve +1</text>
+          <g font-family="var(--mono)" font-size="14" text-anchor="middle" opacity="0.55">
+            <g><rect x="212" y="216" width="54" height="36" class="dg-white" stroke="var(--outline)" stroke-width="1.1" stroke-dasharray="4 3"/><text x="239" y="240" class="dg-lab">a</text></g>
+            <g><rect x="274" y="216" width="54" height="36" class="dg-white" stroke="var(--outline)" stroke-width="1.1" stroke-dasharray="4 3"/><text x="301" y="240" class="dg-lab">b</text></g>
+            <g><rect x="336" y="216" width="54" height="36" class="dg-white" stroke="var(--outline)" stroke-width="1.1" stroke-dasharray="4 3"/><text x="363" y="240" class="dg-lab">a</text></g>
+            <g><rect x="398" y="216" width="54" height="36" class="dg-white" stroke="var(--outline)" stroke-width="1.1" stroke-dasharray="4 3"/><text x="425" y="240" class="dg-lab">b</text></g>
+          </g>
+          <text x="600" y="238" class="dg-lab-sm" fill="var(--outline)">slides 1, re-reads 4 chars — forgetful</text>
+
+          <!-- KMP @2, y=288 -->
+          <text x="24" y="312" class="dg-lab-sm" fill="var(--bau-blue-ink)">KMP +2</text>
+          <g font-family="var(--mono)" font-size="16" font-weight="700" text-anchor="middle">
+            <!-- border aba reused under text cols 2,3,4 -->
+            <g><rect x="274" y="288" width="54" height="40" fill="color-mix(in oklch,var(--bau-blue) 18%,#fff)" stroke="var(--bau-blue)" stroke-width="2"/><text x="301" y="315" class="dg-blue-ink" fill="var(--bau-blue-ink)">a</text></g>
+            <g><rect x="336" y="288" width="54" height="40" fill="color-mix(in oklch,var(--bau-blue) 18%,#fff)" stroke="var(--bau-blue)" stroke-width="2"/><text x="363" y="315" fill="var(--bau-blue-ink)">b</text></g>
+            <g><rect x="398" y="288" width="54" height="40" fill="color-mix(in oklch,var(--bau-blue) 18%,#fff)" stroke="var(--bau-blue)" stroke-width="2"/><text x="425" y="315" fill="var(--bau-blue-ink)">a</text></g>
+            <!-- resume cell P[3] under text col5 -->
+            <g><rect x="460" y="288" width="54" height="40" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="487" y="315" class="dg-fill-ink">b</text></g>
+            <g><rect x="522" y="288" width="54" height="40" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.2"/><text x="549" y="315" class="dg-fill-ink">a</text></g>
+          </g>
+          <!-- resume arrow from text col5 down to KMP resume cell -->
+          <g class="dg-blue" stroke-width="2"><line x1="487" y1="100" x2="487" y2="286"/><polygon points="481,286 487,296 493,286" class="dg-blue-f"/></g>
+          <text x="278" y="350" class="dg-lab-sm" fill="var(--bau-blue-ink)">border "aba" = π[4]=3 re-aligns; resume at P[3] vs the SAME text char. Shift = 5 − 3 = 2.</text>
+        </svg>
+        <figcaption><span class="fig-num">FIG 1</span> · The matched run was <b>ababa</b>. Its longest border — a string that is both a proper prefix and a proper suffix — is <b>aba</b>, of length 3. So we slide the pattern by <code>5 − 3 = 2</code>, the border lands under the text's own trailing <b>aba</b> for free, and the next comparison is the text's mismatch char against <code>P[3]</code>. The <b>text pointer never retreats</b>. The naïve <b>+1</b> (ghosted) re-reads everything. The border table is the entire trick.</figcaption>
+      </figure>
+
+      <div class="band blue">
+        <p class="bl">A useful framing — matching is running a machine</p>
+        <p>Here is the clean abstraction. KMP is the execution of a <strong>deterministic finite automaton</strong> with <code>m+1</code> states, “number of pattern characters matched so far,” reading the text one symbol at a time. On a match it takes a forward edge (state <code>k → k+1</code>); on a mismatch it takes a <strong>failure edge</strong> to state <code>π[k−1]</code> and tries again. The entire automaton is encoded by one array, <code>π</code>. What can be mechanised here is <em>everything</em> — there is no judgement left once <code>π</code> exists; the only real question is how few steps the machine takes, and §05 answers it with a potential function.</p>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- 04 PREFIX FUNCTION -->
+    <section id="pi" class="reveal">
+      <p class="kicker"><span class="n">04</span> The core object · fully worked</p>
+      <h2>The prefix function: a table of borders</h2>
+      <p class="lede">Everything in KMP rests on one array. Fix it precisely first, then we will compute it for a real pattern and watch the failure-link chain appear.</p>
+
+      <p>For a string <code>P</code> of length <code>m</code> (0-indexed), define the <em class="term">prefix function</em> <code>π[i]</code> as the length of the longest <strong>proper</strong> prefix of the substring <code>P[0…i]</code> that is also a suffix of <code>P[0…i]</code>. “Proper” means we forbid the whole substring itself (otherwise the answer is trivially the full length). Equivalently, <code>π[i]</code> is the length of the longest <em>border</em> of the prefix ending at <code>i</code>.</p>
+
+      <div class="mathrow">
+        <div class="cap">Definition — the longest border length</div>
+        <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+          <mrow>
+            <mi>&#960;</mi><mo>[</mo><mi>i</mi><mo>]</mo><mo>=</mo>
+            <munder><mo movablelimits="false">max</mo><mrow><mn>0</mn><mo>&#8804;</mo><mi>k</mi><mo>&#8804;</mo><mi>i</mi></mrow></munder>
+            <mrow><mo>{</mo><mspace width="2px"/><mi>k</mi><mo>:</mo><mspace width="3px"/>
+            <mi>P</mi><mo>[</mo><mn>0</mn><mo>&#8230;</mo><mi>k</mi><mo>&#8722;</mo><mn>1</mn><mo>]</mo><mo>=</mo>
+            <mi>P</mi><mo>[</mo><mi>i</mi><mo>&#8722;</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>&#8230;</mo><mi>i</mi><mo>]</mo><mspace width="2px"/><mo>}</mo></mrow>
+          </mrow>
+        </math></div>
+      </div>
+
+      <p>The empty border (<code>k=0</code>) always qualifies, so <code>π</code> is well-defined and <code>π[0]=0</code> always. The decisive structural fact — the one that makes the computation linear — is that <strong>the borders of a string form a chain</strong>: the next-longest border of <code>P[0…i]</code> is the longest border of its own longest border. That is why, when the character at the current border length disagrees, we fall back to <code>π[k−1]</code> rather than starting over: we are walking down the border chain, trying ever-shorter candidates.</p>
+
+      <figure>
+        <svg viewBox="0 0 900 320" role="img" aria-labelledby="fig2t fig2d">
+          <title id="fig2t">Figure 2 — the prefix function of the pattern ababaca, and the border that defines pi at index 4</title>
+          <desc id="fig2d">The seven characters a b a b a c a are shown in a row with their index above and the prefix-function value below: 0, 0, 1, 2, 3, 0, 1. Above the prefix ending at index 4, two brackets mark the prefix a b a over positions 0 to 2 and the suffix a b a over positions 2 to 4, which are equal, so pi of 4 equals 3.</desc>
+
+          <!-- geometry: colX(c)=130+92*c width 80 center +40 -->
+          <text x="24" y="28" class="dg-ttl">PATTERN P = ababaca  ·  π = [0,0,1,2,3,0,1]</text>
+
+          <!-- border brackets for i=4: prefix aba (cols0-2), suffix aba (cols2-4) -->
+          <g class="dg-blue" stroke-width="2" fill="none">
+            <path d="M134,92 L134,78 L294,78 L294,92"/>
+          </g>
+          <text x="214" y="70" text-anchor="middle" class="dg-lab" fill="var(--bau-blue-ink)">prefix "aba"</text>
+          <g class="dg-red" stroke-width="2" fill="none">
+            <path d="M318,92 L318,52 L478,52 L478,92"/>
+          </g>
+          <text x="398" y="44" text-anchor="middle" class="dg-lab" fill="var(--bau-red-ink)">suffix "aba"  (of the prefix ending at i=4)</text>
+
+          <!-- index row -->
+          <g font-family="var(--mono)" font-size="12" text-anchor="middle" class="dg-lab-sm">
+            <text x="174" y="112">i=0</text><text x="266" y="112">1</text><text x="358" y="112">2</text><text x="450" y="112">3</text><text x="542" y="112">4</text><text x="634" y="112">5</text><text x="726" y="112">6</text>
+          </g>
+          <!-- char cells -->
+          <g font-family="var(--mono)" font-size="20" font-weight="700" text-anchor="middle">
+            <g><rect x="134" y="120" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="174" y="152" class="dg-fill-ink">a</text></g>
+            <g><rect x="226" y="120" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="266" y="152" class="dg-fill-ink">b</text></g>
+            <g><rect x="318" y="120" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="358" y="152" class="dg-fill-ink">a</text></g>
+            <g><rect x="410" y="120" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="450" y="152" class="dg-fill-ink">b</text></g>
+            <g><rect x="502" y="120" width="80" height="48" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="1.6"/><text x="542" y="152" class="dg-fill-ink">a</text></g>
+            <g><rect x="594" y="120" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="634" y="152" class="dg-fill-ink">c</text></g>
+            <g><rect x="686" y="120" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="726" y="152" class="dg-fill-ink">a</text></g>
+          </g>
+          <!-- pi value boxes -->
+          <g font-family="var(--mono)" font-size="16" font-weight="700" text-anchor="middle">
+            <g><rect x="134" y="178" width="80" height="34" class="dg-fill-ink"/><text x="174" y="201" fill="#fff">0</text></g>
+            <g><rect x="226" y="178" width="80" height="34" class="dg-fill-ink"/><text x="266" y="201" fill="#fff">0</text></g>
+            <g><rect x="318" y="178" width="80" height="34" class="dg-fill-ink"/><text x="358" y="201" fill="#fff">1</text></g>
+            <g><rect x="410" y="178" width="80" height="34" class="dg-fill-ink"/><text x="450" y="201" fill="#fff">2</text></g>
+            <g><rect x="502" y="178" width="80" height="34" class="dg-red-f"/><text x="542" y="201" fill="#fff">3</text></g>
+            <g><rect x="594" y="178" width="80" height="34" class="dg-fill-ink"/><text x="634" y="201" fill="#fff">0</text></g>
+            <g><rect x="686" y="178" width="80" height="34" class="dg-fill-ink"/><text x="726" y="201" fill="#fff">1</text></g>
+          </g>
+          <text x="134" y="232" class="dg-lab-sm">π[i] (longest border length)</text>
+
+          <!-- reading -->
+          <text x="134" y="266" class="dg-lab" fill="var(--bau-blue-ink)">π[4] = 3  ⇒  "ababa" has border "aba": its prefix aba (blue) equals its suffix aba (red).</text>
+          <text x="134" y="288" class="dg-lab-sm">π[5]=0 — "ababac" has no border (the c breaks it). π[6]=1 — "ababaca" borders on "a".</text>
+        </svg>
+        <figcaption><span class="fig-num">FIG 2</span> · <code>π[i]</code> reads off the longest border of each growing prefix. At <code>i=4</code> the prefix <b>ababa</b> overlaps itself by <b>aba</b> (blue prefix = red suffix), so <code>π[4]=3</code> — and that 3 is precisely the shift logic of Figure 1. The drop to <code>π[5]=0</code> is the <code>c</code> destroying all overlap; <code>π[6]=1</code> rebuilds a one-character border on <code>a</code>.</figcaption>
+      </figure>
+
+      <h3>Computing π in one pass</h3>
+      <p>The algorithm grows <code>i</code> left to right while maintaining <code>k</code>, the length of the current longest border. To extend to position <code>i</code>: if <code>P[i]</code> equals <code>P[k]</code> the border grows by one (<code>k+1</code>); otherwise we drop <code>k</code> to <code>π[k−1]</code> — the next candidate down the border chain — and retry, stopping at <code>k=0</code>.</p>
+
+      <pre><code><span class="com"># π[i] = length of the longest proper prefix of P[0..i] that is also a suffix.</span>
+<span class="kw">def</span> <span class="fn">prefix_function</span>(P):
+    m = <span class="fn">len</span>(P)
+    pi = [<span class="num">0</span>] <span class="op">*</span> m
+    k = <span class="num">0</span>                            <span class="com"># length of the current longest border</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, m):
+        <span class="kw">while</span> k <span class="op">&gt;</span> <span class="num">0</span> <span class="kw">and</span> P[i] <span class="op">!=</span> P[k]:
+            k = pi[k <span class="op">-</span> <span class="num">1</span>]            <span class="com"># fall back along the border chain</span>
+        <span class="kw">if</span> P[i] <span class="op">==</span> P[k]:
+            k <span class="op">+=</span> <span class="num">1</span>                    <span class="com"># the border extends by one character</span>
+        pi[i] = k
+    <span class="kw">return</span> pi</code></pre>
+
+      <details>
+        <summary>Trace <code>prefix_function("ababaca")</code> step by step</summary>
+        <div class="inner">
+          <div class="tablewrap">
+            <table>
+              <caption>Building π for P = ababaca. Watch k fall back at i=5.</caption>
+              <thead><tr><th scope="col">i</th><th scope="col">P[i]</th><th scope="col">k in</th><th scope="col">action</th><th scope="col">k out</th><th scope="col">π[i]</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">1</th><td class="mono">b</td><td class="mono">0</td><td>P[1]=b ≠ P[0]=a, k stays 0</td><td class="mono">0</td><td class="mono">0</td></tr>
+                <tr><th scope="row">2</th><td class="mono">a</td><td class="mono">0</td><td>P[2]=a = P[0]=a → k+1</td><td class="mono">1</td><td class="mono">1</td></tr>
+                <tr><th scope="row">3</th><td class="mono">b</td><td class="mono">1</td><td>P[3]=b = P[1]=b → k+1</td><td class="mono">2</td><td class="mono">2</td></tr>
+                <tr><th scope="row">4</th><td class="mono">a</td><td class="mono">2</td><td>P[4]=a = P[2]=a → k+1</td><td class="mono">3</td><td class="mono">3</td></tr>
+                <tr><th scope="row">5</th><td class="mono">c</td><td class="mono">3</td><td>c≠P[3]=b → k=π[2]=1; c≠P[1]=b → k=π[0]=0; c≠P[0]=a</td><td class="mono">0</td><td class="mono">0</td></tr>
+                <tr><th scope="row">6</th><td class="mono">a</td><td class="mono">0</td><td>P[6]=a = P[0]=a → k+1</td><td class="mono">1</td><td class="mono">1</td></tr>
+              </tbody>
+              <tfoot><tr><td colspan="6">Result π = [0, 0, 1, 2, 3, 0, 1]. The two fall-backs at i=5 (3→1→0) are the only “expensive” step — §05 proves they are free.</td></tr></tfoot>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <div class="band yellow">
+        <p class="bl">Bonus structure — periodicity falls out for free</p>
+        <p>A string's smallest <em>period</em> is <code>p = m − π[m−1]</code>, and the whole string is an integer number of copies of its length-<code>p</code> prefix <strong>iff <code>p</code> divides <code>m</code></strong>. Example: <code>ababab</code> has <code>m=6, π[5]=4</code>, so <code>p=2</code> and <code>2 | 6</code> — it is <code>(ab)³</code>. Example: <code>ababaca</code> has <code>π[6]=1</code>, so <code>p=6</code> and <code>6 ∤ 7</code> — not periodic. This single line solves two of the practice problems below; the prefix function is a periodicity detector in disguise.</p>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- 05 KMP + POTENTIAL -->
+    <section id="kmp" class="reveal">
+      <p class="kicker"><span class="n">05</span> The match, and why it is linear</p>
+      <h2>KMP, and the potential argument on the pointer</h2>
+      <p class="lede">With <code>π</code> in hand, matching is the same loop applied to the text — and the famous part is the proof. KMP is <em>not</em> obviously linear: one text character can trigger a whole cascade of failure-link jumps. The fix is the potential method from Lesson 02.</p>
+
+      <p>The matcher scans <code>T</code> with the identical mechanics: keep <code>k</code> = how many pattern characters currently match the text ending here; on agreement advance, on disagreement fall back along <code>π</code>; when <code>k</code> reaches <code>m</code> we have a full occurrence, and we fall back to <code>π[m−1]</code> to keep hunting (this is what lets overlapping matches be found).</p>
+
+      <pre><code><span class="kw">def</span> <span class="fn">kmp_search</span>(T, P):
+    pi = <span class="fn">prefix_function</span>(P)
+    k, hits = <span class="num">0</span>, []
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(T)):       <span class="com"># i sweeps the text ONCE, never moves back</span>
+        <span class="kw">while</span> k <span class="op">&gt;</span> <span class="num">0</span> <span class="kw">and</span> T[i] <span class="op">!=</span> P[k]:
+            k = pi[k <span class="op">-</span> <span class="num">1</span>]            <span class="com"># follow failure links — the only "expensive" line</span>
+        <span class="kw">if</span> T[i] <span class="op">==</span> P[k]:
+            k <span class="op">+=</span> <span class="num">1</span>
+        <span class="kw">if</span> k <span class="op">==</span> <span class="fn">len</span>(P):
+            hits.append(i <span class="op">-</span> <span class="fn">len</span>(P) <span class="op">+</span> <span class="num">1</span>)
+            k = pi[k <span class="op">-</span> <span class="num">1</span>]            <span class="com"># slide by the border, keep overlapping matches</span>
+    <span class="kw">return</span> hits</code></pre>
+
+      <details>
+        <summary>Trace <code>kmp_search("ababacababacab", "ababaca")</code> — note the reuse between the two hits</summary>
+        <div class="inner">
+          <div class="tablewrap">
+            <table>
+              <caption>π = [0,0,1,2,3,0,1]. Two occurrences, at shifts 0 and 6, found in one forward pass.</caption>
+              <thead><tr><th scope="col">i</th><th scope="col">T[i]</th><th scope="col">k before</th><th scope="col">result</th><th scope="col">k after</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">0–5</th><td class="mono">a b a b a c</td><td class="mono">0</td><td>six straight matches</td><td class="mono">6</td></tr>
+                <tr><th scope="row">6</th><td class="mono">a</td><td class="mono">6</td><td>match → k=7 = m ⇒ <b>HIT @ shift 0</b>; reset k=π[6]=1</td><td class="mono">1</td></tr>
+                <tr><th scope="row">7</th><td class="mono">b</td><td class="mono">1</td><td>T[7]=b = P[1]=b → advance</td><td class="mono">2</td></tr>
+                <tr><th scope="row">8–11</th><td class="mono">a b a c</td><td class="mono">2</td><td>four straight matches</td><td class="mono">6</td></tr>
+                <tr><th scope="row">12</th><td class="mono">a</td><td class="mono">6</td><td>match → k=7 = m ⇒ <b>HIT @ shift 6</b>; reset k=π[6]=1</td><td class="mono">1</td></tr>
+                <tr><th scope="row">13</th><td class="mono">b</td><td class="mono">1</td><td>advance</td><td class="mono">2</td></tr>
+              </tbody>
+              <tfoot><tr><td colspan="5">After the first hit, k resets to 1 (not 0): the trailing “a” of occurrence one is reused as the leading “a” of occurrence two. The text pointer i only ever increases.</td></tr></tfoot>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <h3>The potential argument — the failure-link pointer is a bank balance</h3>
+      <p>Look at the inner <code>while</code>. In the worst single iteration of the outer loop it could fire many times. So a line-by-line count gives only the useless bound “<code>≤ m</code> per character, hence <code>O(nm)</code>.” To get <code>O(n)</code> we must <em>amortize</em>, and the right potential is sitting in plain sight: let <strong><code>Φ = k</code></strong>, the current match length — the value of the failure-link pointer itself.</p>
+
+      <div class="mathrow">
+        <div class="cap">Amortized accounting — Φ = k, the pointer, never negative</div>
+        <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+          <mrow>
+            <munder><mo movablelimits="false">&#8721;</mo><mtext>iterations</mtext></munder>
+            <msub><mi>c</mi><mtext>actual</mtext></msub>
+            <mo>=</mo>
+            <munder><mo movablelimits="false">&#8721;</mo><mtext>iterations</mtext></munder>
+            <mrow><mo>(</mo><msub><mi>c</mi><mtext>amort</mtext></msub><mo>&#8722;</mo><mi>&#916;</mi><mi>&#934;</mi><mo>)</mo></mrow>
+            <mo>&#8804;</mo>
+            <munder><mo movablelimits="false">&#8721;</mo><mtext>iterations</mtext></munder>
+            <msub><mi>c</mi><mtext>amort</mtext></msub>
+            <mo>+</mo><msub><mi>&#934;</mi><mtext>start</mtext></msub>
+            <mo>&#8722;</mo><msub><mi>&#934;</mi><mtext>end</mtext></msub>
+          </mrow>
+        </math></div>
+      </div>
+
+      <p>Now read off the three facts of the loop:</p>
+      <ul>
+        <li><strong>Φ rises by at most 1 per text character.</strong> The only increase is the single <code>k += 1</code>, which happens at most once per outer step. Over the whole scan, total rise <code>≤ n</code>.</li>
+        <li><strong>Every failure-link jump strictly lowers Φ.</strong> Each inner-loop iteration sets <code>k = π[k−1] &lt; k</code>, so it drops <code>Φ</code> by at least 1.</li>
+        <li><strong>Φ never goes negative</strong> (<code>k ≥ 0</code>), and starts at 0.</li>
+      </ul>
+      <p>Therefore the total number of failure-link jumps across the <em>entire</em> search is bounded by the total rise plus the starting balance: <code>(jumps) ≤ (rises) + Φ_start − Φ_end ≤ n</code>. The outer loop runs <code>n</code> times; the inner loop runs <code>≤ n</code> times <em>in total</em>. The whole match is <code>O(n)</code>, and the same argument on the pattern gives <code>O(m)</code> to build <code>π</code> — so KMP is <code>O(n+m)</code>. Each matched character banks one unit of credit; each fall-back spends credit it cannot overdraw.</p>
+
+      <figure>
+        <svg viewBox="0 0 900 360" role="img" aria-labelledby="fig3t fig3d">
+          <title id="fig3t">Figure 3 — the potential Phi equals k, plotted while building pi for ababaca</title>
+          <desc id="fig3d">A plot with the step index i on the horizontal axis and the pointer value k on the vertical axis. The value rises by one at i equals 2, 3 and 4, banking credit, reaching three. At i equals 5 two red downward arrows drop it from three to one to zero, spending the banked credit. At i equals 6 it rises again to one. A caption states that total falls are at most total rises, which is at most m.</desc>
+
+          <text x="24" y="30" class="dg-ttl">POTENTIAL Φ = k  WHILE BUILDING π("ababaca")</text>
+
+          <!-- axes -->
+          <line x1="120" y1="270" x2="800" y2="270" class="dg-stroke" stroke-width="1.6"/>
+          <polygon points="800,265 812,270 800,275" class="dg-fill-ink"/>
+          <line x1="120" y1="270" x2="120" y2="70" class="dg-stroke" stroke-width="1.6"/>
+          <polygon points="115,70 120,58 125,70" class="dg-fill-ink"/>
+          <text x="806" y="292" class="dg-lab-sm">step i →</text>
+          <text x="92" y="74" class="dg-lab-sm">k</text>
+          <!-- y gridlines 0..3 -->
+          <g class="dg-faint" stroke-width="1"><line x1="120" y1="220" x2="800" y2="220"/><line x1="120" y1="170" x2="800" y2="170"/><line x1="120" y1="120" x2="800" y2="120"/></g>
+          <g class="dg-lab-sm" text-anchor="end"><text x="112" y="274">0</text><text x="112" y="224">1</text><text x="112" y="174">2</text><text x="112" y="124">3</text></g>
+
+          <!-- x labels i=1..6 at x=180,280,380,480,580,680 -->
+          <g class="dg-lab-sm" text-anchor="middle"><text x="180" y="292">1</text><text x="280" y="292">2</text><text x="380" y="292">3</text><text x="480" y="292">4</text><text x="580" y="292">5</text><text x="680" y="292">6</text></g>
+
+          <!-- rises: blue segments. points (i,k): (1,0)(2,1)(3,2)(4,3) -->
+          <g class="dg-blue" stroke-width="3" fill="none">
+            <line x1="180" y1="270" x2="280" y2="220"/>
+            <line x1="280" y1="220" x2="380" y2="170"/>
+            <line x1="380" y1="170" x2="480" y2="120"/>
+          </g>
+          <!-- +1 tags -->
+          <g class="dg-lab-sm" fill="var(--bau-blue-ink)" text-anchor="middle"><text x="228" y="238">+1</text><text x="328" y="188">+1</text><text x="428" y="138">+1</text></g>
+          <text x="300" y="92" class="dg-lab" fill="var(--bau-blue-ink)">banking credit (matched chars)</text>
+
+          <!-- fall at i=5: from (4,3)=(480,120) carried to x=580, then drop 3->1->0 -->
+          <line x1="480" y1="120" x2="580" y2="120" class="dg-faint" stroke-width="1.4" stroke-dasharray="3 3"/>
+          <g class="dg-red" stroke-width="3">
+            <line x1="580" y1="120" x2="580" y2="214"/><polygon points="574,206 580,222 586,206" class="dg-red-f"/>
+            <line x1="600" y1="222" x2="600" y2="262"/><polygon points="594,256 600,270 606,256" class="dg-red-f"/>
+          </g>
+          <text x="612" y="170" class="dg-lab" fill="var(--bau-red-ink)">two π-jumps</text>
+          <text x="612" y="190" class="dg-lab-sm" fill="var(--bau-red-ink)">3 → 1 → 0</text>
+          <text x="612" y="210" class="dg-lab-sm">spends banked credit — FREE</text>
+
+          <!-- rise at i=6: (5 settles at 0 ~x=600,y=270) to (6,1)=(680,220) -->
+          <line x1="600" y1="270" x2="680" y2="220" class="dg-blue" stroke-width="3"/>
+          <g class="dg-lab-sm" fill="var(--bau-blue-ink)" text-anchor="middle"><text x="648" y="238">+1</text></g>
+
+          <!-- dots -->
+          <g class="dg-fill-ink"><circle cx="180" cy="270" r="4"/><circle cx="280" cy="220" r="4"/><circle cx="380" cy="170" r="4"/><circle cx="480" cy="120" r="4"/><circle cx="600" cy="270" r="4"/><circle cx="680" cy="220" r="4"/></g>
+
+          <!-- inequality box -->
+          <g transform="translate(120,308)">
+            <rect x="0" y="0" width="680" height="40" rx="4" fill="var(--surface-1)" stroke="var(--bau-ink)" stroke-width="1.5"/>
+            <text x="16" y="25" class="dg-lab" fill="var(--bau-ink)">Σ(falls) ≤ Σ(rises) + Φ_start ≤ m.  The deep red drop is paid for by the three blue rises before it.</text>
+          </g>
+        </svg>
+        <figcaption><span class="fig-num">FIG 3</span> · The pointer <code>k</code> <b>is</b> the potential. Blue rises are matched characters, each banking one credit; the red cascade at <code>i=5</code> (the <code>c</code> in <b>ababaca</b>) spends three banked credits to fall <code>3 → 1 → 0</code>. Because the balance never goes negative, the spending can never exceed the banking, so the total fall-back work is <code>≤ m</code> — and the identical picture over the text gives <code>≤ n</code>. That is the entire linearity proof.</figcaption>
+      </figure>
+    </section>
+
+    <hr class="rule">
+
+    <!-- 06 Z-ALGORITHM -->
+    <section id="zalgo" class="reveal">
+      <p class="kicker"><span class="n">06</span> The same self-similarity, mirrored</p>
+      <h2>The Z-algorithm: prefixes from every position</h2>
+      <p class="lede">The prefix function asks “how does the pattern overlap its <em>end</em>?” The Z-algorithm asks the mirror question — “how does the string overlap its <em>start</em>, from every position?” — and answers it, again, in one linear pass with one reused window.</p>
+
+      <p>For a string <code>S</code> of length <code>n</code>, define <code>Z[i]</code> = the length of the longest substring starting at index <code>i</code> that is also a prefix of <code>S</code>. (<code>Z[0]</code> is left undefined or set to <code>n</code>.) Computed naïvely this is <code>O(n²)</code>; the trick that makes it linear is to remember the <em class="term">Z-box</em> — the interval <code>[l, r)</code> that reaches farthest right among all prefix-matches found so far, i.e. <code>S[l … r−1]</code> equals a prefix of <code>S</code>.</p>
+
+      <p>When we reach a new index <code>i</code> that lies <em>inside</em> the current box (<code>i &lt; r</code>), its answer is partly known for free: the box says <code>S[i …]</code> mirrors <code>S[i−l …]</code> near the front, so <code>Z[i]</code> starts at <code>min(r−i, Z[i−l])</code> — copy the mirror value, but never trust it past the box edge <code>r</code>. Only the part <em>beyond</em> <code>r</code> needs real character comparisons, and every such comparison pushes <code>r</code> forward — which (another potential argument) can happen only <code>n</code> times total.</p>
+
+      <figure>
+        <svg viewBox="0 0 900 300" role="img" aria-labelledby="fig4t fig4d">
+          <title id="fig4t">Figure 4 — the Z-box reuse on the string aabaabaab</title>
+          <desc id="fig4d">The nine characters a a b a a b a a b with indices zero through eight. A blue box spans indices three through eight, marked as a copy of the prefix because Z of three equals six. Position i equals four sits inside the box; an arrow maps it to its mirror at index one near the front, whose Z value of one is copied to position four for free without any character comparison.</desc>
+
+          <text x="24" y="28" class="dg-ttl">Z-BOX REUSE  ·  S = aabaabaab</text>
+
+          <!-- geometry colX(c)=120+78*c width 66 center +33 -->
+          <!-- index row -->
+          <g class="dg-lab-sm" text-anchor="middle">
+            <text x="153" y="74">0</text><text x="231" y="74">1</text><text x="309" y="74">2</text><text x="387" y="74">3</text><text x="465" y="74">4</text><text x="543" y="74">5</text><text x="621" y="74">6</text><text x="699" y="74">7</text><text x="777" y="74">8</text>
+          </g>
+          <!-- cells -->
+          <g font-family="var(--mono)" font-size="19" font-weight="700" text-anchor="middle">
+            <g><rect x="120" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="153" y="112" class="dg-fill-ink">a</text></g>
+            <g><rect x="198" y="82" width="66" height="46" fill="color-mix(in oklch,var(--bau-yellow) 40%,#fff)" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="231" y="112" class="dg-fill-ink">a</text></g>
+            <g><rect x="276" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="309" y="112" class="dg-fill-ink">b</text></g>
+            <g><rect x="354" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-blue)" stroke-width="2"/><text x="387" y="112" class="dg-fill-ink">a</text></g>
+            <g><rect x="432" y="82" width="66" height="46" fill="color-mix(in oklch,var(--bau-yellow) 40%,#fff)" stroke="var(--bau-blue)" stroke-width="2"/><text x="465" y="112" class="dg-fill-ink">a</text></g>
+            <g><rect x="510" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-blue)" stroke-width="2"/><text x="543" y="112" class="dg-fill-ink">b</text></g>
+            <g><rect x="588" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-blue)" stroke-width="2"/><text x="621" y="112" class="dg-fill-ink">a</text></g>
+            <g><rect x="666" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-blue)" stroke-width="2"/><text x="699" y="112" class="dg-fill-ink">a</text></g>
+            <g><rect x="744" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-blue)" stroke-width="2"/><text x="777" y="112" class="dg-fill-ink">b</text></g>
+          </g>
+
+          <!-- box bracket [l=3, r=9) -->
+          <g class="dg-blue" stroke-width="2" fill="none"><path d="M354,140 L354,154 L810,154 L810,140"/></g>
+          <text x="582" y="174" text-anchor="middle" class="dg-lab" fill="var(--bau-blue-ink)">Z-box [l=3, r=9):  S[3..8] = prefix "aabaab"  (Z[3]=6)</text>
+
+          <!-- mirror arrow from i=4 (465) to mirror j=1 (231) -->
+          <path d="M465,200 C400,232 296,232 231,200" class="dg-red" stroke-width="2" fill="none"/>
+          <polygon points="236,206 226,196 244,193" class="dg-red-f"/>
+          <text x="348" y="246" text-anchor="middle" class="dg-lab" fill="var(--bau-red-ink)">i=4 inside box → mirror j = i−l = 1</text>
+
+          <!-- value callouts -->
+          <text x="231" y="200" text-anchor="middle" class="dg-lab-sm" fill="var(--bau-red-ink)">Z[1]=1</text>
+          <text x="465" y="200" text-anchor="middle" class="dg-lab-sm" fill="var(--bau-blue-ink)">Z[4]=min(r−i, Z[1])=1</text>
+          <text x="470" y="276" class="dg-lab-sm">Copied for free — no character comparison. Only matches that would push past r=9 cost real work.</text>
+        </svg>
+        <figcaption><span class="fig-num">FIG 4</span> · The box <code>[3, 9)</code> certifies that <b>aabaab</b> (from index 3) equals the prefix. For <code>i=4</code> inside it, the mirror at <code>j = i−l = 1</code> already holds <code>Z[1]=1</code>, so <code>Z[4] = min(r−i, Z[1]) = 1</code> is read off with <b>zero</b> comparisons. Work happens only when a match would extend past <code>r</code>, and each such step advances <code>r</code> — so total work is <code>O(n)</code>, the Z-algorithm's twin of the KMP potential.</figcaption>
+      </figure>
+
+      <pre><code><span class="kw">def</span> <span class="fn">z_function</span>(S):
+    n = <span class="fn">len</span>(S)
+    Z = [<span class="num">0</span>] <span class="op">*</span> n
+    l = r = <span class="num">0</span>                        <span class="com"># [l, r) = rightmost prefix-matching box</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, n):
+        <span class="kw">if</span> i <span class="op">&lt;</span> r:
+            Z[i] = <span class="fn">min</span>(r <span class="op">-</span> i, Z[i <span class="op">-</span> l])   <span class="com"># copy from the mirror, capped by the box</span>
+        <span class="kw">while</span> i <span class="op">+</span> Z[i] <span class="op">&lt;</span> n <span class="kw">and</span> S[Z[i]] <span class="op">==</span> S[i <span class="op">+</span> Z[i]]:
+            Z[i] <span class="op">+=</span> <span class="num">1</span>                <span class="com"># extend past the box, char by char</span>
+        <span class="kw">if</span> i <span class="op">+</span> Z[i] <span class="op">&gt;</span> r:
+            l, r = i, i <span class="op">+</span> Z[i]          <span class="com"># this match reaches further right — adopt it</span>
+    <span class="kw">return</span> Z</code></pre>
+
+      <h3>Matching with Z — the separator trick</h3>
+      <p>To find <code>P</code> in <code>T</code>, build the string <code>S = P + # + T</code> where <code>#</code> is a sentinel that occurs in neither (so no match can straddle it). Compute <code>Z</code> over <code>S</code>. Wherever <code>Z[i] = m</code> for an index <code>i</code> in the <code>T</code>-region, the pattern occurs at <code>T</code>-position <code>i − (m+1)</code>. The sentinel caps every <code>Z</code> at <code>m</code>, so a value of exactly <code>m</code> is an occurrence.</p>
+
+      <details>
+        <summary>Worked: find <code>P = aba</code> in <code>T = abacaba</code> via <code>S = aba#abacaba</code></summary>
+        <div class="inner">
+          <div class="tablewrap">
+            <table>
+              <caption>Z over S = a b a # a b a c a b a (length 11). m = 3, so Z = 3 marks a hit.</caption>
+              <thead><tr><th scope="col">i</th><th scope="col">0</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th><th scope="col">5</th><th scope="col">6</th><th scope="col">7</th><th scope="col">8</th><th scope="col">9</th><th scope="col">10</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">S[i]</th><td class="mono">a</td><td class="mono">b</td><td class="mono">a</td><td class="mono">#</td><td class="mono">a</td><td class="mono">b</td><td class="mono">a</td><td class="mono">c</td><td class="mono">a</td><td class="mono">b</td><td class="mono">a</td></tr>
+                <tr><th scope="row">Z[i]</th><td class="mono">–</td><td class="mono">0</td><td class="mono">1</td><td class="mono">0</td><td class="mono"><b>3</b></td><td class="mono">0</td><td class="mono">1</td><td class="mono">0</td><td class="mono"><b>3</b></td><td class="mono">0</td><td class="mono">1</td></tr>
+              </tbody>
+              <tfoot><tr><td colspan="12">Z=3 at i=4 and i=8 ⇒ occurrences at T-positions 4−4=0 and 8−4=4. Indeed “aba” sits at T[0..2] and T[4..6] of “abacaba”.</td></tr></tfoot>
+            </table>
+          </div>
+        </div>
+      </details>
+      <p>KMP and Z carry the same information — both are linear-time encodings of a string's self-overlap, and you can convert one to the other in linear time. Pick by ergonomics: <code>π</code> is the natural streaming matcher (it consumes the text online, one symbol at a time); <code>Z</code> is often cleaner for offline “analyse this whole string” tasks such as counting periods or the palindrome problem in §09.</p>
+    </section>
+
+    <hr class="rule">
+
+    <!-- 07 RABIN-KARP -->
+    <section id="rk" class="reveal">
+      <p class="kicker"><span class="n">07</span> A different bet — arithmetic, not automata</p>
+      <h2>Rabin–Karp: fingerprint the window</h2>
+      <p class="lede">KMP and Z are deterministic and comparison-based. Rabin–Karp makes an entirely different wager: turn each length-<code>m</code> window into a <em>number</em>, compare numbers instead of strings, and update that number in <code>O(1)</code> as the window slides. It trades a small, controllable probability of error for arithmetic simplicity — and it generalises to multi-pattern and 2-D search where automata strain.</p>
+
+      <p>Read a string as the digits of a number in base <code>b</code>, then reduce mod a large prime <code>q</code> to keep it small. This is just <strong>Horner's rule</strong> — evaluating the string as a polynomial at the point <code>b</code>:</p>
+      <div class="mathrow">
+        <div class="cap">The polynomial fingerprint — a string evaluated at b, mod q</div>
+        <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+          <mrow>
+            <mi>H</mi><mo>(</mo><mi>s</mi><mo>)</mo><mo>=</mo>
+            <mrow><mo>(</mo>
+              <munderover><mo movablelimits="false">&#8721;</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>m</mi><mo>&#8722;</mo><mn>1</mn></mrow></munderover>
+              <mi>s</mi><mo>[</mo><mi>k</mi><mo>]</mo><mo>&#183;</mo><msup><mi>b</mi><mrow><mi>m</mi><mo>&#8722;</mo><mn>1</mn><mo>&#8722;</mo><mi>k</mi></mrow></msup>
+            <mo>)</mo></mrow>
+            <mspace width="6px"/><mi>mod</mi><mspace width="3px"/><mi>q</mi>
+          </mrow>
+        </math></div>
+      </div>
+
+      <p>The magic is the <em class="term">rolling update</em>. Equal strings always have equal fingerprints; the point of the polynomial form is that sliding the window one step is three cheap operations — drop the high digit, shift everything up by a factor of <code>b</code>, add the new low digit — all mod <code>q</code>:</p>
+      <div class="mathrow">
+        <div class="cap">Slide the window in O(1) — h = b^(m−1) mod q is precomputed</div>
+        <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+          <mrow>
+            <mi>H</mi><mo>(</mo><mi>T</mi><mo>[</mo><mi>i</mi><mo>+</mo><mn>1</mn><mo>&#8230;</mo><mi>i</mi><mo>+</mo><mi>m</mi><mo>]</mo><mo>)</mo><mo>=</mo>
+            <mrow><mo>(</mo>
+              <mo>(</mo><mi>H</mi><mo>&#8722;</mo><mi>T</mi><mo>[</mo><mi>i</mi><mo>]</mo><mo>&#183;</mo><mi>h</mi><mo>)</mo>
+              <mo>&#183;</mo><mi>b</mi><mo>+</mo><mi>T</mi><mo>[</mo><mi>i</mi><mo>+</mo><mi>m</mi><mo>]</mo>
+            <mo>)</mo></mrow>
+            <mspace width="6px"/><mi>mod</mi><mspace width="3px"/><mi>q</mi>
+          </mrow>
+        </math></div>
+      </div>
+
+      <figure>
+        <svg viewBox="0 0 900 320" role="img" aria-labelledby="fig5t fig5d">
+          <title id="fig5t">Figure 5 — Rabin-Karp rolling hash over the digits 313156 with base 10 mod 13</title>
+          <desc id="fig5d">The six digits 3 1 3 1 5 6 are shown. The first window covering 3 1 has fingerprint 31 mod 13 equals 5. Sliding to the window 1 3 uses the rolling formula: subtract the high digit 3 times ten, multiply by ten, add the low digit 3, giving 13 mod 13 equals 0. The pattern 31 has fingerprint 5, matching windows zero and two, with a note that hash matches must be verified because 44 would also hash to 5.</desc>
+
+          <text x="24" y="28" class="dg-ttl">ROLLING HASH  ·  T = 313156, b=10, q=13, m=2, h = b^(m−1) = 10</text>
+
+          <!-- digit cells: colX(c)=170+92*c width 80 center+40, y=64 -->
+          <g class="dg-lab-sm" text-anchor="middle"><text x="210" y="56">0</text><text x="302" y="56">1</text><text x="394" y="56">2</text><text x="486" y="56">3</text><text x="578" y="56">4</text><text x="670" y="56">5</text></g>
+          <g font-family="var(--mono)" font-size="22" font-weight="700" text-anchor="middle">
+            <g><rect x="170" y="64" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="210" y="98" class="dg-fill-ink">3</text></g>
+            <g><rect x="262" y="64" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="302" y="98" class="dg-fill-ink">1</text></g>
+            <g><rect x="354" y="64" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="394" y="98" class="dg-fill-ink">3</text></g>
+            <g><rect x="446" y="64" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="486" y="98" class="dg-fill-ink">1</text></g>
+            <g><rect x="538" y="64" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="578" y="98" class="dg-fill-ink">5</text></g>
+            <g><rect x="630" y="64" width="80" height="48" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="670" y="98" class="dg-fill-ink">6</text></g>
+          </g>
+
+          <!-- window 0 bracket over cols 0,1 -->
+          <g class="dg-blue" stroke-width="2.4" fill="none"><rect x="166" y="60" width="180" height="56" rx="3"/></g>
+          <text x="256" y="146" text-anchor="middle" class="dg-lab" fill="var(--bau-blue-ink)">window₀ "31" → 31 mod 13 = 5</text>
+
+          <!-- window 1 bracket over cols 1,2 -->
+          <g class="dg-red" stroke-width="2.4" fill="none" stroke-dasharray="5 3"><rect x="258" y="60" width="180" height="56" rx="3"/></g>
+          <text x="348" y="166" text-anchor="middle" class="dg-lab" fill="var(--bau-red-ink)">window₁ "13" → 0</text>
+
+          <!-- rolling arithmetic callout -->
+          <g transform="translate(150,196)">
+            <rect x="0" y="0" width="600" height="64" rx="4" fill="var(--surface-1)" stroke="var(--bau-ink)" stroke-width="1.5"/>
+            <text x="16" y="26" class="dg-lab" fill="var(--bau-ink)">new = ( ( 5 − 3·10 )·10 + 3 ) mod 13  =  ( 1·10 + 3 ) mod 13  =  0</text>
+            <text x="16" y="50" class="dg-lab-sm" fill="var(--bau-red-ink)">drop high "3"·h    ·    shift ·b    ·    add low "3"</text>
+          </g>
+
+          <!-- pattern fingerprint + verify note -->
+          <g transform="translate(150,272)">
+            <rect x="0" y="0" width="600" height="36" rx="4" fill="color-mix(in oklch,var(--bau-yellow) 26%,#fff)" stroke="var(--bau-ink)" stroke-width="1.4"/>
+            <text x="16" y="24" class="dg-lab" fill="var(--bau-ink)">P="31" → hp=5. Hash hits windows 0 &amp; 2 — but VERIFY: "44" also ≡ 5 (mod 13). A hash match is a candidate, not a proof.</text>
+          </g>
+        </svg>
+        <figcaption><span class="fig-num">FIG 5</span> · Sliding from <b>31</b> to <b>13</b> is one subtraction, one multiply, one add, all mod 13 — independent of <code>m</code>. The pattern <b>31</b> fingerprints to 5 and flags windows 0 and 2. Because the modulus folds many strings onto each residue (here <b>44</b> also lands on 5), an equal fingerprint is only a <b>candidate</b>: confirm with a direct character check to stay exact.</figcaption>
+      </figure>
+
+      <pre><code><span class="kw">def</span> <span class="fn">rabin_karp</span>(T, P, b=<span class="num">256</span>, q=<span class="num">1_000_000_007</span>):
+    n, m = <span class="fn">len</span>(T), <span class="fn">len</span>(P)
+    <span class="kw">if</span> m <span class="op">&gt;</span> n: <span class="kw">return</span> []
+    h = <span class="fn">pow</span>(b, m <span class="op">-</span> <span class="num">1</span>, q)            <span class="com"># b^(m-1) mod q — weight of the top char</span>
+    hp = ht = <span class="num">0</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(m):               <span class="com"># hash P and the first window together</span>
+        hp = (hp <span class="op">*</span> b <span class="op">+</span> <span class="fn">ord</span>(P[i])) <span class="op">%</span> q
+        ht = (ht <span class="op">*</span> b <span class="op">+</span> <span class="fn">ord</span>(T[i])) <span class="op">%</span> q
+    hits = []
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n <span class="op">-</span> m <span class="op">+</span> <span class="num">1</span>):
+        <span class="kw">if</span> hp <span class="op">==</span> ht <span class="kw">and</span> T[i:i <span class="op">+</span> m] <span class="op">==</span> P:   <span class="com"># VERIFY — kill spurious hits</span>
+            hits.append(i)
+        <span class="kw">if</span> i <span class="op">&lt;</span> n <span class="op">-</span> m:
+            ht = ((ht <span class="op">-</span> <span class="fn">ord</span>(T[i]) <span class="op">*</span> h) <span class="op">*</span> b <span class="op">+</span> <span class="fn">ord</span>(T[i <span class="op">+</span> m])) <span class="op">%</span> q
+    <span class="kw">return</span> hits</code></pre>
+
+      <h3>Why it is expected-linear, and how it can betray you</h3>
+      <p>Two <em>distinct</em> strings of length <code>m</code> are two distinct degree-<code>(m−1)</code> polynomials; their difference is a non-zero polynomial of degree <code>≤ m−1</code>, which has at most <code>m−1</code> roots mod a prime <code>q</code>. So for a randomly chosen base <code>b</code>, the probability they collide is <strong><code>≤ (m−1)/q</code></strong> — vanishing for a 64-bit prime. With verification, every reported hit is real (a <em>Las Vegas</em> algorithm: always correct, expected <code>O(n+m)</code>); skip verification and you get a <em>Monte Carlo</em> matcher that is faster but wrong with tiny probability. The worst case, when an adversary or a fixed bad <code>b</code> forces a collision at every window, degrades to <code>Θ(nm)</code> — which is exactly why the modulus and base should be large and, ideally, randomised per run.</p>
+    </section>
+
+    <hr class="rule">
+
+    <!-- COMPLEXITY TABLE -->
+    <section class="reveal">
+      <h3>Four matchers at a glance</h3>
+      <div class="tablewrap">
+        <table>
+          <caption>n = |text|, m = |pattern|. All three smart methods are linear; they differ in what they precompute and what they bet.</caption>
+          <thead>
+            <tr><th scope="col">Method</th><th scope="col">Preprocess</th><th scope="col">Search</th><th scope="col">Extra space</th><th scope="col">Kind</th><th scope="col">The idea in five words</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Naïve</th><td class="mono">—</td><td class="mono">O(nm)</td><td class="mono">O(1)</td><td>deterministic</td><td>try every shift, forget</td></tr>
+            <tr><th scope="row">KMP</th><td class="mono">O(m)</td><td class="mono">O(n)</td><td class="mono">O(m)</td><td>deterministic</td><td>prefix function, never re-read</td></tr>
+            <tr><th scope="row">Z-algorithm</th><td class="mono">O(m)</td><td class="mono">O(n)</td><td class="mono">O(n+m)</td><td>deterministic</td><td>Z-box over P#T</td></tr>
+            <tr><th scope="row">Rabin–Karp</th><td class="mono">O(m)</td><td class="mono">O(n+m) exp.</td><td class="mono">O(1)</td><td>randomized</td><td>fingerprint, roll, verify</td></tr>
+          </tbody>
+          <tfoot><tr><td colspan="6">Rabin–Karp's search is O(n+m) <em>expected</em>; worst case O(nm) under collisions. Its real edge is multi-pattern (hash a whole set) and 2-D matching, where a single rolling number replaces a forest of automata.</td></tr></tfoot>
+        </table>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- 08 FAILURE MODES -->
+    <section id="breaks" class="reveal">
+      <p class="kicker"><span class="n">08</span> Where it breaks</p>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <p class="lede">These algorithms fail in two flavours: a subtle index slip that quietly returns the wrong matches, and a hash bet that blows up only on the input you did not test. My own bias is to trust a clean abstraction past its edge — so here is exactly where each edge is.</p>
+
+      <h4>1 · The off-by-one in the border fall-back</h4>
+      <p>The single most common KMP bug: writing <code>k = pi[k]</code> instead of <code>k = pi[k − 1]</code>. The prefix function indexes by the <em>last matched position</em>, which is <code>k − 1</code> when <code>k</code> characters match. Get this wrong and the failure chain is corrupted — you will either loop or skip occurrences. Equally, remember that <code>π[0]</code> must be <code>0</code> by definition (a one-character string has no proper border); seeding it otherwise poisons everything downstream.</p>
+
+      <h4>2 · The missing separator in the Z / concatenation tricks</h4>
+      <p>Matching via <code>S = P + T</code> with no sentinel lets a “match” straddle the seam — a prefix of the pattern bleeding into the text — and over-reports. Use a separator <code>#</code> that is guaranteed absent from the alphabet. The same caution applies to the palindrome and shortest-cover constructions: the sentinel is what caps every <code>Z</code> at <code>m</code> and keeps the two halves from contaminating each other.</p>
+
+      <h4>3 · Integer overflow in the rolling hash</h4>
+      <p>In languages with fixed-width integers, <code>ht · b</code> or <code>ord(T[i]) · h</code> overflows a 32- or 64-bit word long before you take the modulus. Reduce mod <code>q</code> at every step, keep the product in a 64-bit (or 128-bit) type, and choose <code>q</code> small enough that <code>q · b</code> still fits. The subtraction <code>(ht − ord·h)</code> can also go negative — add <code>q</code> before the modulus, or use a language whose <code>%</code> already returns a non-negative result.</p>
+
+      <h4>4 · The adversarial hash — when randomness is the wrong tool</h4>
+      <p>A <em>fixed</em> base and modulus are public, so an adversary (or an unlucky data set) can manufacture collisions at every window and drag Rabin–Karp to <code>Θ(nm)</code> — the “anti-hash” attack seen in competitive judges. If inputs are adversarial, randomise <code>b</code> per run, use a 64-bit prime, or use two independent moduli (double hashing) so a collision needs to happen in both. And if you cannot tolerate <em>any</em> wrong answer or any slow case, do not bet at all — use KMP or Z, which are unconditionally <code>O(n+m)</code>.</p>
+
+      <h4>5 · Skipping verification (Monte Carlo where you needed Las Vegas)</h4>
+      <p>Dropping the <code>T[i:i+m] == P</code> check makes Rabin–Karp faster and occasionally <em>wrong</em>. That is acceptable for a fingerprint pre-filter or a deduplication heuristic, and unacceptable for, say, a security-sensitive search. Know which regime you are in. The verification is what converts a probabilistic filter into an exact matcher.</p>
+
+      <h4>6 · Forgetting overlaps, and the empty pattern</h4>
+      <p>After a full match, resetting <code>k = 0</code> instead of <code>k = π[m−1]</code> misses overlapping occurrences (find “aa” in “aaa” — there are two, at 0 and 1). And the degenerate inputs bite: an empty pattern conventionally matches at every position (including <code>n</code>); a pattern longer than the text matches nowhere. Decide and test these before they decide for you.</p>
+
+      <div class="band red">
+        <p class="bl">The one check that catches most KMP/Z bugs</p>
+        <p>Brute-force a naïve <code>O(nm)</code> matcher in five lines and fuzz it against your fast one on thousands of random short strings over a tiny alphabet (say <code>{a, b}</code>, lengths ≤ 12). Small alphabets maximise borders and overlaps — exactly the cases where index slips hide. If the two ever disagree, you have a reproducible minimal counterexample in hand.</p>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- 09 PRACTICE -->
+    <section id="practice" class="reveal">
+      <p class="kicker"><span class="n">09</span> Practice · solve before you peek</p>
+      <h2>Four problems across π, Z, and the rolling hash</h2>
+
+      <div class="prob">
+        <div class="head"><span class="pn">01</span><span class="pt">Find the Index of the First Occurrence in a String</span><span class="lc">LeetCode 28 · KMP</span></div>
+        <div class="body">
+          <p>Return the index of the first occurrence of <code>needle</code> in <code>haystack</code>, or <code>-1</code> if it is not part of <code>haystack</code>. Aim for <code>O(n+m)</code> — the naïve scan is the thing this lecture exists to beat.</p>
+          <p class="sig">def strStr(haystack: str, needle: str) -> int</p>
+          <p class="ex">Example 1:  haystack = "sadbutsad", needle = "sad"  → 0
+Example 2:  haystack = "leetcode",  needle = "leeto" → -1
+Constraints: 1 ≤ len ≤ 10^4 ; lowercase English letters</p>
+          <p class="note">Build <code>π</code> for the needle, then run the single-pass matcher (§05). Return at the first time <code>k</code> reaches <code>m</code>.</p>
+        </div>
+      </div>
+
+      <div class="prob">
+        <div class="head"><span class="pn">02</span><span class="pt">Longest Happy Prefix</span><span class="lc">LeetCode 1392 · prefix function</span></div>
+        <div class="body">
+          <p>A “happy prefix” is a non-empty prefix that is also a suffix (excluding the whole string). Return the longest happy prefix of <code>s</code>; return the empty string if none exists.</p>
+          <p class="sig">def longestPrefix(s: str) -> str</p>
+          <p class="ex">Example 1:  s = "level"   → "l"
+Example 2:  s = "ababab"  → "abab"
+Constraints: 1 ≤ len(s) ≤ 10^5 ; lowercase English letters</p>
+          <p class="note">This is the definition of <code>π</code> read off its last cell. What single value of the prefix function <em>is</em> the answer's length? (Recall Figure 2.)</p>
+        </div>
+      </div>
+
+      <div class="prob">
+        <div class="head"><span class="pn">03</span><span class="pt">Shortest Palindrome</span><span class="lc">LeetCode 214 · KMP / Z on a concatenation</span></div>
+        <div class="body">
+          <p>You may add characters only in front of <code>s</code>. Return the shortest palindrome you can form this way.</p>
+          <p class="sig">def shortestPalindrome(s: str) -> str</p>
+          <p class="ex">Example 1:  s = "aacecaaa" → "aaacecaaa"
+Example 2:  s = "abcd"     → "dcbabcd"
+Constraints: 0 ≤ len(s) ≤ 5·10^4 ; lowercase English letters</p>
+          <p class="note">Find the longest <em>prefix</em> of <code>s</code> that is a palindrome, then mirror the rest in front. Build it from the prefix function of <code>s + # + reverse(s)</code> — mind the sentinel (§08·2).</p>
+        </div>
+      </div>
+
+      <div class="prob">
+        <div class="head"><span class="pn">04</span><span class="pt">Longest Duplicate Substring</span><span class="lc">LeetCode 1044 · Rabin–Karp + binary search</span></div>
+        <div class="body">
+          <p>Return any longest substring of <code>s</code> that occurs at least twice (occurrences may overlap); return <code>""</code> if none repeats.</p>
+          <p class="sig">def longestDupSubstring(s: str) -> str</p>
+          <p class="ex">Example 1:  s = "banana"  → "ana"
+Example 2:  s = "abcd"    → ""
+Constraints: 2 ≤ len(s) ≤ 3·10^4 ; lowercase English letters</p>
+          <p class="note">Binary-search the answer length <code>L</code> (duplicate-of-length-<code>L</code> is monotone), and at each <code>L</code> use a rolling hash over all length-<code>L</code> windows to detect a repeat. Verify hits, or double-hash, to defeat collisions (§08·4). Target <code>O(n log n)</code> expected.</p>
+        </div>
+      </div>
+
+    </section>
+
+    <hr class="rule">
+
+    <!-- 10 RECAP + NEXT -->
+    <section id="recap" class="reveal">
+      <p class="kicker"><span class="n">10</span> Recap &amp; what's next</p>
+      <h2>The one thing to remember</h2>
+      <div class="recap">
+        <p style="margin:0;font-size:21px;line-height:1.5"><strong>Linear-time matching is precomputed self-similarity.</strong> A pattern's borders (the prefix function <code>π</code>) — or, mirrored, its Z-array — tell the matcher exactly how far it may slide on a mismatch without ever re-reading the text, and the failure-link pointer's own value is the potential that proves the whole thing runs in <code>O(n+m)</code>. Rabin–Karp makes the orthogonal bet: a string is a number, the window rolls in <code>O(1)</code>, and a quick verification keeps the answer exact.</p>
+      </div>
+      <p>Notice the shape of the trick, because it recurs: when a brute-force method <em>forgets</em>, the cure is a small precomputed table of structure, and the cost of consulting it is paid by an amortized argument. That is the same melody as the doubling array and union-find from Lesson 02 — the failure-link pointer is just one more potential function.</p>
+
+      <a class="nextcard" href="#" onclick="return false;" aria-label="Next lecture, number 19, on tries and suffix structures">
+        <div>
+          <div class="meta">Next in the DSA syllabus · Lecture 19</div>
+          <div class="t">Algorithms on Text II: Tries &amp; Suffix Structures</div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+      <p class="note">Here we matched <em>one</em> pattern against a text. Next we invert the work: index the <em>text</em> once — tries for prefix sets, then suffix trees and suffix arrays — so that <em>many</em> substring queries each become near-instant. The self-similarity we precomputed today becomes a whole searchable structure.</p>
+
+      
+    </section>
+
+  </main>
+</div>
+
+<script>
+// progressive enhancement only — page is fully readable with JS off
+document.documentElement.classList.add('js');
+(function(){
+  var rm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = document.querySelectorAll('.reveal');
+  if (rm || !('IntersectionObserver' in window)) {
+    els.forEach(function(e){ e.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+  els.forEach(function(e){ io.observe(e); });
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html">← Previous study</a><a href="dsa-19-tries-and-suffix-structures.html">Next study →</a></nav>
+</body>
+</html>

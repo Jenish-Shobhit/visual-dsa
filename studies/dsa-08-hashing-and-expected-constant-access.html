@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Dictionary Problem II: Hashing &amp; Expected-Constant Access</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:22ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.7rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.3rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.wrap-row td, tr.wrap-row th{background:color-mix(in oklab,var(--bau-yellow) 26%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-stroke{stroke:var(--on-surface); fill:none; stroke-width:2}
+  .dg-thin{stroke:var(--outline); fill:none; stroke-width:1}
+  .dg-dash{stroke:var(--outline); fill:none; stroke-width:1.5; stroke-dasharray:5 5}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+  .dg-red{stroke:var(--bau-red)}   .dg-red-f{fill:var(--bau-red)}
+  .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-cell{fill:var(--surface);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill{fill:var(--primary-container);stroke:var(--bau-ink);stroke-width:2}
+  .dg-label{font-family:var(--font-mono); font-size:14px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
+  .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
+
+  /* ===== inline cell strips (HTML, for state traces) ===== */
+  .cells{display:flex; gap:5px; flex-wrap:wrap; margin:.5em 0 1em; font-family:var(--font-mono); font-size:14px; align-items:flex-end}
+  .cells .c{min-width:40px; height:40px; display:grid; place-items:center; border:1.5px solid var(--bau-ink); border-radius:var(--r-xs); background:var(--surface-1); position:relative}
+  .cells .c.fill{background:var(--primary-container); color:var(--on-primary-container); font-weight:650}
+  .cells .c.piv{background:var(--bau-yellow); color:var(--bau-ink); font-weight:700}
+  .cells .c.tomb{background:color-mix(in oklab,var(--bau-red) 16%,var(--surface)); }
+  .cells .sep{align-self:center; color:var(--on-surface-variant)}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">08 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>08</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="210" height="168" viewBox="0 0 210 168" aria-hidden="true">
+    <!-- a column of slots, one with a chain spilling out — the hash table motif -->
+    <rect x="8"  y="14"  width="40" height="24" class="dg-cell"/>
+    <rect x="8"  y="40"  width="40" height="24" class="dg-fill"/>
+    <rect x="8"  y="66"  width="40" height="24" class="dg-cell"/>
+    <rect x="8"  y="92"  width="40" height="24" class="dg-fill"/>
+    <rect x="8"  y="118" width="40" height="24" class="dg-cell"/>
+    <!-- a chain off slot 2 (y=40) -->
+    <line x1="48" y1="52" x2="74" y2="52" class="dg-stroke dg-blue"/>
+    <rect x="74"  y="40" width="34" height="24" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <line x1="108" y1="52" x2="130" y2="52" class="dg-stroke dg-blue"/>
+    <rect x="130" y="40" width="34" height="24" class="dg-red-f"/>
+    <!-- the function arrow + a key disc above -->
+    <circle cx="150" cy="116" r="22" class="dg-blue-f"/>
+    <path d="M150 96 a20 20 0 0 1 0 40" fill="none" stroke="var(--bau-ink)" stroke-width="2"/>
+    <text x="150" y="122" text-anchor="middle" font-family="var(--font-mono)" font-size="15" font-weight="700" fill="#fff">h(k)</text>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 08</span> trading order &amp; worst-case for an expected miracle</div>
+    <h1>Hashing &amp; Expected-Constant Access</h1>
+    <p class="lede col">Lecture&nbsp;7 gave us a structure that stays ordered while it changes, at a worst-case <code class="inl">O(log n)</code> per operation — and proved that is the best a comparison-based search tree can promise. This lecture asks the audacious next question: can we do <em>better than logarithmic</em>? Can lookup cost <strong>nothing that grows with <code class="inl">n</code> at all</strong>? The answer is yes, but you must pay for it in a new currency — you surrender sorted order, you surrender worst-case determinism, and you take on a coin flip. What you buy is <span class="term">expected <code class="inl">O(1)</code></span> search, insert, and delete. We will build the hash table from the direct-address dream, watch collisions become inevitable, tame them with <strong>chaining</strong> and <strong>open addressing</strong>, then close the one hole an adversary can exploit with <strong>universal</strong> and <strong>perfect hashing</strong>.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A number to fix the stakes.</strong> Fill a hash table until it holds exactly as many items as it has slots — load factor one. Search for a key that <em>is</em> present and you will examine, on average, about <code class="inl">1.5</code> entries. Search for one that is <em>absent</em> and you will examine about <code class="inl">2</code>. Those two numbers do not change when the table holds a thousand keys, a million, or a billion. <strong>The cost of access is constant in the size of the data</strong> — the single most useful fact in all of practical computing.</p>
+        <p style="margin-bottom:0">And yet there is a shadow. The <em>worst</em> case is <code class="inl">&#x398;(n)</code> — every key in one slot, a linked list wearing a table's clothes — and for any <em>fixed</em> hash function, an adversary who can read your code can hand you exactly the input that triggers it. Reconciling the constant average with the linear worst case, and proving the average holds <em>even against that adversary</em>, is the whole intellectual content of this lecture.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>The dream of O(1)</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>Direct addressing &amp; the wall</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>The hash function</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Collision resolution: chaining</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>Worked: trace a table</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>Open addressing</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Universal hashing</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Perfect hashing</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Concentration &amp; the tail</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>The zoo, tabulated</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Where it breaks</span></a></li>
+      <li><a href="#s13"><span class="num">13</span><span>Practice</span></a></li>
+      <li><a href="#s14"><span class="num">14</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> the dream of constant access</div>
+      <h2>What if the key told you where it lived?</h2>
+      <div class="col">
+        <p>I think first about what a machine is <em>permitted to do</em>, because the permissions fix the price. A search tree learns about its keys by comparing them, and we proved last lecture that comparing is a thin channel — one bit per question — so it cannot pin a key in fewer than <code class="inl">log n</code> questions. But suppose the key is not an opaque token to be compared; suppose it is a <em>number we may read and use as an address</em>. Then there is nothing to search. The key <em>is</em> the location. We walk to it in one step.</p>
+        <p>That is the whole dream, and it is worth stating as a principle before we complicate it: <strong>a lookup is free when the key can be turned into an index.</strong> An array does exactly this — <code class="inl">A[i]</code> in one step — because the index <em>is</em> the address. The dictionary problem is the project of making arbitrary keys behave like array indices. Everything that follows — the hash function, the collisions, the chains, the probe sequences, the randomized families — is engineering around the one obstacle that stands between us and that free lookup.</p>
+        <p>Let me name the problem formally so we can attack its skeleton rather than its surface. A <span class="term">dynamic dictionary</span> (or symbol table, or map) maintains a set of <code class="inl">(key, value)</code> pairs under three operations: <code class="inl">insert(k, v)</code>, <code class="inl">delete(k)</code>, and <code class="inl">search(k)</code>. Keys are drawn from a <span class="term">universe</span> <code class="inl">U</code>. We will hold at most <code class="inl">n</code> keys at once. The question of this lecture is exactly: <em>how cheaply can the three operations run, as a function of <code class="inl">n</code>, if we are allowed to read the bits of a key?</em></p>
+        <div class="note info"><span class="tag">the formal lens</span>Notice what we are about to give up. A search tree keeps keys in sorted order, so it answers range queries, successor, predecessor, and min/max almost for free. A hash table scatters keys deliberately — it <em>destroys</em> order to gain speed. The right structure is never &ldquo;the fast one&rdquo; in the abstract; it is the one whose retained invariant matches the queries you will ask. Hashing keeps membership and nothing else.</div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>Explain</strong> why a direct-address table gives <code class="inl">O(1)</code> operations yet is unusable for real keys, and how a hash function trades <code class="inl">&#x398;(|U|)</code> space for <code class="inl">&#x398;(m)</code> at the price of collisions.</li>
+          <li><strong>Implement</strong> both collision strategies — separate chaining and open addressing (linear probing, quadratic probing, double hashing) — and state the deletion subtlety that makes open addressing trickier than it looks.</li>
+          <li><strong>Derive</strong>, with indicator variables, that a chained table under simple uniform hashing answers a search in expected <code class="inl">&#x398;(1+&alpha;)</code> time, where <code class="inl">&alpha;=n/m</code> is the load factor.</li>
+          <li><strong>State and use</strong> the open-addressing probe bound <code class="inl">1/(1&minus;&alpha;)</code>, and read off why a table must be resized before it fills.</li>
+          <li><strong>Define</strong> a universal family of hash functions and prove that drawing <code class="inl">h</code> at random from it gives expected <code class="inl">&#x398;(1+&alpha;)</code> access for <em>every</em> input — defeating the adversary by randomizing the function, not hoping about the data.</li>
+          <li><strong>Construct</strong> the FKS perfect-hashing scheme: <code class="inl">O(n)</code> space and <code class="inl">O(1)</code> <em>worst-case</em> lookup for a static set, and justify the quadratic second-level table by the birthday bound.</li>
+          <li><strong>Diagnose</strong> the failure modes: adversarial hash flooding, primary clustering, the open-addressing tombstone bug, mutable keys, and the silent assumption that real hash functions behave uniformly.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>This lecture stands on three earlier ideas in this syllabus. Each links to its page; the probabilistic toolkit of Lecture&nbsp;5 is the load-bearing one.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotic notation — O / &Theta; / &Omega;</a>
+          <a class="chip" href="dsa-01-linear-layouts-and-access-disciplines.html">arrays &amp; linked structures</a>
+          <a class="chip" href="dsa-05-probability-for-algorithms.html">probability — expectation &amp; concentration</a>
+        </div>
+        <p style="margin-top:1em">The single tool you must hold firmly, again, is <strong>linearity of expectation</strong>: for any random variables whatsoever, <code class="inl">E[X&#8321;+&hellip;+X&#x2098;] = E[X&#8321;]+&hellip;+E[X&#x2098;]</code>, with <em>no</em> independence required. An <span class="term">indicator variable</span> is <code class="inl">1</code> when an event happens and <code class="inl">0</code> otherwise, so its expectation is exactly the probability of that event: <code class="inl">E[X]=Pr[X=1]</code>. Every analysis on this page is built from those two sentences and nothing more exotic.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> the idea that almost works</div>
+      <h2>Direct addressing, and the wall it hits</h2>
+      <div class="col">
+        <p>Start with the purest version of the dream. Suppose the universe of keys is small — say every key is an integer in <code class="inl">{0, 1, &hellip;, |U|&minus;1}</code>. Then allocate an array <code class="inl">T</code> of <code class="inl">|U|</code> slots and store the value for key <code class="inl">k</code> at <code class="inl">T[k]</code>. This is the <span class="term">direct-address table</span>. Every operation is a single array access:</p>
+
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">insert</span>(T, k, v): T[k] <span class="tok-op">=</span> v        <span class="tok-com"># O(1)</span>
+<span class="tok-kw">function</span> <span class="tok-fn">search</span>(T, k): <span class="tok-kw">return</span> T[k]          <span class="tok-com"># O(1)</span>
+<span class="tok-kw">function</span> <span class="tok-fn">delete</span>(T, k): T[k] <span class="tok-op">=</span> NIL      <span class="tok-com"># O(1)</span></code></pre>
+
+        <p>Perfect worst-case <code class="inl">O(1)</code>, no probability, no cleverness. So why isn't every dictionary a direct-address table? Because of the size of <code class="inl">U</code>. The cost is <code class="inl">&#x398;(|U|)</code> space whether you store one key or a million, and real key universes are astronomically large. A 64-bit integer key has <code class="inl">|U| = 2&#x2076;&#x2074; &#8776; 1.8&times;10&#xB9;&#x2079;</code> — a table you cannot allocate in this universe, let alone fill. Strings, URLs, and tuples are worse still. We routinely store <code class="inl">n = 10&#x2076;</code> keys drawn from a universe of size <code class="inl">2&#x2076;&#x2074;</code>: the direct-address table would be <code class="inl">99.99999&hellip;%</code> empty.</p>
+
+        <p>Now extract the skeleton of the difficulty. We have a <em>huge</em> address space we cannot afford and a <em>tiny</em> occupancy we actually need. The fix writes itself: choose a table size <code class="inl">m</code> proportional to <code class="inl">n</code>, not to <code class="inl">|U|</code>, and install a function that <em>folds</em> the universe down onto those <code class="inl">m</code> slots. That folding function is the <span class="term">hash function</span> <code class="inl">h : U &rarr; {0, 1, &hellip;, m&minus;1}</code>, and the array of <code class="inl">m</code> slots it feeds is the <span class="term">hash table</span>. Key <code class="inl">k</code> now lives near slot <code class="inl">h(k)</code> instead of at slot <code class="inl">k</code>.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 380" role="img" aria-labelledby="f1t f1d">
+            <title id="f1t">Direct addressing versus hashing: folding a huge universe onto m slots</title>
+            <desc id="f1d">On the left, a large rounded rectangle labelled universe U of size two to the sixty-four contains a few scattered key dots and maps directly to an enormous mostly-empty array — wasteful. On the right, the same universe is folded by a hash function h onto a small array of eight slots; three keys are shown being hashed, and two of them, k two and k three, land in the same slot four, illustrating a collision that the pigeonhole principle makes unavoidable whenever the universe is larger than the table.</desc>
+
+            <text x="24" y="34" class="dg-cap">the universe is huge; the table is small; something must give</text>
+
+            <!-- LEFT: direct addressing -->
+            <text x="40" y="66" class="dg-label sm dg-red-f">direct addressing — &#x398;(|U|) space, almost all empty</text>
+            <rect x="40" y="78" width="150" height="250" rx="14" fill="var(--surface-2)" stroke="var(--bau-ink)" stroke-width="2"/>
+            <text x="115" y="100" text-anchor="middle" class="dg-label sm">universe U</text>
+            <text x="115" y="118" text-anchor="middle" class="dg-label sm">|U| = 2&#x2076;&#x2074;</text>
+            <circle cx="80"  cy="150" r="6" class="dg-blue-f"/>
+            <circle cx="150" cy="185" r="6" class="dg-blue-f"/>
+            <circle cx="95"  cy="240" r="6" class="dg-blue-f"/>
+            <!-- the giant array -->
+            <g font-family="var(--font-mono)">
+              <rect x="240" y="78" width="44" height="250" class="dg-cell"/>
+              <line x1="240" y1="110" x2="284" y2="110" class="dg-thin"/>
+              <line x1="240" y1="142" x2="284" y2="142" class="dg-thin"/>
+              <line x1="240" y1="174" x2="284" y2="174" class="dg-thin"/>
+              <circle cx="262" cy="126" r="6" class="dg-blue-f"/>
+              <line x1="240" y1="206" x2="284" y2="206" class="dg-thin"/>
+              <line x1="240" y1="238" x2="284" y2="238" class="dg-thin"/>
+              <circle cx="262" cy="222" r="6" class="dg-blue-f"/>
+              <line x1="240" y1="270" x2="284" y2="270" class="dg-thin"/>
+              <line x1="240" y1="302" x2="284" y2="302" class="dg-thin"/>
+              <circle cx="262" cy="286" r="6" class="dg-blue-f"/>
+            </g>
+            <path d="M192 188 L236 158" class="dg-stroke dg-dash" marker-end="url(#a1)"/>
+            <text x="262" y="346" text-anchor="middle" class="dg-label sm dg-red-f">2&#x2076;&#x2074; slots</text>
+
+            <!-- RIGHT: hashing -->
+            <text x="470" y="66" class="dg-label sm dg-blue-f">hashing — &#x398;(m) space, m &#8776; n</text>
+            <rect x="470" y="78" width="120" height="250" rx="14" fill="var(--surface-2)" stroke="var(--bau-ink)" stroke-width="2"/>
+            <text x="530" y="100" text-anchor="middle" class="dg-label sm">universe U</text>
+            <circle cx="510" cy="140" r="7" class="dg-blue-f"/><text x="510" y="145" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="#fff">k&#8321;</text>
+            <circle cx="552" cy="200" r="7" class="dg-red-f"/><text x="552" y="205" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="#fff">k&#8322;</text>
+            <circle cx="505" cy="262" r="7" class="dg-red-f"/><text x="505" y="267" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="#fff">k&#8323;</text>
+
+            <!-- the function disc -->
+            <circle cx="680" cy="200" r="34" class="dg-blue-f"/>
+            <text x="680" y="206" text-anchor="middle" font-family="var(--font-mono)" font-size="17" font-weight="700" fill="#fff">h</text>
+
+            <!-- small array of 8 slots -->
+            <g font-family="var(--font-mono)">
+              <rect x="800" y="78"  width="100" height="30" class="dg-cell"/><text x="788" y="98"  text-anchor="end" class="dg-label sm">0</text>
+              <rect x="800" y="108" width="100" height="30" class="dg-cell"/><text x="788" y="128" text-anchor="end" class="dg-label sm">1</text>
+              <rect x="800" y="138" width="100" height="30" class="dg-cell"/><text x="788" y="158" text-anchor="end" class="dg-label sm">2</text>
+              <rect x="800" y="168" width="100" height="30" class="dg-cell"/><text x="788" y="188" text-anchor="end" class="dg-label sm">3</text>
+              <rect x="800" y="198" width="100" height="30" class="dg-fill" stroke="var(--bau-red)" stroke-width="2.5"/><text x="788" y="218" text-anchor="end" class="dg-label sm dg-red-f">4</text>
+              <rect x="800" y="228" width="100" height="30" class="dg-cell"/><text x="788" y="248" text-anchor="end" class="dg-label sm">5</text>
+              <rect x="800" y="258" width="100" height="30" class="dg-fill"/><text x="788" y="278" text-anchor="end" class="dg-label sm">6</text>
+              <rect x="800" y="288" width="100" height="30" class="dg-cell"/><text x="788" y="308" text-anchor="end" class="dg-label sm">7</text>
+            </g>
+            <!-- arrows keys -> h -> slots -->
+            <path d="M517 140 L648 192" class="dg-stroke dg-blue" marker-end="url(#a2)"/>
+            <path d="M559 200 L646 200" class="dg-stroke dg-red" marker-end="url(#a3)"/>
+            <path d="M512 262 L648 210" class="dg-stroke dg-red" marker-end="url(#a3)"/>
+            <path d="M714 195 L798 180" class="dg-stroke dg-blue" marker-end="url(#a2)"/>
+            <path d="M714 205 L798 213" class="dg-stroke dg-red" marker-end="url(#a3)"/>
+            <text x="724" y="262" text-anchor="middle" class="dg-label sm dg-red-f">k&#8322;, k&#8323; &rarr; slot 4: a collision</text>
+
+            <defs>
+              <marker id="a1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--on-surface)"/></marker>
+              <marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+              <marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 1 — folding the universe.</b> Direct addressing pays for a slot per <em>possible</em> key; hashing pays for a slot per <em>stored</em> key and folds the rest on top. The fold is lossy: two distinct keys can share a slot. That shared slot — a <span class="term">collision</span> — is unavoidable, and managing it is the rest of the lecture.</figcaption>
+        </figure>
+
+        <p>Why is a collision unavoidable? The <span class="term">pigeonhole principle</span>: any function from a set of size <code class="inl">&gt; m</code> into <code class="inl">m</code> slots must send two elements to the same slot. Since <code class="inl">|U| &gt; m</code> always (that was the entire point), <em>every</em> hash function has colliding pairs. We cannot escape collisions; we can only arrange that, on the keys we actually store, they are rare and cheap. That reframing — collisions are certain in the universe but should be improbable on the sample — is the bridge from a deterministic worry to a probabilistic guarantee.</p>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> the fold, designed</div>
+      <h2>What makes a hash function good</h2>
+      <div class="col">
+        <p>A hash function has one job: spread keys across the <code class="inl">m</code> slots as evenly as possible, so that no slot is overloaded. The ideal we analyse against is the <span class="term">simple uniform hashing assumption</span> (SUHA): each key is equally likely to hash to any of the <code class="inl">m</code> slots, independently of where the others go. No real, deterministic function achieves this for all inputs — &sect;08 explains why and how we repair it — but SUHA is the clean model in which the cost formulae are derived, exactly as the comparison model was the clean model for sorting's lower bound.</p>
+
+        <p>Two classic constructions, both assuming the key has already been turned into a non-negative integer:</p>
+
+        <h3>The division method</h3>
+        <p><code class="inl">h(k) = k mod m</code>. One instruction, very fast. The catch is the choice of <code class="inl">m</code>. If <code class="inl">m = 2&#x1D56;</code>, then <code class="inl">k mod m</code> is just the low <code class="inl">p</code> bits of <code class="inl">k</code> — the high bits are thrown away, so any structure in the upper bits is invisible to the table and patterned keys collide en masse. The standard remedy is to pick <code class="inl">m</code> to be a <strong>prime</strong> not close to a power of two, so the remainder mixes all the bits of the key.</p>
+
+        <h3>The multiplication method</h3>
+        <p><code class="inl">h(k) = &#8970; m &middot; (k&middot;A mod 1) &#8971;</code> for an irrational-flavoured constant <code class="inl">0 &lt; A &lt; 1</code> (Knuth suggests <code class="inl">A &#8776; 0.618</code>, the golden ratio's fractional part). Multiply, take the fractional part, scale to <code class="inl">m</code>. It is insensitive to the choice of <code class="inl">m</code>, so <code class="inl">m = 2&#x1D56;</code> becomes convenient again, and it mixes the bits far better than raw division.</p>
+
+        <div class="note warn"><span class="tag">a hash function is not a checksum, nor a cipher</span>Three different goals get confused. A <em>hash-table</em> function optimises uniform spread and speed; it need not be secure. A <em>cryptographic</em> hash (SHA-256) optimises irreversibility and collision-resistance against an adversary, and is far too slow for a table's hot path. A <em>checksum</em> (CRC) optimises error detection. Using the wrong one is a real bug — a cryptographic hash in an inner loop is needless cost; a fast table hash exposed to untrusted input is a denial-of-service hole (&sect;12).</div>
+
+        <p>Whatever the method, the table needs one more parameter, and it is the one every cost formula is written in terms of. The <span class="term">load factor</span> is the ratio of stored keys to slots:</p>
+
+        <div class="eq">
+          <span class="lbl">load factor — the single dial that governs cost</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mi>&#x3B1;</mi><mo>=</mo><mfrac><mi>n</mi><mi>m</mi></mfrac>
+            <mo>,</mo><mtext>&#xA0;&#xA0;the average number of keys per slot.</mtext>
+          </math></div>
+        </div>
+
+        <p>Read <code class="inl">&alpha;</code> as &ldquo;how full.&rdquo; At <code class="inl">&alpha; = 0.5</code> the table is half full; at <code class="inl">&alpha; = 1</code> it holds one key per slot on average; chaining can run at <code class="inl">&alpha; &gt; 1</code> but open addressing cannot reach <code class="inl">1</code> at all. The entire performance story of a hash table is a function of <code class="inl">&alpha;</code> — and crucially <strong>not of <code class="inl">n</code> directly</strong>. Hold <code class="inl">&alpha;</code> fixed by growing <code class="inl">m</code> with <code class="inl">n</code> (a doubling resize, exactly the amortised trick of Lecture&nbsp;2) and the per-operation cost stays flat as the table grows without bound. That is where &ldquo;constant&rdquo; comes from.</p>
+
+        <div class="pull">A hash function is an attempt to <span>mechanize randomness</span> — to make a deterministic map behave as if it had scattered the keys by chance.</div>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> collisions, absorbed</div>
+      <h2>Separate chaining and its expected cost</h2>
+      <div class="col">
+        <p>The most direct way to handle collisions is to admit them and store the colliding keys together. In <span class="term">separate chaining</span>, each slot <code class="inl">T[j]</code> holds a linked list (a &ldquo;chain&rdquo;) of all keys that hash to <code class="inl">j</code>. Insert prepends to the list; search scans it; delete unlinks from it.</p>
+
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">insert</span>(T, k, v):
+    j <span class="tok-op">=</span> h(k)
+    prepend (k, v) <span class="tok-kw">to</span> T[j]            <span class="tok-com"># O(1): no scan needed to insert</span>
+
+<span class="tok-kw">function</span> <span class="tok-fn">search</span>(T, k):
+    j <span class="tok-op">=</span> h(k)
+    <span class="tok-kw">for</span> (key, val) <span class="tok-kw">in</span> T[j]:           <span class="tok-com"># walk the chain at slot j</span>
+        <span class="tok-kw">if</span> key <span class="tok-op">==</span> k: <span class="tok-kw">return</span> val
+    <span class="tok-kw">return</span> NOT_FOUND
+
+<span class="tok-kw">function</span> <span class="tok-fn">delete</span>(T, k):
+    j <span class="tok-op">=</span> h(k)
+    unlink the node with key k <span class="tok-kw">from</span> T[j]</code></pre>
+
+        <p>Insert is unconditionally <code class="inl">O(1)</code>. The cost of search and delete is the <em>length of the chain</em> we land on. So the entire question is: <strong>how long is a chain?</strong> This is where the probability earns its place.</p>
+
+        <h3>Unsuccessful search</h3>
+        <p>Search for a key <code class="inl">k</code> that is <em>not</em> in the table. We compute <code class="inl">h(k)</code>, land on some slot, and scan its whole chain to the end before concluding &ldquo;absent.&rdquo; The work is the length of that chain. Under SUHA each of the <code class="inl">n</code> stored keys landed in slot <code class="inl">h(k)</code> with probability <code class="inl">1/m</code> independently, so let <code class="inl">X&#7522;</code> indicate that stored key <code class="inl">i</code> is in that slot:</p>
+
+        <div class="eq">
+          <span class="lbl">expected chain length = expected work of an unsuccessful search</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mi>E</mi><mo>[</mo>
+            <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover>
+            <msub><mi>X</mi><mi>i</mi></msub>
+            <mo>]</mo>
+            <mo>=</mo>
+            <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover>
+            <mi>E</mi><mo>[</mo><msub><mi>X</mi><mi>i</mi></msub><mo>]</mo>
+            <mo>=</mo>
+            <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover>
+            <mfrac><mn>1</mn><mi>m</mi></mfrac>
+            <mo>=</mo>
+            <mfrac><mi>n</mi><mi>m</mi></mfrac>
+            <mo>=</mo>
+            <mi>&#x3B1;</mi>
+          </math></div>
+        </div>
+
+        <p>Including the one hash computation and the one walk to the end, the expected cost is <code class="inl">&#x398;(1 + &alpha;)</code>. Linearity of expectation did all the work — note we never needed the chain lengths to be independent of one another, only the expectation of a sum equalling the sum of expectations.</p>
+
+        <h3>Successful search</h3>
+        <p>A successful search for a key that <em>is</em> present scans, on average, only <em>half</em> its chain — it stops when it finds the key, not at the end. Averaging over the <code class="inl">n</code> stored keys (each equally likely to be the target), and counting one comparison for the key itself plus one for each key inserted into its chain after it, the expected number of comparisons works out to a clean closed form:</p>
+
+        <div class="eq">
+          <span class="lbl">expected comparisons in a successful search</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mn>1</mn><mo>+</mo>
+            <mfrac><mi>&#x3B1;</mi><mn>2</mn></mfrac>
+            <mo>&#x2212;</mo>
+            <mfrac><mi>&#x3B1;</mi><mrow><mn>2</mn><mi>n</mi></mrow></mfrac>
+            <mo>=</mo>
+            <mi>&#x398;</mi><mo>(</mo><mn>1</mn><mo>+</mo><mi>&#x3B1;</mi><mo>)</mo>
+          </math></div>
+        </div>
+
+        <details>
+          <summary>derive the successful-search bound, term by term</summary>
+          <div class="body">
+            <p>Number the keys <code class="inl">k&#8321;, &hellip;, k&#x2099;</code> in the order they were inserted, and insert at the head of each chain. The number of elements examined when searching for <code class="inl">k&#7522;</code> equals <code class="inl">1</code> (for <code class="inl">k&#7522;</code> itself) plus the number of keys that were inserted <em>after</em> <code class="inl">k&#7522;</code> into the same chain — because head-insertion puts later arrivals in front of <code class="inl">k&#7522;</code>. Let <code class="inl">X&#7522;&#11388;</code> indicate <code class="inl">h(k&#7522;)=h(k&#11388;)</code>, with <code class="inl">E[X&#7522;&#11388;]=1/m</code> under SUHA. Then the cost of searching for <code class="inl">k&#7522;</code> is <code class="inl">1 + &#x3A3;&#11388;&#62;&#7522; X&#7522;&#11388;</code>, with expectation <code class="inl">1 + (n&minus;i)/m</code>. Average over <code class="inl">i = 1 &hellip; n</code>:</p>
+            <div class="eq" style="background:var(--surface-2)">
+              <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+                <mfrac><mn>1</mn><mi>n</mi></mfrac>
+                <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover>
+                <mfenced open="(" close=")"><mrow><mn>1</mn><mo>+</mo><mfrac><mrow><mi>n</mi><mo>&#x2212;</mo><mi>i</mi></mrow><mi>m</mi></mfrac></mrow></mfenced>
+                <mo>=</mo>
+                <mn>1</mn><mo>+</mo>
+                <mfrac><mn>1</mn><mrow><mi>n</mi><mi>m</mi></mrow></mfrac>
+                <mfenced open="(" close=")"><mrow>
+                  <msup><mi>n</mi><mn>2</mn></msup><mo>&#x2212;</mo><mfrac><mrow><mi>n</mi><mo>(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></mfrac>
+                </mrow></mfenced>
+                <mo>=</mo>
+                <mn>1</mn><mo>+</mo><mfrac><mrow><mi>n</mi><mo>&#x2212;</mo><mn>1</mn></mrow><mrow><mn>2</mn><mi>m</mi></mrow></mfrac>
+                <mo>=</mo>
+                <mn>1</mn><mo>+</mo><mfrac><mi>&#x3B1;</mi><mn>2</mn></mfrac><mo>&#x2212;</mo><mfrac><mi>&#x3B1;</mi><mrow><mn>2</mn><mi>n</mi></mrow></mfrac>
+              </math></div>
+            </div>
+            <p>The middle step uses <code class="inl">&#x3A3;(n&minus;i) = n(n&minus;1)/2</code>. The result is <code class="inl">&#x398;(1+&alpha;)</code> — the same order as the unsuccessful search, with a constant smaller by about half.</p>
+          </div>
+        </details>
+
+        <p>The headline now follows. <strong>If we keep <code class="inl">&alpha; = O(1)</code></strong> — that is, keep the table size proportional to the number of keys — then every dictionary operation runs in expected <code class="inl">&#x398;(1)</code> time, independent of <code class="inl">n</code>. At <code class="inl">&alpha; = 1</code>, a successful search touches <code class="inl">&#8776; 1.5</code> entries and an unsuccessful one <code class="inl">&#8776; 2</code>. Those are the numbers from the hook, now earned.</p>
+
+        <div class="stats">
+          <div class="stat lead"><div class="big">1 + &alpha;</div><span class="lab">expected probes — the master formula for chaining, in the load factor alone</span></div>
+          <div class="stat"><div class="big">&#8776;1.5</div><span class="lab">successful search at &alpha; = 1, any n</span></div>
+          <div class="stat"><div class="big">&#8776;2.0</div><span class="lab">unsuccessful search at &alpha; = 1, any n</span></div>
+          <div class="stat"><div class="big">&#x398;(n)</div><span class="lab">the worst case that never fully disappears</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> a fully worked table</div>
+      <h2>Trace: building and querying a chained table</h2>
+      <div class="col">
+        <p>Let me make the abstraction concrete with numbers you can verify by hand. Take <code class="inl">m = 8</code> slots and the division hash <code class="inl">h(k) = k mod 8</code>. Insert this sequence of integer keys, in order, prepending to each chain:</p>
+        <div class="cells" aria-hidden="true">
+          <span class="c">21</span><span class="c">9</span><span class="c">14</span><span class="c">17</span><span class="c">28</span><span class="c">33</span><span class="c">5</span>
+        </div>
+        <p>Compute each hash: <code class="inl">21 mod 8 = 5</code>, <code class="inl">9 mod 8 = 1</code>, <code class="inl">14 mod 8 = 6</code>, <code class="inl">17 mod 8 = 1</code> (collides with 9), <code class="inl">28 mod 8 = 4</code>, <code class="inl">33 mod 8 = 1</code> (collides again), <code class="inl">5 mod 8 = 5</code> (collides with 21). With <code class="inl">n = 7</code> keys in <code class="inl">m = 8</code> slots the load factor is <code class="inl">&alpha; = 7/8 = 0.875</code>. Here is the resulting table — slot&nbsp;1 carries a chain of three (head-inserted, so newest first), slot&nbsp;5 a chain of two:</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 400" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">A chained hash table of eight slots after inserting seven keys</title>
+            <desc id="f2d">An array of eight slots indexed zero to seven. Slot one holds a chain of three nodes in head-insertion order: thirty-three, then seventeen, then nine. Slot four holds twenty-eight. Slot five holds a chain of two: five then twenty-one. Slot six holds fourteen. Slots zero, two, three, and seven are empty. An unsuccessful search for twenty-five hashes to slot one and walks all three nodes; a successful search for seventeen hashes to slot one and stops at the second node after two comparisons.</desc>
+
+            <text x="24" y="32" class="dg-cap">m = 8,  h(k) = k mod 8,  &#x3B1; = 7/8</text>
+
+            <!-- slot column -->
+            <g font-family="var(--font-mono)">
+              <rect x="60" y="56"  width="70" height="36" class="dg-cell"/><text x="95" y="80"  text-anchor="middle" class="dg-label sm">&#8709;</text><text x="44" y="80"  text-anchor="end" class="dg-label sm">0</text>
+              <rect x="60" y="96"  width="70" height="36" class="dg-fill" stroke="var(--bau-red)" stroke-width="2.5"/><text x="95" y="120" text-anchor="middle" class="dg-val">&#9679;</text><text x="44" y="120" text-anchor="end" class="dg-label sm dg-red-f">1</text>
+              <rect x="60" y="136" width="70" height="36" class="dg-cell"/><text x="95" y="160" text-anchor="middle" class="dg-label sm">&#8709;</text><text x="44" y="160" text-anchor="end" class="dg-label sm">2</text>
+              <rect x="60" y="176" width="70" height="36" class="dg-cell"/><text x="95" y="200" text-anchor="middle" class="dg-label sm">&#8709;</text><text x="44" y="200" text-anchor="end" class="dg-label sm">3</text>
+              <rect x="60" y="216" width="70" height="36" class="dg-fill"/><text x="95" y="240" text-anchor="middle" class="dg-val">&#9679;</text><text x="44" y="240" text-anchor="end" class="dg-label sm">4</text>
+              <rect x="60" y="256" width="70" height="36" class="dg-fill"/><text x="95" y="280" text-anchor="middle" class="dg-val">&#9679;</text><text x="44" y="280" text-anchor="end" class="dg-label sm">5</text>
+              <rect x="60" y="296" width="70" height="36" class="dg-fill"/><text x="95" y="320" text-anchor="middle" class="dg-val">&#9679;</text><text x="44" y="320" text-anchor="end" class="dg-label sm">6</text>
+              <rect x="60" y="336" width="70" height="36" class="dg-cell"/><text x="95" y="360" text-anchor="middle" class="dg-label sm">&#8709;</text><text x="44" y="360" text-anchor="end" class="dg-label sm">7</text>
+            </g>
+
+            <!-- chain at slot 1: 33 -> 17 -> 9 -->
+            <g font-family="var(--font-mono)">
+              <line x1="130" y1="114" x2="166" y2="114" class="dg-stroke dg-blue" marker-end="url(#ac)"/>
+              <rect x="166" y="96" width="58" height="36" class="dg-cell" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="195" y="120" text-anchor="middle" class="dg-val">33</text>
+              <line x1="224" y1="114" x2="260" y2="114" class="dg-stroke dg-blue" marker-end="url(#ac)"/>
+              <rect x="260" y="96" width="58" height="36" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2.5"/><text x="289" y="120" text-anchor="middle" class="dg-val">17</text>
+              <line x1="318" y1="114" x2="354" y2="114" class="dg-stroke dg-blue" marker-end="url(#ac)"/>
+              <rect x="354" y="96" width="58" height="36" class="dg-cell" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="383" y="120" text-anchor="middle" class="dg-val">9</text>
+              <text x="412" y="120" class="dg-label sm">&nbsp;&rarr; &#8709;</text>
+            </g>
+            <!-- slot 4 -->
+            <g font-family="var(--font-mono)">
+              <line x1="130" y1="234" x2="166" y2="234" class="dg-stroke dg-blue" marker-end="url(#ac)"/>
+              <rect x="166" y="216" width="58" height="36" class="dg-cell" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="195" y="240" text-anchor="middle" class="dg-val">28</text>
+              <text x="224" y="240" class="dg-label sm">&nbsp;&rarr; &#8709;</text>
+            </g>
+            <!-- slot 5: 5 -> 21 -->
+            <g font-family="var(--font-mono)">
+              <line x1="130" y1="274" x2="166" y2="274" class="dg-stroke dg-blue" marker-end="url(#ac)"/>
+              <rect x="166" y="256" width="58" height="36" class="dg-cell" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="195" y="280" text-anchor="middle" class="dg-val">5</text>
+              <line x1="224" y1="274" x2="260" y2="274" class="dg-stroke dg-blue" marker-end="url(#ac)"/>
+              <rect x="260" y="256" width="58" height="36" class="dg-cell" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="289" y="280" text-anchor="middle" class="dg-val">21</text>
+              <text x="318" y="280" class="dg-label sm">&nbsp;&rarr; &#8709;</text>
+            </g>
+            <!-- slot 6 -->
+            <g font-family="var(--font-mono)">
+              <line x1="130" y1="314" x2="166" y2="314" class="dg-stroke dg-blue" marker-end="url(#ac)"/>
+              <rect x="166" y="296" width="58" height="36" class="dg-cell" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="195" y="320" text-anchor="middle" class="dg-val">14</text>
+              <text x="224" y="320" class="dg-label sm">&nbsp;&rarr; &#8709;</text>
+            </g>
+
+            <!-- query callouts -->
+            <g transform="translate(500,84)">
+              <rect x="0" y="0" width="404" height="120" rx="10" fill="var(--surface-2)" stroke="var(--bau-red)" stroke-width="2"/>
+              <text x="16" y="28" class="dg-label" style="fill:var(--bau-red)">search 25  &rarr;  unsuccessful</text>
+              <text x="16" y="52" class="dg-label sm">25 mod 8 = 1.  Walk slot 1: 33? no, 17? no, 9? no.</text>
+              <text x="16" y="74" class="dg-label sm">Reach end of chain &rArr; ABSENT.  3 comparisons.</text>
+              <text x="16" y="100" class="dg-label sm">expected for &#x3B1;=0.875 was 1+&#x3B1; &#8776; 1.9; this slot ran long.</text>
+            </g>
+            <g transform="translate(500,224)">
+              <rect x="0" y="0" width="404" height="120" rx="10" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
+              <text x="16" y="28" class="dg-label" style="fill:var(--bau-blue)">search 17  &rarr;  successful</text>
+              <text x="16" y="52" class="dg-label sm">17 mod 8 = 1.  Walk slot 1: 33? no, 17? YES.</text>
+              <text x="16" y="74" class="dg-label sm">Stop on match.  2 comparisons (half the chain).</text>
+              <text x="16" y="100" class="dg-label sm">search 40 &rarr; 40 mod 8 = 0, slot empty: 0 comparisons.</text>
+            </g>
+
+            <defs>
+              <marker id="ac" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 2 — the chained table, with two queries traced.</b> The structure is literally an array of linked lists. A query costs one hash plus a walk of one chain. Notice the variance the average hides: slot&nbsp;1 holds three keys while four slots hold none. The <em>expectation</em> is <code class="inl">1+&alpha; &#8776; 1.9</code>, but individual slots run long — the seed of the &ldquo;tail&rdquo; we bound in &sect;10.</figcaption>
+        </figure>
+
+        <p>Three searches, three lessons. <strong>Search 25</strong> (absent) hashes to the busiest slot and pays three comparisons — above the <code class="inl">&#8776;1.9</code> expectation, because expectation is an average over slots and this is an unlucky one. <strong>Search 17</strong> (present) stops on the match after two comparisons, illustrating the &ldquo;half the chain&rdquo; saving. <strong>Search 40</strong> (absent) hashes to an empty slot and returns after zero comparisons. The variance you see by eye — three keys here, none there — is exactly why an expectation, however reassuring, is not the end of the story.</p>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> store inside the table itself</div>
+      <h2>Open addressing &amp; the probe sequence</h2>
+      <div class="col">
+        <p>Chaining stores collisions in lists outside the table. <span class="term">Open addressing</span> takes the opposite vow: every key lives <em>in the table itself</em>, one key per slot, no external lists, no pointers. When a key's home slot is taken, we follow a deterministic <span class="term">probe sequence</span> of alternative slots until we find an empty one. The hash function gains a second argument — the probe number — and produces, for each key, a sequence <code class="inl">h(k,0), h(k,1), &hellip;, h(k,m&minus;1)</code> that ideally visits every slot.</p>
+
+        <p>The simplest rule is <span class="term">linear probing</span>: on a miss, try the next slot, wrapping around.</p>
+
+        <div class="eq">
+          <span class="lbl">linear probing — try home, then home+1, home+2, &hellip;</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mi>h</mi><mo>(</mo><mi>k</mi><mo>,</mo><mi>i</mi><mo>)</mo>
+            <mo>=</mo>
+            <mo>(</mo><mi>h'</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>+</mo><mi>i</mi><mo>)</mo>
+            <mspace width="0.4em"/><mi>mod</mi><mspace width="0.4em"/><mi>m</mi>
+          </math></div>
+        </div>
+
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">insert</span>(T, k, v):
+    <span class="tok-kw">for</span> i <span class="tok-kw">in</span> 0 .. m<span class="tok-op">-</span>1:
+        j <span class="tok-op">=</span> (h(k) <span class="tok-op">+</span> i) mod m         <span class="tok-com"># the probe sequence</span>
+        <span class="tok-kw">if</span> T[j] <span class="tok-kw">is</span> EMPTY <span class="tok-kw">or</span> T[j] <span class="tok-kw">is</span> TOMBSTONE:
+            T[j] <span class="tok-op">=</span> (k, v); <span class="tok-kw">return</span>
+    error <span class="tok-str">"table full — must resize"</span>
+
+<span class="tok-kw">function</span> <span class="tok-fn">search</span>(T, k):
+    <span class="tok-kw">for</span> i <span class="tok-kw">in</span> 0 .. m<span class="tok-op">-</span>1:
+        j <span class="tok-op">=</span> (h(k) <span class="tok-op">+</span> i) mod m
+        <span class="tok-kw">if</span> T[j] <span class="tok-kw">is</span> EMPTY: <span class="tok-kw">return</span> NOT_FOUND   <span class="tok-com"># a true gap ends the search</span>
+        <span class="tok-kw">if</span> T[j] <span class="tok-kw">is</span> <span class="tok-kw">not</span> TOMBSTONE <span class="tok-kw">and</span> T[j].key <span class="tok-op">==</span> k:
+            <span class="tok-kw">return</span> T[j].val
+    <span class="tok-kw">return</span> NOT_FOUND</code></pre>
+
+        <p>Let me run it on the <em>same seven keys</em> as &sect;06, so you can compare the two strategies on identical input. With <code class="inl">h(k) = k mod 8</code> and linear probing: 21&rarr;5, 9&rarr;1, 14&rarr;6, 17 wants 1 (taken) &rarr; probes to 2, 28&rarr;4, 33 wants 1 (taken), 2 (taken) &rarr; probes to 3, 5 wants 5 (taken), 6 (taken) &rarr; probes to 7.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 300" role="img" aria-labelledby="f3t f3d">
+            <title id="f3t">The same seven keys placed by linear probing, forming one long cluster</title>
+            <desc id="f3d">A single array of eight slots. Slot zero is empty. Slots one through seven are all occupied in this order: nine, seventeen, thirty-three, twenty-eight, twenty-one, fourteen, five. Keys seventeen, thirty-three, and five were displaced from their home slots by linear probing, and the occupied run from slot one to slot seven is a single primary cluster. Inserting thirty-three took three probes and inserting five took three probes because each had to step across the growing cluster.</desc>
+
+            <text x="24" y="32" class="dg-cap">open addressing, linear probing — same keys, one array, no lists</text>
+
+            <g font-family="var(--font-mono)">
+              <rect x="60"  y="92" width="100" height="48" class="dg-cell"/><text x="110" y="122" text-anchor="middle" class="dg-label sm">&#8709;</text><text x="110" y="160" text-anchor="middle" class="dg-label sm">0</text>
+              <rect x="160" y="92" width="100" height="48" class="dg-fill"/><text x="210" y="122" text-anchor="middle" class="dg-val">9</text><text x="210" y="160" text-anchor="middle" class="dg-label sm">1</text>
+              <rect x="260" y="92" width="100" height="48" class="dg-fill"/><text x="310" y="122" text-anchor="middle" class="dg-val">17</text><text x="310" y="160" text-anchor="middle" class="dg-label sm">2</text>
+              <rect x="360" y="92" width="100" height="48" class="dg-fill"/><text x="410" y="122" text-anchor="middle" class="dg-val">33</text><text x="410" y="160" text-anchor="middle" class="dg-label sm">3</text>
+              <rect x="460" y="92" width="100" height="48" class="dg-fill"/><text x="510" y="122" text-anchor="middle" class="dg-val">28</text><text x="510" y="160" text-anchor="middle" class="dg-label sm">4</text>
+              <rect x="560" y="92" width="100" height="48" class="dg-fill"/><text x="610" y="122" text-anchor="middle" class="dg-val">21</text><text x="610" y="160" text-anchor="middle" class="dg-label sm">5</text>
+              <rect x="660" y="92" width="100" height="48" class="dg-fill"/><text x="710" y="122" text-anchor="middle" class="dg-val">14</text><text x="710" y="160" text-anchor="middle" class="dg-label sm">6</text>
+              <rect x="760" y="92" width="100" height="48" class="dg-fill"/><text x="810" y="122" text-anchor="middle" class="dg-val">5</text><text x="810" y="160" text-anchor="middle" class="dg-label sm">7</text>
+            </g>
+
+            <!-- cluster bracket -->
+            <path d="M160 84 L860 84" class="dg-stroke dg-red"/>
+            <path d="M160 84 L160 92" class="dg-stroke dg-red"/>
+            <path d="M860 84 L860 92" class="dg-stroke dg-red"/>
+            <text x="510" y="74" text-anchor="middle" class="dg-label sm dg-red-f">one primary cluster — slots 1&ndash;7 run together</text>
+
+            <!-- probe arc for 33: home 1 -> 2 -> 3 -->
+            <path d="M210 140 q50 40 100 0" class="dg-thin dg-blue" marker-end="url(#ap)"/>
+            <path d="M310 140 q50 40 100 0" class="dg-thin dg-blue" marker-end="url(#ap)"/>
+            <text x="360" y="206" text-anchor="middle" class="dg-label sm dg-blue-f">insert 33: home 1 &rarr; 2 &rarr; 3   (3 probes)</text>
+            <!-- probe arc for 5: home 5 -> 6 -> 7 -->
+            <path d="M610 140 q50 48 100 0" class="dg-thin dg-red" marker-end="url(#ap2)"/>
+            <path d="M710 140 q50 48 100 0" class="dg-thin dg-red" marker-end="url(#ap2)"/>
+            <text x="710" y="220" text-anchor="middle" class="dg-label sm dg-red-f">insert 5: home 5 &rarr; 6 &rarr; 7   (3 probes)</text>
+
+            <text x="60" y="268" class="dg-label sm">At &#x3B1;=7/8 the run is nearly the whole table: the next insert may probe many slots. This is <tspan class="dg-red-f">primary clustering</tspan>.</text>
+
+            <defs>
+              <marker id="ap"  markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+              <marker id="ap2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 3 — linear probing and primary clustering.</b> The very same keys, now packed into the array with no external storage. Displaced keys pile into a contiguous run; once a run forms, it grows faster, because more home slots feed into it. That self-reinforcing run is <span class="term">primary clustering</span> — linear probing's characteristic disease.</figcaption>
+        </figure>
+
+        <h3>The cost, and why <code class="inl">&alpha;</code> must stay below 1</h3>
+        <p>Under the <span class="term">uniform hashing assumption</span> (the probe sequence is a uniformly random permutation of the slots), the expected number of probes in an <em>unsuccessful</em> search has a famous bound:</p>
+
+        <div class="eq">
+          <span class="lbl">expected probes, unsuccessful search, open addressing</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mi>E</mi><mo>[</mo><mtext>probes</mtext><mo>]</mo>
+            <mo>&#x2264;</mo>
+            <mfrac><mn>1</mn><mrow><mn>1</mn><mo>&#x2212;</mo><mi>&#x3B1;</mi></mrow></mfrac>
+          </math></div>
+        </div>
+
+        <details>
+          <summary>where 1/(1&minus;&alpha;) comes from — a geometric series</summary>
+          <div class="body">
+            <p>Every search makes a first probe. It needs a second only if the first slot was occupied, which happens with probability <code class="inl">n/m = &alpha;</code>. It needs a third only if the first two were occupied: probability <code class="inl">(n/m)&middot;((n&minus;1)/(m&minus;1)) &#8804; &alpha;&#xB2;</code>. In general the probability of needing at least <code class="inl">i</code> probes is at most <code class="inl">&alpha;&#x2071;&#x207B;&#xB9;</code>. Summing the tail gives the expected count:</p>
+            <div class="eq" style="background:var(--surface-2)">
+              <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+                <mi>E</mi><mo>[</mo><mtext>probes</mtext><mo>]</mo>
+                <mo>=</mo>
+                <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>&#x221E;</mi></munderover>
+                <mi>Pr</mi><mo>[</mo><mtext>&#x2265; i probes</mtext><mo>]</mo>
+                <mo>&#x2264;</mo>
+                <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mi>&#x221E;</mi></munderover>
+                <msup><mi>&#x3B1;</mi><mi>i</mi></msup>
+                <mo>=</mo>
+                <mfrac><mn>1</mn><mrow><mn>1</mn><mo>&#x2212;</mo><mi>&#x3B1;</mi></mrow></mfrac>
+              </math></div>
+            </div>
+            <p>The successful-search bound is gentler, <code class="inl">(1/&alpha;)&middot;ln(1/(1&minus;&alpha;))</code>, but it diverges at <code class="inl">&alpha;&rarr;1</code> just the same.</p>
+          </div>
+        </details>
+
+        <p>Read the formula as a warning. At <code class="inl">&alpha; = 0.5</code> an unsuccessful search costs <code class="inl">&#8804; 2</code> probes; at <code class="inl">&alpha; = 0.9</code> it costs <code class="inl">&#8804; 10</code>; at <code class="inl">&alpha; = 0.99</code> it costs <code class="inl">&#8804; 100</code>. The curve is a wall at <code class="inl">&alpha; = 1</code>, where the table is exactly full and a search may probe every slot. So open-addressed tables must be <strong>resized before they fill</strong> — typically kept below <code class="inl">&alpha; &#8776; 0.7</code>. Linear probing is worse than this idealised bound because real probe sequences are <em>not</em> independent permutations — clustering correlates them. The cures are better probe sequences:</p>
+        <ul>
+          <li><strong>Quadratic probing:</strong> <code class="inl">h(k,i) = (h'(k) + c&#8321;i + c&#8322;i&#xB2;) mod m</code>. The jumps grow, so displaced keys do not pile into one contiguous run — this kills <em>primary</em> clustering. But two keys with the same home slot still share an entire probe sequence (<em>secondary</em> clustering).</li>
+          <li><strong>Double hashing:</strong> <code class="inl">h(k,i) = (h&#8321;(k) + i&middot;h&#8322;(k)) mod m</code>, where a <em>second</em> hash function sets the step size. Now even keys with the same home slot probe differently, because <code class="inl">h&#8322;</code> distinguishes them. This is the closest practical approach to the uniform-hashing ideal.</li>
+        </ul>
+
+        <div class="note warn"><span class="tag">the tombstone — open addressing's sharpest edge</span>You cannot delete by simply emptying a slot. In &sect;06's probed table, <code class="inl">33</code> sits at slot&nbsp;3 only because it walked <em>through</em> slots&nbsp;1 and&nbsp;2. If you delete <code class="inl">17</code> at slot&nbsp;2 by marking it EMPTY, a later search for <code class="inl">33</code> probes slot&nbsp;1 (miss), slot&nbsp;2 (EMPTY &rarr; <em>stop, wrongly conclude absent</em>) and never reaches slot&nbsp;3. The fix is a <span class="term">tombstone</span>: a special DELETED marker that search treats as &ldquo;keep going&rdquo; but insert treats as &ldquo;reusable.&rdquo; Tombstones accumulate and slowly degrade performance, which is a second reason open-addressed tables need periodic rebuilds.</div>
+        <div class="cells" aria-label="A probe chain broken by deleting slot 2 as empty versus a tombstone">
+          <span class="c">9</span><span class="c tomb">&#8224;</span><span class="c fill">33</span><span class="sep">&larr; search 33 must cross the tombstone at slot 2 to reach slot 3</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> defeat the adversary</div>
+      <h2>Universal hashing: randomize the function, not the data</h2>
+      <div class="col">
+        <p>Now the uncomfortable truth SUHA was hiding. A real hash function is <em>fixed and deterministic</em> — you write it down, you ship it. The pigeonhole principle (&sect;03) guarantees that for any fixed <code class="inl">h</code>, some block of <code class="inl">&#8968;|U|/m&#8969; &#8805; n</code> keys all map to the same slot. An adversary who can read your code — a user submitting form fields, JSON keys, HTTP headers — can <em>choose</em> exactly those keys, collapse every one into a single chain, and turn your expected-<code class="inl">O(1)</code> table into a <code class="inl">&#x398;(n)</code> linked list. This is not hypothetical; it is the <span class="term">hash-flooding</span> denial-of-service attack, and it has taken down real web frameworks (&sect;12).</p>
+
+        <p>Here is the resolution, and it is the same move that saved quicksort in Lecture&nbsp;6. <strong>The flaw is not in any one function; it is in fixing the function in advance.</strong> So do not fix it. Keep a whole <em>family</em> of hash functions and, at table-creation time, pick one <em>at random</em>. The adversary chooses keys without knowing which <code class="inl">h</code> you will draw; your guarantee becomes an expectation over <em>your</em> coin flips, holding for <em>every</em> input. We have moved the randomness out of an unjustified assumption about the data and into an honest algorithmic choice we control.</p>
+
+        <p>For this to work the family must be good in a precise sense:</p>
+
+        <div class="eq">
+          <span class="lbl">universal family — collisions are rare for every distinct pair</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <munder><mi>Pr</mi><mrow><mi>h</mi><mo>&#x2208;</mo><mi>H</mi></mrow></munder>
+            <mo>[</mo><mi>h</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mi>h</mi><mo>(</mo><mi>y</mi><mo>)</mo><mo>]</mo>
+            <mo>&#x2264;</mo>
+            <mfrac><mn>1</mn><mi>m</mi></mfrac>
+            <mspace width="1em"/>
+            <mtext>for every&#xA0;</mtext><mi>x</mi><mo>&#x2260;</mo><mi>y</mi>
+          </math></div>
+        </div>
+
+        <p>In words: pick <code class="inl">h</code> at random from <code class="inl">H</code>; then any two <em>fixed, distinct</em> keys collide with probability at most <code class="inl">1/m</code> — exactly the collision rate of an idealised random function. A family with this property is called <span class="term">universal</span>. The payoff theorem needs nothing more:</p>
+
+        <div class="band flush" style="margin:1.4em 0">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:.4em"><strong>Theorem (universal hashing gives expected <code class="inl">&#x398;(1+&alpha;)</code> for any input).</strong> Fix any set of <code class="inl">n</code> keys and any key <code class="inl">x</code>. Draw <code class="inl">h</code> from a universal family <code class="inl">H</code> into <code class="inl">m</code> slots. Then the expected number of keys colliding with <code class="inl">x</code> is at most <code class="inl">&alpha; = n/m</code>.</p>
+          <p style="margin-bottom:0"><strong>Proof.</strong> For each stored key <code class="inl">y &#8800; x</code> let <code class="inl">C&#11388; = 1</code> if <code class="inl">h(y) = h(x)</code>. By universality <code class="inl">E[C&#11388;] = Pr[h(y)=h(x)] &#8804; 1/m</code>. By linearity, the expected slot population around <code class="inl">x</code> is <code class="inl">E[&#x3A3;&#11388; C&#11388;] = &#x3A3;&#11388; E[C&#11388;] &#8804; n/m = &alpha;</code>. There is no SUHA here and no assumption about the keys — the only randomness is our own choice of <code class="inl">h</code>. <span style="color:var(--bau-red)">&#9632;</span></p>
+        </div>
+
+        <p>That is the whole game. The same <code class="inl">1+&alpha;</code> bound as &sect;05, but now it holds <em>against an adversary who picked the worst possible keys</em>, because they could not see our coin. A concrete universal family — Carter and Wegman's, 1979 — costs only a multiply and two mods:</p>
+
+        <div class="eq">
+          <span class="lbl">Carter&ndash;Wegman universal family</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <msub><mi>h</mi><mrow><mi>a</mi><mo>,</mo><mi>b</mi></mrow></msub>
+            <mo>(</mo><mi>k</mi><mo>)</mo>
+            <mo>=</mo>
+            <mrow><mo>(</mo><mo>(</mo><mi>a</mi><mi>k</mi><mo>+</mo><mi>b</mi><mo>)</mo>
+            <mspace width="0.3em"/><mi>mod</mi><mspace width="0.3em"/><mi>p</mi><mo>)</mo>
+            <mspace width="0.3em"/><mi>mod</mi><mspace width="0.3em"/><mi>m</mi></mrow>
+          </math></div>
+        </div>
+
+        <p>Choose a prime <code class="inl">p &gt; |U|</code> once. Draw <code class="inl">a</code> uniformly from <code class="inl">{1, &hellip;, p&minus;1}</code> and <code class="inl">b</code> from <code class="inl">{0, &hellip;, p&minus;1}</code> at table creation; those two random numbers <em>are</em> your chosen <code class="inl">h</code>. One can prove this family is universal by a short argument in modular arithmetic: for fixed <code class="inl">x &#8800; y</code>, the pair <code class="inl">(ax+b, ay+b) mod p</code> ranges over all distinct ordered pairs as <code class="inl">(a,b)</code> varies, and at most <code class="inl">(p&minus;1)/m</code> of the <code class="inl">p&minus;1</code> nonzero differences survive the final <code class="inl">mod m</code> as a collision — at most <code class="inl">1/m</code>. Cheap to compute, provably safe on every input. This is what production hash tables actually do (often with a random seed chosen at process start) to shut the flooding attack.</p>
+
+        <div class="note info"><span class="tag">the through-line</span>Lecture&nbsp;6 converted &ldquo;quicksort is slow on <em>some inputs</em>&rdquo; into &ldquo;quicksort is slow on <em>some coin flips</em>, with vanishing probability,&rdquo; by randomizing the pivot. Universal hashing performs the identical conversion for the dictionary: &ldquo;this hash is bad on <em>some key sets</em>&rdquo; becomes &ldquo;our random hash is bad with <em>vanishing probability</em>, for whatever key set you bring.&rdquo; Randomization is not a hack here — it is the formal instrument that makes a worst-case-fragile structure robust.</div>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> when the set never changes</div>
+      <h2>Perfect hashing: O(1) <em>worst case</em>, not just expected</h2>
+      <div class="col">
+        <p>Everything so far has bought an <em>expected</em> constant with a lurking <code class="inl">&#x398;(n)</code> worst case. Can we ever get a <strong>worst-case</strong> <code class="inl">O(1)</code> guarantee — no probability in the promise the caller hears? Yes, for the important special case of a <span class="term">static</span> set: the keys are fixed and known in advance (think reserved words of a language, a routing table, a content-addressed index). For static sets, <span class="term">perfect hashing</span> achieves <code class="inl">O(1)</code> worst-case lookup using only <code class="inl">O(n)</code> space. The construction is the FKS scheme (Fredman, Koml&oacute;s, Szemer&eacute;di, 1984), and it is a beautiful two-level idea.</p>
+
+        <p>A perfect hash function for a set has <em>no collisions at all</em> on that set. The trouble is that a single collision-free table needs to be large: hashing <code class="inl">n</code> keys with no collision into one table generally requires size <code class="inl">&#8776; n&#xB2;</code> (the birthday bound, below) — far too much space. FKS gets the best of both: a first level of size <code class="inl">n</code> to keep space linear, and a <em>second</em> level of tiny squared tables to kill collisions exactly.</p>
+
+        <ol>
+          <li><strong>Level 1.</strong> Hash all <code class="inl">n</code> keys into a table of size <code class="inl">m = n</code> with a universal <code class="inl">h</code>. Collisions happen; let <code class="inl">n&#11388;</code> be the number of keys landing in slot <code class="inl">j</code>.</li>
+          <li><strong>Level 2.</strong> For each slot <code class="inl">j</code>, build a <em>secondary</em> hash table of size <code class="inl">n&#11388;&#xB2;</code> with its own universal hash <code class="inl">h&#11388;</code>, chosen so it is collision-free on those <code class="inl">n&#11388;</code> keys.</li>
+        </ol>
+
+        <p>A lookup is now exactly two hash evaluations — slot <code class="inl">j = h(k)</code>, then position <code class="inl">h&#11388;(k)</code> inside the collision-free secondary table — and at most one key comparison. <strong>Two probes, worst case, always.</strong></p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 380" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">The FKS two-level perfect hash structure</title>
+            <desc id="f4d">A first-level table of size n with universal hash h. Slot two contains three keys and points to a second-level table of size three squared equals nine, in which the three keys occupy distinct cells with no collisions. Slot five contains two keys and points to a second-level table of size two squared equals four. Empty first-level slots store nothing. A lookup evaluates h to pick the slot, then the slot's own hash to pick a collision-free cell — two probes in the worst case.</desc>
+
+            <text x="24" y="32" class="dg-cap">FKS: level-1 size n, level-2 size n&#11388;&#xB2; and collision-free</text>
+
+            <!-- level 1 -->
+            <text x="60" y="64" class="dg-label sm">level 1 — size m = n, universal h</text>
+            <g font-family="var(--font-mono)">
+              <rect x="60" y="76"  width="120" height="34" class="dg-cell"/><text x="120" y="98"  text-anchor="middle" class="dg-label sm">0 &middot; &#8709;</text>
+              <rect x="60" y="110" width="120" height="34" class="dg-cell"/><text x="120" y="132" text-anchor="middle" class="dg-label sm">1 &middot; &#8709;</text>
+              <rect x="60" y="144" width="120" height="34" class="dg-fill" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="120" y="166" text-anchor="middle" class="dg-val">2 &middot; n&#11388;=3</text>
+              <rect x="60" y="178" width="120" height="34" class="dg-cell"/><text x="120" y="200" text-anchor="middle" class="dg-label sm">3 &middot; &#8709;</text>
+              <rect x="60" y="212" width="120" height="34" class="dg-cell"/><text x="120" y="234" text-anchor="middle" class="dg-label sm">4 &middot; &#8709;</text>
+              <rect x="60" y="246" width="120" height="34" class="dg-fill" stroke="var(--bau-red)" stroke-width="2.5"/><text x="120" y="268" text-anchor="middle" class="dg-val">5 &middot; n&#11388;=2</text>
+              <rect x="60" y="280" width="120" height="34" class="dg-cell"/><text x="120" y="302" text-anchor="middle" class="dg-label sm">6 &middot; &#8709;</text>
+            </g>
+
+            <!-- level 2 table for slot 2: size 9 -->
+            <text x="430" y="98" class="dg-label sm dg-blue-f">slot 2 &rarr; size n&#11388;&#xB2; = 9, no collisions</text>
+            <g font-family="var(--font-mono)">
+              <rect x="430" y="110" width="46" height="34" class="dg-cell"/><text x="453" y="132" text-anchor="middle" class="dg-label sm">&#8709;</text>
+              <rect x="476" y="110" width="46" height="34" class="dg-fill"/><text x="499" y="132" text-anchor="middle" class="dg-val">a</text>
+              <rect x="522" y="110" width="46" height="34" class="dg-cell"/><text x="545" y="132" text-anchor="middle" class="dg-label sm">&#8709;</text>
+              <rect x="568" y="110" width="46" height="34" class="dg-cell"/><text x="591" y="132" text-anchor="middle" class="dg-label sm">&#8709;</text>
+              <rect x="614" y="110" width="46" height="34" class="dg-fill"/><text x="637" y="132" text-anchor="middle" class="dg-val">b</text>
+              <rect x="660" y="110" width="46" height="34" class="dg-cell"/><text x="683" y="132" text-anchor="middle" class="dg-label sm">&#8709;</text>
+              <rect x="706" y="110" width="46" height="34" class="dg-cell"/><text x="729" y="132" text-anchor="middle" class="dg-label sm">&#8709;</text>
+              <rect x="752" y="110" width="46" height="34" class="dg-fill"/><text x="775" y="132" text-anchor="middle" class="dg-val">c</text>
+              <rect x="798" y="110" width="46" height="34" class="dg-cell"/><text x="821" y="132" text-anchor="middle" class="dg-label sm">&#8709;</text>
+            </g>
+            <path d="M180 161 L424 130" class="dg-stroke dg-blue" marker-end="url(#af)"/>
+
+            <!-- level 2 table for slot 5: size 4 -->
+            <text x="430" y="248" class="dg-label sm dg-red-f">slot 5 &rarr; size n&#11388;&#xB2; = 4, no collisions</text>
+            <g font-family="var(--font-mono)">
+              <rect x="430" y="260" width="56" height="34" class="dg-fill"/><text x="458" y="282" text-anchor="middle" class="dg-val">d</text>
+              <rect x="486" y="260" width="56" height="34" class="dg-cell"/><text x="514" y="282" text-anchor="middle" class="dg-label sm">&#8709;</text>
+              <rect x="542" y="260" width="56" height="34" class="dg-cell"/><text x="570" y="282" text-anchor="middle" class="dg-label sm">&#8709;</text>
+              <rect x="598" y="260" width="56" height="34" class="dg-fill"/><text x="626" y="282" text-anchor="middle" class="dg-val">e</text>
+            </g>
+            <path d="M180 263 L424 278" class="dg-stroke dg-red" marker-end="url(#af2)"/>
+
+            <text x="60" y="348" class="dg-label sm">lookup k:  j = h(k)  &rarr;  position h&#11388;(k) in the collision-free level-2 table.  <tspan class="dg-blue-f">Two probes, worst case.</tspan></text>
+
+            <defs>
+              <marker id="af"  markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+              <marker id="af2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 4 — the FKS scheme.</b> A linear-size top level routes each key to a slot; each slot owns a private squared table that is collision-free by construction. The lookup never branches on chain length — it is a fixed two-step walk, so the guarantee is worst-case, not expected.</figcaption>
+        </figure>
+
+        <p>Two facts make this work, and both are pure probability:</p>
+
+        <h3>Why a squared table has no collisions (the birthday bound)</h3>
+        <p>Hash <code class="inl">n&#11388;</code> keys into a table of size <code class="inl">n&#11388;&#xB2;</code> with a universal function. The expected number of colliding pairs is <code class="inl">&#8729;C(n&#11388;,2)&middot;(1/n&#11388;&#xB2;) &lt; n&#11388;&#xB2;/2 &middot; 1/n&#11388;&#xB2; = 1/2</code>. By Markov's inequality, the probability of <em>any</em> collision is below <code class="inl">1/2</code> — so a randomly drawn <code class="inl">h&#11388;</code> is collision-free with probability over a half. Draw, test, redraw if needed: in expectation fewer than two tries find a perfect <code class="inl">h&#11388;</code>.</p>
+
+        <h3>Why the total space is still <code class="inl">O(n)</code></h3>
+        <p>The space is dominated by the second level, <code class="inl">&#x3A3;&#11388; n&#11388;&#xB2;</code>. The identity <code class="inl">&#x3A3;&#11388; n&#11388;&#xB2; = n + 2&middot;(number of colliding pairs at level 1)</code> turns this into an expectation we already know how to take:</p>
+
+        <div class="eq">
+          <span class="lbl">expected second-level space, level-1 table of size m = n</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mi>E</mi><mo>[</mo>
+            <munder><mo>&#x2211;</mo><mi>j</mi></munder>
+            <msubsup><mi>n</mi><mi>j</mi><mn>2</mn></msubsup>
+            <mo>]</mo>
+            <mo>=</mo>
+            <mi>n</mi><mo>+</mo><mn>2</mn><mo>&#x22C5;</mo>
+            <mfenced open="(" close=")"><mfrac><mrow><mi>n</mi><mo>(</mo><mi>n</mi><mo>&#x2212;</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></mfrac></mfenced>
+            <mo>&#x22C5;</mo>
+            <mfrac><mn>1</mn><mi>n</mi></mfrac>
+            <mo>=</mo>
+            <mn>2</mn><mi>n</mi><mo>&#x2212;</mo><mn>1</mn>
+            <mo>&lt;</mo><mn>2</mn><mi>n</mi>
+          </math></div>
+        </div>
+
+        <p>So the expected total table space is <code class="inl">O(n)</code>; pick a level-1 <code class="inl">h</code> whose <code class="inl">&#x3A3; n&#11388;&#xB2;</code> is below <code class="inl">2n</code> (Markov again — at least half of the draws qualify) and the bound becomes a guarantee. The result is the striking combination the section promised: <strong><code class="inl">O(n)</code> space and <code class="inl">O(1)</code> worst-case lookup</strong>, with all the probability spent once, at build time, never at query time. Modern variants (cuckoo hashing, and the minimal-perfect-hash generators behind compilers and search indexes) descend directly from this idea.</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> the tail the average hides</div>
+      <h2>Concentration: how bad can the worst slot be?</h2>
+      <div class="col">
+        <p>An expectation is a promise about the <em>average</em> operation. But a single slow operation — the unlucky slot with a long chain — can dominate a latency budget. So the honest question is not only &ldquo;what is the expected chain length?&rdquo; (we know: <code class="inl">&alpha;</code>) but &ldquo;how long is the <em>longest</em> chain likely to get?&rdquo; That is a <span class="term">concentration</span> question, and it is exactly the balls-in-bins model from Lecture&nbsp;5: throw <code class="inl">n</code> balls (keys) into <code class="inl">n</code> bins (slots) uniformly, and ask for the fullest bin.</p>
+
+        <div class="band flush" style="margin:1.4em 0">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0"><strong>Maximum load.</strong> When <code class="inl">n</code> keys are hashed uniformly into <code class="inl">n</code> slots, the expected length of the longest chain is <code class="inl">&#x398;&#8202;(log n / log log n)</code> with high probability — even though the <em>average</em> chain has length <code class="inl">1</code>. So although <em>typical</em> access is constant, the <em>worst</em> single access in a table of a million keys is around a dozen, not one. The gap between <code class="inl">1</code> and <code class="inl">log n / log log n</code> is the tail the title warns about.</p>
+        </div>
+
+        <p>Two consequences worth carrying:</p>
+        <ul>
+          <li><strong>Tighten the tail with two choices.</strong> If each key is hashed by <em>two</em> independent functions and inserted into the <em>shorter</em> of the two candidate chains (&ldquo;the power of two choices&rdquo;), the maximum load collapses from <code class="inl">&#x398;(log n / log log n)</code> to <code class="inl">&#x398;(log log n)</code> — an exponential improvement in the tail for one extra hash. This is the engine behind modern load balancers and cuckoo hashing.</li>
+          <li><strong>Keep <code class="inl">&alpha;</code> bounded by resizing.</strong> Because every cost is a function of <code class="inl">&alpha;</code>, the table must grow as keys arrive. Double <code class="inl">m</code> whenever <code class="inl">&alpha;</code> crosses a threshold (say <code class="inl">0.75</code>) and re-hash everything into the larger table. A single resize costs <code class="inl">&#x398;(n)</code>, but it happens rarely enough that the <em>amortised</em> cost per insertion stays <code class="inl">O(1)</code> — precisely the doubling-array argument of Lecture&nbsp;2, reused here for hash tables.</li>
+        </ul>
+
+        <div class="note info"><span class="tag">three promises, kept straight</span>This syllabus has now built three different cost guarantees for the same dictionary problem. A balanced tree (Lecture&nbsp;7) promises <code class="inl">O(log n)</code> <em>worst case, every time</em>. A chained hash table promises <code class="inl">O(1)</code> <em>expected</em>, with a rare <code class="inl">&#x398;(n)</code> tail. FKS perfect hashing promises <code class="inl">O(1)</code> <em>worst case</em>, but only for a <em>static</em> set. There is no universally best answer — only a match between the promise you need and the price you will pay in space, order, and dynamism.</p></div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> the field, at a glance</div>
+      <h2>The hashing zoo, tabulated</h2>
+      <div class="col">
+        <p>One table to hold the landscape. Read the worst-case and deletion columns as the deciding ones in practice: they are where the strategies genuinely differ, long after their averages have converged.</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>Collision strategies &amp; hashing schemes — the essential profile</caption>
+            <thead>
+              <tr>
+                <th scope="col">scheme</th>
+                <th scope="col">search (avg)</th>
+                <th scope="col">search (worst)</th>
+                <th scope="col">extra space</th>
+                <th scope="col">load &alpha;</th>
+                <th scope="col">delete</th>
+                <th scope="col">cache</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Chaining</th><td class="good mono">1+&alpha;</td><td class="bad mono">&#x398;(n)</td><td class="mono">n ptrs</td><td>any</td><td class="good">easy</td><td class="mid">poor</td></tr>
+              <tr><th scope="row">Linear probing</th><td class="good mono">&#8776;&#189;(1+1/(1&minus;&alpha;))</td><td class="bad mono">&#x398;(n)</td><td class="good mono">0</td><td>&lt; 1</td><td class="bad">tombstone</td><td class="good">excellent</td></tr>
+              <tr><th scope="row">Quadratic probing</th><td class="good mono">&#8776;1/(1&minus;&alpha;)</td><td class="bad mono">&#x398;(n)</td><td class="good mono">0</td><td>&lt; 1</td><td class="bad">tombstone</td><td class="mid">good</td></tr>
+              <tr><th scope="row">Double hashing</th><td class="good mono">1/(1&minus;&alpha;)</td><td class="bad mono">&#x398;(n)</td><td class="good mono">0</td><td>&lt; 1</td><td class="bad">tombstone</td><td class="mid">fair</td></tr>
+              <tr class="wrap-row"><th scope="row">Universal (any above)</th><td class="good mono">1+&alpha;</td><td class="mid mono">&#x398;(n)*</td><td class="mono">&mdash;</td><td>any</td><td class="mid">&mdash;</td><td class="mid">&mdash;</td></tr>
+              <tr class="wrap-row"><th scope="row">FKS perfect (static)</th><td class="good mono">2</td><td class="good mono">2</td><td class="good mono">O(n)</td><td>&mdash;</td><td class="bad">rebuild</td><td class="good">good</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="7">* universal hashing keeps the <code>&#x398;(n)</code> worst case but makes it occur only with vanishing probability over the chosen <code>h</code>, for <em>every</em> input — it removes the adversary, not the tail. The shaded rows are guarantees layered on top of a base scheme, not standalone tables.</td></tr></tfoot>
+          </table>
+        </div>
+        <p>A practitioner's reading: <strong>open addressing wins on small, cache-friendly tables</strong> with a known load ceiling and few deletions — linear probing's sequential memory access often beats chaining's pointer-chasing despite its worse clustering math (recall the locality lessons of Lecture&nbsp;1). <strong>Chaining wins when deletions are frequent</strong> or the load factor is hard to bound, because removing a node is trivial and <code class="inl">&alpha; &gt; 1</code> degrades gracefully. <strong>Universal hashing is not optional</strong> anywhere untrusted input reaches the keys. And <strong>perfect hashing is the specialist</strong> for fixed dictionaries that are built once and queried forever.</p>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>Keep the gap between the idealised model and the deterministic function in view. Here is where hashing bites — the security holes, the silent quadratics, the deletion bug that corrupts the table, the assumptions that are false in production.</p>
+
+        <h3>1 &middot; Hash flooding — the adversarial worst case is a weapon</h3>
+        <p>A <em>fixed</em> hash function exposed to untrusted keys is a denial-of-service vulnerability. An attacker computes keys that all collide, collapses every operation to <code class="inl">&#x398;(n)</code>, and a single crafted request burns minutes of CPU. This is not theoretical — it hit PHP, Java, Python, Ruby, and ASP.NET web stacks in 2011&ndash;2012, and the fix shipped industry-wide was exactly &sect;08: a <strong>randomly seeded universal (or keyed, like SipHash) hash chosen at process start</strong>. If keys can come from outside your program, a deterministic hash is a bug, not a performance choice.</p>
+
+        <h3>2 &middot; A bad hash function silently destroys the guarantee</h3>
+        <p>Every bound on this page assumes good spreading. Ship <code class="inl">h(k) = k mod 2&#x1D56;</code> and you key on the low bits only; feed it pointers or aligned addresses (all ending in <code class="inl">000</code>) and most slots are dead while a few overflow. Worse, a hash that ignores part of a composite key — hashing only the first field of a struct — turns whole classes of distinct keys into collisions. Test your hash's <em>distribution</em>, not just its correctness; a hash that compiles and &ldquo;works&rdquo; can still be quietly quadratic.</p>
+
+        <h3>3 &middot; The open-addressing deletion bug (deleting to EMPTY)</h3>
+        <p>The single most common hash-table bug: in an open-addressed table, deleting a key by marking its slot EMPTY severs the probe chains that ran through it, so later searches for displaced keys stop early and report <em>false absences</em> — silent data loss. You must use a <span class="term">tombstone</span> (&sect;07). And because tombstones accumulate and lengthen probe sequences over time, a long-lived table needs periodic full rebuilds to flush them.</p>
+
+        <h3>4 &middot; Letting the load factor drift toward 1</h3>
+        <p>Open-addressing cost is <code class="inl">1/(1&minus;&alpha;)</code> — it does not degrade gracefully, it detonates. At <code class="inl">&alpha; = 0.99</code> an average search probes a hundred slots; at <code class="inl">&alpha; = 1</code> insertion never terminates. Forgetting to resize, or resizing too late, converts a fast table into a hang. Pick a ceiling (commonly <code class="inl">0.7</code> for open addressing, higher for chaining) and resize <em>before</em> crossing it. Resizing is the amortised-doubling discipline of Lecture&nbsp;2; skipping it is not an optimisation, it is a latent outage.</p>
+
+        <h3>5 &middot; Mutable keys — hashing something that then changes</h3>
+        <p>A hash table places a key by <code class="inl">h(k)</code> at insertion time. If the key object is later mutated so that <code class="inl">h(k)</code> changes, the key is now filed under its <em>old</em> hash but searched for under its <em>new</em> one — it becomes unreachable while still occupying space, and the invariant &ldquo;a key sits at <code class="inl">h(k)</code>&rdquo; is broken. Keys must be <strong>immutable</strong>, or at least hash-stable for their time in the table. This is why mutable lists cannot be dictionary keys in most languages, and why <code class="inl">equals</code> and <code class="inl">hashCode</code> must be defined consistently — two keys equal under <code class="inl">==</code> must share a hash, or lookups miss.</p>
+
+        <h3>6 &middot; Mistaking the expectation for a guarantee</h3>
+        <p>&ldquo;Hash tables are <code class="inl">O(1)</code>&rdquo; is shorthand, not a theorem about every operation. The bound is <em>expected</em>, the worst case is <code class="inl">&#x398;(n)</code>, and the worst <em>single</em> access in a large table is <code class="inl">&#x398;(log n / log log n)</code> even in the average case (&sect;10). In a hard-real-time or worst-case-latency-bounded setting (avionics, high-frequency trading, an SLA on the 99.99th percentile), an <em>expected</em> constant may be unacceptable — reach for a balanced tree's worst-case <code class="inl">O(log n)</code> or a static perfect hash. Always ask which promise the caller actually needs.</p>
+
+        <h3>7 &middot; Integer overflow and sign in hash computation</h3>
+        <p>A polynomial string hash <code class="inl">&#x3A3; s&#7522;&middot;B&#x2071;</code> overflows machine integers fast. That is fine — overflow is just arithmetic mod <code class="inl">2&#x2076;&#x2074;</code> — <em>provided</em> you account for it (and never index with a negative result in languages where <code class="inl">%</code> can return a negative). Forgetting the sign of the modulo, or mixing signed and unsigned, produces out-of-bounds indices or skewed distributions. Reduce to <code class="inl">[0, m)</code> deliberately, not by accident.</p>
+
+        <h3>8 &middot; Reaching for a hash table when you needed order</h3>
+        <p>The meta-mistake. A hash table answers membership and point lookup and nothing else. The moment you need sorted iteration, range queries, nearest-key, successor/predecessor, or min/max, the scattering that made hashing fast is now your enemy, and you are sorting the keys on every query. That is the signal you wanted the <em>ordered</em> dictionary of Lecture&nbsp;7, not this one. Choose the structure by the queries, never by the headline speed.</p>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section id="s13" class="reveal">
+      <div class="eyebrow"><span class="n">13</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Subarray sum equals K</h3>
+          <p class="meta">hash map as a prefix-sum counter &middot; O(n) &middot; LeetCode 560</p>
+          <p>Given an integer array <code class="inl">nums</code> and an integer <code class="inl">k</code>, return the total number of <em>contiguous</em> subarrays whose elements sum to exactly <code class="inl">k</code>. The brute force is <code class="inl">&#x398;(n&#xB2;)</code>; reach <code class="inl">O(n)</code> with one pass. Define the prefix sum <code class="inl">P[i] = nums[0] + &hellip; + nums[i&minus;1]</code>; a subarray <code class="inl">(i, j]</code> sums to <code class="inl">k</code> exactly when <code class="inl">P[j] &minus; P[i] = k</code>, i.e. <code class="inl">P[i] = P[j] &minus; k</code>. Sweep left to right keeping a <strong>hash map from prefix-sum value to how many times it has occurred</strong>, and at each <code class="inl">j</code> add the count of <code class="inl">P[j] &minus; k</code> seen so far. State why a hash map (not a sorted structure) is the right tool here, and handle the empty-prefix and negative-number cases. Note that <code class="inl">nums</code> may contain zeros and negatives, so two-pointer/sliding-window does <em>not</em> apply.</p>
+          <pre><code><span class="tok-fn">subarraySum</span>(nums, k) <span class="tok-op">-&gt;</span> int    <span class="tok-com"># 1 &le; n &le; 2e4;  -1e3 &le; nums[i] &le; 1e3</span></code></pre>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Group anagrams</h3>
+          <p class="meta">designing a canonical hash key &middot; O(n&#183;k) &middot; LeetCode 49</p>
+          <p>Given an array of strings <code class="inl">strs</code>, group together all strings that are anagrams of one another (return the groups in any order). The art is choosing a <strong>canonical key</strong> that two strings share <em>iff</em> they are anagrams, then hashing on it: either the sorted characters (<code class="inl">"eat" &rarr; "aet"</code>, key cost <code class="inl">O(k&nbsp;log&nbsp;k)</code>) or a length-26 count vector (key cost <code class="inl">O(k)</code>). Use a hash map from canonical key to the list of original strings. Argue which canonical form gives the better total complexity, and explain what property the key must have for the grouping to be correct — connect this back to &sect;12's rule that <em>equal keys must hash equal</em>.</p>
+          <pre><code><span class="tok-fn">groupAnagrams</span>(strs) <span class="tok-op">-&gt;</span> List[List[str]]   <span class="tok-com"># 1 &le; n &le; 1e4, 0 &le; len(s) &le; 100, a&ndash;z</span></code></pre>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Insert, delete, and getRandom in O(1)</h3>
+          <p class="meta">hash map + dynamic array &middot; expected O(1) all ops &middot; LeetCode 380</p>
+          <p>Design a set structure supporting <code class="inl">insert(x)</code>, <code class="inl">remove(x)</code>, and <code class="inl">getRandom()</code> — return a uniformly random current element — each in <strong>average <code class="inl">O(1)</code></strong>. Neither structure alone suffices: a hash map gives <code class="inl">O(1)</code> insert/remove/membership but cannot pick a uniform random element in <code class="inl">O(1)</code>; a dynamic array gives <code class="inl">O(1)</code> random indexing and append but <code class="inl">O(n)</code> removal from the middle. Combine them: an array holds the elements (so <code class="inl">getRandom</code> is one random index) and a hash map sends each value to its index in the array (so removal is <code class="inl">O(1)</code>). The trick for <code class="inl">remove</code>: <strong>swap the victim with the last array element</strong>, pop the tail, and fix the moved element's stored index. Explain why the swap-to-tail is what keeps removal constant, and exactly which map entries you must update.</p>
+          <pre><code><span class="tok-kw">class</span> <span class="tok-fn">RandomizedSet</span>:
+    <span class="tok-fn">insert</span>(val) <span class="tok-op">-&gt;</span> bool;  <span class="tok-fn">remove</span>(val) <span class="tok-op">-&gt;</span> bool;  <span class="tok-fn">getRandom</span>() <span class="tok-op">-&gt;</span> int</code></pre>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>No fixed hash function can escape the worst case</h3>
+          <p class="meta">pigeonhole / adversary argument &middot; proof</p>
+          <p>Prove the claim that motivates universal hashing. Let <code class="inl">h : U &rarr; {0, &hellip;, m&minus;1}</code> be <em>any</em> fixed, deterministic hash function on a universe with <code class="inl">|U| &gt; (n&minus;1)&middot;m</code>. Show that there exists a set <code class="inl">S</code> of <code class="inl">n</code> distinct keys that <strong>all hash to the same slot</strong> — so that, for this <code class="inl">S</code>, a chained table built with <code class="inl">h</code> degrades to a single chain and answers a search in <code class="inl">&#x398;(n)</code> time. Argue it cleanly with the pigeonhole principle (some slot has at least <code class="inl">&#8968;|U|/m&#8969; &#8805; n</code> preimages). Then explain in two or three sentences <em>why drawing <code class="inl">h</code> at random from a universal family escapes this argument</em> even though every single function in the family still has its own bad set — i.e., what exactly the randomization changes about <em>when</em> the adversary must commit to the keys.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section id="s14" class="reveal">
+      <div class="eyebrow"><span class="n">14</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>Hashing buys expected-constant access by turning a key into an address and paying for collisions in probability.</strong> Fold the universe onto <code class="inl">m &#8776; n</code> slots; absorb the unavoidable collisions with chaining or open addressing; and read every cost off the load factor <code class="inl">&alpha; = n/m</code> as <code class="inl">1+&alpha;</code> (chaining) or <code class="inl">1/(1&minus;&alpha;)</code> (open addressing). The lurking <code class="inl">&#x398;(n)</code> worst case is real but defanged: <strong>universal hashing</strong> randomizes the <em>function</em> so the guarantee holds against any adversary, and <strong>perfect hashing</strong> spends all the randomness at build time to deliver <code class="inl">O(1)</code> <em>worst-case</em> lookup on a static set in <code class="inl">O(n)</code> space. You traded order and determinism; you bought a constant that does not grow.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 09</span>
+            <div class="ttl">Partial Order Is Enough: Heaps and Priority Queues</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We have now seen the dictionary keep <em>full</em> order (balanced trees) and <em>no</em> order (hash tables). Next we ask for the cheapest useful structure in between: maintain only enough order to surface the single extreme — the minimum or maximum — and nothing else. The binary heap as an implicit complete tree, the priority-queue ADT, and heapsort. The lesson recurs: <em>maintain the weakest invariant your queries permit, and you will pay the least to keep it.</em></p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-07-balanced-search-trees.html">← Previous study</a><a href="dsa-09-partial-order-is-enough-heaps-and-priority-queues.html">Next study →</a></nav>
+</body>
+</html>

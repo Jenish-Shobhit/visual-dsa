@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Max-Flow, Min-Cut &amp; the Power of Duality</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.7rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.3rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.add-row td, tr.add-row th{background:color-mix(in oklab,var(--bau-blue) 12%,var(--surface)) !important}
+  tr.hi-row td, tr.hi-row th{background:color-mix(in oklab,var(--bau-yellow) 24%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.1em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue-f{fill:var(--bau-blue)} .dg-red-f{fill:var(--bau-red)} .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-label{font-family:var(--font-mono); font-size:13px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:11px; fill:var(--on-surface-variant)}
+  .dg-cap{font-family:var(--font-display); font-size:14px; font-weight:600; fill:var(--on-surface)}
+  /* flow-graph helpers */
+  .dg-edge{stroke:var(--bau-ink); stroke-width:2.5; fill:none}
+  .dg-edge-sat{stroke:var(--bau-blue); stroke-width:5.5; fill:none}
+  .dg-edge-mut{stroke:var(--outline); stroke-width:2; fill:none}
+  .dg-edge-back{stroke:var(--bau-red); stroke-width:3; fill:none; stroke-dasharray:7 5}
+  .dg-edge-path{stroke:var(--bau-blue); stroke-width:5.5; fill:none}
+  .dg-node{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node-s{fill:color-mix(in oklab,var(--bau-blue) 16%,var(--surface)); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node-t{fill:color-mix(in oklab,var(--bau-red) 14%,var(--surface)); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-nt{font-family:var(--font-mono); font-size:16px; font-weight:700; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
+  .dg-cap-b{fill:var(--surface); stroke:var(--bau-ink); stroke-width:1.4}
+  .dg-cap-b.sat{fill:var(--bau-blue); stroke:var(--bau-ink)}
+  .dg-cap-n{font-family:var(--font-mono); font-size:12.5px; font-weight:700; fill:var(--bau-ink); text-anchor:middle; dominant-baseline:central}
+  .dg-cap-n.w{fill:#fff}
+  .dg-cutline{stroke:var(--bau-red); stroke-width:2.5; stroke-dasharray:10 7; fill:none}
+  .dg-region{fill:color-mix(in oklab,var(--bau-blue) 9%,transparent); stroke:var(--bau-blue); stroke-width:1.5; stroke-dasharray:4 5}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">17 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>17</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="210" height="170" viewBox="0 0 210 170" aria-hidden="true">
+    <!-- a tiny flow with a cut -->
+    <circle cx="34" cy="85" r="20" class="dg-blue-f"/>
+    <rect x="158" y="65" width="40" height="40" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <path d="M70 50 L150 70 M70 120 L150 100 M70 50 L70 120" stroke="var(--bau-ink)" stroke-width="3" fill="none"/>
+    <path d="M118 18 L118 152" stroke="var(--bau-red)" stroke-width="3" stroke-dasharray="9 7" fill="none"/>
+    <path d="M96 26 L210 8 L150 40 Z" class="dg-red-f" opacity="0"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 17</span> max-flow, min-cut &amp; duality</div>
+    <h1>Max-Flow, Min-Cut &amp; the Power of Duality</h1>
+    <p class="lede col">Picture a pipeline network &mdash; a source, a sink, and pipes of fixed capacity between them. Two questions sound opposite. <strong>How much</strong> can you push from source to sink at once? And <strong>how little</strong> would you have to sever &mdash; which pipes to cut, paying their capacities &mdash; to stop all flow entirely? The astonishing fact, and the whole of this lecture, is that <em>these are the same number</em>. The maximum you can push equals the cheapest wall you can build. That single equality &mdash; <span class="term">max-flow = min-cut</span> &mdash; is one of the most useful theorems in all of computing.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>The number that frames the lecture.</strong> The max-flow problem was posed in 1955 by Ford and Fulkerson in a classified RAND report &mdash; the &ldquo;flow&rdquo; was rail tonnage across the Soviet network, and the &ldquo;min cut&rdquo; was the cheapest set of rail links to bomb to sever it. For sixty-six years the best algorithms crept forward: <code class="inl">O(VE&sup2;)</code>, then <code class="inl">O(V&sup2;E)</code>, then a long plateau. Then in <strong>2022</strong>, Chen, Kyng, Liu, Peng, Probst&nbsp;Gutenberg and Sachdeva broke it open with an algorithm running in <strong>m<sup>1+o(1)</sup></strong> time &mdash; <em>almost-linear</em> in the number of edges, essentially as fast as <em>reading the graph</em>.</p>
+        <p style="margin-bottom:0">The same theorem that once chose where to cut a railway now finds maximum matchings, segments images, schedules airlines, and selects projects. We build it from the source edge outward &mdash; and end at that 2022 frontier.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>Two questions, one number</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>The flow network, formalized</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>Why greedy fails: residuals</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Ford&ndash;Fulkerson &amp; Edmonds&ndash;Karp</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>Cuts &amp; weak duality</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>The max-flow min-cut theorem</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Worked: Edmonds&ndash;Karp end to end</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Modeling: matching &amp; partitions</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>The ledger &amp; the 2022 frontier</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Where it breaks</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Practice</span></a></li>
+      <li><a href="#s13"><span class="num">13</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> the problem beneath the structure</div>
+      <h2>Two questions, one number</h2>
+      <div class="col">
+        <p>I begin, as always, by separating the <em>problem</em> from the <em>engine</em>. The problem is a directed graph with a distinguished <span class="term">source</span> <code class="inl">s</code> and <span class="term">sink</span> <code class="inl">t</code>, where every edge carries a <span class="term">capacity</span> &mdash; an upper bound on the rate of stuff that may travel along it. Water in pipes, packets on links, trucks on roads, tokens through a refinery. We ask for the maximum steady rate from <code class="inl">s</code> to <code class="inl">t</code> that respects every capacity and never lets material pile up at an intermediate node.</p>
+        <p>Now hold that problem next to its shadow. A <span class="term">cut</span> is a way of splitting the vertices into the source&rsquo;s side and the sink&rsquo;s side; its <em>cost</em> is the total capacity of the edges pointing from the source side to the sink side &mdash; the price of severing those links so that nothing can cross. Minimizing a flow&rsquo;s throughput and minimizing the cost of a wall feel like different exercises in different units. They are not. <strong>The maximum flow value equals the minimum cut cost, exactly, on every network.</strong> This is the phenomenon a mathematician calls <span class="term">duality</span>: two optimization problems, one a maximization and one a minimization, locked together so that the optimum of each certifies the optimum of the other.</p>
+        <p>Why does a working programmer care? Because duality is the most reliable engine of <em>insight</em> we have. The flow tells you how to do the thing; the cut tells you <em>why you can do no better</em> &mdash; it is a proof, checkable in a glance, that your answer is optimal. And because dozens of problems that look nothing like plumbing &mdash; assigning workers to jobs, choosing which projects to fund, separating an image&rsquo;s foreground from its background &mdash; turn out to be flows in disguise, the same engine solves all of them at once.</p>
+        <div class="note info"><span class="tag">the formal lens</span>Fix the contract &mdash; &ldquo;a maximum <code class="inl">s</code>&ndash;<code class="inl">t</code> flow&rdquo; &mdash; and a second object falls out of it for free: a minimum cut of equal value, which <em>witnesses</em> optimality. Wherever you find a clean min&ndash;max duality, you have found a problem you can both solve and certify.</div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>Define</strong> a flow network, a feasible flow (capacity + conservation), and the value of a flow, and explain why the naive greedy &ldquo;saturate any path&rdquo; can get stuck below optimum.</li>
+          <li><strong>Construct</strong> the <span class="term">residual graph</span> and find <span class="term">augmenting paths</span>, understanding the backward edge as the mechanism that lets the algorithm <em>undo</em> an earlier commitment.</li>
+          <li><strong>Run</strong> Ford&ndash;Fulkerson and its BFS refinement Edmonds&ndash;Karp by hand, and quote why the latter&rsquo;s <code class="inl">O(VE&sup2;)</code> bound is independent of the capacities.</li>
+          <li><strong>State and prove</strong> the max-flow min-cut theorem via the three-way equivalence (max flow &hArr; no augmenting path &hArr; a saturated cut), and read a minimum cut off the final residual graph.</li>
+          <li><strong>Model</strong> bipartite matching, vertex/edge-disjoint paths, and project-selection / partition problems as flows or cuts, invoking the integrality theorem to know the answer is whole.</li>
+          <li><strong>Diagnose</strong> the failure modes: non-termination on irrational capacities, exponential blow-up of plain Ford&ndash;Fulkerson, forgotten back edges, and antiparallel-edge bookkeeping &mdash; and place today&rsquo;s tools against the 2022 almost-linear frontier.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>Three ideas carry the whole lecture. Augmenting-path search is breadth-first search wearing a hat; the duality argument leans on the same &ldquo;reachable set&rdquo; idea BFS computes.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-11-graphs-and-their-traversals.html">graph traversal (BFS)</a>
+          <span class="chip">augmenting-path / greedy</span>
+          <a class="chip" href="dsa-13-single-source-shortest-paths.html">shortest paths</a>
+        </div>
+        <p style="margin-top:1em">If you can run a BFS to find a shortest path in an unweighted graph, recall that &ldquo;greedy&rdquo; means committing to a locally best move, and remember that shortest-path algorithms <em>relax</em> edges toward an optimum, you are ready. We are about to give a network a conscience &mdash; the ability to take back a bad decision.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> fix the object before the algorithm</div>
+      <h2>The flow network, formalized</h2>
+      <div class="col">
+        <p>A <span class="term">flow network</span> is a directed graph <code class="inl">G=(V,E)</code> with two distinguished vertices, the source <code class="inl">s</code> and the sink <code class="inl">t</code>, and a non-negative <span class="term">capacity</span> <code class="inl">c(u,v)&ge;0</code> on every edge <code class="inl">(u,v)&isin;E</code> (we take <code class="inl">c(u,v)=0</code> when there is no edge). A <span class="term">flow</span> is a function <code class="inl">f(u,v)</code> assigning to each edge a real value obeying two laws:</p>
+
+        <div class="eq">
+          <span class="lbl">law 1 &mdash; the capacity constraint</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mn>0</mn><mo>&#x2264;</mo><mi>f</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo><mo>&#x2264;</mo><mi>c</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo>
+            <mspace width="2.4em"/>
+            <mtext>for every edge&#xA0;</mtext><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo><mo>&#x2208;</mo><mi>E</mi>
+          </math></div>
+        </div>
+        <p>You may not send more along a pipe than it holds, and flow runs in the edge&rsquo;s direction.</p>
+
+        <div class="eq">
+          <span class="lbl">law 2 &mdash; conservation (flow in = flow out)</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <munder><mo>&#x2211;</mo><mrow><mi>u</mi></mrow></munder>
+            <mi>f</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>x</mi><mo stretchy="false">)</mo>
+            <mo>=</mo>
+            <munder><mo>&#x2211;</mo><mrow><mi>w</mi></mrow></munder>
+            <mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>w</mi><mo stretchy="false">)</mo>
+            <mspace width="2.4em"/>
+            <mtext>for every&#xA0;</mtext><mi>x</mi><mo>&#x2208;</mo><mi>V</mi><mo>&#x2216;</mo><mo fence="false">{</mo><mi>s</mi><mo>,</mo><mi>t</mi><mo fence="false">}</mo>
+          </math></div>
+        </div>
+        <p>Every intermediate node is a perfect junction: nothing is created, nothing is stored, nothing leaks. Only <code class="inl">s</code> and <code class="inl">t</code> are exempt &mdash; the source manufactures, the sink consumes. The <span class="term">value</span> of the flow is the net rate leaving the source (equivalently, by conservation, the net rate arriving at the sink):</p>
+
+        <div class="eq">
+          <span class="lbl">the objective &mdash; value of a flow</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mo stretchy="false">|</mo><mi>f</mi><mo stretchy="false">|</mo>
+            <mo>=</mo>
+            <munder><mo>&#x2211;</mo><mrow><mi>v</mi></mrow></munder><mi>f</mi><mo stretchy="false">(</mo><mi>s</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo>
+            <mo>&#x2212;</mo>
+            <munder><mo>&#x2211;</mo><mrow><mi>v</mi></mrow></munder><mi>f</mi><mo stretchy="false">(</mo><mi>v</mi><mo>,</mo><mi>s</mi><mo stretchy="false">)</mo>
+            <mspace width="2em"/><mo>&#x27F6;</mo><mspace width="1em"/>
+            <munder><mrow><mi>max</mi></mrow><mi>f</mi></munder><mspace width="0.3em"/><mo stretchy="false">|</mo><mi>f</mi><mo stretchy="false">|</mo>
+          </math></div>
+        </div>
+
+        <p>That is the entire specification: maximize <code class="inl">|f|</code> over all functions <code class="inl">f</code> obeying the two laws. Here is the concrete network we will solve in full, by Edmonds&ndash;Karp, in &sect;08. Read each edge as <em>capacity</em>.</p>
+
+        <figure>
+          <svg viewBox="0 0 840 440" role="img" aria-labelledby="g1t g1d">
+            <title id="g1t">A flow network on six vertices</title>
+            <desc id="g1d">Source s on the left, sink t on the right, with middle vertices a and b in a left column and c and d in a right column. Eight directed edges carry capacities: s to a 12, s to b 12, a to c 5, a to d 3, b to c 3, b to d 6, c to t 12, d to t 12.</desc>
+            <defs>
+              <marker id="f1ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--bau-ink)"/></marker>
+            </defs>
+            <!-- edges -->
+            <g marker-end="url(#f1ah)">
+              <line class="dg-edge" x1="105.5" y1="208.4" x2="274.5" y2="131.6"/><!-- s-a -->
+              <line class="dg-edge" x1="105.5" y1="231.6" x2="274.5" y2="308.4"/><!-- s-b -->
+              <line class="dg-edge" x1="328" y1="120" x2="512" y2="120"/><!-- a-c -->
+              <line class="dg-edge" x1="321.5" y1="137.9" x2="518.5" y2="302.1"/><!-- a-d -->
+              <line class="dg-edge" x1="321.5" y1="302.1" x2="518.5" y2="137.9"/><!-- b-c -->
+              <line class="dg-edge" x1="328" y1="320" x2="512" y2="320"/><!-- b-d -->
+              <line class="dg-edge" x1="565.5" y1="131.6" x2="734.5" y2="208.4"/><!-- c-t -->
+              <line class="dg-edge" x1="565.5" y1="308.4" x2="734.5" y2="231.6"/><!-- d-t -->
+            </g>
+            <!-- capacity badges -->
+            <g>
+              <g><rect class="dg-cap-b" x="177" y="159" width="26" height="21" rx="5"/><text class="dg-cap-n" x="190" y="170">12</text></g>
+              <g><rect class="dg-cap-b" x="177" y="260" width="26" height="21" rx="5"/><text class="dg-cap-n" x="190" y="271">12</text></g>
+              <g><rect class="dg-cap-b" x="407" y="98" width="20" height="21" rx="5"/><text class="dg-cap-n" x="417" y="109">5</text></g>
+              <g><rect class="dg-cap-b" x="360" y="170" width="20" height="21" rx="5"/><text class="dg-cap-n" x="370" y="181">3</text></g>
+              <g><rect class="dg-cap-b" x="360" y="250" width="20" height="21" rx="5"/><text class="dg-cap-n" x="370" y="261">3</text></g>
+              <g><rect class="dg-cap-b" x="407" y="330" width="20" height="21" rx="5"/><text class="dg-cap-n" x="417" y="341">6</text></g>
+              <g><rect class="dg-cap-b" x="637" y="159" width="26" height="21" rx="5"/><text class="dg-cap-n" x="650" y="170">12</text></g>
+              <g><rect class="dg-cap-b" x="637" y="260" width="26" height="21" rx="5"/><text class="dg-cap-n" x="650" y="271">12</text></g>
+            </g>
+            <!-- nodes -->
+            <g>
+              <circle class="dg-node-s" cx="80" cy="220" r="28"/><text class="dg-nt" x="80" y="220">s</text>
+              <circle class="dg-node" cx="300" cy="120" r="28"/><text class="dg-nt" x="300" y="120">a</text>
+              <circle class="dg-node" cx="300" cy="320" r="28"/><text class="dg-nt" x="300" y="320">b</text>
+              <circle class="dg-node" cx="540" cy="120" r="28"/><text class="dg-nt" x="540" y="120">c</text>
+              <circle class="dg-node" cx="540" cy="320" r="28"/><text class="dg-nt" x="540" y="320">d</text>
+              <circle class="dg-node-t" cx="760" cy="220" r="28"/><text class="dg-nt" x="760" y="220">t</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 1 &mdash; the input network.</b> Source <code class="inl">s</code>, sink <code class="inl">t</code>, six vertices, eight directed edges labelled with capacities. The source can emit up to 24 and the sink can absorb up to 24, yet &mdash; as the duality theorem will pin down &mdash; a wall <em>in the middle</em> limits everything. Watch for it.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> the idea that makes it work</div>
+      <h2>Why greedy fails &mdash; and the residual graph that rescues it</h2>
+      <div class="col">
+        <p>The obvious algorithm: find any path from <code class="inl">s</code> to <code class="inl">t</code> whose edges all have spare capacity, push as much as the path&rsquo;s tightest edge allows, repeat until no such path remains. This is greedy, and on the right network it <em>fails</em> &mdash; it can wedge itself below the true maximum, having committed flow to an edge it now wishes it had left empty. Plain greed cannot revise; once it pushes a unit down a pipe, that unit is stranded.</p>
+        <p>The repair is one of the most elegant moves in algorithms. We let the algorithm <em>cancel</em> flow it regrets by introducing, for every edge that currently carries flow, a fictitious <span class="term">backward edge</span> down which a later path may shove flow in reverse. Pushing a unit backward along <code class="inl">(u,v)</code> is bookkeeping for &ldquo;reroute a unit that was going <code class="inl">u&rarr;v</code> so it goes somewhere better instead.&rdquo; Collect all the spare forward capacity and all the cancellable backward capacity into one structure:</p>
+
+        <div class="band flush" style="margin:1.4em 0">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin:0 0 .3em"><strong>The residual graph <code class="inl">G<sub>f</sub></code>.</strong> Given a flow <code class="inl">f</code>, every original edge <code class="inl">(u,v)</code> contributes up to two residual edges:</p>
+          <p style="margin:0 0 .3em">&bull; a <strong>forward</strong> residual edge <code class="inl">u&rarr;v</code> of capacity <code class="inl">c(u,v)&minus;f(u,v)</code> &mdash; the unused room;</p>
+          <p style="margin:0 0 .3em">&bull; a <strong>backward</strong> residual edge <code class="inl">v&rarr;u</code> of capacity <code class="inl">f(u,v)</code> &mdash; the flow you could take back.</p>
+          <p style="margin:0; color:var(--on-surface-variant); font-size:15px">An <span class="term">augmenting path</span> is any path from <code class="inl">s</code> to <code class="inl">t</code> in <code class="inl">G<sub>f</sub></code>. Its <span class="term">bottleneck</span> is the smallest residual capacity along it; augmenting means adding that bottleneck to every forward edge and subtracting it from every backward edge on the path.</p>
+        </div>
+
+        <p>The backward edge is the entire trick, so let us watch it earn its keep on the smallest network where greed goes wrong. Capacities are large on the outside, and a single fat diagonal <code class="inl">u&rarr;v</code> tempts the first path into a commitment it must later partly undo.</p>
+
+        <figure>
+          <svg viewBox="0 0 900 320" role="img" aria-labelledby="g2t g2d">
+            <title id="g2t">A residual augmentation that uses a backward edge</title>
+            <desc id="g2d">Left panel: a greedy first path s to u to v to t carries 20 units and then no forward path remains, so flow is stuck at 20. Right panel: in the residual graph an augmenting path s to v to u to t uses the backward edge v to u, cancelling 10 units on u-v and raising the flow to 30.</desc>
+            <defs>
+              <marker id="f2ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--bau-ink)"/></marker>
+              <marker id="f2ab" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--bau-red)"/></marker>
+              <marker id="f2ap" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--bau-blue)"/></marker>
+            </defs>
+            <!-- ===== PANEL A ===== -->
+            <text class="dg-cap" x="30" y="28">greedy commits the diagonal &mdash; stuck at 20</text>
+            <g>
+              <line class="dg-edge-sat" x1="91.5" y1="139.3" x2="208.5" y2="80.7" marker-end="url(#f2ap)"/><!-- s-u sat -->
+              <line class="dg-edge-mut" x1="91.5" y1="160.7" x2="208.5" y2="219.3" marker-end="url(#f2ah)"/><!-- s-v -->
+              <line class="dg-edge-sat" x1="230" y1="94" x2="230" y2="206" marker-end="url(#f2ap)"/><!-- u-v partial(20/30) drawn as flow -->
+              <line class="dg-edge-mut" x1="251.5" y1="80.7" x2="368.5" y2="139.3" marker-end="url(#f2ah)"/><!-- u-t -->
+              <line class="dg-edge-sat" x1="251.5" y1="219.3" x2="368.5" y2="160.7" marker-end="url(#f2ap)"/><!-- v-t sat -->
+              <circle class="dg-node-s" cx="70" cy="150" r="24"/><text class="dg-nt" x="70" y="150">s</text>
+              <circle class="dg-node" cx="230" cy="70" r="24"/><text class="dg-nt" x="230" y="70">u</text>
+              <circle class="dg-node" cx="230" cy="230" r="24"/><text class="dg-nt" x="230" y="230">v</text>
+              <circle class="dg-node-t" cx="390" cy="150" r="24"/><text class="dg-nt" x="390" y="150">t</text>
+              <text class="dg-label sm" x="118" y="100">20/20</text>
+              <text class="dg-label sm" x="240" y="155">20/30</text>
+              <text class="dg-label sm" x="300" y="100">0/10</text>
+              <text class="dg-label sm" x="300" y="205" fill="var(--bau-blue)">20/20</text>
+              <text class="dg-label sm" x="118" y="205">0/10</text>
+            </g>
+            <!-- divider -->
+            <line x1="450" y1="40" x2="450" y2="280" stroke="var(--outline-variant)" stroke-width="1.5"/>
+            <!-- ===== PANEL B ===== -->
+            <text class="dg-cap" x="500" y="28">residual reroute via the back edge &rarr; 30</text>
+            <g>
+              <line class="dg-edge-mut" x1="521.5" y1="139.3" x2="638.5" y2="80.7" marker-end="url(#f2ah)"/><!-- s-u (saturated, faint) -->
+              <line class="dg-edge-path" x1="521.5" y1="160.7" x2="638.5" y2="219.3" marker-end="url(#f2ap)"/><!-- s-v augment -->
+              <line class="dg-edge-back" x1="660" y1="206" x2="660" y2="94" marker-end="url(#f2ab)"/><!-- v->u back edge -->
+              <line class="dg-edge-path" x1="681.5" y1="80.7" x2="798.5" y2="139.3" marker-end="url(#f2ap)"/><!-- u-t augment -->
+              <line class="dg-edge-mut" x1="681.5" y1="219.3" x2="798.5" y2="160.7" marker-end="url(#f2ah)"/><!-- v-t faint -->
+              <circle class="dg-node-s" cx="500" cy="150" r="24"/><text class="dg-nt" x="500" y="150">s</text>
+              <circle class="dg-node" cx="660" cy="70" r="24"/><text class="dg-nt" x="660" y="70">u</text>
+              <circle class="dg-node" cx="660" cy="230" r="24"/><text class="dg-nt" x="660" y="230">v</text>
+              <circle class="dg-node-t" cx="820" cy="150" r="24"/><text class="dg-nt" x="820" y="150">t</text>
+              <text class="dg-label sm" x="548" y="205" fill="var(--bau-blue)">+10</text>
+              <text class="dg-label sm" x="668" y="155" fill="var(--bau-red)">back 20</text>
+              <text class="dg-label sm" x="730" y="100" fill="var(--bau-blue)">+10</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 2 &mdash; the backward edge, drawn.</b> Capacities: <code class="inl">s&rarr;u=20</code>, <code class="inl">s&rarr;v=10</code>, <code class="inl">u&rarr;v=30</code>, <code class="inl">u&rarr;t=10</code>, <code class="inl">v&rarr;t=20</code>. <b>Left:</b> a greedy first push of 20 along <code class="inl">s&rarr;u&rarr;v&rarr;t</code> saturates <code class="inl">s&rarr;u</code> and <code class="inl">v&rarr;t</code>; no forward <code class="inl">s</code>&ndash;<code class="inl">t</code> path survives, so greed halts at 20. <b>Right:</b> the residual graph still offers <code class="inl">s&rarr;v&rarr;u&rarr;t</code> &mdash; the middle hop runs <span style="color:var(--bau-red)">backward</span> along <code class="inl">u&rarr;v</code>, cancelling 10 units there. Pushing 10 lifts the flow to its true maximum, <b>30</b>.</figcaption>
+        </figure>
+
+        <p>Trace the right panel once and the mechanism is yours forever. The path <code class="inl">s&rarr;v&rarr;u&rarr;t</code> sends 10 new units out of <code class="inl">s</code> into <code class="inl">v</code>; at <code class="inl">v</code> it does <em>not</em> add to <code class="inl">v&rarr;t</code> (already full) but instead <em>removes</em> 10 from the incoming <code class="inl">u&rarr;v</code>; those 10 units, no longer needed at <code class="inl">v</code>, exit <code class="inl">u</code> through the idle <code class="inl">u&rarr;t</code>. Conservation holds at every node throughout. The backward edge did not move new material &mdash; it <em>reassigned</em> material already in transit. That is how an algorithm built from purely local pushes achieves a global optimum: not by never erring, but by always being able to take an error back.</p>
+        <div class="pull col">Greed without memory paints itself into a corner. The residual graph gives the algorithm a <span>conscience</span> &mdash; the power to undo.</div>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> the augmenting-path method</div>
+      <h2>Ford&ndash;Fulkerson and Edmonds&ndash;Karp</h2>
+      <div class="col">
+        <p>The whole algorithm is now one sentence: <em>while the residual graph has an augmenting path, augment along it.</em> This is the <span class="term">Ford&ndash;Fulkerson method</span> &mdash; a <em>method</em>, not yet an algorithm, because it does not say <em>which</em> augmenting path to take. The choice turns out to govern everything about the running time.</p>
+
+        <pre><code><span class="tok-kw">def</span> <span class="tok-fn">ford_fulkerson</span>(C, s, t):       <span class="tok-com"># C[u][v] = capacity (0 if no edge)</span>
+    F = defaultdict(<span class="tok-kw">lambda</span>: defaultdict(<span class="tok-fn">int</span>))   <span class="tok-com"># flow on each edge, starts 0</span>
+    <span class="tok-kw">while</span> <span class="tok-kw">True</span>:
+        path, bottleneck = <span class="tok-fn">find_aug_path</span>(C, F, s, t)  <span class="tok-com"># a path in the residual graph</span>
+        <span class="tok-kw">if</span> path <span class="tok-kw">is</span> <span class="tok-kw">None</span>:
+            <span class="tok-kw">break</span>                          <span class="tok-com"># no augmenting path -&gt; f is maximum</span>
+        <span class="tok-kw">for</span> (u, v) <span class="tok-kw">in</span> path:               <span class="tok-com"># push the bottleneck along the path</span>
+            <span class="tok-kw">if</span> C[u][v] - F[u][v] &gt; <span class="tok-num">0</span>:    <span class="tok-com"># forward residual edge</span>
+                F[u][v] += bottleneck
+            <span class="tok-kw">else</span>:                       <span class="tok-com"># backward residual edge: cancel flow</span>
+                F[v][u] -= bottleneck
+    <span class="tok-kw">return</span> <span class="tok-fn">sum</span>(F[s][v] <span class="tok-kw">for</span> v <span class="tok-kw">in</span> C[s])  <span class="tok-com"># value = net flow out of s</span></code></pre>
+
+        <h3>Termination, and the trap of arbitrary paths</h3>
+        <p>With <strong>integer</strong> capacities each augmentation raises <code class="inl">|f|</code> by an integer <code class="inl">&ge;1</code>, so the method terminates after at most <code class="inl">|f*|</code> rounds, where <code class="inl">|f*|</code> is the maximum-flow value. Each round costs <code class="inl">O(E)</code> to find a path, giving <code class="inl">O(E&middot;|f*|)</code>. That bound hides a menace: <code class="inl">|f*|</code> can be enormous, and if you choose augmenting paths carelessly the round count really can scale with the capacities rather than the graph size (the textbook trap: two fat edges joined by a capacity-1 bridge, where unlucky pathing alternates across the bridge and augments by a single unit thousands of times). On irrational capacities, arbitrary Ford&ndash;Fulkerson can fail to terminate <em>at all</em> &mdash; see &sect;11.</p>
+
+        <h3>Edmonds&ndash;Karp: always take the shortest augmenting path</h3>
+        <p>The fix is disarmingly simple and is why you already learned BFS. <span class="term">Edmonds&ndash;Karp</span> picks, every round, the augmenting path with the <em>fewest edges</em> &mdash; exactly what a breadth-first search from <code class="inl">s</code> in the residual graph returns. This single rule severs the running time from the capacities entirely.</p>
+
+        <pre><code><span class="tok-kw">def</span> <span class="tok-fn">find_aug_path</span>(C, F, s, t):        <span class="tok-com"># BFS in the residual graph  =&gt; Edmonds-Karp</span>
+    parent = {s: <span class="tok-kw">None</span>}
+    q = <span class="tok-fn">deque</span>([s])
+    <span class="tok-kw">while</span> q:
+        u = q.<span class="tok-fn">popleft</span>()
+        <span class="tok-kw">for</span> v <span class="tok-kw">in</span> C:                       <span class="tok-com"># every vertex v...</span>
+            resid = C[u][v] - F[u][v] + F[v][u]   <span class="tok-com"># forward room + cancellable flow</span>
+            <span class="tok-kw">if</span> resid &gt; <span class="tok-num">0</span> <span class="tok-kw">and</span> v <span class="tok-kw">not</span> <span class="tok-kw">in</span> parent:
+                parent[v] = u
+                <span class="tok-kw">if</span> v == t:
+                    <span class="tok-kw">return</span> <span class="tok-fn">trace_and_bottleneck</span>(parent, C, F, s, t)
+                q.<span class="tok-fn">append</span>(v)
+    <span class="tok-kw">return</span> <span class="tok-kw">None</span>, <span class="tok-num">0</span></code></pre>
+
+        <div class="band flush" style="margin:1.5em 0">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin:0 0 .4em"><strong>Why Edmonds&ndash;Karp is <code class="inl">O(VE&sup2;)</code>.</strong> Two facts, both about BFS distances in the residual graph. Let <code class="inl">&delta;(v)</code> be the number of edges on the shortest residual path from <code class="inl">s</code> to <code class="inl">v</code>.</p>
+          <p style="margin:0 0 .4em">(1) <em>Distances never decrease.</em> Augmenting along a shortest path can only add backward edges that point &ldquo;toward&rdquo; <code class="inl">s</code>, so no <code class="inl">&delta;(v)</code> ever shrinks across a round.</p>
+          <p style="margin:0 0 .4em">(2) <em>Each edge is the bottleneck <code class="inl">O(V)</code> times.</em> When edge <code class="inl">(u,v)</code> is saturated (the bottleneck), it vanishes from the residual graph; it can only reappear when flow is pushed back along <code class="inl">(v,u)</code>, and a careful look shows <code class="inl">&delta;(u)</code> has grown by <code class="inl">&ge;2</code> in between. Since <code class="inl">&delta;</code> ranges over <code class="inl">0&hellip;V</code>, this happens <code class="inl">O(V)</code> times per edge.</p>
+          <p style="margin:0; color:var(--on-surface-variant); font-size:15px">So there are <code class="inl">O(VE)</code> augmentations, each a BFS of cost <code class="inl">O(E)</code>: total <strong><code class="inl">O(VE&sup2;)</code></strong> &mdash; polynomial in the graph, with <em>no dependence on the capacities</em>.</p>
+        </div>
+
+        <p>Two refinements you should know by name. <span class="term">Dinic&rsquo;s algorithm</span> (1970) groups the BFS into a layered &ldquo;level graph&rdquo; and pushes a whole <em>blocking flow</em> per phase, reaching <code class="inl">O(V&sup2;E)</code> in general and a remarkable <code class="inl">O(E&radic;V)</code> when every capacity is 1 &mdash; the regime of matching. That unit-capacity bound is exactly the <span class="term">Hopcroft&ndash;Karp</span> matching algorithm in disguise, which we meet in &sect;09. Both are still augmenting-path algorithms; both still rest entirely on the residual graph of &sect;04.</p>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> the shadow problem</div>
+      <h2>Cuts and weak duality</h2>
+      <div class="col">
+        <p>Now the other half of the story. An <span class="term">s&ndash;t cut</span> <code class="inl">(S,T)</code> partitions the vertices so that <code class="inl">s&isin;S</code> and <code class="inl">t&isin;T</code>. Its <span class="term">capacity</span> is the total capacity of edges pointing from <code class="inl">S</code> into <code class="inl">T</code> &mdash; the forward-crossing edges only:</p>
+
+        <div class="eq">
+          <span class="lbl">capacity of a cut</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>c</mi><mo stretchy="false">(</mo><mi>S</mi><mo>,</mo><mi>T</mi><mo stretchy="false">)</mo>
+            <mo>=</mo>
+            <munder><mo>&#x2211;</mo><mrow><mi>u</mi><mo>&#x2208;</mo><mi>S</mi></mrow></munder>
+            <mspace width="0.2em"/>
+            <munder><mo>&#x2211;</mo><mrow><mi>v</mi><mo>&#x2208;</mo><mi>T</mi></mrow></munder>
+            <mi>c</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo>
+          </math></div>
+        </div>
+
+        <p>Edges running backward, from <code class="inl">T</code> to <code class="inl">S</code>, cost nothing in the cut &mdash; the cut prices only what crosses in the source-to-sink direction. Here is the lemma that ties flows to cuts, and it is just conservation telescoped. For <em>any</em> flow <code class="inl">f</code> and <em>any</em> cut <code class="inl">(S,T)</code>, the net flow crossing the cut equals the value of the flow:</p>
+
+        <div class="eq">
+          <span class="lbl">flow across any cut = value of the flow</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mo stretchy="false">|</mo><mi>f</mi><mo stretchy="false">|</mo>
+            <mo>=</mo>
+            <mi>f</mi><mo stretchy="false">(</mo><mi>S</mi><mo>,</mo><mi>T</mi><mo stretchy="false">)</mo>
+            <mo>=</mo>
+            <munder><mo>&#x2211;</mo><mrow><mi>u</mi><mo>&#x2208;</mo><mi>S</mi><mo>,</mo><mi>v</mi><mo>&#x2208;</mo><mi>T</mi></mrow></munder>
+            <mi>f</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo>
+            <mo>&#x2212;</mo>
+            <munder><mo>&#x2211;</mo><mrow><mi>u</mi><mo>&#x2208;</mo><mi>S</mi><mo>,</mo><mi>v</mi><mo>&#x2208;</mo><mi>T</mi></mrow></munder>
+            <mi>f</mi><mo stretchy="false">(</mo><mi>v</mi><mo>,</mo><mi>u</mi><mo stretchy="false">)</mo>
+          </math></div>
+        </div>
+
+        <p>The reasoning: start from <code class="inl">|f|</code> as the net outflow of <code class="inl">s</code>, then add the conservation equation (net outflow <code class="inl">=0</code>) for every other vertex in <code class="inl">S</code>. Every edge with <em>both</em> endpoints in <code class="inl">S</code> contributes <code class="inl">+f</code> at its tail and <code class="inl">&minus;f</code> at its head and cancels; what survives is precisely the flow on edges crossing the cut, forward minus backward. Now bound it. Forward terms are at most their capacities; backward terms are at least zero. Therefore:</p>
+
+        <div class="eq">
+          <span class="lbl">weak duality &mdash; every flow is bounded by every cut</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mo stretchy="false">|</mo><mi>f</mi><mo stretchy="false">|</mo>
+            <mo>=</mo>
+            <mi>f</mi><mo stretchy="false">(</mo><mi>S</mi><mo>,</mo><mi>T</mi><mo stretchy="false">)</mo>
+            <mo>&#x2264;</mo>
+            <munder><mo>&#x2211;</mo><mrow><mi>u</mi><mo>&#x2208;</mo><mi>S</mi><mo>,</mo><mi>v</mi><mo>&#x2208;</mo><mi>T</mi></mrow></munder>
+            <mi>c</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo>
+            <mo>=</mo>
+            <mi>c</mi><mo stretchy="false">(</mo><mi>S</mi><mo>,</mo><mi>T</mi><mo stretchy="false">)</mo>
+          </math></div>
+        </div>
+
+        <p>This already gives half the theorem, and it is the more useful half in practice. <strong>Every</strong> flow value is <code class="inl">&le;</code> <strong>every</strong> cut capacity. So if you ever exhibit a flow and a cut of <em>equal</em> value, you have simultaneously proved the flow is maximum (no flow can beat that cut) and the cut is minimum (no cut can undercut that flow). The cut is a one-line certificate of optimality. The deep question &mdash; answered next &mdash; is whether such a matching pair <em>always</em> exists.</p>
+        <div class="note info"><span class="tag">a free lower bound on cuts</span>Weak duality runs both ways as a sanity check: produce any flow, and you have a guaranteed <em>lower</em> bound on the minimum cut; produce any cut, and you have an <em>upper</em> bound on the maximum flow. Squeeze them together and you are done.</div>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> the theorem at the centre</div>
+      <h2>The max-flow min-cut theorem</h2>
+      <div class="col">
+        <p>Weak duality says <code class="inl">max&nbsp;flow&nbsp;&le;&nbsp;min&nbsp;cut</code>. The theorem of Ford and Fulkerson (1956) says they are <em>equal</em>, and it does so by welding three statements into one.</p>
+
+        <div class="band flush" style="margin:1.4em 0">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin:0 0 .4em"><strong>Max-Flow Min-Cut Theorem.</strong> For a flow <code class="inl">f</code> in a network, the following are equivalent:</p>
+          <p style="margin:0 0 .3em">&nbsp;&nbsp;<strong>(1)</strong> <code class="inl">f</code> is a maximum flow.</p>
+          <p style="margin:0 0 .3em">&nbsp;&nbsp;<strong>(2)</strong> The residual graph <code class="inl">G<sub>f</sub></code> contains no augmenting path (no <code class="inl">s</code>&ndash;<code class="inl">t</code> path).</p>
+          <p style="margin:0 0 .3em">&nbsp;&nbsp;<strong>(3)</strong> <code class="inl">|f| = c(S,T)</code> for some cut <code class="inl">(S,T)</code>.</p>
+          <p style="margin:0; color:var(--on-surface-variant); font-size:15px">Consequently the maximum flow value equals the minimum cut capacity, and Edmonds&ndash;Karp &mdash; which halts exactly when (2) holds &mdash; returns a maximum flow.</p>
+        </div>
+
+        <h3>Proof &mdash; a tidy cycle (1)&rArr;(2)&rArr;(3)&rArr;(1)</h3>
+        <p><strong>(1)&rArr;(2).</strong> Contrapositive. If <code class="inl">G<sub>f</sub></code> had an augmenting path, augmenting along it would strictly raise <code class="inl">|f|</code> (the bottleneck is positive), so <code class="inl">f</code> was not maximum. Hence a maximum flow admits no augmenting path.</p>
+        <p><strong>(2)&rArr;(3).</strong> This is the beautiful step &mdash; the cut is built from the residual graph itself. Suppose <code class="inl">G<sub>f</sub></code> has no <code class="inl">s</code>&ndash;<code class="inl">t</code> path. Let <code class="inl">S</code> be the set of vertices <em>reachable</em> from <code class="inl">s</code> in <code class="inl">G<sub>f</sub></code>, and <code class="inl">T=V&#8726;S</code>. Then <code class="inl">s&isin;S</code> by definition and <code class="inl">t&isin;T</code> because <code class="inl">t</code> is unreachable &mdash; so <code class="inl">(S,T)</code> is a genuine cut. Examine its crossing edges:</p>
+        <ul>
+          <li>For an original edge <code class="inl">(u,v)</code> with <code class="inl">u&isin;S, v&isin;T</code>: it must be <strong>saturated</strong>, <code class="inl">f(u,v)=c(u,v)</code>. Were there slack, the forward residual edge <code class="inl">u&rarr;v</code> would exist and <code class="inl">v</code> would be reachable &mdash; contradicting <code class="inl">v&isin;T</code>.</li>
+          <li>For an original edge <code class="inl">(v,u)</code> with <code class="inl">u&isin;S, v&isin;T</code> (i.e. running from <code class="inl">T</code> back into <code class="inl">S</code>): it must carry <strong>zero</strong> flow, <code class="inl">f(v,u)=0</code>. Any positive flow would create the backward residual edge <code class="inl">u&rarr;v</code>, again making <code class="inl">v</code> reachable.</li>
+        </ul>
+        <p>Substitute into the cut lemma of &sect;06: the forward crossing flow equals capacity and the backward crossing flow is zero, so <code class="inl">|f| = f(S,T) = c(S,T) &minus; 0 = c(S,T)</code>. The flow exactly saturates this cut.</p>
+        <p><strong>(3)&rArr;(1).</strong> Immediate from weak duality. If <code class="inl">|f|=c(S,T)</code> for some cut, then for any other flow <code class="inl">f&prime;</code> we have <code class="inl">|f&prime;| &le; c(S,T) = |f|</code>, so <code class="inl">f</code> is maximum. <strong>&#9633;</strong></p>
+
+        <p>Read the cycle once more and notice what it buys. The implication (2)&rArr;(3) does not merely <em>assert</em> a min cut exists &mdash; it <em>builds</em> one, for free, as the residual-reachable set of <code class="inl">s</code>. After Edmonds&ndash;Karp stops, one final BFS from <code class="inl">s</code> in <code class="inl">G<sub>f</sub></code> hands you the minimum cut. The algorithm that finds the flow also prints its own proof of optimality.</p>
+
+        <details>
+          <summary>Corollary &mdash; the integrality theorem (why matching will work)</summary>
+          <div class="body">
+            <p>If every capacity is an integer, then the Ford&ndash;Fulkerson method produces a maximum flow in which <em>every edge carries integer flow</em>. The induction is one line: the zero flow is integral; each augmentation adds or subtracts an integer bottleneck (the min of integer residual capacities), preserving integrality. So there is always an <strong>integral</strong> maximum flow. This is exactly what makes the matching reduction of &sect;09 sound &mdash; with unit capacities, an integral flow is forced to be <em>0/1</em> on every edge, i.e. a set of chosen edges, i.e. a matching. The same fact underlies the half-dozen modeling tricks in this lecture: solve the relaxed flow, and integrality hands you a combinatorial object back, with no rounding.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> the algorithm, by hand</div>
+      <h2>Worked example: Edmonds&ndash;Karp end to end</h2>
+      <div class="col">
+        <p>Return to Figure 1. We run Edmonds&ndash;Karp &mdash; shortest augmenting path each round &mdash; tracking the flow pushed and the residual graph, then read the minimum cut off the final reachable set. Because every <code class="inl">s</code>&ndash;<code class="inl">t</code> path here has length three, BFS will find length-three paths until none remain.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>Edmonds&ndash;Karp trace on Figure 1 &mdash; one shortest augmenting path per row</caption>
+            <thead>
+              <tr><th scope="col">Round</th><th scope="col">BFS augmenting path</th><th scope="col">Bottleneck</th><th scope="col">Why that bottleneck</th><th scope="col">Cumulative |f|</th></tr>
+            </thead>
+            <tbody>
+              <tr class="add-row"><td>1</td><td class="mono">s&rarr;a&rarr;c&rarr;t</td><td class="good">5</td><td class="mono">min(12, 5, 12) = 5 &mdash; a&rarr;c caps it</td><td>5</td></tr>
+              <tr class="add-row"><td>2</td><td class="mono">s&rarr;a&rarr;d&rarr;t</td><td class="good">3</td><td class="mono">min(7, 3, 12) = 3 &mdash; a&rarr;d caps it</td><td>8</td></tr>
+              <tr class="add-row"><td>3</td><td class="mono">s&rarr;b&rarr;c&rarr;t</td><td class="good">3</td><td class="mono">min(12, 3, 7) = 3 &mdash; b&rarr;c caps it</td><td>11</td></tr>
+              <tr class="add-row"><td>4</td><td class="mono">s&rarr;b&rarr;d&rarr;t</td><td class="good">6</td><td class="mono">min(9, 6, 9) = 6 &mdash; b&rarr;d caps it</td><td><b>17</b></td></tr>
+              <tr class="hi-row"><td>5</td><td class="mono">&mdash; no s&ndash;t path in G<sub>f</sub></td><td class="mid">&mdash;</td><td class="mono">from s, residual reaches only {a, b}</td><td><b>17 = max</b></td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="5">After round 4 every middle edge is saturated. BFS from s in the residual graph reaches {s, a, b} and stops &mdash; that set is the minimum cut.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <p>Watch the fourth row carefully. By round 4, edge <code class="inl">s&rarr;a</code> has only <code class="inl">12&minus;8=4</code> residual left and <code class="inl">a</code>&rsquo;s out-edges <code class="inl">a&rarr;c, a&rarr;d</code> are both saturated &mdash; so <code class="inl">a</code> is a dead end in the residual graph. The only way forward from <code class="inl">s</code> is through <code class="inl">b</code>, and after <code class="inl">b&rarr;d</code> fills, <code class="inl">b</code> is a dead end too. The residual frontier collapses to <code class="inl">\{s,a,b\}</code>. By the theorem&rsquo;s (2)&rArr;(3) step, <em>that reachable set is a minimum cut</em>.</p>
+
+        <figure>
+          <svg viewBox="0 0 840 460" role="img" aria-labelledby="g3t g3d">
+            <title id="g3t">The maximum flow and the minimum cut of Figure 1</title>
+            <desc id="g3d">The same network with flow over capacity labelled on each edge. The four middle edges a-c, a-d, b-c, b-d are saturated and drawn bold blue. A dashed red cut line separates the source side {s, a, b} from the sink side {c, d, t}; the four edges it severs total capacity seventeen, equal to the maximum flow.</desc>
+            <defs>
+              <marker id="f3ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--bau-ink)"/></marker>
+              <marker id="f3ab" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--bau-blue)"/></marker>
+            </defs>
+            <!-- regions -->
+            <rect class="dg-region" x="24" y="58" width="372" height="344" rx="26"/>
+            <text class="dg-cap" x="44" y="86" fill="var(--bau-blue)">S = {s, a, b}</text>
+            <text class="dg-cap" x="585" y="86" fill="var(--bau-red)">T = {c, d, t}</text>
+            <!-- cut line -->
+            <line class="dg-cutline" x1="420" y1="48" x2="420" y2="412"/>
+            <text class="dg-label sm" x="430" y="62" fill="var(--bau-red)">the min cut</text>
+            <!-- non-saturated edges -->
+            <g>
+              <line class="dg-edge" x1="105.5" y1="208.4" x2="274.5" y2="131.6" marker-end="url(#f3ah)"/><!-- s-a -->
+              <line class="dg-edge" x1="105.5" y1="231.6" x2="274.5" y2="308.4" marker-end="url(#f3ah)"/><!-- s-b -->
+              <line class="dg-edge" x1="565.5" y1="131.6" x2="734.5" y2="208.4" marker-end="url(#f3ab)"/><!-- c-t -->
+              <line class="dg-edge" x1="565.5" y1="308.4" x2="734.5" y2="231.6" marker-end="url(#f3ab)"/><!-- d-t -->
+            </g>
+            <!-- saturated middle edges (the cut) -->
+            <g>
+              <line class="dg-edge-sat" x1="328" y1="120" x2="512" y2="120" marker-end="url(#f3ab)"/><!-- a-c -->
+              <line class="dg-edge-sat" x1="321.5" y1="137.9" x2="518.5" y2="302.1" marker-end="url(#f3ab)"/><!-- a-d -->
+              <line class="dg-edge-sat" x1="321.5" y1="302.1" x2="518.5" y2="137.9" marker-end="url(#f3ab)"/><!-- b-c -->
+              <line class="dg-edge-sat" x1="328" y1="320" x2="512" y2="320" marker-end="url(#f3ab)"/><!-- b-d -->
+            </g>
+            <!-- flow/cap badges -->
+            <g>
+              <g><rect class="dg-cap-b" x="172" y="159" width="36" height="21" rx="5"/><text class="dg-cap-n" x="190" y="170">8/12</text></g>
+              <g><rect class="dg-cap-b" x="172" y="260" width="36" height="21" rx="5"/><text class="dg-cap-n" x="190" y="271">9/12</text></g>
+              <g><rect class="dg-cap-b sat" x="401" y="98" width="32" height="21" rx="5"/><text class="dg-cap-n w" x="417" y="109">5/5</text></g>
+              <g><rect class="dg-cap-b sat" x="354" y="170" width="32" height="21" rx="5"/><text class="dg-cap-n w" x="370" y="181">3/3</text></g>
+              <g><rect class="dg-cap-b sat" x="354" y="250" width="32" height="21" rx="5"/><text class="dg-cap-n w" x="370" y="261">3/3</text></g>
+              <g><rect class="dg-cap-b sat" x="401" y="330" width="32" height="21" rx="5"/><text class="dg-cap-n w" x="417" y="341">6/6</text></g>
+              <g><rect class="dg-cap-b" x="632" y="159" width="36" height="21" rx="5"/><text class="dg-cap-n" x="650" y="170">8/12</text></g>
+              <g><rect class="dg-cap-b" x="632" y="260" width="36" height="21" rx="5"/><text class="dg-cap-n" x="650" y="271">9/12</text></g>
+            </g>
+            <!-- nodes -->
+            <g>
+              <circle class="dg-node-s" cx="80" cy="220" r="28"/><text class="dg-nt" x="80" y="220">s</text>
+              <circle class="dg-node-s" cx="300" cy="120" r="28"/><text class="dg-nt" x="300" y="120">a</text>
+              <circle class="dg-node-s" cx="300" cy="320" r="28"/><text class="dg-nt" x="300" y="320">b</text>
+              <circle class="dg-node-t" cx="540" cy="120" r="28"/><text class="dg-nt" x="540" y="120">c</text>
+              <circle class="dg-node-t" cx="540" cy="320" r="28"/><text class="dg-nt" x="540" y="320">d</text>
+              <circle class="dg-node-t" cx="760" cy="220" r="28"/><text class="dg-nt" x="760" y="220">t</text>
+            </g>
+            <!-- total badge -->
+            <g>
+              <rect x="612" y="392" width="200" height="44" rx="10" fill="var(--bau-ink)"/>
+              <text x="712" y="415" text-anchor="middle" font-family="var(--font-mono)" font-size="14.5" fill="var(--bau-yellow)" font-weight="700">|f| = cut = 5+3+3+6 = 17</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 3 &mdash; max flow equals min cut.</b> The four <b style="color:var(--bau-blue)">blue</b> middle edges are saturated; the dashed <span style="color:var(--bau-red)">red</span> line is the minimum cut <code class="inl">(S,T)</code> with <code class="inl">S=\{s,a,b\}</code>. Its capacity <code class="inl">5+3+3+6=17</code> equals the flow value exactly. The bottleneck was never at the source (out-capacity 24) or the sink (in-capacity 24), but at the <em>wall in the middle</em> &mdash; which the duality theorem found for us.</figcaption>
+        </figure>
+
+        <p>The certificate is now visible to the eye. The flow <em>is</em> 17 (count the saturated middle edges). No flow can exceed 17 (the cut caps it at 17). The two numbers coincide, so both are optimal &mdash; and we needed no exhaustive search of flows or cuts to know it. That is duality doing the work of a proof.</p>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> everything is secretly a flow</div>
+      <h2>Modeling: matching and partition problems as flows</h2>
+      <div class="col">
+        <p>Flow earns its central place not because pipelines are common but because so many problems that mention no pipe at all are flows wearing a costume. The craft is <span class="term">reduction</span>: build a network whose maximum flow (or minimum cut) <em>is</em> the answer you want. Three patterns cover an enormous range.</p>
+
+        <h3>Pattern 1 &mdash; bipartite matching (a flow)</h3>
+        <p>You have a set <code class="inl">L</code> of workers and a set <code class="inl">R</code> of jobs, with an edge wherever a worker can do a job. A <span class="term">matching</span> is a set of worker&ndash;job pairs using each worker and each job at most once; you want the largest. Build a network: a super-source <code class="inl">s</code> with a capacity-1 edge to every worker, the original worker&rarr;job edges (capacity 1), and a capacity-1 edge from every job to a super-sink <code class="inl">t</code>.</p>
+
+        <figure>
+          <svg viewBox="0 0 720 360" role="img" aria-labelledby="g4t g4d">
+            <title id="g4t">Bipartite matching as a flow network</title>
+            <desc id="g4d">A super source s connects to three workers x1 x2 x3 with unit edges; workers connect to jobs y1 y2 y3 by the allowed assignments; jobs connect to a super sink t with unit edges. A maximum matching of size three is highlighted: x1-y1, x2-y2, x3-y3.</desc>
+            <defs>
+              <marker id="f4ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--outline)"/></marker>
+              <marker id="f4am" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--bau-blue)"/></marker>
+            </defs>
+            <!-- matched edges s->x (blue) -->
+            <g>
+              <line class="dg-edge-sat" x1="92" y1="172" x2="220" y2="92" marker-end="url(#f4am)"/>
+              <line class="dg-edge-sat" x1="94" y1="180" x2="220" y2="180" marker-end="url(#f4am)"/>
+              <line class="dg-edge-sat" x1="92" y1="188" x2="220" y2="268" marker-end="url(#f4am)"/>
+            </g>
+            <!-- worker->job edges: allowed set (grey), matched (blue) -->
+            <g>
+              <!-- x1: y1(matched), y2 -->
+              <line class="dg-edge-sat" x1="266" y1="80" x2="446" y2="80" marker-end="url(#f4am)"/>
+              <line class="dg-edge-mut" x1="266" y1="92" x2="446" y2="168" marker-end="url(#f4ah)"/>
+              <!-- x2: y2(matched), y3 -->
+              <line class="dg-edge-sat" x1="266" y1="180" x2="446" y2="180" marker-end="url(#f4am)"/>
+              <line class="dg-edge-mut" x1="266" y1="192" x2="446" y2="268" marker-end="url(#f4ah)"/>
+              <!-- x3: y3(matched) -->
+              <line class="dg-edge-sat" x1="266" y1="268" x2="446" y2="268" marker-end="url(#f4am)"/>
+            </g>
+            <!-- job->t edges (blue) -->
+            <g>
+              <line class="dg-edge-sat" x1="494" y1="80" x2="620" y2="172" marker-end="url(#f4am)"/>
+              <line class="dg-edge-sat" x1="494" y1="180" x2="624" y2="180" marker-end="url(#f4am)"/>
+              <line class="dg-edge-sat" x1="494" y1="268" x2="620" y2="188" marker-end="url(#f4am)"/>
+            </g>
+            <!-- nodes -->
+            <g>
+              <circle class="dg-node-s" cx="70" cy="180" r="22"/><text class="dg-nt" x="70" y="180" font-size="14">s</text>
+              <circle class="dg-node" cx="244" cy="80" r="22"/><text class="dg-nt" x="244" y="80" font-size="13">x&#8321;</text>
+              <circle class="dg-node" cx="244" cy="180" r="22"/><text class="dg-nt" x="244" y="180" font-size="13">x&#8322;</text>
+              <circle class="dg-node" cx="244" cy="280" r="22"/><text class="dg-nt" x="244" y="280" font-size="13">x&#8323;</text>
+              <circle class="dg-node" cx="470" cy="80" r="22"/><text class="dg-nt" x="470" y="80" font-size="13">y&#8321;</text>
+              <circle class="dg-node" cx="470" cy="180" r="22"/><text class="dg-nt" x="470" y="180" font-size="13">y&#8322;</text>
+              <circle class="dg-node" cx="470" cy="280" r="22"/><text class="dg-nt" x="470" y="280" font-size="13">y&#8323;</text>
+              <circle class="dg-node-t" cx="646" cy="180" r="22"/><text class="dg-nt" x="646" y="180" font-size="14">t</text>
+            </g>
+            <text class="dg-label sm" x="150" y="44">all edges capacity 1</text>
+          </svg>
+          <figcaption><b>Figure 4 &mdash; matching is flow.</b> Every edge has capacity 1, so by the integrality theorem the maximum flow is <em>0/1</em> on each edge &mdash; a set of vertex-disjoint <code class="inl">s&rarr;x&rarr;y&rarr;t</code> routes, i.e. a matching. Here the maximum flow is <b>3</b>, the matching <code class="inl">\{x&#8321;y&#8321;, x&#8322;y&#8322;, x&#8323;y&#8323;\}</code>. An augmenting path in this network is precisely an <em>augmenting path</em> in the classical matching sense.</figcaption>
+        </figure>
+
+        <p>Maximum integral flow = maximum matching. And the min-cut shadow is itself a famous theorem: in a bipartite graph the minimum cut in this network corresponds to a minimum <span class="term">vertex cover</span>, giving <span class="term">K&ouml;nig&rsquo;s theorem</span> &mdash; <em>maximum matching = minimum vertex cover</em>. Duality is not an analogy here; König&rsquo;s theorem <em>is</em> max-flow min-cut, specialized. Practice problems 1 and 2 are these two faces.</p>
+
+        <h3>Pattern 2 &mdash; disjoint paths (a cut)</h3>
+        <p>How many edge-disjoint routes run from <code class="inl">s</code> to <code class="inl">t</code>? Give every edge capacity 1; the maximum flow is exactly the number of edge-disjoint paths, and by duality it equals the minimum number of edges whose removal disconnects <code class="inl">s</code> from <code class="inl">t</code>. That is <span class="term">Menger&rsquo;s theorem</span>, the granddaddy of network reliability. For <em>vertex</em>-disjoint paths, apply the standard <span class="term">vertex-splitting</span> gadget: replace each vertex <code class="inl">v</code> by <code class="inl">v<sub>in</sub>&rarr;v<sub>out</sub></code> with capacity 1, forcing at most one path through it. Practice problem 3 is this gadget on a grid.</p>
+
+        <h3>Pattern 3 &mdash; partition / project selection (a weighted cut)</h3>
+        <p>When the prize is a <em>partition</em> &mdash; split things into &ldquo;keep&rdquo; and &ldquo;drop&rdquo; to optimize a weighted objective &mdash; the minimum cut is your tool directly. The archetype is <span class="term">project selection</span> (maximum-weight closure): each project earns a profit but requires paying for certain shared resources; choosing a project obliges you to choose its resources. Model it: <code class="inl">s&rarr;</code>project with capacity = profit, resource<code class="inl">&rarr;t</code> with capacity = cost, project<code class="inl">&rarr;</code>resource with capacity <code class="inl">&infin;</code> (so no finite cut ever severs a project from a resource it needs). The infinite edges force every finite cut to respect the &ldquo;closure&rdquo; rule, and</p>
+        <div class="eq">
+          <span class="lbl">project selection via min cut</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <munder><mrow><mi>max</mi></mrow><mtext>valid&#xA0;subset</mtext></munder>
+            <mspace width="0.3em"/><mtext>profit</mtext>
+            <mo>=</mo>
+            <mo stretchy="false">(</mo><mtext>total&#xA0;profit</mtext><mo stretchy="false">)</mo>
+            <mo>&#x2212;</mo>
+            <mtext>min&#x2011;cut</mtext>
+          </math></div>
+        </div>
+        <p>The same min-cut partition is the engine behind image segmentation (foreground vs. background), the densest-subgraph and stable-marriage variants, and the &ldquo;baseball elimination&rdquo; classic. Practice problem 4 is project selection in full. The lesson generalizes: <strong>a maximization that decomposes into independent route choices is a max-flow; a clean two-way partition with a weighted objective is a min-cut.</strong></p>
+
+        <div class="note info"><span class="tag">the reduction checklist</span>To model a problem as flow, answer four questions: <em>What is one unit of flow?</em> (a matched pair, a path, a chosen project) <em>What are the capacities?</em> (the &ldquo;at most once / at most this much&rdquo; limits) <em>Where is the source and sink?</em> <em>Does integrality give me back a combinatorial object?</em> If all four have clean answers, the flow toolbox &mdash; and a free optimality certificate &mdash; is yours.</div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> the cost ledger &amp; the live frontier</div>
+      <h2>What it costs &mdash; and the 2022 breakthrough</h2>
+      <div class="col">
+        <p>The augmenting-path family gives a clean ladder of bounds. Each rung trades a cleverer choice of path (or a batched push) for a better dependence on the graph.</p>
+
+        <div class="stats">
+          <div class="stat lead"><div class="big">m<sup>1+o(1)</sup></div><span class="lab">2022 max-flow &mdash; almost-linear in the edges</span></div>
+          <div class="stat"><div class="big">O(VE&sup2;)</div><span class="lab">Edmonds&ndash;Karp &mdash; capacity-independent</span></div>
+          <div class="stat"><div class="big">1</div><span class="lab">theorem (max-flow=min-cut) certifies every answer</span></div>
+          <div class="stat"><div class="big">66 yr</div><span class="lab">from Ford&ndash;Fulkerson (1956) to almost-linear (2022)</span></div>
+        </div>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>Maximum-flow algorithms, 1956 &rarr; 2022</caption>
+            <thead>
+              <tr><th scope="col">Algorithm</th><th scope="col">Core idea</th><th scope="col">Time</th><th scope="col">Note</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Ford&ndash;Fulkerson</th><td>any augmenting path</td><td class="mono">O(E&middot;|f*|)</td><td>integer caps; can blow up</td></tr>
+              <tr><th scope="row">Edmonds&ndash;Karp</th><td>shortest augmenting path (BFS)</td><td class="mono">O(VE&sup2;)</td><td>capacity-independent</td></tr>
+              <tr><th scope="row">Dinic</th><td>blocking flow on level graph</td><td class="mono">O(V&sup2;E)</td><td>O(E&radic;V) on unit caps</td></tr>
+              <tr><th scope="row">Hopcroft&ndash;Karp</th><td>Dinic, specialized to matching</td><td class="mono">O(E&radic;V)</td><td>bipartite matching</td></tr>
+              <tr><th scope="row">Orlin (2013)</th><td>strongly-poly combinatorial</td><td class="mono">O(VE)</td><td>best strongly-poly bound</td></tr>
+              <tr class="hi-row"><th scope="row">Chen&ndash;Kyng&ndash;Liu&ndash;Peng&ndash;Probst&ndash;Sachdeva (2022)</th><td>&#8467;&#8321; interior-point + dynamic min-ratio cycles</td><td class="mono">m<sup>1+o(1)</sup></td><td>almost-linear; min-cost flow too</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="4">m = number of edges. The 2022 bound is for integer capacities bounded by a polynomial; it is optimal up to the sub-polynomial o(1) factor &mdash; essentially the cost of reading the input.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <p>For decades, max-flow was a showcase of <em>combinatorial</em> algorithms &mdash; augmenting paths, blocking flows, scaling &mdash; and progress stalled around <code class="inl">O(VE)</code>. The breakthrough came from a different continent of mathematics. Beginning with M&#x105;dry&rsquo;s electrical-flow methods (2013) and the interior-point revolution of Lee&ndash;Sidford and others, researchers reframed max-flow as a <em>continuous</em> optimization &mdash; an objective minimized by gliding through the interior of the polytope of feasible flows, taking Newton-like steps. Each step is itself a graph problem (a min-ratio cycle, or an undirected min-cost flow) solved approximately by a dynamic data structure that maintains low-stretch trees and sparsifiers on a slowly changing graph.</p>
+
+        <figure>
+          <svg viewBox="0 0 880 300" role="img" aria-labelledby="g5t g5d">
+            <title id="g5t">The running-time exponent for max-flow, 1956 to 2022</title>
+            <desc id="g5d">A timeline showing milestones whose dependence on graph size falls from capacity-dependent and high-polynomial bounds in the mid twentieth century toward an almost-linear m to the one plus little-o of one bound in 2022.</desc>
+            <!-- baseline -->
+            <line x1="70" y1="232" x2="850" y2="232" stroke="var(--on-surface-variant)" stroke-width="2"/>
+            <text class="dg-label sm" x="70" y="258">1956</text>
+            <text class="dg-label sm" x="815" y="258">2022</text>
+            <!-- descending dashed exponent curve -->
+            <path d="M110 96 C 320 110, 470 150, 620 186 S 770 214, 808 210" fill="none" stroke="var(--bau-blue)" stroke-width="2.5" stroke-dasharray="7 6"/>
+            <text class="dg-label sm" x="120" y="86" fill="var(--bau-blue)">cost / graph-size dependence falls toward linear</text>
+            <!-- milestone ticks -->
+            <g font-family="var(--font-mono)">
+              <!-- 1956 FF -->
+              <circle cx="110" cy="232" r="6" class="dg-blue-f"/>
+              <line x1="110" y1="232" x2="110" y2="120" stroke="var(--outline-variant)" stroke-width="1.2"/>
+              <text class="dg-label sm" x="92" y="138">Ford&ndash;Fulkerson</text>
+              <text class="dg-label sm" x="110" y="152">O(E&middot;f*)</text>
+              <!-- 1970 Dinic -->
+              <circle cx="250" cy="232" r="6" class="dg-red-f"/>
+              <line x1="250" y1="232" x2="250" y2="178" stroke="var(--outline-variant)" stroke-width="1.2"/>
+              <text class="dg-label sm" x="232" y="172">Dinic</text>
+              <text class="dg-label sm" x="216" y="186">O(V&sup2;E)</text>
+              <!-- 1972 EK -->
+              <circle cx="350" cy="232" r="6" class="dg-blue-f"/>
+              <line x1="350" y1="232" x2="350" y2="262" stroke="var(--outline-variant)" stroke-width="1.2"/>
+              <text class="dg-label sm" x="318" y="278">Edmonds&ndash;Karp O(VE&sup2;)</text>
+              <!-- 1973 HK -->
+              <circle cx="470" cy="232" r="6" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <line x1="470" y1="232" x2="470" y2="196" stroke="var(--outline-variant)" stroke-width="1.2"/>
+              <text class="dg-label sm" x="452" y="190">Hopcroft&ndash;Karp</text>
+              <text class="dg-label sm" x="448" y="204">O(E&radic;V) match</text>
+              <!-- 2013 Madry/Orlin -->
+              <circle cx="620" cy="232" r="6" class="dg-red-f"/>
+              <line x1="620" y1="232" x2="620" y2="270" stroke="var(--outline-variant)" stroke-width="1.2"/>
+              <text class="dg-label sm" x="560" y="286">M&#x105;dry &#771;O(E&#185;&#8304;&#8260;&#8311;) &middot; Orlin O(VE)</text>
+              <!-- 2022 CKLPPS -->
+              <circle cx="808" cy="232" r="9" class="dg-blue-f" stroke="var(--bau-red)" stroke-width="3"/>
+              <line x1="808" y1="232" x2="808" y2="150" stroke="var(--bau-red)" stroke-width="1.5"/>
+              <rect x="700" y="120" width="170" height="34" rx="8" fill="var(--bau-ink)"/>
+              <text x="785" y="142" text-anchor="middle" font-size="14" fill="var(--bau-yellow)" font-weight="700">2022: m^(1+o(1))</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 5 &mdash; the 66-year arc.</b> Combinatorial augmenting-path and blocking-flow methods (blue/red dots) carried the field from capacity-dependent bounds to <code class="inl">O(VE)</code>; the 2022 result of Chen, Kyng, Liu, Peng, Probst Gutenberg and Sachdeva &mdash; built on continuous interior-point optimization rather than augmenting paths &mdash; finally reached <strong>almost-linear</strong> <code class="inl">m<sup>1+o(1)</sup></code>, and for minimum-<em>cost</em> flow as well.</figcaption>
+        </figure>
+
+        <p>What is worth carrying from the frontier is not the machinery but the shape of the story. A problem can look <em>solved</em> for forty years &mdash; everyone knows the augmenting-path algorithms, the bounds feel canonical &mdash; and still be wide open at the asymptotic edge. The 2022 result did not find a faster augmenting path; it <em>changed what kind of object a flow algorithm is</em>, trading discrete pushes for continuous descent. The duality theorem you proved in &sect;07 survives untouched underneath all of it &mdash; it is the fixed star the new methods still navigate by.</p>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>Flow is forgiving in theory and treacherous in code. Every trap below is something the formal lens flags: a violated invariant, or a choice the &ldquo;method&rdquo; left unspecified.</p>
+
+        <h3>1. Arbitrary Ford&ndash;Fulkerson can be exponential &mdash; or never halt</h3>
+        <p>The classic teaching graph: two paths of capacity <code class="inl">10<sup>9</sup></code> joined by a capacity-1 bridge. Choose augmenting paths that cross the bridge each round and you augment by <em>one unit</em> two billion times &mdash; correct, but useless. Worse, on <em>irrational</em> capacities arbitrary path choice can converge to a value below the maximum and never terminate (Ford and Fulkerson&rsquo;s own example; Zwick&rsquo;s 6-vertex graph is the cleanest). The cure is to specify the path rule: Edmonds&ndash;Karp&rsquo;s shortest-path choice makes it <code class="inl">O(VE&sup2;)</code>, capacity-blind, and always-terminating. <strong>Never ship the bare &ldquo;method&rdquo;; ship a path rule.</strong></p>
+
+        <h3>2. Forgetting the backward edge</h3>
+        <p>The single most common implementation bug: pushing only along forward residual edges and omitting the cancellation edge. The result is the broken greedy of &sect;04 &mdash; it returns <em>a</em> maximal flow but not <em>the</em> maximum one, undercounting on exactly the networks where rerouting matters. Your residual capacity must always read <code class="inl">c(u,v)&minus;f(u,v)+f(v,u)</code>; if your code has no term that lets a later path subtract earlier flow, it is wrong.</p>
+
+        <h3>3. Antiparallel edges and the residual ambiguity</h3>
+        <p>If the graph contains both <code class="inl">(u,v)</code> and <code class="inl">(v,u)</code>, a single &ldquo;residual capacity between <code class="inl">u</code> and <code class="inl">v</code>&rdquo; conflates two different edges. The clean fixes: keep flows per-edge (an edge list with explicit reverse-edge indices, as every production Dinic does), or split one antiparallel edge through a dummy node <code class="inl">u&rarr;w&rarr;v</code>. Storing capacities in a single <code class="inl">C[u][v]</code> matrix silently corrupts antiparallel inputs.</p>
+
+        <h3>4. Capacities are on edges, not nodes &mdash; until you split them</h3>
+        <p>Max-flow constrains edges. If your problem limits how much may pass <em>through a vertex</em> (a router&rsquo;s throughput, a grid cell used once), the model does not see it &mdash; until you apply vertex-splitting: replace <code class="inl">v</code> by <code class="inl">v<sub>in</sub>&rarr;v<sub>out</sub></code> carrying the vertex&rsquo;s capacity. Forgetting this is the usual reason a disjoint-paths or segmentation model returns too large an answer.</p>
+
+        <h3>5. Multiple sources or sinks</h3>
+        <p>Several sources <code class="inl">s&#8321;&hellip;s<sub>k</sub></code> or sinks? Do not run the algorithm <code class="inl">k</code> times. Add a <span class="term">super-source</span> <code class="inl">S</code> with edges <code class="inl">S&rarr;s<sub>i</sub></code> (capacity = that source&rsquo;s supply, or <code class="inl">&infin;</code>) and a symmetric super-sink. One run on the augmented network solves it, and the min cut is interpreted on the original.</p>
+
+        <h3>6. The minimum cut is not unique &mdash; but residual reachability picks one</h3>
+        <p>A network can have many minimum cuts of equal capacity. The construction in the theorem&rsquo;s (2)&rArr;(3) step returns a <em>specific</em> one: <code class="inl">S</code> = vertices reachable from <code class="inl">s</code> in the final residual graph (the &ldquo;source-minimal&rdquo; min cut). Reachability <em>into</em> <code class="inl">t</code> gives the &ldquo;sink-minimal&rdquo; one. If your application needs a particular cut (smallest source side, say), say which and compute it deliberately &mdash; do not assume the cut is the cut.</p>
+
+        <div class="note warn"><span class="tag">the litmus test</span>Before trusting a flow model, ask: <em>Does my residual capacity include the backward term?</em> (correctness) <em>Are my limits on edges or on vertices?</em> (split if vertices) <em>Did I fix a path rule, or ship the bare method?</em> (termination) The first guards the answer&rsquo;s value, the second its meaning, the third whether your program stops at all.</div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Maximum Number of Accepted Invitations</h3>
+          <p class="meta">bipartite matching &middot; the core gadget &middot; LeetCode 1820</p>
+          <p>There are <code class="inl">m</code> boys and <code class="inl">n</code> girls. You are given an <code class="inl">m&times;n</code> binary matrix <code class="inl">grid</code> where <code class="inl">grid[i][j]==1</code> means boy <code class="inl">i</code> can invite girl <code class="inl">j</code>. Each boy invites at most one girl and each girl accepts at most one invitation. Return the maximum number of invitations that can be accepted. Constraints: <code class="inl">1 &le; m, n &le; 200</code>. Example: <code class="inl">grid=[[1,1,1],[1,0,1],[0,0,1]] &#8594; 3</code>; <code class="inl">grid=[[1,0,1,0],[1,0,0,0],[0,0,1,0]] &#8594; 2</code>. This is maximum bipartite matching exactly: build the <code class="inl">s&rarr;</code>boy<code class="inl">&rarr;</code>girl<code class="inl">&rarr;t</code> network of &sect;09 and find the max flow &mdash; or run the equivalent augmenting-path matching (Kuhn&rsquo;s) directly. State your capacities and justify why the integrality theorem makes the flow a matching.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Minimum Lines to Cover All Ones (K&ouml;nig&rsquo;s theorem)</h3>
+          <p class="meta">matching = cover duality &middot; min-cut in disguise &middot; classic</p>
+          <p>Given a binary matrix <code class="inl">mat</code> (<code class="inl">R&times;C</code>), a <em>line</em> is an entire row or an entire column; placing a line &ldquo;covers&rdquo; every cell on it. Return the minimum number of lines needed so that every <code class="inl">1</code> in the matrix lies on at least one chosen line. Constraints: <code class="inl">1 &le; R, C &le; 200</code>. Example: <code class="inl">mat=[[1,0,1],[1,0,0],[0,0,1]] &#8594; 2</code> (column&nbsp;0 and column&nbsp;2 cover all four ones). Model the ones as edges of a bipartite graph between rows and columns. Which classical theorem equates the minimum cover with the maximum matching &mdash; and why is that theorem an instance of max-flow min-cut? Your code is the same matcher as problem&nbsp;1, but the <em>answer you return</em> is different. Explain the connection precisely.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Maximum Vertex-Disjoint Escape Routes</h3>
+          <p class="meta">Menger &middot; vertex-splitting gadget &middot; min-cut</p>
+          <p>You are given a grid of characters, <code class="inl">'.'</code> for open and <code class="inl">'#'</code> for blocked. A <em>route</em> walks from any open cell in the top row to any open cell in the bottom row, stepping between 4-directionally adjacent open cells, and may pass through each cell at most once. Two routes are <em>vertex-disjoint</em> if they share no cell. Return the maximum number of pairwise vertex-disjoint routes. Constraints: grid up to <code class="inl">50&times;50</code>. Example: <code class="inl">grid=['...','.#.','...'] &#8594; 2</code> (the two outer columns; the centre is blocked at the middle). Build a unit-capacity flow network with a super-source above the top row and super-sink below the bottom row. Which gadget enforces &ldquo;each cell at most once,&rdquo; and what does the minimum cut <em>mean</em> here (Menger)? Justify the unit capacities.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Maximum-Profit Project Selection</h3>
+          <p class="meta">maximum-weight closure &middot; weighted min-cut &middot; capstone</p>
+          <p>You may undertake any subset of <code class="inl">P</code> projects. Project <code class="inl">i</code> yields <code class="inl">revenue[i] &ge; 0</code>. There are <code class="inl">M</code> machines; machine <code class="inl">j</code> costs <code class="inl">cost[j] &ge; 0</code> to buy (once), and undertaking project <code class="inl">i</code> requires owning every machine in <code class="inl">requires[i]</code> (a list of machine indices); a bought machine serves all projects that need it. Maximize <code class="inl">(&Sigma;&nbsp;revenue&nbsp;of&nbsp;chosen&nbsp;projects) &minus; (&Sigma;&nbsp;cost&nbsp;of&nbsp;machines&nbsp;you&nbsp;must&nbsp;buy)</code>; the empty selection (profit&nbsp;0) is allowed. Constraints: <code class="inl">P, M &le; 200</code>. Example: <code class="inl">revenue=[10,7], cost=[6,4], requires=[[0],[0,1]] &#8594; 7</code> (take only project&nbsp;0: <code class="inl">10&minus;6=4</code>; take both: <code class="inl">17&minus;10=7</code>; both wins). Build the closure network of &sect;09 with <code class="inl">&infin;</code> on the requirement edges, and return <code class="inl">total&nbsp;revenue &minus; min&#8209;cut</code>. Prove why the infinite edges force the min cut to correspond to a <em>valid</em> selection.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section id="s13" class="reveal">
+      <div class="eyebrow"><span class="n">13</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>The maximum flow from <code class="inl">s</code> to <code class="inl">t</code> equals the minimum cut separating them &mdash; one number that both solves the problem and certifies the answer.</strong> Augmenting-path algorithms find it by repeatedly pushing flow along <code class="inl">s</code>&ndash;<code class="inl">t</code> paths in the <em>residual graph</em>, whose backward edges let the algorithm undo earlier commitments; Edmonds&ndash;Karp&rsquo;s shortest-path rule makes that <code class="inl">O(VE&sup2;)</code>, free of the capacities. The same theorem, read as a min-cut or a matching, models assignment, disjoint paths, and partition problems &mdash; and the integrality theorem hands the combinatorial answer back whole. When Edmonds&ndash;Karp halts, the vertices still reachable from <code class="inl">s</code> in the residual graph <em>are</em> the minimum cut: the algorithm prints its own proof.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 18</span>
+            <div class="ttl">Algorithms on Text I: Linear-Time Exact Matching (KMP, Z, Rabin&ndash;Karp)</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We leave graphs for strings &mdash; but the habits of mind carry over. Lecture&nbsp;18 builds linear-time pattern matching: the Knuth&ndash;Morris&ndash;Pratt failure function, the Z-algorithm, and Rabin&ndash;Karp&rsquo;s rolling-hash fingerprints. KMP&rsquo;s linear bound, like union-find&rsquo;s, is an <em>amortized</em> argument &mdash; a potential on a single pointer that never moves backward too far. The duality you met here has a cousin there too: the failure function is the string &ldquo;remembering&rdquo; its own structure so it never re-scans what it already proved.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-16-when-is-greedy-optimal-exchange-arguments-and-matroids.html">← Previous study</a><a href="dsa-18-linear-time-exact-matching.html">Next study →</a></nav>
+</body>
+</html>

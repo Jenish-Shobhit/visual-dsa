@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>All-Pairs Shortest Paths: Floyd&ndash;Warshall, Johnson&rsquo;s Reweighting &amp; the O(n&sup3;) Baseline</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  em{font-style:italic}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.7rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.3rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.hl-row td, tr.hl-row th{background:color-mix(in oklab,var(--bau-yellow) 26%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-stroke{stroke:var(--on-surface); fill:none; stroke-width:2}
+  .dg-thin{stroke:var(--outline); fill:none; stroke-width:1}
+  .dg-dash{stroke:var(--outline); fill:none; stroke-width:1.5; stroke-dasharray:5 5}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+  .dg-red{stroke:var(--bau-red)}   .dg-red-f{fill:var(--bau-red)}
+  .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-cell{fill:var(--surface);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill{fill:var(--primary-container);stroke:var(--bau-ink);stroke-width:2}
+  .dg-label{font-family:var(--font-mono); font-size:14px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
+  .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
+
+  /* ===== matrices (worked-example state, designed data) ===== */
+  .mwrap{display:flex; flex-wrap:wrap; gap:calc(var(--sp)*2.5); align-items:flex-start; margin:1.3em 0}
+  .mtx{display:inline-block; border:none; width:auto}
+  .mtx table{border-collapse:collapse; width:auto; font-size:14px}
+  .mtx caption{caption-side:top; text-align:center; padding:0 0 8px; color:var(--on-surface);
+    font-family:var(--font-mono); letter-spacing:.04em; text-transform:none}
+  .mtx caption b{color:var(--bau-red)}
+  .mtx th{background:transparent; color:var(--on-surface-variant); font-family:var(--font-mono);
+    font-size:12px; font-weight:700; padding:3px 0; position:static; text-align:center}
+  .mtx thead th{background:transparent; color:var(--bau-blue)}
+  .mtx td{width:40px; height:36px; text-align:center; padding:0; border:1.5px solid var(--outline-variant);
+    font-family:var(--font-mono); font-variant-numeric:tabular-nums; background:var(--surface)}
+  .mtx td.diag{background:var(--surface-3); color:var(--on-surface-variant)}
+  .mtx td.inf{color:var(--outline)}
+  .mtx td.ch{background:var(--bau-yellow); color:var(--bau-ink); font-weight:700; border-color:var(--bau-ink)}
+  .mtx td.neg{color:var(--bau-red); font-weight:700}
+  .mtx .pivrow th, .mtx .pivrow td{outline:2px solid color-mix(in oklab,var(--bau-blue) 55%,transparent); outline-offset:-2px}
+  .mtx col.pivcol{background:color-mix(in oklab,var(--bau-blue) 9%,transparent)}
+  .klabel{font-family:var(--font-mono); font-size:12px; letter-spacing:.06em; color:var(--on-surface-variant); margin:.2em 0 .2em}
+
+  /* ===== inline cell strips ===== */
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-family:var(--font-mono); font-size:12px; color:var(--on-surface-variant); margin:.2em 0 1em}
+  .legend i{display:inline-block; width:13px; height:13px; border:1.5px solid var(--bau-ink); border-radius:3px; vertical-align:-2px; margin-right:5px}
+  .legend .ch{background:var(--bau-yellow)} .legend .pv{background:color-mix(in oklab,var(--bau-blue) 18%,var(--surface))} .legend .dg{background:var(--surface-3)}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">14 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>14</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="220" height="180" viewBox="0 0 220 180" aria-hidden="true">
+    <!-- the motif: a distance matrix as a grid of cells, one diagonal of zeros -->
+    <g font-family="var(--font-mono)" font-size="13">
+      <rect x="20"  y="20"  width="40" height="40" class="dg-blue-f"/>
+      <rect x="62"  y="20"  width="40" height="40" class="dg-cell"/>
+      <rect x="104" y="20"  width="40" height="40" class="dg-cell"/>
+      <rect x="146" y="20"  width="40" height="40" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+      <rect x="20"  y="62"  width="40" height="40" class="dg-cell"/>
+      <rect x="62"  y="62"  width="40" height="40" class="dg-blue-f"/>
+      <rect x="104" y="62"  width="40" height="40" class="dg-red-f"/>
+      <rect x="146" y="62"  width="40" height="40" class="dg-cell"/>
+      <rect x="20"  y="104" width="40" height="40" class="dg-cell"/>
+      <rect x="62"  y="104" width="40" height="40" class="dg-cell"/>
+      <rect x="104" y="104" width="40" height="40" class="dg-blue-f"/>
+      <rect x="146" y="104" width="40" height="40" class="dg-cell"/>
+      <rect x="20"  y="146" width="40" height="20" class="dg-cell"/>
+      <rect x="62"  y="146" width="40" height="20" class="dg-cell"/>
+      <rect x="104" y="146" width="40" height="20" class="dg-cell"/>
+      <rect x="146" y="146" width="40" height="20" class="dg-blue-f"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 14</span> one source was never the question</div>
+    <h1>All-Pairs Shortest Paths</h1>
+    <p class="lede col">Last lecture answered one source: stand at a vertex, learn the distance to everyone. But the questions that bite want the whole <em>matrix</em> &mdash; the distance between <em>every</em> ordered pair. The diameter of a network (its longest shortest path). A routing table. The closeness of every node to every other. You can get all of it by running a single-source algorithm <code class="inl">n</code> times &mdash; or you can compute the entire <code class="inl">n &times; n</code> table with <strong>three nested loops and five lines</strong>. This lecture builds that loop from first principles (<strong>Floyd&ndash;Warshall</strong>, <code class="inl">&#x398;(n&sup3;)</code> for <em>any</em> weights), then sharpens it for sparse graphs by <em>reshaping the weights themselves</em> (<strong>Johnson&rsquo;s reweighting</strong>).</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A number to fix the stakes.</strong> Take a dense graph with <code class="inl">n = 1000</code> vertices and possibly-negative edge weights, and ask for all <code class="inl">10&#8310;</code> pairwise distances. The honest baseline &mdash; run <em>Bellman&ndash;Ford</em> from each source because Dijkstra cannot survive a negative edge &mdash; costs <code class="inl">&#x398;(n&middot;nm)=&#x398;(n&sup3;m)</code>; on a dense graph that is <code class="inl">&#x398;(n&#8308;)&nbsp;&asymp;&nbsp;10&sup1;&sup2;</code> elementary steps, roughly <strong>quarter of an hour</strong>.</p>
+        <p style="margin-bottom:0">Floyd&ndash;Warshall computes the <em>same</em> matrix, negative edges and all, in <code class="inl">&#x398;(n&sup3;)=10&#8313;</code> steps &mdash; about <strong>one second</strong>. A <strong>1000&times;</strong> gap, and the faster program is shorter. One idea buys it: <em>grow the set of vertices a path is allowed to pass through, one vertex at a time.</em></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>The whole-matrix problem</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>The Floyd&ndash;Warshall idea</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>Correctness &amp; in-place</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Worked: trace the matrix</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>Paths &amp; negative cycles</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>Johnson&rsquo;s reweighting</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Which one, and when</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Where it breaks</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Practice</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> the shape of the question</div>
+      <h2>From one row to the whole table</h2>
+      <div class="col">
+        <p>A single-source shortest-path algorithm hands you one <em>row</em> of an answer: from a fixed source <code class="inl">s</code>, the distance <code class="inl">&delta;(s,v)</code> to every <code class="inl">v</code>. The <span class="term">all-pairs shortest paths</span> (APSP) problem asks for the entire <code class="inl">n &times; n</code> matrix at once:</p>
+        <div class="eq">
+          <span class="lbl">the object we must produce</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>D</mi><mo>[</mo><mi>i</mi><mo>]</mo><mo>[</mo><mi>j</mi><mo>]</mo>
+              <mo>=</mo>
+              <mi>&delta;</mi><mo>(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo>)</mo>
+              <mo>=</mo>
+              <mtext>weight of the shortest directed path&#xA0;</mtext>
+              <mi>i</mi><mo>&#x21DD;</mo><mi>j</mi>
+              <mtext>,&#xA0;for all ordered pairs&#xA0;</mtext>
+              <mo>(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo>)</mo><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>The input is a weighted directed graph <code class="inl">G=(V,E)</code> with <code class="inl">n=|V|</code> vertices, <code class="inl">m=|E|</code> edges, and a weight <code class="inl">w(u,v)</code> on each edge &mdash; weights may be <strong>negative</strong>, but (for the answer to exist) there must be <strong>no negative-weight cycle</strong> reachable along the paths we measure, else some distances are <code class="inl">&minus;&infin;</code>. The output is the matrix <code class="inl">D</code>, and usually a companion structure that lets us reconstruct the actual paths.</p>
+
+        <p>The first instinct is correct and worth pricing out: <em>solve APSP by solving SSSP</em> once per vertex. The catch is the weights.</p>
+
+        <div class="two">
+          <div class="band">
+            <div class="eyebrow" style="margin-bottom:.5em"><span class="n" style="background:var(--bau-blue);color:#fff;border-color:var(--bau-blue)">A</span> non-negative weights</div>
+            <p style="margin-bottom:.4em"><strong>Run Dijkstra <code class="inl">n</code> times.</strong> One source costs <code class="inl">O(m + n log n)</code> with a binary heap.</p>
+            <p style="margin-bottom:0">All pairs: <code class="inl">O(nm + n&sup2; log n)</code>. On a <em>sparse</em> graph that is <code class="inl">O(n&sup2; log n)</code> &mdash; excellent. But Dijkstra is <em>wrong</em> the instant one edge is negative.</p>
+          </div>
+          <div class="band">
+            <div class="eyebrow" style="margin-bottom:.5em"><span class="n" style="background:var(--bau-red);color:#fff;border-color:var(--bau-red)">B</span> negative weights allowed</div>
+            <p style="margin-bottom:.4em"><strong>Run Bellman&ndash;Ford <code class="inl">n</code> times.</strong> One source costs <code class="inl">O(nm)</code>.</p>
+            <p style="margin-bottom:0">All pairs: <code class="inl">O(n&sup2;m)</code>. On a dense graph (<code class="inl">m=&#x398;(n&sup2;)</code>) that is <code class="inl">O(n&#8308;)</code> &mdash; the slow baseline the hero quoted.</p>
+          </div>
+        </div>
+
+        <p>So the landscape has two pressures. Negative edges forbid the cheap algorithm (Dijkstra); density makes the safe one (Bellman&ndash;Ford&times;n) cost <code class="inl">n&#8308;</code>. Floyd&ndash;Warshall escapes <em>both</em> at once: it tolerates negative edges and runs in <code class="inl">&#x398;(n&sup3;)</code> no matter the density &mdash; a single flat cost that beats <code class="inl">n&#8308;</code> and asks nothing of the sign of the weights. Then Johnson&rsquo;s algorithm wins the <em>sparse</em> case back, getting Dijkstra&rsquo;s <code class="inl">n&sup2; log n</code> even when the graph has negative edges, by first making them non-negative without disturbing which paths are shortest.</p>
+
+        <div class="note info"><span class="tag">why a matrix, not n separate runs</span>The deep reason Floyd&ndash;Warshall beats <code class="inl">n</code> separate searches is that the <em>pairs share work</em>. The shortest path from <code class="inl">i</code> to <code class="inl">j</code> and the shortest from <code class="inl">i'</code> to <code class="inl">j'</code> may both route through the same vertex <code class="inl">k</code>; computing &ldquo;best route through <code class="inl">k</code>&rdquo; once, for the whole matrix, is cheaper than rediscovering it inside every source&rsquo;s independent search.</p></div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>State</strong> the APSP problem and price its two SSSP-repetition baselines (<code class="inl">n&times;</code>Dijkstra, <code class="inl">n&times;</code>Bellman&ndash;Ford), knowing exactly which one each weight regime permits.</li>
+          <li><strong>Derive</strong> the Floyd&ndash;Warshall recurrence over <em>permitted intermediate vertices</em> <code class="inl">d&#8317;&#8338;&#8318;(i,j)=min(d&#8317;&#8338;&#8315;&#185;&#8318;(i,j),&nbsp;d&#8317;&#8338;&#8315;&#185;&#8318;(i,k)+d&#8317;&#8338;&#8315;&#185;&#8318;(k,j))</code> and prove it correct by induction on <code class="inl">k</code>.</li>
+          <li><strong>Implement</strong> it in <code class="inl">&#x398;(n&sup3;)</code> time and <code class="inl">&#x398;(n&sup2;)</code> space, justify the in-place collapse of the <code class="inl">k</code>-index, reconstruct paths via a successor matrix, and detect negative cycles on the diagonal.</li>
+          <li><strong>Derive</strong> Johnson&rsquo;s reweighting: why a potential <code class="inl">h(v)</code> makes every reduced weight <code class="inl">&#373;(u,v)=w(u,v)+h(u)&minus;h(v)&nbsp;&ge;&nbsp;0</code> while preserving every shortest path, and why Bellman&ndash;Ford from a super-source yields a valid <code class="inl">h</code>.</li>
+          <li><strong>Choose</strong> between Floyd&ndash;Warshall and Johnson from the graph&rsquo;s density, locating the crossover where <code class="inl">O(nm + n&sup2; log n)</code> overtakes <code class="inl">&#x398;(n&sup3;)</code>.</li>
+          <li><strong>Diagnose</strong> the classic disasters: the loop-order trap, the <code class="inl">&infin;+&infin;</code> overflow, undirected negative edges, the forgotten un-reduction in Johnson, and silent negative cycles.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>This lecture stands on the single-source machinery and a little algebra of recurrences. Where a prerequisite has its own page in this syllabus, it is linked.</p>
+        <div class="chips">
+          <span class="chip">single-source shortest paths &mdash; Dijkstra, Bellman&ndash;Ford</span>
+          <span class="chip">edge relaxation</span>
+          <a class="chip" href="dsa-03-divide-solve-combine.html">recurrences / Master Theorem</a>
+          <span class="chip">graph representation (adjacency matrix / list)</span>
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotics &mdash; O / &Theta; / &Omega;</a>
+        </div>
+        <p style="margin-top:1em">Two facts you must hold firmly from Lecture&nbsp;13. First, <strong>relaxation</strong>: an edge <code class="inl">(u,v)</code> is <em>relaxed</em> by testing whether going to <code class="inl">v</code> via <code class="inl">u</code> beats the best known route &mdash; <code class="inl">if d[u]+w(u,v) &lt; d[v]: d[v]=d[u]+w(u,v)</code>. Every shortest-path algorithm is a discipline for ordering relaxations. Second, a shortest path in a graph with <strong>no negative cycle is simple</strong> &mdash; it repeats no vertex &mdash; because excising any repeated stretch (a cycle of weight <code class="inl">&ge; 0</code>) never makes the path longer. That simplicity is the hinge of today&rsquo;s correctness proof.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> grow the permitted set, one vertex at a time</div>
+      <h2>The Floyd&ndash;Warshall idea: a dimension nobody thinks to add</h2>
+      <div class="col">
+        <p>Here is the move that makes the whole thing mechanical. Number the vertices <code class="inl">1, 2, &hellip;, n</code>. For a path from <code class="inl">i</code> to <code class="inl">j</code>, call its <span class="term">intermediate vertices</span> everything strictly between the endpoints &mdash; the vertices it passes <em>through</em>, not <code class="inl">i</code> or <code class="inl">j</code> themselves. Now define a family of restricted distances indexed by an integer <code class="inl">k</code>:</p>
+
+        <div class="eq">
+          <span class="lbl">the subproblem &mdash; a third index k bounding the permitted intermediates</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <msup><mi>d</mi><mrow><mo>(</mo><mi>k</mi><mo>)</mo></mrow></msup>
+              <mo>(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo>)</mo>
+              <mo>=</mo>
+              <mtext>length of the shortest&#xA0;</mtext><mi>i</mi><mo>&#x21DD;</mo><mi>j</mi>
+              <mtext>&#xA0;path whose intermediate vertices all lie in&#xA0;</mtext>
+              <mo>{</mo><mn>1</mn><mo>,</mo><mn>2</mn><mo>,</mo><mo>&hellip;</mo><mo>,</mo><mi>k</mi><mo>}</mo><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>Read the two ends of that ladder. At <code class="inl">k=0</code> <em>no</em> vertex may be used as an intermediate, so the only legal <code class="inl">i&#x21DD;j</code> path is the direct edge: <code class="inl">d&#8317;&#8304;&#8318;(i,j)=w(i,j)</code> (with <code class="inl">0</code> on the diagonal and <code class="inl">&infin;</code> where no edge exists). At <code class="inl">k=n</code> <em>every</em> vertex is permitted, so the restriction is no restriction at all: <code class="inl">d&#8317;&#8319;&#8318;(i,j)=&delta;(i,j)</code>, the true answer. The plan writes itself: start at the trivial layer <code class="inl">d&#8317;&#8304;&#8318;</code> and climb to <code class="inl">d&#8317;&#8319;&#8318;</code>, admitting one more vertex into the permitted set at each step.</p>
+
+        <p>The climb &mdash; from layer <code class="inl">k&minus;1</code> to layer <code class="inl">k</code> &mdash; is a single binary choice. We are about to let paths use vertex <code class="inl">k</code> as an intermediate, on top of everything in <code class="inl">{1,&hellip;,k&minus;1}</code> they could already use. For a given pair <code class="inl">(i,j)</code>, the best path permitted at layer <code class="inl">k</code> either ignores the new option or seizes it:</p>
+        <ul>
+          <li><strong>It does not pass through <code class="inl">k</code>.</strong> Then its intermediates already lie in <code class="inl">{1,&hellip;,k&minus;1}</code>, and its length is exactly <code class="inl">d&#8317;&#8338;&#8315;&#185;&#8318;(i,j)</code> &mdash; nothing changed.</li>
+          <li><strong>It passes through <code class="inl">k</code>.</strong> Because the path is simple (no negative cycle), it visits <code class="inl">k</code> <em>exactly once</em>. Split it there: <code class="inl">i &#x21DD; k</code> then <code class="inl">k &#x21DD; j</code>. Neither half uses <code class="inl">k</code> as an interior vertex, so each half&rsquo;s intermediates lie in <code class="inl">{1,&hellip;,k&minus;1}</code>, and each half is itself shortest under that restriction. The length is <code class="inl">d&#8317;&#8338;&#8315;&#185;&#8318;(i,k) + d&#8317;&#8338;&#8315;&#185;&#8318;(k,j)</code>.</li>
+        </ul>
+        <p>Take the smaller. That single line is the entire algorithm:</p>
+
+        <div class="eq">
+          <span class="lbl">the Floyd&ndash;Warshall recurrence</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <msup><mi>d</mi><mrow><mo>(</mo><mi>k</mi><mo>)</mo></mrow></msup><mo>(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo>)</mo>
+              <mo>=</mo>
+              <mi>min</mi><mrow><mo>(</mo>
+                <mrow>
+                  <munder><munder><msup><mi>d</mi><mrow><mo>(</mo><mi>k</mi><mo>&minus;</mo><mn>1</mn><mo>)</mo></mrow></msup><mo>&#x23DF;</mo></munder><mtext>don&rsquo;t use k</mtext></munder>
+                  <mo>(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo>)</mo>
+                </mrow>
+                <mo>,</mo>
+                <mrow>
+                  <munder><munder><mrow><msup><mi>d</mi><mrow><mo>(</mo><mi>k</mi><mo>&minus;</mo><mn>1</mn><mo>)</mo></mrow></msup><mo>(</mo><mi>i</mi><mo>,</mo><mi>k</mi><mo>)</mo><mo>+</mo><msup><mi>d</mi><mrow><mo>(</mo><mi>k</mi><mo>&minus;</mo><mn>1</mn><mo>)</mo></mrow></msup><mo>(</mo><mi>k</mi><mo>,</mo><mi>j</mi><mo>)</mo></mrow><mo>&#x23DF;</mo></munder><mtext>route through k</mtext></munder>
+                </mrow>
+              <mo>)</mo></mrow>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>Look at what just happened. A two-dimensional question (a matrix of distances) became a three-dimensional table (the same matrix, indexed also by how many vertices it may use). The extra index is pure bookkeeping &mdash; it never appears in the input or the output &mdash; yet it converts a global optimisation over exponentially many paths into <code class="inl">n</code> sweeps of a trivial local choice. That is the signature of a dynamic program, and the next lecture will name it as such. For now, watch the decision drawn out:</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 760 300" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">The Floyd&ndash;Warshall relaxation: route i to j directly or through vertex k</title>
+            <desc id="f2d">Vertex i on the left and vertex j on the right. A lower straight arrow from i to j is labelled d superscript k minus one of i j, the best route that does not use vertex k. An upper two-segment route goes from i up to vertex k at top centre and down to j, labelled d superscript k minus one of i k plus d superscript k minus one of k j. The layer-k value is the minimum of the two.</desc>
+
+            <defs>
+              <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--on-surface)"/>
+              </marker>
+              <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--bau-blue)"/>
+              </marker>
+            </defs>
+
+            <text x="24" y="34" class="dg-cap">layer k admits one new waypoint: vertex k</text>
+
+            <!-- nodes -->
+            <circle cx="110" cy="200" r="26" class="dg-fill"/>
+            <text x="110" y="206" text-anchor="middle" class="dg-val">i</text>
+            <circle cx="650" cy="200" r="26" class="dg-fill"/>
+            <text x="650" y="206" text-anchor="middle" class="dg-val">j</text>
+            <circle cx="380" cy="86" r="26" class="dg-red-f" stroke="var(--bau-ink)" stroke-width="2"/>
+            <text x="380" y="92" text-anchor="middle" class="dg-val" fill="#fff">k</text>
+
+            <!-- direct route (does not use k) -->
+            <path d="M136 207 Q 380 250 624 207" class="dg-stroke" marker-end="url(#ah)"/>
+            <text x="380" y="262" text-anchor="middle" class="dg-label sm">d&#8317;&#8338;&#8315;&#185;&#8318;(i, j) &mdash; intermediates &sube; {1&hellip;k&minus;1}</text>
+
+            <!-- route through k -->
+            <path d="M128 178 Q 230 96 354 92" class="dg-blue" stroke-width="2.5" fill="none" marker-end="url(#ahb)"/>
+            <path d="M406 92 Q 530 96 632 178" class="dg-blue" stroke-width="2.5" fill="none" marker-end="url(#ahb)"/>
+            <text x="210" y="120" text-anchor="middle" class="dg-label sm" fill="var(--bau-blue)">d&#8317;&#8338;&#8315;&#185;&#8318;(i, k)</text>
+            <text x="556" y="120" text-anchor="middle" class="dg-label sm" fill="var(--bau-blue)">d&#8317;&#8338;&#8315;&#185;&#8318;(k, j)</text>
+
+            <!-- min brace -->
+            <text x="380" y="200" text-anchor="middle" class="dg-label">d&#8317;&#8338;&#8318;(i,j) = min( &darr; , &uarr; )</text>
+          </svg>
+          <figcaption><b>Figure 1 &mdash; the only decision the algorithm ever makes.</b> Admitting vertex <code class="inl">k</code> gives each pair one new candidate route &mdash; bend the path through <code class="inl">k</code> &mdash; weighed against the best route that ignores it. Everything else is sweeping this choice across all <code class="inl">i,j</code> for <code class="inl">k=1&hellip;n</code>.</figcaption>
+        </figure>
+
+        <pre><code><span class="tok-com"># Floyd&ndash;Warshall &mdash; all-pairs shortest paths. O(n^3) time, O(n^2) space.</span>
+<span class="tok-kw">def</span> <span class="tok-fn">floyd_warshall</span>(W):            <span class="tok-com"># W[i][j] = w(i,j), or INF if no edge; W[i][i] = 0</span>
+    n = <span class="tok-fn">len</span>(W)
+    D = [row[:] <span class="tok-kw">for</span> row <span class="tok-kw">in</span> W]      <span class="tok-com"># D starts as layer 0: the raw weight matrix</span>
+    <span class="tok-kw">for</span> k <span class="tok-kw">in</span> <span class="tok-fn">range</span>(n):             <span class="tok-com"># OUTERMOST: k = highest permitted intermediate</span>
+        <span class="tok-kw">for</span> i <span class="tok-kw">in</span> <span class="tok-fn">range</span>(n):
+            dik = D[i][k]
+            <span class="tok-kw">if</span> dik == INF: <span class="tok-kw">continue</span>      <span class="tok-com"># no i..k path yet: nothing to route through k</span>
+            <span class="tok-kw">for</span> j <span class="tok-kw">in</span> <span class="tok-fn">range</span>(n):
+                <span class="tok-kw">if</span> dik + D[k][j] &lt; D[i][j]:    <span class="tok-com"># relax (i,j) through k</span>
+                    D[i][j] = dik + D[k][j]
+    <span class="tok-kw">return</span> D</code></pre>
+
+        <div class="pull">A two-dimensional problem solved by adding a third dimension nobody asked for &mdash; <span>the count of vertices a path is allowed to remember.</span></div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> why it is right, and why it fits in one matrix</div>
+      <h2>Correctness, and the in-place collapse</h2>
+      <div class="col">
+        <p>Two things deserve proof, because both are load-bearing and both look like sleight of hand: that the recurrence computes <code class="inl">&delta;</code>, and that we may overwrite a single <code class="inl">n&times;n</code> matrix in place rather than keep <code class="inl">n+1</code> separate layers.</p>
+
+        <details>
+          <summary>Proof &mdash; the recurrence is correct (induction on k)</summary>
+          <div class="body">
+            <p><strong>Claim.</strong> After the recurrence has processed layer <code class="inl">k</code>, the entry holds <code class="inl">d&#8317;&#8338;&#8318;(i,j)</code> = the shortest <code class="inl">i&#x21DD;j</code> distance using intermediates only in <code class="inl">{1,&hellip;,k}</code>.</p>
+            <p><strong>Base (<code class="inl">k=0</code>).</strong> With no permitted intermediates, the only candidate path is the single edge <code class="inl">i&rarr;j</code> (or the empty path when <code class="inl">i=j</code>). So <code class="inl">d&#8317;&#8304;&#8318;(i,j)=w(i,j)</code>, which is exactly the initial matrix. &#10003;</p>
+            <p><strong>Step.</strong> Assume the entries equal <code class="inl">d&#8317;&#8338;&#8315;&#185;&#8318;</code> before we process <code class="inl">k</code>. Fix <code class="inl">(i,j)</code> and let <code class="inl">P</code> be a shortest <code class="inl">i&#x21DD;j</code> path with intermediates in <code class="inl">{1,&hellip;,k}</code>. Either <code class="inl">k</code> is not an interior vertex of <code class="inl">P</code> &mdash; then <code class="inl">P</code>&rsquo;s intermediates lie in <code class="inl">{1,&hellip;,k&minus;1}</code> and <code class="inl">w(P) &ge; d&#8317;&#8338;&#8315;&#185;&#8318;(i,j)</code> &mdash; or <code class="inl">k</code> is interior. In the latter case, since there is no negative cycle a shortest path is simple, so <code class="inl">k</code> appears once; the prefix <code class="inl">i&#x21DD;k</code> and suffix <code class="inl">k&#x21DD;j</code> each have interior vertices in <code class="inl">{1,&hellip;,k&minus;1}</code> and must each be shortest under that restriction (else swap in a shorter sub-path and shorten <code class="inl">P</code>, a contradiction). Hence <code class="inl">w(P)=d&#8317;&#8338;&#8315;&#185;&#8318;(i,k)+d&#8317;&#8338;&#8315;&#185;&#8318;(k,j)</code>. The minimum of the two cases is precisely the recurrence, and conversely both cases are achievable, so the minimum is attained. &#10003;</p>
+          </div>
+        </details>
+
+        <p>Now the space trick. The recurrence as written references three layers&rsquo; worth of values, suggesting an <code class="inl">(n+1)&times;n&times;n</code> table. In practice everyone runs it on <em>one</em> matrix <code class="inl">D</code>, overwriting entries as they go. Is that legal? When we compute layer <code class="inl">k</code> we read <code class="inl">D[i][k]</code> and <code class="inl">D[k][j]</code> &mdash; entries from row <code class="inl">k</code> and column <code class="inl">k</code> &mdash; but those reads happen <em>while we are mutating <code class="inl">D</code></em>. We need them to still hold their layer-<code class="inl">(k&minus;1)</code> values. They do, and here is the one-line reason:</p>
+
+        <div class="eq">
+          <span class="lbl">row k and column k are frozen during pass k</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <msup><mi>d</mi><mrow><mo>(</mo><mi>k</mi><mo>)</mo></mrow></msup><mo>(</mo><mi>i</mi><mo>,</mo><mi>k</mi><mo>)</mo>
+              <mo>=</mo>
+              <mi>min</mi><mo>(</mo><msup><mi>d</mi><mrow><mo>(</mo><mi>k</mi><mo>&minus;</mo><mn>1</mn><mo>)</mo></mrow></msup><mo>(</mo><mi>i</mi><mo>,</mo><mi>k</mi><mo>)</mo><mo>,</mo>
+              <mspace width="3px"/>
+              <msup><mi>d</mi><mrow><mo>(</mo><mi>k</mi><mo>&minus;</mo><mn>1</mn><mo>)</mo></mrow></msup><mo>(</mo><mi>i</mi><mo>,</mo><mi>k</mi><mo>)</mo>
+              <mo>+</mo>
+              <munder><munder><mrow><msup><mi>d</mi><mrow><mo>(</mo><mi>k</mi><mo>&minus;</mo><mn>1</mn><mo>)</mo></mrow></msup><mo>(</mo><mi>k</mi><mo>,</mo><mi>k</mi><mo>)</mo></mrow><mo>&#x23DF;</mo></munder><mrow><mo>=</mo><mn>0</mn></mrow></munder>
+              <mo>)</mo>
+              <mo>=</mo>
+              <msup><mi>d</mi><mrow><mo>(</mo><mi>k</mi><mo>&minus;</mo><mn>1</mn><mo>)</mo></mrow></msup><mo>(</mo><mi>i</mi><mo>,</mo><mi>k</mi><mo>)</mo><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>Because <code class="inl">d&#8317;&#8338;&#8315;&#185;&#8318;(k,k)=0</code> (no negative cycle through <code class="inl">k</code>), routing <code class="inl">i&#x21DD;k</code> &ldquo;through <code class="inl">k</code>&rdquo; adds nothing, so the column-<code class="inl">k</code> entry cannot improve during pass <code class="inl">k</code>; the symmetric argument freezes row <code class="inl">k</code>. The values we read are therefore exactly the layer-<code class="inl">(k&minus;1)</code> values, whether or not they have already been &ldquo;updated&rdquo; &mdash; the update is a no-op. One matrix suffices. <code class="inl">&#x398;(n&sup2;)</code> space, <code class="inl">&#x398;(n&sup3;)</code> time, and the inner two lines are branch-free.</p>
+
+        <div class="note warn"><span class="tag">the one ordering that must hold</span><code class="inl">k</code> is the <strong>outermost</strong> loop &mdash; not <code class="inl">i</code>, not <code class="inl">j</code>. The induction is over <em>layers</em>: every pair must finish absorbing vertex <code class="inl">k&minus;1</code> before <em>any</em> pair is allowed to use vertex <code class="inl">k</code>. Swap the loops so <code class="inl">i</code> or <code class="inl">j</code> is outermost and you let some pairs race ahead to later waypoints before earlier ones are settled &mdash; the matrix fills with confident, wrong numbers. &sect;09 shows the exact failure.</p></div>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> watch every cell move</div>
+      <h2>Worked example: four vertices, one negative edge</h2>
+      <div class="col">
+        <p>Nothing teaches this loop like turning the crank by hand. Here is a four-vertex directed graph. One edge is negative (<code class="inl">2&rarr;3</code> at <code class="inl">&minus;2</code>), but every cycle has non-negative total weight, so all distances are finite and well-defined.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 760 360" role="img" aria-labelledby="f3t f3d">
+            <title id="f3t">The example directed weighted graph on four vertices</title>
+            <desc id="f3d">Four vertices arranged in a square: vertex 1 top-left, vertex 2 top-right, vertex 3 bottom-right, vertex 4 bottom-left. Directed edges with weights: 1 to 2 weight 3, 1 to 3 weight 8, 1 to 4 weight 10, 2 to 3 weight minus 2 in red, 2 to 4 weight 5, 3 to 4 weight 2, and 4 to 1 weight 7.</desc>
+
+            <defs>
+              <marker id="g-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--bau-ink)"/>
+              </marker>
+              <marker id="g-ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--bau-red)"/>
+              </marker>
+            </defs>
+
+            <!-- edges first (under nodes) -->
+            <!-- 1->2 top -->
+            <line x1="232" y1="80" x2="568" y2="80" class="dg-stroke" stroke="var(--bau-ink)" marker-end="url(#g-ah)"/>
+            <text x="400" y="66" text-anchor="middle" class="dg-val">3</text>
+            <!-- 2->3 right (negative) -->
+            <line x1="600" y1="112" x2="600" y2="268" class="dg-red" stroke-width="2.5" marker-end="url(#g-ahr)"/>
+            <text x="624" y="194" text-anchor="middle" class="dg-val" fill="var(--bau-red)">&minus;2</text>
+            <!-- 3->4 bottom -->
+            <line x1="568" y1="300" x2="232" y2="300" class="dg-stroke" stroke="var(--bau-ink)" marker-end="url(#g-ah)"/>
+            <text x="400" y="322" text-anchor="middle" class="dg-val">2</text>
+            <!-- 4->1 left straight -->
+            <line x1="200" y1="268" x2="200" y2="112" class="dg-stroke" stroke="var(--bau-ink)" marker-end="url(#g-ah)"/>
+            <text x="178" y="194" text-anchor="middle" class="dg-val">7</text>
+            <!-- 1->4 curved bulge left -->
+            <path d="M176 104 Q 96 190 176 276" class="dg-stroke" stroke="var(--bau-ink)" fill="none" marker-end="url(#g-ah)"/>
+            <text x="96" y="194" text-anchor="middle" class="dg-val">10</text>
+            <!-- 1->3 diagonal -->
+            <line x1="226" y1="104" x2="574" y2="276" class="dg-stroke" stroke="var(--bau-ink)" marker-end="url(#g-ah)"/>
+            <text x="334" y="206" text-anchor="middle" class="dg-val">8</text>
+            <!-- 2->4 diagonal -->
+            <line x1="574" y1="104" x2="226" y2="276" class="dg-stroke" stroke="var(--bau-ink)" marker-end="url(#g-ah)"/>
+            <text x="470" y="206" text-anchor="middle" class="dg-val">5</text>
+
+            <!-- nodes -->
+            <circle cx="200" cy="80"  r="30" class="dg-fill"/><text x="200" y="87" text-anchor="middle" class="dg-val">1</text>
+            <circle cx="600" cy="80"  r="30" class="dg-fill"/><text x="600" y="87" text-anchor="middle" class="dg-val">2</text>
+            <circle cx="600" cy="300" r="30" class="dg-fill"/><text x="600" y="307" text-anchor="middle" class="dg-val">3</text>
+            <circle cx="200" cy="300" r="30" class="dg-fill"/><text x="200" y="307" text-anchor="middle" class="dg-val">4</text>
+          </svg>
+          <figcaption><b>Figure 2 &mdash; the input graph.</b> Edges: <code class="inl">1&rarr;2:3, 1&rarr;3:8, 1&rarr;4:10, 2&rarr;3:&minus;2, 2&rarr;4:5, 3&rarr;4:2, 4&rarr;1:7</code>. The lone negative edge is drawn in red. Check there is no negative cycle: the only cycle through <code class="inl">2&rarr;3</code> is <code class="inl">2&rarr;3&rarr;4&rarr;1&rarr;2 = &minus;2+2+7+3 = 10 &gt; 0</code>.</figcaption>
+        </figure>
+
+        <p>We initialise <code class="inl">D</code> to the weight matrix &mdash; layer <code class="inl">k=0</code>, the &ldquo;direct edge only&rdquo; distances &mdash; then run four passes, one per permitted intermediate. In each grid below, a <span style="background:var(--bau-yellow);color:var(--bau-ink);padding:0 .25em;border-radius:3px;font-family:var(--font-mono);font-size:.85em">yellow</span> cell is one that <em>improved</em> during that pass; the blue-outlined band marks the pivot row/column <code class="inl">k</code> being routed through.</p>
+
+        <div class="legend">
+          <span><i class="ch"></i> improved this pass</span>
+          <span><i class="pv"></i> pivot row/column k</span>
+          <span><i class="dg"></i> diagonal (always 0)</span>
+          <span style="color:var(--bau-red)">red &middot; a negative entry</span>
+        </div>
+
+        <p class="klabel">D&#8317;&#8304;&#8318; &mdash; direct edges only. <code class="inl">&infin;</code> = no edge.</p>
+        <div class="mwrap">
+          <div class="mtx"><table>
+            <caption><b>k = 0</b>&nbsp;&middot; initial</caption>
+            <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
+            <tbody>
+              <tr><th>1</th><td class="diag">0</td><td>3</td><td>8</td><td>10</td></tr>
+              <tr><th>2</th><td class="inf">&infin;</td><td class="diag">0</td><td class="neg">&minus;2</td><td>5</td></tr>
+              <tr><th>3</th><td class="inf">&infin;</td><td class="inf">&infin;</td><td class="diag">0</td><td>2</td></tr>
+              <tr><th>4</th><td>7</td><td class="inf">&infin;</td><td class="inf">&infin;</td><td class="diag">0</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <h3>Pass k = 1 &mdash; allow routing through vertex 1</h3>
+        <p>Only vertices with a finite edge <em>into</em> 1 can gain: here just <code class="inl">D[4][1]=7</code>. So row 4 can reach 2, 3, 4 by first hopping to 1. <code class="inl">D[4][2]=min(&infin;, 7+3)=10</code>; <code class="inl">D[4][3]=min(&infin;, 7+8)=15</code>. No other row has a finite first leg to 1.</p>
+        <div class="mwrap">
+          <div class="mtx"><table>
+            <caption><b>k = 1</b>&nbsp;&middot; via {1}</caption>
+            <colgroup><col><col class="pivcol"><col><col><col></colgroup>
+            <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
+            <tbody>
+              <tr><th>1</th><td class="diag">0</td><td>3</td><td>8</td><td>10</td></tr>
+              <tr><th>2</th><td class="inf">&infin;</td><td class="diag">0</td><td class="neg">&minus;2</td><td>5</td></tr>
+              <tr><th>3</th><td class="inf">&infin;</td><td class="inf">&infin;</td><td class="diag">0</td><td>2</td></tr>
+              <tr class="pivrow"><th>4</th><td>7</td><td class="ch">10</td><td class="ch">15</td><td class="diag">0</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <h3>Pass k = 2 &mdash; allow routing through vertex 2</h3>
+        <p>Vertex 2 has the negative edge, so it pays off. Rows with a finite leg to 2 are row 1 (<code class="inl">D[1][2]=3</code>) and row 4 (<code class="inl">D[4][2]=10</code>). Using 2&rsquo;s outgoing distances <code class="inl">D[2][&middot;]=[&infin;,0,&minus;2,5]</code>:
+        <code class="inl">D[1][3]=min(8, 3+(&minus;2))=1</code>; <code class="inl">D[1][4]=min(10, 3+5)=8</code>; <code class="inl">D[4][3]=min(15, 10+(&minus;2))=8</code>.</p>
+        <div class="mwrap">
+          <div class="mtx"><table>
+            <caption><b>k = 2</b>&nbsp;&middot; via {1,2}</caption>
+            <colgroup><col><col><col class="pivcol"><col><col></colgroup>
+            <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
+            <tbody>
+              <tr><th>1</th><td class="diag">0</td><td>3</td><td class="ch">1</td><td class="ch">8</td></tr>
+              <tr class="pivrow"><th>2</th><td class="inf">&infin;</td><td class="diag">0</td><td class="neg">&minus;2</td><td>5</td></tr>
+              <tr><th>3</th><td class="inf">&infin;</td><td class="inf">&infin;</td><td class="diag">0</td><td>2</td></tr>
+              <tr><th>4</th><td>7</td><td>10</td><td class="ch">8</td><td class="diag">0</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <h3>Pass k = 3 &mdash; allow routing through vertex 3</h3>
+        <p>Vertex 3&rsquo;s only outgoing distance is <code class="inl">D[3][4]=2</code>, so the gains are all about reaching 4 more cheaply. Rows with a finite leg to 3 are 1 (<code class="inl">1</code>), 2 (<code class="inl">&minus;2</code>), and 4 (<code class="inl">8</code>):
+        <code class="inl">D[1][4]=min(8, 1+2)=3</code>; <code class="inl">D[2][4]=min(5, &minus;2+2)=0</code>. Row 4 sees <code class="inl">8+2=10 &ge; 0</code>, no change.</p>
+        <div class="mwrap">
+          <div class="mtx"><table>
+            <caption><b>k = 3</b>&nbsp;&middot; via {1,2,3}</caption>
+            <colgroup><col><col><col><col class="pivcol"><col></colgroup>
+            <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
+            <tbody>
+              <tr><th>1</th><td class="diag">0</td><td>3</td><td>1</td><td class="ch">3</td></tr>
+              <tr><th>2</th><td class="inf">&infin;</td><td class="diag">0</td><td class="neg">&minus;2</td><td class="ch">0</td></tr>
+              <tr class="pivrow"><th>3</th><td class="inf">&infin;</td><td class="inf">&infin;</td><td class="diag">0</td><td>2</td></tr>
+              <tr><th>4</th><td>7</td><td>10</td><td>8</td><td class="diag">0</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <h3>Pass k = 4 &mdash; allow routing through vertex 4</h3>
+        <p>Now vertex 4 reaches 1 (<code class="inl">D[4][&middot;]=[7,10,8,0]</code>), which finally connects the &ldquo;dead&rdquo; lower-left of the matrix: vertices 2 and 3 had no route back to 1 until they could pass through 4. <code class="inl">D[2][1]=min(&infin;, 0+7)=7</code>; <code class="inl">D[3][1]=min(&infin;, 2+7)=9</code>; <code class="inl">D[3][2]=min(&infin;, 2+10)=12</code>. Everything else is already optimal.</p>
+        <div class="mwrap">
+          <div class="mtx"><table>
+            <caption><b>k = 4</b>&nbsp;&middot; via {1,2,3,4} = final &delta;</caption>
+            <colgroup><col class="pivcol"><col><col><col><col></colgroup>
+            <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
+            <tbody>
+              <tr><th>1</th><td class="diag">0</td><td>3</td><td>1</td><td>3</td></tr>
+              <tr><th>2</th><td class="ch">7</td><td class="diag">0</td><td class="neg">&minus;2</td><td>0</td></tr>
+              <tr><th>3</th><td class="ch">9</td><td class="ch">12</td><td class="diag">0</td><td>2</td></tr>
+              <tr class="pivrow"><th>4</th><td>7</td><td>10</td><td>8</td><td class="diag">0</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <p>That last matrix is the answer: every <code class="inl">&delta;(i,j)</code>. Spot-check three against the picture. <code class="inl">&delta;(2,1)=7</code>: the route <code class="inl">2&rarr;3&rarr;4&rarr;1 = &minus;2+2+7</code>. <code class="inl">&delta;(1,4)=3</code>: the route <code class="inl">1&rarr;2&rarr;3&rarr;4 = 3&minus;2+2</code>, beating the direct edge of 10. <code class="inl">&delta;(3,2)=12</code>: <code class="inl">3&rarr;4&rarr;1&rarr;2 = 2+7+3</code>. Every diagonal entry is <code class="inl">0</code> &mdash; the certificate that no negative cycle exists. Four passes, sixteen cells each, and the entire distance table fell out.</p>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> the route, and the certificate of doom</div>
+      <h2>Reconstructing paths &amp; detecting negative cycles</h2>
+      <div class="col">
+        <p>A distance is rarely enough; you usually want the <em>path</em>. Carry a second matrix alongside <code class="inl">D</code>. The cleanest is a <span class="term">successor</span> matrix <code class="inl">nxt[i][j]</code> = the first vertex after <code class="inl">i</code> on a shortest <code class="inl">i&#x21DD;j</code> path. Initialise <code class="inl">nxt[i][j]=j</code> whenever the edge <code class="inl">(i,j)</code> exists. Every time a relaxation rewrites <code class="inl">D[i][j]</code> through <code class="inl">k</code>, the new path begins by heading toward <code class="inl">k</code> &mdash; so copy <code class="inl">i</code>&rsquo;s successor toward <code class="inl">k</code>:</p>
+
+        <pre><code><span class="tok-com"># inside the triple loop, when we relax (i,j) through k:</span>
+<span class="tok-kw">if</span> dik + D[k][j] &lt; D[i][j]:
+    D[i][j]   = dik + D[k][j]
+    nxt[i][j] = nxt[i][k]          <span class="tok-com"># first step toward j is the first step toward k</span>
+
+<span class="tok-kw">def</span> <span class="tok-fn">path</span>(i, j, nxt):                 <span class="tok-com"># O(length) reconstruction</span>
+    <span class="tok-kw">if</span> nxt[i][j] <span class="tok-kw">is</span> <span class="tok-kw">None</span>: <span class="tok-kw">return</span> []   <span class="tok-com"># i cannot reach j</span>
+    route = [i]
+    <span class="tok-kw">while</span> i != j:
+        i = nxt[i][j]
+        route.append(i)
+    <span class="tok-kw">return</span> route</code></pre>
+
+        <p>The other companion question is whether the answer exists at all. A <span class="term">negative cycle</span> &mdash; a directed cycle of negative total weight &mdash; lets a path loop forever to drive its cost to <code class="inl">&minus;&infin;</code>, so shortest distances along it are undefined. Floyd&ndash;Warshall does not announce this; it just returns finite-looking nonsense. The detector is one line, and it sits on the diagonal:</p>
+
+        <div class="note warn"><span class="tag">the diagonal is the alarm</span>After the run, if any <code class="inl">D[i][i] &lt; 0</code>, then vertex <code class="inl">i</code> lies on a negative cycle: the algorithm found an <code class="inl">i&#x21DD;i</code> closed walk of negative weight. In a clean graph every <code class="inl">D[i][i]</code> stays exactly <code class="inl">0</code>. Always scan the diagonal before trusting the matrix &mdash; and if you intend to read off finite distances near a negative cycle, remember they are meaningless, not merely small.</p></div>
+
+        <p>One subtlety the formalist must flag: a single negative edge in an <em>undirected</em> graph is already a negative cycle, because the edge can be traversed back and forth (<code class="inl">u&rarr;v&rarr;u = 2w &lt; 0</code>). APSP with negative weights is therefore a <em>directed</em> story. Undirected graphs with negative edges need different machinery (matching-based), well outside today&rsquo;s scope.</p>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> bend the weights, not the graph</div>
+      <h2>Johnson&rsquo;s algorithm: reweighting for sparse graphs</h2>
+      <div class="col">
+        <p>Floyd&ndash;Warshall is <code class="inl">&#x398;(n&sup3;)</code> whether the graph is a dense web or a thin tree &mdash; it never looks at <code class="inl">m</code>. On a <strong>sparse</strong> graph (<code class="inl">m = O(n)</code>) that is wasteful: <code class="inl">n</code> runs of Dijkstra would cost only <code class="inl">O(n&sup2; log n)</code>, far below <code class="inl">n&sup3;</code>. The single obstacle is that Dijkstra dies on negative edges. <strong>Johnson&rsquo;s algorithm removes the obstacle</strong>: it transforms the weights so that all become non-negative, <em>without changing which path between any two vertices is shortest</em> &mdash; then runs <code class="inl">n</code> Dijkstras and corrects the answers back.</p>
+
+        <h3>The reweighting trick</h3>
+        <p>Assign each vertex a number <code class="inl">h(v)</code> &mdash; a <span class="term">potential</span>, or &ldquo;height.&rdquo; Replace every edge weight by its <span class="term">reduced weight</span>:</p>
+        <div class="eq">
+          <span class="lbl">the reduced weight &mdash; a height difference added to each edge</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mover><mi>w</mi><mo>&#x5E;</mo></mover><mo>(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo>)</mo>
+              <mo>=</mo>
+              <mi>w</mi><mo>(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo>)</mo>
+              <mo>+</mo><mi>h</mi><mo>(</mo><mi>u</mi><mo>)</mo>
+              <mo>&minus;</mo><mi>h</mi><mo>(</mo><mi>v</mi><mo>)</mo><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Why this exact form? Sum it along any path <code class="inl">p = v&#8320;&rarr;v&#8321;&rarr;&hellip;&rarr;v&#8343;</code> and the interior potentials <strong>telescope</strong>: each <code class="inl">h(v&#7522;)</code> is added once (as the head&rsquo;s <code class="inl">+h(u)</code>) and subtracted once (as the tail&rsquo;s <code class="inl">&minus;h(v)</code>), so everything cancels except the endpoints.</p>
+        <div class="eq">
+          <span class="lbl">telescoping &mdash; every path&rsquo;s length shifts by the same endpoint constant</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mover><mi>w</mi><mo>&#x5E;</mo></mover><mo>(</mo><mi>p</mi><mo>)</mo>
+              <mo>=</mo>
+              <munderover><mo>&#x2211;</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>&#x2113;</mi></munderover>
+              <mrow><mo>[</mo><mi>w</mi><mo>(</mo><msub><mi>v</mi><mrow><mi>t</mi><mo>&minus;</mo><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>v</mi><mi>t</mi></msub><mo>)</mo><mo>+</mo><mi>h</mi><mo>(</mo><msub><mi>v</mi><mrow><mi>t</mi><mo>&minus;</mo><mn>1</mn></mrow></msub><mo>)</mo><mo>&minus;</mo><mi>h</mi><mo>(</mo><msub><mi>v</mi><mi>t</mi></msub><mo>)</mo><mo>]</mo></mrow>
+              <mo>=</mo>
+              <mi>w</mi><mo>(</mo><mi>p</mi><mo>)</mo><mo>+</mo><mi>h</mi><mo>(</mo><msub><mi>v</mi><mn>0</mn></msub><mo>)</mo><mo>&minus;</mo><mi>h</mi><mo>(</mo><msub><mi>v</mi><mi>&#x2113;</mi></msub><mo>)</mo><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>This is the whole point. Every <code class="inl">s&#x21DD;t</code> path &mdash; long, short, all of them &mdash; has its reduced length shifted by the <em>same</em> constant <code class="inl">h(s)&minus;h(t)</code>, which depends only on the endpoints. Adding a constant to every candidate cannot change which one is smallest, so <strong>the shortest path is preserved exactly</strong>; only its recorded number changes, and we undo that at the end: <code class="inl">&delta;(s,t)=&delta;&#770;(s,t)&minus;h(s)+h(t)</code>.</p>
+
+        <h3>Choosing h so every reduced weight is non-negative</h3>
+        <p>We need <code class="inl">&#373;(u,v)=w(u,v)+h(u)&minus;h(v) &ge; 0</code>, i.e. <code class="inl">h(v) &le; h(u)+w(u,v)</code> for every edge. That inequality is exactly the <em>triangle inequality satisfied by shortest-path distances</em>. So pick any source <code class="inl">q</code> that can reach all vertices and set <code class="inl">h(v)=&delta;(q,v)</code>; the relaxation-stable condition <code class="inl">&delta;(q,v) &le; &delta;(q,u)+w(u,v)</code> then holds by definition. To guarantee <code class="inl">q</code> reaches everything, <strong>invent a super-source</strong>: add a new vertex <code class="inl">q</code> with a <code class="inl">0</code>-weight edge to every original vertex. It has no incoming edges, so it creates no new cycle and disturbs no existing distance. Compute <code class="inl">h(v)=&delta;(q,v)</code> with one Bellman&ndash;Ford run &mdash; which doubles as the negative-cycle test.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 760 320" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">Johnson reweighting on a three-vertex path with potentials</title>
+            <desc id="f4d">Three vertices a, b, c left to right with potentials h of a equals 0, h of b equals minus 2, h of c equals minus 3, computed by Bellman-Ford from a super-source. Original edge a to b weight minus 2 becomes reduced weight 0; edge b to c weight minus 1 becomes reduced weight 0; edge a to c weight 1 becomes reduced weight 4. All reduced weights are non-negative.</desc>
+
+            <defs>
+              <marker id="j-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--bau-ink)"/>
+              </marker>
+              <marker id="j-ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--bau-blue)"/>
+              </marker>
+            </defs>
+
+            <text x="24" y="30" class="dg-cap">h(v) = &delta;(q, v) from the super-source makes every reduced weight &ge; 0</text>
+
+            <!-- super-source row note -->
+            <text x="24" y="58" class="dg-label sm">potentials: h(a)=0, h(b)=&minus;2, h(c)=&minus;3</text>
+
+            <!-- a->c arc (top) -->
+            <path d="M150 120 Q 390 70 630 120" class="dg-stroke" stroke="var(--bau-ink)" fill="none" marker-end="url(#j-ah)"/>
+            <text x="390" y="86" text-anchor="middle" class="dg-label">w=1 &nbsp;&rarr;&nbsp; <tspan fill="var(--bau-blue)" font-weight="700">&#373;=4</tspan></text>
+
+            <!-- a->b -->
+            <line x1="158" y1="180" x2="352" y2="180" class="dg-stroke" stroke="var(--bau-ink)" marker-end="url(#j-ah)"/>
+            <text x="255" y="210" text-anchor="middle" class="dg-label">w=&minus;2 &nbsp;&rarr;&nbsp; <tspan fill="var(--bau-blue)" font-weight="700">&#373;=0</tspan></text>
+            <!-- b->c -->
+            <line x1="438" y1="180" x2="632" y2="180" class="dg-stroke" stroke="var(--bau-ink)" marker-end="url(#j-ah)"/>
+            <text x="535" y="210" text-anchor="middle" class="dg-label">w=&minus;1 &nbsp;&rarr;&nbsp; <tspan fill="var(--bau-blue)" font-weight="700">&#373;=0</tspan></text>
+
+            <!-- nodes -->
+            <circle cx="130" cy="180" r="26" class="dg-fill"/><text x="130" y="186" text-anchor="middle" class="dg-val">a</text>
+            <circle cx="390" cy="180" r="26" class="dg-fill"/><text x="390" y="186" text-anchor="middle" class="dg-val">b</text>
+            <circle cx="650" cy="180" r="26" class="dg-fill"/><text x="650" y="186" text-anchor="middle" class="dg-val">c</text>
+            <text x="130" y="240" text-anchor="middle" class="dg-label sm">h=0</text>
+            <text x="390" y="240" text-anchor="middle" class="dg-label sm">h=&minus;2</text>
+            <text x="650" y="240" text-anchor="middle" class="dg-label sm">h=&minus;3</text>
+
+            <text x="380" y="290" text-anchor="middle" class="dg-label sm">recover: &delta;(a,c) = &delta;&#770;(a,c) &minus; h(a) + h(c) = 0 &minus; 0 + (&minus;3) = &minus;3 &nbsp;(= a&rarr;b&rarr;c)</text>
+          </svg>
+          <figcaption><b>Figure 3 &mdash; reweighting in action.</b> The negative edges <code class="inl">a&rarr;b</code> and <code class="inl">b&rarr;c</code> flatten to <code class="inl">0</code>; the direct edge <code class="inl">a&rarr;c</code> rises to <code class="inl">4</code>. Dijkstra now runs safely, still preferring <code class="inl">a&rarr;b&rarr;c</code> (reduced cost <code class="inl">0</code>) over the direct hop (reduced cost <code class="inl">4</code>) &mdash; the same winner as before. Un-reducing restores the true <code class="inl">&minus;3</code>.</figcaption>
+        </figure>
+
+        <pre><code><span class="tok-com"># Johnson &mdash; APSP for sparse graphs. O(n*m + n^2 log n).</span>
+<span class="tok-kw">def</span> <span class="tok-fn">johnson</span>(n, edges):                 <span class="tok-com"># edges: list of (u, v, w), vertices 0..n-1</span>
+    g = [[] <span class="tok-kw">for</span> _ <span class="tok-kw">in</span> <span class="tok-fn">range</span>(n + 1)]    <span class="tok-com"># 1. add super-source q = n</span>
+    <span class="tok-kw">for</span> (u, v, w) <span class="tok-kw">in</span> edges: g[u].append((v, w))
+    <span class="tok-kw">for</span> v <span class="tok-kw">in</span> <span class="tok-fn">range</span>(n): g[n].append((v, <span class="tok-num">0</span>))   <span class="tok-com"># q -&gt; v, weight 0, for every v</span>
+
+    h = <span class="tok-fn">bellman_ford</span>(n + 1, g, src=n)     <span class="tok-com"># 2. potentials h[v] = dist(q, v)</span>
+    <span class="tok-kw">if</span> h <span class="tok-kw">is</span> <span class="tok-kw">None</span>: <span class="tok-kw">raise</span> <span class="tok-fn">NegativeCycle</span>()   <span class="tok-com">#    Bellman-Ford also detects -ve cycles</span>
+
+    gh = [[(v, w + h[u] - h[v]) <span class="tok-kw">for</span> (v, w) <span class="tok-kw">in</span> g[u]]   <span class="tok-com"># 3. reweight: w_hat &gt;= 0</span>
+          <span class="tok-kw">for</span> u <span class="tok-kw">in</span> <span class="tok-fn">range</span>(n)]
+    D = [[INF] * n <span class="tok-kw">for</span> _ <span class="tok-kw">in</span> <span class="tok-fn">range</span>(n)]
+    <span class="tok-kw">for</span> u <span class="tok-kw">in</span> <span class="tok-fn">range</span>(n):                    <span class="tok-com"># 4. Dijkstra from each real source</span>
+        dist = <span class="tok-fn">dijkstra</span>(n, gh, src=u)
+        <span class="tok-kw">for</span> v <span class="tok-kw">in</span> <span class="tok-fn">range</span>(n):
+            <span class="tok-kw">if</span> dist[v] &lt; INF:
+                D[u][v] = dist[v] - h[u] + h[v]   <span class="tok-com"># 5. un-reduce to true distance</span>
+    <span class="tok-kw">return</span> D</code></pre>
+
+        <p>The accounting: building the super-source and Bellman&ndash;Ford is <code class="inl">O(nm)</code>; reweighting is <code class="inl">O(m)</code>; the <code class="inl">n</code> Dijkstras dominate at <code class="inl">O(n(m + n log n)) = O(nm + n&sup2; log n)</code>; un-reducing is <code class="inl">O(n&sup2;)</code>. The headline is <code class="inl">O(nm + n&sup2; log n)</code>. Bellman&ndash;Ford pays its <code class="inl">O(nm)</code> <em>once</em>, not once per source &mdash; that is the saving over the naive &ldquo;Bellman&ndash;Ford from every vertex.&rdquo;</p>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> the density crossover</div>
+      <h2>Which one, and when</h2>
+      <div class="col">
+        <p>The choice is governed by one variable: the edge count <code class="inl">m</code>, relative to <code class="inl">n&sup2;</code>. Floyd&ndash;Warshall is flat at <code class="inl">&#x398;(n&sup3;)</code> &mdash; insensitive to <code class="inl">m</code>. Johnson is <code class="inl">O(nm + n&sup2; log n)</code> &mdash; it rides up with density. They meet where <code class="inl">nm &asymp; n&sup3;</code>, i.e. <code class="inl">m &asymp; n&sup2;/\!\log n</code>.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 760 360" role="img" aria-labelledby="f5t f5d">
+            <title id="f5t">Running time versus edge density for Floyd-Warshall and Johnson</title>
+            <desc id="f5d">A plot with edge count m on the horizontal axis from sparse to dense and running time on the vertical axis. Floyd-Warshall is a flat horizontal line at height n cubed, independent of m. Johnson rises with m from low cost on sparse graphs to n cubed on dense graphs, crossing the Floyd-Warshall line near m equals n squared over log n. Left of the crossover, sparse, Johnson is faster; right of it, dense, Floyd-Warshall is the pragmatic choice.</desc>
+
+            <!-- axes -->
+            <line x1="80" y1="300" x2="720" y2="300" class="dg-stroke" stroke="var(--bau-ink)"/>
+            <line x1="80" y1="300" x2="80" y2="40" class="dg-stroke" stroke="var(--bau-ink)"/>
+            <text x="400" y="338" text-anchor="middle" class="dg-label">edge count m &nbsp;(sparse &rarr; dense)</text>
+            <text x="34" y="170" text-anchor="middle" class="dg-label" transform="rotate(-90 34 170)">running time</text>
+            <text x="92" y="58" class="dg-label sm">n&sup3;</text>
+            <line x1="80" y1="70" x2="720" y2="70" class="dg-dash"/>
+
+            <!-- Floyd-Warshall: flat at n^3 -->
+            <line x1="80" y1="70" x2="720" y2="70" class="dg-red" stroke-width="3"/>
+            <text x="610" y="60" class="dg-label" fill="var(--bau-red)" font-weight="700">Floyd&ndash;Warshall &#x398;(n&sup3;)</text>
+
+            <!-- Johnson: rising curve from low-left to n^3 at right -->
+            <path d="M80 280 Q 300 250 470 160 T 720 72" class="dg-blue" stroke-width="3" fill="none"/>
+            <text x="120" y="268" class="dg-label" fill="var(--bau-blue)" font-weight="700">Johnson O(nm + n&sup2;log n)</text>
+
+            <!-- crossover marker -->
+            <circle cx="470" cy="118" r="6" class="dg-red-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+            <line x1="470" y1="118" x2="470" y2="300" class="dg-dash"/>
+            <text x="470" y="320" text-anchor="middle" class="dg-label sm">m &asymp; n&sup2;/log n</text>
+
+            <!-- regions -->
+            <rect x="84" y="44" width="384" height="20" fill="none"/>
+            <text x="250" y="166" text-anchor="middle" class="dg-label sm" fill="var(--bau-blue)">sparse &rarr; Johnson wins</text>
+            <text x="600" y="200" text-anchor="middle" class="dg-label sm" fill="var(--bau-red)">dense &rarr; use Floyd&ndash;Warshall</text>
+          </svg>
+          <figcaption><b>Figure 4 &mdash; the trade-off, drawn.</b> On a sparse graph Johnson&rsquo;s <code class="inl">n</code> Dijkstras sit far below the <code class="inl">n&sup3;</code> line; as edges fill in, Johnson climbs to meet it. At and beyond the crossover the two are asymptotically equal &mdash; and there Floyd&ndash;Warshall&rsquo;s tiny constant, branch-free inner loop, and cache-friendly matrix sweep make it the pragmatic winner.</figcaption>
+        </figure>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>All-pairs shortest paths: the methods compared</caption>
+            <thead>
+              <tr><th scope="col">method</th><th scope="col">time</th><th scope="col">space</th><th scope="col">negative edges?</th><th scope="col">best when</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">n &times; Dijkstra</th><td class="mono">O(nm + n&sup2; log n)</td><td class="mono">O(n+m)</td><td class="bad">no</td><td>sparse &amp; all weights <code class="inl">&ge; 0</code></td></tr>
+              <tr><th scope="row">n &times; Bellman&ndash;Ford</th><td class="mono">O(n&sup2;m) &rarr; O(n&#8308;) dense</td><td class="mono">O(n+m)</td><td class="good">yes</td><td>almost never &mdash; dominated</td></tr>
+              <tr class="hl-row"><th scope="row">Floyd&ndash;Warshall</th><td class="mono">&#x398;(n&sup3;)</td><td class="mono">&#x398;(n&sup2;)</td><td class="good">yes</td><td>dense, or <code class="inl">n</code> small; simplest code</td></tr>
+              <tr class="hl-row"><th scope="row">Johnson</th><td class="mono">O(nm + n&sup2; log n)</td><td class="mono">O(n+m)</td><td class="good">yes</td><td>sparse, with negative edges</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="5">Rule of thumb: dense graph or <code class="inl">n &lesssim; 500</code> &rarr; Floyd&ndash;Warshall (five lines, unbeatable constant). Large sparse graph with possibly-negative weights &rarr; Johnson. All weights non-negative &rarr; skip reweighting and just run <code class="inl">n</code> Dijkstras.</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>These algorithms are short, so their bugs are quiet &mdash; they hand back a full matrix of plausible numbers, just wrong ones. Here is the catalogue I have watched trip up everyone, including me.</p>
+
+        <div class="note warn"><span class="tag">1 &middot; the loop-order trap</span><code class="inl">k</code> must be the <strong>outermost</strong> loop. The recurrence is an induction on permitted-intermediate <em>layers</em>; routing through <code class="inl">k</code> is only valid once every pair has fully absorbed <code class="inl">{1,&hellip;,k&minus;1}</code>. Put <code class="inl">i</code> or <code class="inl">j</code> outside <code class="inl">k</code> and you let a pair use a waypoint whose own best distances are not settled, producing too-large entries that never get a second chance. The code looks identical bar the loop order; the answers are wrong. Mnemonic: <em>k, then from, then to.</em></div>
+
+        <div class="note warn"><span class="tag">2 &middot; &infin; + &infin; overflow</span>Coding <code class="inl">&infin;</code> as <code class="inl">INT_MAX</code> and then evaluating <code class="inl">D[i][k]+D[k][j]</code> overflows to a large <em>negative</em> number, which beats the real distance and corrupts the cell. Guard it: skip the relax when either operand is <code class="inl">&infin;</code> (the <code class="inl">if dik == INF: continue</code> in &sect;03), or use a soft sentinel like <code class="inl">INF = 10&sup1;&#8312;</code> with 64-bit math so two of them can sum without wrapping.</div>
+
+        <div class="note warn"><span class="tag">3 &middot; silent negative cycles</span>If a reachable negative cycle exists, true distances are <code class="inl">&minus;&infin;</code> and the matrix is meaningless. Floyd&ndash;Warshall will not raise &mdash; you must scan the diagonal for <code class="inl">D[i][i] &lt; 0</code> afterward. In Johnson, the Bellman&ndash;Ford stage detects it; if you skip that check (or replace Bellman&ndash;Ford with something that does not detect cycles) the reduced weights can be negative and Dijkstra silently misbehaves.</div>
+
+        <div class="note warn"><span class="tag">4 &middot; running Dijkstra n times on negative edges</span>The seductive shortcut: &ldquo;just run <code class="inl">n</code> Dijkstras, it&rsquo;s faster.&rdquo; Dijkstra is simply <em>incorrect</em> with even one negative edge &mdash; it finalises a vertex too early and never revisits it. This is the entire reason Johnson exists: reweight <em>first</em>, then Dijkstra. Never feed raw negative weights to Dijkstra.</div>
+
+        <div class="note warn"><span class="tag">5 &middot; Johnson without the un-reduction</span>Returning <code class="inl">&delta;&#770;(u,v)</code> instead of <code class="inl">&delta;&#770;(u,v) &minus; h(u) + h(v)</code> gives distances that are off by an endpoint-dependent constant &mdash; frequently positive, so they look reasonable and pass small tests. Equally fatal: using a real vertex as the potential source instead of a super-source. If that vertex cannot reach some <code class="inl">w</code>, then <code class="inl">h(w)=&infin;</code> and the reduced weights around <code class="inl">w</code> are garbage.</div>
+
+        <div class="note warn"><span class="tag">6 &middot; undirected graphs with negative edges</span>An undirected negative edge is a 2-cycle of negative weight, so the problem is ill-posed before any algorithm runs. If your graph is undirected and all weights are <code class="inl">&ge; 0</code>, fine &mdash; orient each edge both ways and proceed. With a negative undirected edge, stop: APSP is undefined.</div>
+
+        <div class="note warn"><span class="tag">7 &middot; reconstruction that forgets the k-update</span>If you keep a successor (or predecessor) matrix but forget to update it on the very relaxations that improve <code class="inl">D</code> inside the <code class="inl">k</code>-loop, <code class="inl">D</code> is right while the path matrix points along stale, longer routes. Update both in the same <code class="inl">if</code>, every time &mdash; <code class="inl">nxt[i][j]=nxt[i][k]</code> rides along with the distance write.</div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> practice &mdash; stated only</div>
+      <h2>Build it yourself</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Find the City With the Smallest Number of Reachable Neighbors</h3>
+          <p>There are <code class="inl">n</code> cities numbered <code class="inl">0&hellip;n&minus;1</code> and a list of bidirectional weighted <code class="inl">edges[i]=[u,v,w]</code>. For a given <code class="inl">distanceThreshold</code>, find the city with the fewest other cities reachable within total distance <code class="inl">&le; distanceThreshold</code>; on a tie, return the city with the <em>largest</em> index.</p>
+          <p class="meta">Signature: <code class="inl">int findTheCity(int n, int[][] edges, int distanceThreshold)</code></p>
+          <p class="meta">Constraints: <code class="inl">2 &le; n &le; 100</code>; <code class="inl">1 &le; w &le; 10&#8308;</code>; weights non-negative. Example: <code class="inl">n=4</code>, <code class="inl">edges=[[0,1,3],[1,2,1],[1,3,4],[2,3,1]]</code>, <code class="inl">threshold=4</code> &rarr; city <code class="inl">3</code>.</p>
+          <p class="meta">Hint lens: <code class="inl">n &le; 100</code> screams Floyd&ndash;Warshall (<code class="inl">10&#8310;</code> ops). Build the full distance matrix, then count per row how many entries are <code class="inl">&le; threshold</code>.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>All-Pairs Distances with Path Recovery &amp; Cycle Guard</h3>
+          <p>Given an <code class="inl">n&times;n</code> weight matrix <code class="inl">W</code> of a directed graph (<code class="inl">W[i][j]=&infin;</code> for no edge, <code class="inl">W[i][i]=0</code>, weights possibly negative), implement an APSP engine. Support <code class="inl">dist(u,v)</code> and <code class="inl">path(u,v)</code> (the actual vertex sequence, or empty if unreachable). If the graph contains a negative cycle, <code class="inl">build()</code> must report it instead of returning distances.</p>
+          <p class="meta">Signature: <code class="inl">class APSP { APSP(long[][] W); boolean hasNegativeCycle(); long dist(int u,int v); List&lt;Integer&gt; path(int u,int v); }</code></p>
+          <p class="meta">Constraints: <code class="inl">1 &le; n &le; 400</code>; <code class="inl">|w| &le; 10&#8313;</code> (use 64-bit, sentinel <code class="inl">INF=10&sup1;&#8312;</code>). Example: a 4-node graph from &sect;05 returns <code class="inl">dist(2,1)=7</code> and <code class="inl">path(2,1)=[2,3,4,1]</code>.</p>
+          <p class="meta">Hint lens: Floyd&ndash;Warshall with a successor matrix; <code class="inl">nxt[i][j]=nxt[i][k]</code> on each relax; scan the diagonal for <code class="inl">D[i][i]&lt;0</code>.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Sum of All Finite Shortest Distances on a Sparse Graph</h3>
+          <p>A directed graph has <code class="inl">n</code> vertices and <code class="inl">m</code> edges with possibly-negative weights and no negative cycle. Return the sum of <code class="inl">&delta;(u,v)</code> over all ordered pairs with a finite path (count each finite pair once). The sizes rule out an <code class="inl">&#x398;(n&sup3;)</code> solution &mdash; you must reweight.</p>
+          <p class="meta">Signature: <code class="inl">long sumShortest(int n, int[][] edges)</code> &nbsp;with <code class="inl">edges[i]=[u,v,w]</code></p>
+          <p class="meta">Constraints: <code class="inl">1 &le; n &le; 2&times;10&#8308;</code>; <code class="inl">0 &le; m &le; 10&#8309;</code>; <code class="inl">|w| &le; 10&#8310;</code>. Note <code class="inl">n&sup3;=8&times;10&sup1;&sup2;</code> is far too slow, but <code class="inl">nm log n &asymp; 3&times;10&#8310;</code> is fine.</p>
+          <p class="meta">Hint lens: Johnson &mdash; super-source, Bellman&ndash;Ford for <code class="inl">h</code>, reweight, <code class="inl">n</code> Dijkstras, un-reduce, then add only the finite results.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Currency Arbitrage Detection</h3>
+          <p>Given <code class="inl">c</code> currencies and a table <code class="inl">rate[i][j]</code> &mdash; one unit of <code class="inl">i</code> buys <code class="inl">rate[i][j]</code> units of <code class="inl">j</code> &mdash; decide whether a sequence of trades can return to the start currency with <em>more</em> than you began (an arbitrage cycle). If none exists, also report, for every pair <code class="inl">(i,j)</code>, the best achievable product of rates from <code class="inl">i</code> to <code class="inl">j</code>.</p>
+          <p class="meta">Signature: <code class="inl">boolean hasArbitrage(double[][] rate)</code> &nbsp;(plus the best-rate matrix when false)</p>
+          <p class="meta">Constraints: <code class="inl">2 &le; c &le; 200</code>; <code class="inl">0 &lt; rate[i][j] &le; 10&#8310;</code>. Example: a 3-currency table where <code class="inl">A&rarr;B&rarr;C&rarr;A</code> multiplies to <code class="inl">1.02</code> returns <code class="inl">true</code>.</p>
+          <p class="meta">Hint lens: products become sums under a logarithm. Set <code class="inl">w(i,j)=&minus;log&nbsp;rate[i][j]</code>; a profitable cycle (product <code class="inl">&gt; 1</code>) becomes a <em>negative</em> cycle (sum <code class="inl">&lt; 0</code>). Run Floyd&ndash;Warshall and watch the diagonal.</p>
+        </div>
+      </div>
+
+      <div class="col">
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <p><strong>Solve a two-dimensional distance matrix by adding a third index: the count of vertices a path may pass through.</strong> Grow that permitted set from <code class="inl">&empty;</code> to all of <code class="inl">V</code>, one vertex at a time, and each step is a single relaxation &mdash; route through the new vertex <code class="inl">k</code>, or don&rsquo;t. That is Floyd&ndash;Warshall: <code class="inl">&#x398;(n&sup3;)</code>, five lines, negative edges welcome, the diagonal a built-in negative-cycle alarm. When the graph is sparse, don&rsquo;t pay <code class="inl">n&sup3;</code> &mdash; <em>reshape the weights</em> with a potential so they turn non-negative without disturbing any shortest path, then let Dijkstra run <code class="inl">n</code> times. Floyd&ndash;Warshall and Johnson are two answers to one question, split by density.</p>
+
+        <p>And notice the through-line. The recurrence over permitted intermediates is not really a graph trick &mdash; it is a <em>dynamic program</em>, an optimisation over a layered table of subproblems where each layer is a trivial choice over the last. The next lecture pulls that pattern into the open: optimal substructure, overlapping subproblems, and the realisation that Floyd&ndash;Warshall is shortest-path-over-a-DAG-of-subproblems in disguise.</p>
+
+        <div class="next" role="note">
+          <div>
+            <div class="lab">up next &middot; lecture 15</div>
+            <div class="ttl">Dynamic Programming: Optimal Substructure over a Subproblem DAG</div>
+          </div>
+          <div class="arrow" aria-hidden="true">&#8594;</div>
+        </div>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-13-single-source-shortest-paths.html">← Previous study</a><a href="dsa-15-dynamic-programming-optimal-substructure-over-a-subproblem-dag.html">Next study →</a></nav>
+</body>
+</html>

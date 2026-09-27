@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balanced Search Trees &amp; the Logarithmic Ideal</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.95rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.6rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.wrap-row td, tr.wrap-row th{background:color-mix(in oklab,var(--bau-yellow) 26%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-stroke{stroke:var(--on-surface); fill:none; stroke-width:2}
+  .dg-thin{stroke:var(--outline); fill:none; stroke-width:1}
+  .dg-dash{stroke:var(--outline); fill:none; stroke-width:1.5; stroke-dasharray:5 5}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+  .dg-red{stroke:var(--bau-red)}   .dg-red-f{fill:var(--bau-red)}
+  .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-cell{fill:var(--surface);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill{fill:var(--primary-container);stroke:var(--bau-ink);stroke-width:2}
+  .dg-label{font-family:var(--font-mono); font-size:14px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
+  .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  /* tree-node helpers (added for this lecture) */
+  .dg-edge{stroke:var(--bau-ink); stroke-width:2; fill:none}
+  .dg-node{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node-hot{fill:var(--bau-yellow); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node-b{fill:var(--bau-ink); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node-r{fill:var(--bau-red); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-nt{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
+  .dg-nt.w{fill:#fff}
+  .dg-tri{fill:var(--primary-container); stroke:var(--bau-ink); stroke-width:2}
+  .dg-bf{font-family:var(--font-mono); font-size:11px; font-weight:700; fill:var(--bau-red)}
+
+  /* ===== inline cell strips (HTML, for state traces) ===== */
+  .cells{display:flex; gap:5px; flex-wrap:wrap; margin:.5em 0 1em; font-family:var(--font-mono); font-size:14px; align-items:flex-end}
+  .cells .c{min-width:40px; height:40px; display:grid; place-items:center; border:1.5px solid var(--bau-ink); border-radius:var(--r-xs); background:var(--surface-1); position:relative}
+  .cells .c.fill{background:var(--primary-container); color:var(--on-primary-container); font-weight:650}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">07 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>07</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="190" height="150" viewBox="0 0 190 150" aria-hidden="true">
+    <rect x="70" y="70" width="78" height="78" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <circle cx="48" cy="48" r="46" class="dg-blue-f"/>
+    <path d="M120 4 L186 4 L153 64 Z" class="dg-red-f"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 07</span> the dictionary problem, part i</div>
+    <h1>Balanced Search Trees &amp; the Logarithmic Ideal</h1>
+    <p class="lede col">A <em>dictionary</em> is the most-used abstraction in all of computing: store keyed records, then <strong>search</strong>, <strong>insert</strong>, and <strong>delete</strong> by key. The binary search tree promises to do all three in <code class="inl">O(log&nbsp;n)</code> &mdash; the logarithmic ideal &mdash; by mechanising binary search into a structure. But the promise is conditional, and the condition is <strong>balance</strong>. Break it and the same tree degrades, silently, into a linked list. This lecture is about the invariants that make the promise unconditional.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Load one million keys into a textbook binary search tree. If they arrive in a <em>random</em> order the tree is short and a lookup costs about <strong>20</strong> comparisons. If they arrive already <em>sorted</em> &mdash; the single most common shape real data takes &mdash; the very same code builds a tree of height <strong>999,999</strong>, and a lookup costs up to <strong>a million</strong> comparisons.</p>
+        <p style="margin-bottom:0">Same data structure. Same operations. A <strong>50,000&times;</strong> gap, opened by nothing but the <em>order of arrival</em>. The self-balancing tree exists to close that gap by force &mdash; to guarantee the short tree no matter what the adversary feeds it. Learning the invariant that delivers the guarantee is the craft of this lecture.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>The dictionary problem</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>The dictionary ADT</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>The BST invariant</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Height is destiny</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>The adversary: sorted input</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>The rotation</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>AVL: height balance</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Worked: an AVL insert</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Red-black trees</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>B-trees: external memory</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>The ledger</span></a></li>
+      <li><a href="#s13"><span class="num">13</span><span>Where it breaks</span></a></li>
+      <li><a href="#s14"><span class="num">14</span><span>Practice</span></a></li>
+      <li><a href="#s15"><span class="num">15</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> the problem beneath the structure</div>
+      <h2>What a dictionary really asks</h2>
+      <div class="col">
+        <p>Begin by separating the <em>operation</em> from the <em>engine</em> that performs it. Here the operation is ancient and simple: keep a collection of records, each labelled by a <span class="term">key</span> drawn from some ordered universe, and support three verbs &mdash; <em>find</em> the record with a given key, <em>insert</em> a new one, <em>delete</em> an old one. This is the <span class="term">dictionary problem</span>, and it is everywhere: a symbol table in a compiler, an index in a database, the routing table in a switch, the set of live objects in a memory allocator. Solve it well and a thousand systems get faster at once.</p>
+        <p>Lecture 01 gave us two ways to lay a sequence in memory, and each answers the dictionary problem badly. A <strong>sorted array</strong> searches in <code class="inl">O(log n)</code> by binary search &mdash; excellent &mdash; but every insert or delete shifts half the array, <code class="inl">&#x398;(n)</code> per update. An <strong>unsorted linked list</strong> inserts in <code class="inl">O(1)</code> but searches in <code class="inl">&#x398;(n)</code>. Each structure makes one verb cheap by making another dear. The dictionary problem asks for <em>all three verbs cheap at once</em>, and neither linear layout can give it.</p>
+        <p>The binary search tree is the idea that you need not choose. It takes the decisive <em>act</em> of binary search &mdash; &ldquo;compare to the middle, then discard half&rdquo; &mdash; and freezes it into the shape of the data itself, so that the halving structure persists across edits instead of being rebuilt each time. The catch is that the halving only happens if the tree stays <em>short</em>. The whole lecture turns on one quantity, the tree's <strong>height</strong>, and on the invariants that hold it down.</p>
+        <div class="note info"><span class="tag">the formal lens</span>One problem, many engines. We will hold the <em>contract</em> &mdash; search, insert, delete by key &mdash; absolutely fixed, and vary only the representation. Every cost we meet is a property of the representation, never of the contract.</div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>State</strong> the binary-search-tree ordering invariant precisely, and derive why every one of search / insert / delete costs exactly <code class="inl">&#x398;(h)</code>, the tree's height.</li>
+          <li><strong>Prove</strong> the two-sided bound on height &mdash; <code class="inl">&#8970;log&#8322;n&#8971; &le; h &le; n&minus;1</code> &mdash; and explain why the lower end is the dream and the upper end is a linked list wearing a tree's clothes.</li>
+          <li><strong>Execute</strong> a left and a right <span class="term">rotation</span> by hand and argue, from the in-order traversal, that a rotation changes a tree's shape while leaving its meaning &mdash; the ordering &mdash; untouched.</li>
+          <li><strong>Maintain</strong> the AVL height-balance invariant through an insertion, choosing correctly among the four rotation cases (LL, RR, LR, RL), and prove via the Fibonacci recurrence that AVL height is at most <code class="inl">&asymp;1.44&middot;log&#8322;n</code>.</li>
+          <li><strong>Contrast</strong> red-black trees with AVL &mdash; the looser invariant, the <code class="inl">2&middot;log&#8322;n</code> height bound, and why fewer restructurings make them the standard library's choice.</li>
+          <li><strong>Explain</strong> why databases and filesystems abandon binary trees for <span class="term">B-trees</span>: how counting block transfers instead of comparisons turns <code class="inl">log&#8322;n</code> into <code class="inl">log&#7355;n</code> and finds one record among a billion in three disk reads.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>Three ideas, each a short phrase you should already hold comfortably. The first two are taught on the linked pages.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotic notation &mdash; O / &Theta; / &Omega;</a>
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">binary search / ordering</a>
+          <span class="chip">recursion</span>
+        </div>
+        <p style="margin-top:1em">If you can read <code class="inl">O(log n)</code> as &ldquo;the work to repeatedly halve <code class="inl">n</code> down to one,&rdquo; trust that binary search over a sorted run is <code class="inl">&#x398;(log n)</code>, and follow a function that calls itself on a sub-part of its input, you are ready. We are about to give that halving a permanent home.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> fix the interface before the memory</div>
+      <h2>The dictionary, as an abstract type</h2>
+      <div class="col">
+        <p>An <span class="term">abstract data type</span> is a set of values plus the operations permitted on them &mdash; a contract about behaviour that says nothing about storage. The <strong>Dictionary</strong> (or <em>Map</em>) ADT holds a set of <code class="inl">(key, value)</code> pairs with distinct keys and offers:</p>
+        <ul>
+          <li><code class="inl">search(k)</code> &mdash; return the value stored under key <code class="inl">k</code>, or &ldquo;absent&rdquo;;</li>
+          <li><code class="inl">insert(k, v)</code> / <code class="inl">delete(k)</code> &mdash; add or remove a pair by key.</li>
+        </ul>
+        <p>If that were the whole contract, a hash table &mdash; next lecture &mdash; would answer it in expected <code class="inl">O(1)</code> and trees would be a curiosity. But most real dictionaries quietly demand a richer contract: the keys are <em>ordered</em>, and we want the order back. The <span class="term">Ordered Dictionary</span> adds:</p>
+        <ul>
+          <li><code class="inl">min()</code> / <code class="inl">max()</code> &mdash; the extreme keys;</li>
+          <li><code class="inl">predecessor(k)</code> / <code class="inl">successor(k)</code> &mdash; the neighbouring keys in sorted order;</li>
+          <li><code class="inl">range(lo, hi)</code> &mdash; every key in an interval, in order.</li>
+        </ul>
+        <p>These are exactly the queries a hash table <em>cannot</em> answer cheaply, because hashing deliberately destroys order to spread keys uniformly. A search tree keeps the keys <em>sorted by structure</em>, so it answers all of them along the same <code class="inl">O(h)</code> root-to-leaf walk. That is the real reason trees survive in the age of hashing: <strong>they remember the order.</strong> Hold this distinction; it is the spine connecting this lecture to the next.</p>
+        <div class="pull">Hashing buys <span>speed</span> by forgetting the order. A search tree's whole value is that it <span>remembers</span> it.</div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> the invariant that makes a tree searchable</div>
+      <h2>The binary search tree, from first principles</h2>
+      <div class="col">
+        <p>A <span class="term">binary tree</span> is either empty or a <em>node</em> holding a key plus two children, each itself a binary tree &mdash; a recursive shape. To make it <em>searchable</em> we impose one law on where keys may sit. This is the <span class="term">BST invariant</span>:</p>
+        <div class="eq">
+          <span class="lbl">the bst ordering invariant — holds at every node x</span>
+          <p style="margin:0; font-size:15.5px">For every node <code class="inl">x</code>: <strong>every</strong> key in <code class="inl">x</code>'s <em>left</em> subtree is <code class="inl">&lt; key(x)</code>, and <strong>every</strong> key in <code class="inl">x</code>'s <em>right</em> subtree is <code class="inl">&gt; key(x)</code>.</p>
+        </div>
+        <p>Read the word <em>every</em> carefully &mdash; it is the whole structure and the source of the most common bug in &sect;13. The law is not about a node and its two children; it is about a node and its two entire <em>subtrees</em>. The key at a node is a wall: everything to its left is smaller, everything to its right is larger, all the way down.</p>
+        <p>One consequence is immediate and beautiful. Walk the tree <em>in order</em> &mdash; left subtree, then node, then right subtree &mdash; and the keys come out <strong>sorted</strong>:</p>
+        <pre><code><span class="tok-fn">INORDER</span>(x):
+  <span class="tok-kw">if</span> x &#8800; nil:
+    <span class="tok-fn">INORDER</span>(left(x))          <span class="tok-com">// all keys &lt; key(x), in order</span>
+    visit(key(x))             <span class="tok-com">// then x itself</span>
+    <span class="tok-fn">INORDER</span>(right(x))         <span class="tok-com">// then all keys &gt; key(x), in order</span></code></pre>
+        <p>A BST is therefore a sorted sequence that has been <em>folded into a tree</em> so that the binary search is built into the folding. Searching is just descending the fold:</p>
+        <pre><code><span class="tok-fn">SEARCH</span>(x, k):                <span class="tok-com">// x = subtree root, k = key sought</span>
+  <span class="tok-kw">while</span> x &#8800; nil <span class="tok-kw">and</span> k &#8800; key(x):
+    <span class="tok-kw">if</span> k &lt; key(x): x <span class="tok-op">&#8592;</span> left(x)    <span class="tok-com">// smaller &#8594; the wall sends us left</span>
+    <span class="tok-kw">else</span>:          x <span class="tok-op">&#8592;</span> right(x)   <span class="tok-com">// larger  &#8594; right</span>
+  <span class="tok-kw">return</span> x                    <span class="tok-com">// the node, or nil if k is absent</span></code></pre>
+        <p>Each comparison discards an entire subtree &mdash; exactly the &ldquo;throw away half&rdquo; move of binary search, now a physical descent. <strong>Insertion</strong> reuses the search: walk down as if looking for <code class="inl">k</code>; where the search falls off the tree (hits <code class="inl">nil</code>), that empty slot is precisely where <code class="inl">k</code> belongs, so hang a new leaf there.</p>
+        <pre><code><span class="tok-fn">INSERT</span>(x, k):
+  <span class="tok-kw">if</span> x = nil: <span class="tok-kw">return</span> <span class="tok-fn">Node</span>(k)               <span class="tok-com">// fell off &#8594; the key lives here</span>
+  <span class="tok-kw">if</span>   k &lt; key(x): left(x)  <span class="tok-op">&#8592;</span> <span class="tok-fn">INSERT</span>(left(x), k)
+  <span class="tok-kw">elif</span> k &gt; key(x): right(x) <span class="tok-op">&#8592;</span> <span class="tok-fn">INSERT</span>(right(x), k)
+  <span class="tok-kw">return</span> x                              <span class="tok-com">// k == key(x): duplicate — a policy choice (&sect;13)</span></code></pre>
+        <p><strong>Deletion</strong> is the one operation with real cases, because removing an interior node would split the tree. Three situations: a <em>leaf</em> simply vanishes; a node with <em>one child</em> is spliced out, its child taking its place; a node with <em>two children</em> cannot leave directly, so we overwrite its key with its <span class="term">in-order successor</span> &mdash; the smallest key in its right subtree &mdash; and then delete <em>that</em> node, which by construction has no left child and so falls into one of the two easy cases. Every one of these &mdash; search, insert, delete &mdash; is a single walk from the root toward a leaf. Their cost is the length of that walk. Which brings us to the only quantity that matters.</p>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> the one quantity that governs everything</div>
+      <h2>Height is destiny</h2>
+      <div class="col">
+        <p>Define the <span class="term">height</span> of a tree as the number of edges on the longest path from the root down to a leaf &mdash; a single node has height <code class="inl">0</code>, an empty tree height <code class="inl">&minus;1</code>. Every dictionary operation is a root-to-leaf walk, so each touches at most <code class="inl">h+1</code> nodes. The cost law is therefore exact and merciless:</p>
+        <div class="eq">
+          <span class="lbl">the cost law of search trees</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>T</mi><mo>(</mo><mtext>search</mtext><mo>)</mo><mo>=</mo>
+              <mi>T</mi><mo>(</mo><mtext>insert</mtext><mo>)</mo><mo>=</mo>
+              <mi>T</mi><mo>(</mo><mtext>delete</mtext><mo>)</mo>
+              <mo>=</mo><mi>&#x398;</mi><mo>(</mo><mi>h</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>So the entire performance of a search tree collapses to a single question: <em>how tall is it?</em> And a binary tree's height is bounded on both sides by how many nodes it must spread across its levels. Level <code class="inl">0</code> holds at most <code class="inl">1</code> node, level <code class="inl">1</code> at most <code class="inl">2</code>, level <code class="inl">d</code> at most <code class="inl">2&#7496;</code>. A tree of height <code class="inl">h</code> therefore holds at most <code class="inl">2&#7506;&#8314;&#185;&minus;1</code> nodes, and to <em>hold</em> <code class="inl">n</code> of them it needs height at least <code class="inl">log&#8322;(n+1)&minus;1</code>. At the other extreme, nothing forbids a tree from being a single drooping path, one node per level, height <code class="inl">n&minus;1</code>. So:</p>
+        <div class="eq">
+          <span class="lbl">height is pinned between a logarithm and a line</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mo>&#8970;</mo><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo>&#8971;</mo>
+              <mo>&#8804;</mo><mi>h</mi><mo>&#8804;</mo>
+              <mi>n</mi><mo>&#8722;</mo><mn>1</mn>
+            </mrow>
+          </math></div>
+        </div>
+        <p>The gap between those two ends is the whole drama. At the floor, <code class="inl">h&asymp;log&#8322;n</code>, and a million keys cost twenty steps &mdash; the logarithmic ideal. At the ceiling, <code class="inl">h=n&minus;1</code>, and the tree <em>is</em> a linked list: the same <code class="inl">&#x398;(h)</code> law now reads <code class="inl">&#x398;(n)</code>, and we have built an elaborate pointer structure that performs strictly worse than the array we were trying to beat. A plain BST gives you no say in which end you land at &mdash; the <em>order of insertion</em> decides. Figure 1 shows both fates for the same seven keys.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 960 470" role="img" aria-labelledby="f1t f1d">
+            <title id="f1t">The same seven keys as a balanced tree and as a degenerate path</title>
+            <desc id="f1d">On the left, the keys one through seven inserted in the order four, two, six, one, three, five, seven form a balanced tree of height two; any search takes at most three comparisons. On the right, the same keys inserted in sorted order one through seven form a single right-leaning path of height six; a search for seven takes seven comparisons. Both are valid binary search trees; only the insertion order differs.</desc>
+
+            <line x1="480" y1="40" x2="480" y2="450" class="dg-dash"/>
+
+            <!-- LEFT: balanced -->
+            <text x="30" y="36" class="dg-cap">balanced &mdash; insert 4, 2, 6, 1, 3, 5, 7</text>
+            <!-- edges -->
+            <g class="dg-edge">
+              <line x1="210" y1="60" x2="120" y2="145"/>
+              <line x1="210" y1="60" x2="300" y2="145"/>
+              <line x1="120" y1="145" x2="75" y2="230"/>
+              <line x1="120" y1="145" x2="165" y2="230"/>
+              <line x1="300" y1="145" x2="255" y2="230"/>
+              <line x1="300" y1="145" x2="345" y2="230"/>
+            </g>
+            <!-- nodes -->
+            <g>
+              <circle cx="210" cy="60"  r="19" class="dg-node"/><text x="210" y="60"  class="dg-nt">4</text>
+              <circle cx="120" cy="145" r="19" class="dg-node"/><text x="120" y="145" class="dg-nt">2</text>
+              <circle cx="300" cy="145" r="19" class="dg-node"/><text x="300" y="145" class="dg-nt">6</text>
+              <circle cx="75"  cy="230" r="19" class="dg-node"/><text x="75"  y="230" class="dg-nt">1</text>
+              <circle cx="165" cy="230" r="19" class="dg-node"/><text x="165" y="230" class="dg-nt">3</text>
+              <circle cx="255" cy="230" r="19" class="dg-node"/><text x="255" y="230" class="dg-nt">5</text>
+              <circle cx="345" cy="230" r="19" class="dg-node"/><text x="345" y="230" class="dg-nt">7</text>
+            </g>
+            <g transform="translate(70,300)">
+              <rect x="0" y="0" width="320" height="56" rx="8" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
+              <text x="16" y="25" class="dg-label">height = 2</text>
+              <text x="16" y="46" class="dg-val dg-blue-f">search &#8804; 3 comparisons &mdash; the ideal</text>
+            </g>
+
+            <!-- RIGHT: degenerate -->
+            <text x="520" y="36" class="dg-cap">degenerate &mdash; insert 1, 2, 3, 4, 5, 6, 7 (sorted)</text>
+            <g class="dg-edge">
+              <line x1="560" y1="60"  x2="610" y2="115"/>
+              <line x1="610" y1="115" x2="660" y2="170"/>
+              <line x1="660" y1="170" x2="710" y2="225"/>
+              <line x1="710" y1="225" x2="760" y2="280"/>
+              <line x1="760" y1="280" x2="810" y2="335"/>
+              <line x1="810" y1="335" x2="860" y2="390"/>
+            </g>
+            <g>
+              <circle cx="560" cy="60"  r="19" class="dg-node"/><text x="560" y="60"  class="dg-nt">1</text>
+              <circle cx="610" cy="115" r="19" class="dg-node"/><text x="610" y="115" class="dg-nt">2</text>
+              <circle cx="660" cy="170" r="19" class="dg-node"/><text x="660" y="170" class="dg-nt">3</text>
+              <circle cx="710" cy="225" r="19" class="dg-node"/><text x="710" y="225" class="dg-nt">4</text>
+              <circle cx="760" cy="280" r="19" class="dg-node"/><text x="760" y="280" class="dg-nt">5</text>
+              <circle cx="810" cy="335" r="19" class="dg-node"/><text x="810" y="335" class="dg-nt">6</text>
+              <circle cx="860" cy="390" r="19" class="dg-node-hot"/><text x="860" y="390" class="dg-nt">7</text>
+            </g>
+            <g transform="translate(520,300)">
+              <rect x="0" y="0" width="220" height="56" rx="8" fill="var(--surface-2)" stroke="var(--bau-red)" stroke-width="2"/>
+              <text x="16" y="25" class="dg-label">height = 6</text>
+              <text x="16" y="46" class="dg-val dg-red-f">search &#8804; 7 &mdash; a list in disguise</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 1 &mdash; two fates, one set of keys.</b> Both are legal binary search trees over <code class="inl">{1&hellip;7}</code>; their in-order traversals are identical. Only the order of insertion differs, yet one is height <code class="inl">2</code> and the other height <code class="inl">6</code>. The structure does nothing to defend itself &mdash; balance is something we must <em>impose</em>.</figcaption>
+        </figure>
+
+        <div class="stats">
+          <div class="stat lead"><div class="big">&asymp;20</div><span class="lab">comparisons to search 1,000,000 keys in a <em>short</em> tree</span></div>
+          <div class="stat"><div class="big">1.44&middot;log&#8322;n</div><span class="lab">AVL's worst-case height ceiling</span></div>
+          <div class="stat"><div class="big">2&middot;log&#8322;n</div><span class="lab">red-black's height ceiling</span></div>
+          <div class="stat"><div class="big">3</div><span class="lab">disk reads to find 1 record among a billion in a B-tree</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> why imbalance is the common case, not the rare one</div>
+      <h2>The adversary feeds you sorted data</h2>
+      <div class="col">
+        <p>It is tempting to wave the degenerate tree away as a pathological corner that never happens in practice. The opposite is true. <em>Sorted or nearly-sorted input is the single most common shape real data arrives in.</em> Timestamps land in time order. Auto-increment database keys arrive ascending. Log files, version numbers, re-imported exports, the output of a previous sort &mdash; all monotone. Feed any ascending stream to the plain <code class="inl">INSERT</code> of &sect;04 and <em>every</em> new key is larger than all before it, so it walks to the far right and hangs there. The tree grows as a single right-leaning stick of height <code class="inl">n&minus;1</code>. The most natural input produces the worst possible tree.</p>
+        <p>One might hope the average saves us, and on paper it nearly does: a BST built from a <em>uniformly random</em> permutation has expected height <code class="inl">&#x398;(log n)</code>, with the average node sitting about <code class="inl">1.39&middot;log&#8322;n</code> deep. But &ldquo;average over random insertion orders&rdquo; is a promise about a distribution you do not control. The adversary &mdash; or merely an upstream <code class="inl">ORDER BY</code> &mdash; chooses the order, and a single sorted batch lands you on the <code class="inl">&#x398;(n)</code> ceiling. Relying on the average here is relying on luck you have already lost.</p>
+        <div class="note warn"><span class="tag">the boundary of the average</span>&ldquo;Balanced in expectation&rdquo; and &ldquo;balanced in the worst case&rdquo; are different guarantees. Expectation is defended only against a random adversary; a self-balancing invariant is defended against <em>every</em> adversary. The next four sections build that unconditional defence. (Randomness can be re-introduced deliberately &mdash; the treap of Lecture 22 &mdash; but as a designed tool, not a hope.)</p></div>
+        <p>The fix cannot be &ldquo;ask callers to insert in random order.&rdquo; It must be structural: after each update, <em>detect</em> when the tree is leaning too far and <em>repair</em> it &mdash; cheaply, in <code class="inl">O(log n)</code>, without disturbing the ordering that makes it a search tree at all. There is exactly one primitive that can do this. Everything that follows is built from it.</p>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> the one move that changes shape without changing meaning</div>
+      <h2>The rotation</h2>
+      <div class="col">
+        <p>A <span class="term">rotation</span> is a local re-pivoting of one parent-child pair that re-balances the heights between them while preserving the BST invariant exactly. It is the only restructuring primitive we need, and it touches a constant number of pointers, so it costs <code class="inl">O(1)</code>. Consider a node <code class="inl">x</code> whose right child is <code class="inl">y</code>, with three subtrees hanging off them &mdash; <code class="inl">A</code>, <code class="inl">B</code>, <code class="inl">C</code>. A <strong>left rotation at <code class="inl">x</code></strong> lifts <code class="inl">y</code> up into <code class="inl">x</code>'s place and lets <code class="inl">x</code> descend to become <code class="inl">y</code>'s left child:</p>
+        <pre><code><span class="tok-fn">ROTATE-LEFT</span>(x):            <span class="tok-com">// precondition: x has a right child y</span>
+  y <span class="tok-op">&#8592;</span> right(x)
+  right(x) <span class="tok-op">&#8592;</span> left(y)        <span class="tok-com">// subtree B moves across, under x</span>
+  left(y)  <span class="tok-op">&#8592;</span> x              <span class="tok-com">// x descends to become y's left child</span>
+  <span class="tok-kw">return</span> y                  <span class="tok-com">// y is the new root of this subtree</span></code></pre>
+        <p>Why is the ordering safe? Read off the in-order sequence before and after. Before the rotation the order is <code class="inl">A</code>, <code class="inl">x</code>, <code class="inl">B</code>, <code class="inl">y</code>, <code class="inl">C</code>. After it the order is&hellip; <code class="inl">A</code>, <code class="inl">x</code>, <code class="inl">B</code>, <code class="inl">y</code>, <code class="inl">C</code> &mdash; identical. The constraints <code class="inl">A &lt; x &lt; B &lt; y &lt; C</code> hold in both shapes; the rotation merely re-hangs <code class="inl">B</code> from <code class="inl">y</code> to <code class="inl">x</code>, the one subtree that sits, in value, <em>between</em> them and so is legal under either parent. A <strong>right rotation</strong> is the exact mirror, lifting a left child. Because in-order is preserved, a rotation is invisible to <code class="inl">search</code> &mdash; it changes only the heights, which is exactly what we want to adjust.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 960 390" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">A left rotation at x pivots x and its right child y</title>
+            <desc id="f2d">Before: x is the root with left subtree A and right child y; y has left subtree B and right subtree C. After a left rotation at x, y becomes the root with x as its left child and C as its right subtree; x keeps A on its left and receives B on its right. The in-order sequence A, x, B, y, C is identical before and after, so the binary-search-tree ordering is preserved while the heights change.</desc>
+
+            <!-- BEFORE -->
+            <text x="30" y="34" class="dg-cap">before</text>
+            <g class="dg-edge">
+              <line x1="160" y1="62" x2="98" y2="150"/>
+              <line x1="160" y1="62" x2="250" y2="150"/>
+              <line x1="250" y1="150" x2="200" y2="232"/>
+              <line x1="250" y1="150" x2="305" y2="232"/>
+            </g>
+            <circle cx="160" cy="62" r="20" class="dg-node"/><text x="160" y="62" class="dg-nt">x</text>
+            <circle cx="250" cy="150" r="20" class="dg-node"/><text x="250" y="150" class="dg-nt">y</text>
+            <path d="M98 150 L62 232 L134 232 Z" class="dg-tri"/><text x="98" y="214" class="dg-nt">A</text>
+            <path d="M200 232 L168 300 L232 300 Z" class="dg-tri"/><text x="200" y="285" class="dg-nt">B</text>
+            <path d="M305 232 L273 300 L337 300 Z" class="dg-tri"/><text x="305" y="285" class="dg-nt">C</text>
+
+            <!-- arrow -->
+            <g transform="translate(430,150)">
+              <line x1="0" y1="10" x2="70" y2="10" class="dg-stroke dg-blue" marker-end="url(#ahL)"/>
+              <text x="-4" y="-8" class="dg-label sm dg-blue-f">rotate-left(x)</text>
+              <line x1="70" y1="40" x2="0" y2="40" class="dg-stroke dg-red" marker-end="url(#ahR)"/>
+              <text x="-4" y="66" class="dg-label sm dg-red-f">rotate-right(y)</text>
+            </g>
+
+            <!-- AFTER -->
+            <text x="620" y="34" class="dg-cap">after</text>
+            <g class="dg-edge">
+              <line x1="700" y1="62" x2="618" y2="150"/>
+              <line x1="700" y1="62" x2="775" y2="150"/>
+              <line x1="618" y1="150" x2="568" y2="232"/>
+              <line x1="618" y1="150" x2="672" y2="232"/>
+            </g>
+            <circle cx="700" cy="62" r="20" class="dg-node"/><text x="700" y="62" class="dg-nt">y</text>
+            <circle cx="618" cy="150" r="20" class="dg-node"/><text x="618" y="150" class="dg-nt">x</text>
+            <path d="M775 150 L743 218 L807 218 Z" class="dg-tri"/><text x="775" y="203" class="dg-nt">C</text>
+            <path d="M568 232 L536 300 L600 300 Z" class="dg-tri"/><text x="568" y="285" class="dg-nt">A</text>
+            <path d="M672 232 L640 300 L704 300 Z" class="dg-tri"/><text x="672" y="285" class="dg-nt">B</text>
+
+            <!-- in-order strips -->
+            <text x="30"  y="350" class="dg-label sm">in-order:  A &#9001; x &#9001; B &#9001; y &#9001; C</text>
+            <text x="620" y="350" class="dg-label sm">in-order:  A &#9001; x &#9001; B &#9001; y &#9001; C</text>
+            <text x="30"  y="372" class="dg-val dg-blue-f" style="font-size:13px">&#8230; identical &#8594; ordering preserved, only the heights move</text>
+
+            <defs>
+              <marker id="ahL" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+              <marker id="ahR" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 2 &mdash; the balancing primitive.</b> A rotation is <code class="inl">O(1)</code> pointer surgery that re-hangs the single &ldquo;between&rdquo; subtree <code class="inl">B</code>. Left and right rotations are inverses. Every balanced tree in this lecture &mdash; AVL, red-black, even the splits inside a B-tree &mdash; is, at bottom, a disciplined schedule of these.</figcaption>
+        </figure>
+        <p>A rotation, then, is a knob: it shifts one unit of height from one side of a pivot to the other, for free, without anyone downstream noticing. A self-balancing tree is nothing more than a <em>policy</em> for when to turn that knob. There are two famous policies.</p>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> the strict policy</div>
+      <h2>AVL trees: keep every node nearly balanced</h2>
+      <div class="col">
+        <p>The first self-balancing tree, due to Adelson-Velsky and Landis in 1962, enforces the most direct invariant imaginable. Define a node's <span class="term">balance factor</span> as the height of its right subtree minus that of its left. The <span class="term">AVL invariant</span> demands:</p>
+        <div class="eq">
+          <span class="lbl">the avl height-balance invariant</span>
+          <p style="margin:0; font-size:15.5px">At <strong>every</strong> node, <code class="inl">balanceFactor = height(right) &minus; height(left) &#8712; {&minus;1, 0, +1}</code> &mdash; the two subtrees may differ in height by at most one.</p>
+        </div>
+        <p>This is a local law &mdash; checked one node at a time &mdash; yet it forces a global guarantee: the tree can never be tall. The argument is one of my favourites in all of data structures, because it answers &ldquo;how bad can a <em>barely</em>-balanced tree get?&rdquo; by building the <em>worst legal one</em> and counting it.</p>
+
+        <details>
+          <summary>Derive the AVL height bound (the Fibonacci argument)</summary>
+          <div class="body">
+            <p>Ask the dual question: among all AVL trees of height <code class="inl">h</code>, what is the <em>fewest</em> nodes one can contain? Call it <code class="inl">N(h)</code>. A sparsest tree of height <code class="inl">h</code> has a root, and to reach height <code class="inl">h</code> one child must have height <code class="inl">h&minus;1</code>; to stay legal the other may be as short as <code class="inl">h&minus;2</code>. Both children are themselves sparsest AVL trees, so:</p>
+            <div class="eq">
+              <span class="lbl">a fibonacci recurrence</span>
+              <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+                <mrow>
+                  <mi>N</mi><mo>(</mo><mi>h</mi><mo>)</mo><mo>=</mo>
+                  <mn>1</mn><mo>+</mo>
+                  <mi>N</mi><mo>(</mo><mi>h</mi><mo>&#8722;</mo><mn>1</mn><mo>)</mo><mo>+</mo>
+                  <mi>N</mi><mo>(</mo><mi>h</mi><mo>&#8722;</mo><mn>2</mn><mo>)</mo>
+                  <mo>,</mo><mspace width="1em"/>
+                  <mi>N</mi><mo>(</mo><mn>0</mn><mo>)</mo><mo>=</mo><mn>1</mn><mo>,</mo>
+                  <mspace width="0.5em"/>
+                  <mi>N</mi><mo>(</mo><mn>1</mn><mo>)</mo><mo>=</mo><mn>2</mn>
+                </mrow>
+              </math></div>
+            </div>
+            <p>This is the Fibonacci numbers in disguise: <code class="inl">N(h) = F(h+3) &minus; 1</code>. Checking: <code class="inl">N(0)=1, N(1)=2, N(2)=4, N(3)=7, N(4)=12</code> &mdash; each the sum of the previous two plus one. Since Fibonacci grows like <code class="inl">&#966;&#7506;</code> with <code class="inl">&#966;=(1+&#8730;5)/2&asymp;1.618</code>, the minimum node count grows <em>exponentially</em> in the height. Invert it: a tree with <code class="inl">n</code> nodes satisfies <code class="inl">n &#8805; N(h) &#8776; &#966;&#7506;</code>, hence</p>
+            <div class="eq">
+              <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+                <mrow>
+                  <mi>h</mi><mo>&#8804;</mo>
+                  <msub><mi>log</mi><mi>&#966;</mi></msub><mi>n</mi>
+                  <mo>&#8776;</mo>
+                  <mn>1.4404</mn><mo>&#8901;</mo>
+                  <msub><mi>log</mi><mn>2</mn></msub><mi>n</mi>
+                </mrow>
+              </math></div>
+            </div>
+            <p>An AVL tree is never more than about <strong>44% taller</strong> than a perfectly balanced one. The local <code class="inl">&#177;1</code> rule has bought a global <code class="inl">O(log n)</code> height &mdash; unconditionally.</p>
+          </div>
+        </details>
+
+        <p>Maintaining the invariant is the art. After an <code class="inl">INSERT</code>, walk back up from the new leaf updating heights; the first node whose balance factor reaches <code class="inl">&#177;2</code> is the lowest point of damage. Exactly one of four configurations holds there, named for the two steps of the path from that node down toward the new leaf, and each is repaired by one or two rotations:</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 960 360" role="img" aria-labelledby="f3t f3d">
+            <title id="f3t">The four AVL imbalance cases and their rotations</title>
+            <desc id="f3d">Four small diagrams. Left-Left: the heavy path goes left then left from the unbalanced node z, fixed by a single right rotation at z. Right-Right: heavy path right then right, fixed by a single left rotation at z. Left-Right: heavy path left then right, fixed by a left rotation at the child y followed by a right rotation at z. Right-Left: heavy path right then left, fixed by a right rotation at y followed by a left rotation at z.</desc>
+
+            <!-- LL -->
+            <text x="30" y="34" class="dg-cap">LL &mdash; single right rotation at z</text>
+            <g class="dg-edge"><line x1="150" y1="60" x2="105" y2="115" class="dg-red"/><line x1="105" y1="115" x2="65" y2="170" class="dg-red"/><line x1="150" y1="60" x2="200" y2="115"/></g>
+            <circle cx="150" cy="60"  r="17" class="dg-node"/><text x="150" y="60"  class="dg-nt">z</text>
+            <circle cx="105" cy="115" r="17" class="dg-node"/><text x="105" y="115" class="dg-nt">y</text>
+            <circle cx="65"  cy="170" r="17" class="dg-node-hot"/><text x="65" y="170" class="dg-nt">x</text>
+
+            <!-- RR -->
+            <text x="520" y="34" class="dg-cap">RR &mdash; single left rotation at z</text>
+            <g class="dg-edge"><line x1="620" y1="60" x2="665" y2="115" class="dg-red"/><line x1="665" y1="115" x2="705" y2="170" class="dg-red"/><line x1="620" y1="60" x2="570" y2="115"/></g>
+            <circle cx="620" cy="60"  r="17" class="dg-node"/><text x="620" y="60"  class="dg-nt">z</text>
+            <circle cx="665" cy="115" r="17" class="dg-node"/><text x="665" y="115" class="dg-nt">y</text>
+            <circle cx="705" cy="170" r="17" class="dg-node-hot"/><text x="705" y="170" class="dg-nt">x</text>
+
+            <!-- LR -->
+            <text x="30" y="220" class="dg-cap">LR &mdash; left at y, then right at z</text>
+            <g class="dg-edge"><line x1="150" y1="246" x2="105" y2="301" class="dg-red"/><line x1="105" y1="301" x2="145" y2="335" class="dg-red"/><line x1="150" y1="246" x2="200" y2="301"/></g>
+            <circle cx="150" cy="246" r="17" class="dg-node"/><text x="150" y="246" class="dg-nt">z</text>
+            <circle cx="105" cy="301" r="17" class="dg-node"/><text x="105" y="301" class="dg-nt">y</text>
+            <circle cx="145" cy="335" r="17" class="dg-node-hot"/><text x="145" y="335" class="dg-nt">x</text>
+
+            <!-- RL -->
+            <text x="520" y="220" class="dg-cap">RL &mdash; right at y, then left at z</text>
+            <g class="dg-edge"><line x1="620" y1="246" x2="665" y2="301" class="dg-red"/><line x1="665" y1="301" x2="625" y2="335" class="dg-red"/><line x1="620" y1="246" x2="570" y2="301"/></g>
+            <circle cx="620" cy="246" r="17" class="dg-node"/><text x="620" y="246" class="dg-nt">z</text>
+            <circle cx="665" cy="301" r="17" class="dg-node"/><text x="665" y="301" class="dg-nt">y</text>
+            <circle cx="625" cy="335" r="17" class="dg-node-hot"/><text x="625" y="335" class="dg-nt">x</text>
+          </svg>
+          <figcaption><b>Figure 3 &mdash; the four cases.</b> <code class="inl">z</code> is the lowest unbalanced node, <code class="inl">y</code> its taller child, <code class="inl">x</code> the grandchild on the heavy path (red). When <code class="inl">z</code> and <code class="inl">y</code> lean the <em>same</em> way (LL, RR) a single rotation suffices; when they lean <em>opposite</em> ways (LR, RL) the zig-zag must first be straightened by rotating <code class="inl">y</code>, then <code class="inl">z</code>. A single insertion needs at most one such repair.</figcaption>
+        </figure>
+
+        <pre><code><span class="tok-fn">INSERT</span>(t, k):                              <span class="tok-com">// returns the (possibly new) subtree root</span>
+  <span class="tok-kw">if</span> t = nil: <span class="tok-kw">return</span> <span class="tok-fn">Node</span>(k, height=0)
+  <span class="tok-kw">if</span> k &lt; key(t): left(t)  <span class="tok-op">&#8592;</span> <span class="tok-fn">INSERT</span>(left(t), k)
+  <span class="tok-kw">else</span>:          right(t) <span class="tok-op">&#8592;</span> <span class="tok-fn">INSERT</span>(right(t), k)
+  <span class="tok-fn">update_height</span>(t)                          <span class="tok-com">// 1 + max(h(left), h(right))</span>
+  <span class="tok-kw">return</span> <span class="tok-fn">REBALANCE</span>(t)
+
+<span class="tok-fn">REBALANCE</span>(t):
+  b <span class="tok-op">&#8592;</span> bf(t)                                  <span class="tok-com">// h(right) &minus; h(left)</span>
+  <span class="tok-kw">if</span> b &lt; &minus;1:                                <span class="tok-com">// left-heavy</span>
+    <span class="tok-kw">if</span> bf(left(t)) &gt; 0: left(t) <span class="tok-op">&#8592;</span> <span class="tok-fn">ROTATE-LEFT</span>(left(t))   <span class="tok-com">// LR: straighten first</span>
+    <span class="tok-kw">return</span> <span class="tok-fn">ROTATE-RIGHT</span>(t)                                    <span class="tok-com">// LL or finished LR</span>
+  <span class="tok-kw">if</span> b &gt; +1:                                <span class="tok-com">// right-heavy</span>
+    <span class="tok-kw">if</span> bf(right(t)) &lt; 0: right(t) <span class="tok-op">&#8592;</span> <span class="tok-fn">ROTATE-RIGHT</span>(right(t)) <span class="tok-com">// RL: straighten first</span>
+    <span class="tok-kw">return</span> <span class="tok-fn">ROTATE-LEFT</span>(t)                                     <span class="tok-com">// RR or finished RL</span>
+  <span class="tok-kw">return</span> t                                  <span class="tok-com">// already legal</span></code></pre>
+        <p>The find costs <code class="inl">O(log n)</code>, the retrace updating heights costs <code class="inl">O(log n)</code>, and the rotations are <code class="inl">O(1)</code> each. An insertion triggers <em>at most one</em> single-or-double rotation; a deletion may trigger up to <code class="inl">O(log n)</code> of them as the imbalance propagates upward. Either way, every operation is <code class="inl">O(log n)</code> worst case. The promise of &sect;01 is now unconditional.</p>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> the mechanism, fully worked</div>
+      <h2>Worked example: insert 10, 20, 30, 40, 50, 25</h2>
+      <div class="col">
+        <p>Let us run the AVL machine by hand on a deliberately awkward sequence &mdash; an ascending run that forces single rotations, then a key dropped into the middle that forces a <em>double</em> one. I show every balance factor and name the case that fires.</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>AVL insertions — balance factors and the rotation each triggers</caption>
+            <thead>
+              <tr><th scope="col">insert</th><th scope="col">unbalanced node</th><th scope="col">case</th><th scope="col">rotation</th><th scope="col">tree after (pre-order)</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row" class="mono">10</th><td class="mid">&mdash;</td><td>&mdash;</td><td>none</td><td class="mono">10</td></tr>
+              <tr><th scope="row" class="mono">20</th><td class="mid">&mdash;</td><td>&mdash;</td><td>none</td><td class="mono">10, 20</td></tr>
+              <tr><th scope="row" class="mono">30</th><td class="bad">10 (bf +2)</td><td>RR</td><td>left at 10</td><td class="mono">20, 10, 30</td></tr>
+              <tr><th scope="row" class="mono">40</th><td class="mid">&mdash;</td><td>&mdash;</td><td>none</td><td class="mono">20, 10, 30, 40</td></tr>
+              <tr><th scope="row" class="mono">50</th><td class="bad">30 (bf +2)</td><td>RR</td><td>left at 30</td><td class="mono">20, 10, 40, 30, 50</td></tr>
+              <tr class="wrap-row"><th scope="row" class="mono">25</th><td class="bad">20 (bf +2)</td><td>RL</td><td>right at 40, then left at 20</td><td class="mono">30, 20, 10, 25, 40, 50</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="5">Final in-order = 10, 20, 25, 30, 40, 50 (sorted, as it must be); final height = 2 for 6 keys, well under the <code>1.44&middot;log&#8322;6 &#8776; 3.7</code> ceiling.</td></tr></tfoot>
+          </table>
+        </div>
+        <p>The last row is the instructive one. After inserting <code class="inl">25</code>, node <code class="inl">20</code> is right-heavy (<code class="inl">+2</code>) but its right child <code class="inl">40</code> is left-heavy (<code class="inl">&minus;1</code>) &mdash; opposite leans, the <strong>RL</strong> zig-zag. A single left rotation at <code class="inl">20</code> would merely tip the imbalance the other way; we must first <em>straighten</em> by rotating <code class="inl">40</code> right, then rotate <code class="inl">20</code> left. Figure 4 freezes all three states.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 980 330" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">The right-left double rotation that rebalances after inserting 25</title>
+            <desc id="f4d">Panel one: after inserting 25, node 20 is unbalanced with balance factor plus two; its right child is 40 with left child 30 with left child 25. Panel two: a right rotation at 40 lifts 30, producing the chain 20, 30, with 25 left of 30 and 40 right of 30, and 50 right of 40. Panel three: a left rotation at 20 lifts 30 to the root, giving 30 with left child 20 (children 10 and 25) and right child 40 (right child 50), a balanced tree of height two.</desc>
+
+            <!-- divider lines -->
+            <line x1="330" y1="40" x2="330" y2="310" class="dg-dash"/>
+            <line x1="660" y1="40" x2="660" y2="310" class="dg-dash"/>
+
+            <!-- PANEL A -->
+            <text x="20" y="32" class="dg-cap">1 &middot; after insert 25</text>
+            <text x="20" y="50" class="dg-bf">node 20: bf +2 &mdash; unbalanced</text>
+            <g class="dg-edge">
+              <line x1="140" y1="74" x2="92"  y2="128"/>
+              <line x1="140" y1="74" x2="200" y2="128"/>
+              <line x1="200" y1="128" x2="160" y2="186"/>
+              <line x1="200" y1="128" x2="250" y2="186"/>
+              <line x1="160" y1="186" x2="128" y2="244"/>
+            </g>
+            <circle cx="140" cy="74"  r="17" class="dg-node-hot"/><text x="140" y="74"  class="dg-nt">20</text>
+            <circle cx="92"  cy="128" r="17" class="dg-node"/><text x="92"  y="128" class="dg-nt">10</text>
+            <circle cx="200" cy="128" r="17" class="dg-node"/><text x="200" y="128" class="dg-nt">40</text>
+            <circle cx="160" cy="186" r="17" class="dg-node"/><text x="160" y="186" class="dg-nt">30</text>
+            <circle cx="250" cy="186" r="17" class="dg-node"/><text x="250" y="186" class="dg-nt">50</text>
+            <circle cx="128" cy="244" r="17" class="dg-node-r"/><text x="128" y="244" class="dg-nt w">25</text>
+
+            <!-- PANEL B -->
+            <text x="350" y="32" class="dg-cap">2 &middot; rotate-right(40)</text>
+            <text x="350" y="50" class="dg-bf" style="fill:var(--bau-blue)">straighten the zig-zag</text>
+            <g class="dg-edge">
+              <line x1="470" y1="74" x2="422" y2="128"/>
+              <line x1="470" y1="74" x2="558" y2="128"/>
+              <line x1="558" y1="128" x2="518" y2="186"/>
+              <line x1="558" y1="128" x2="610" y2="186"/>
+              <line x1="610" y1="186" x2="642" y2="244"/>
+            </g>
+            <circle cx="470" cy="74"  r="17" class="dg-node"/><text x="470" y="74"  class="dg-nt">20</text>
+            <circle cx="422" cy="128" r="17" class="dg-node"/><text x="422" y="128" class="dg-nt">10</text>
+            <circle cx="558" cy="128" r="17" class="dg-node-hot"/><text x="558" y="128" class="dg-nt">30</text>
+            <circle cx="518" cy="186" r="17" class="dg-node-r"/><text x="518" y="186" class="dg-nt w">25</text>
+            <circle cx="610" cy="186" r="17" class="dg-node"/><text x="610" y="186" class="dg-nt">40</text>
+            <circle cx="642" cy="244" r="17" class="dg-node"/><text x="642" y="244" class="dg-nt">50</text>
+
+            <!-- PANEL C -->
+            <text x="680" y="32" class="dg-cap">3 &middot; rotate-left(20)</text>
+            <text x="680" y="50" class="dg-bf" style="fill:var(--bau-blue)">balanced, height 2</text>
+            <g class="dg-edge">
+              <line x1="850" y1="74" x2="800" y2="132"/>
+              <line x1="850" y1="74" x2="905" y2="132"/>
+              <line x1="800" y1="132" x2="760" y2="192"/>
+              <line x1="800" y1="132" x2="838" y2="192"/>
+              <line x1="905" y1="132" x2="945" y2="192"/>
+            </g>
+            <circle cx="850" cy="74"  r="17" class="dg-node-hot"/><text x="850" y="74"  class="dg-nt">30</text>
+            <circle cx="800" cy="132" r="17" class="dg-node"/><text x="800" y="132" class="dg-nt">20</text>
+            <circle cx="905" cy="132" r="17" class="dg-node"/><text x="905" y="132" class="dg-nt">40</text>
+            <circle cx="760" cy="192" r="17" class="dg-node"/><text x="760" y="192" class="dg-nt">10</text>
+            <circle cx="838" cy="192" r="17" class="dg-node-r"/><text x="838" y="192" class="dg-nt w">25</text>
+            <circle cx="945" cy="192" r="17" class="dg-node"/><text x="945" y="192" class="dg-nt">50</text>
+          </svg>
+          <figcaption><b>Figure 4 &mdash; a double rotation, step by step.</b> The newly inserted <code class="inl">25</code> (red) sits in the &ldquo;inner&rdquo; position, between <code class="inl">20</code> and <code class="inl">40</code> in value. The first rotation pulls it onto the straight path; the second lifts <code class="inl">30</code> to the top. Throughout, the in-order order <code class="inl">10,20,25,30,40,50</code> is untouched.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> the looser policy</div>
+      <h2>Red-black trees: balance you can afford to maintain</h2>
+      <div class="col">
+        <p>AVL keeps trees beautifully short, but its rigidity has a price: a delete can cascade rotations all the way up. For workloads heavy on updates, a looser invariant that does <em>less</em> restructuring can win overall, even at the cost of a slightly taller tree. The <span class="term">red-black tree</span> is that bargain, and it is the one your standard library actually ships &mdash; C++ <code class="inl">std::map</code> and <code class="inl">std::set</code>, Java's <code class="inl">TreeMap</code> and <code class="inl">TreeSet</code>, and the Linux kernel's scheduler and virtual-memory areas are all red-black trees.</p>
+        <p>Colour every node red or black and impose five rules. Together they let the longest root-to-leaf path be <em>at most twice</em> the shortest, which is all you need for <code class="inl">O(log n)</code>:</p>
+        <ul>
+          <li>Every node is <strong>red</strong> or <strong>black</strong>.</li>
+          <li>The <strong>root is black</strong>; every <code class="inl">nil</code> leaf is black.</li>
+          <li>A <strong>red node's children are both black</strong> &mdash; no two reds in a row.</li>
+          <li>Every path from a node down to its <code class="inl">nil</code> leaves crosses the <strong>same number of black nodes</strong> &mdash; that count is the node's <span class="term">black-height</span>.</li>
+        </ul>
+        <p>The fourth rule pins the &ldquo;shortest path&rdquo; (all black) and the third rule stops the &ldquo;longest path&rdquo; (alternating red/black) from being more than twice it. A short calculation makes it exact.</p>
+
+        <details>
+          <summary>Derive the red-black height bound (h &#8804; 2&middot;log&#8322;(n+1))</summary>
+          <div class="body">
+            <p>Claim: a subtree rooted at <code class="inl">x</code> contains at least <code class="inl">2<sup>bh(x)</sup>&minus;1</code> internal nodes, where <code class="inl">bh(x)</code> is its black-height. Prove it by induction on the subtree's height. <em>Base:</em> a <code class="inl">nil</code> leaf has <code class="inl">bh=0</code> and <code class="inl">2&#8304;&minus;1=0</code> nodes. <em>Step:</em> each child of <code class="inl">x</code> has black-height at least <code class="inl">bh(x)&minus;1</code>, so by hypothesis each child's subtree holds at least <code class="inl">2<sup>bh(x)&minus;1</sup>&minus;1</code> nodes; the subtree at <code class="inl">x</code> therefore holds at least <code class="inl">(2<sup>bh(x)&minus;1</sup>&minus;1)+(2<sup>bh(x)&minus;1</sup>&minus;1)+1 = 2<sup>bh(x)</sup>&minus;1</code>. Now, by the no-two-reds rule at least half the nodes on any root-to-leaf path are black, so <code class="inl">bh(root) &#8805; h/2</code>. Combining: <code class="inl">n &#8805; 2<sup>h/2</sup>&minus;1</code>, hence <code class="inl">h &#8804; 2&middot;log&#8322;(n+1)</code>.</p>
+          </div>
+        </details>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 720 300" role="img" aria-labelledby="f5t f5d">
+            <title id="f5t">A valid red-black tree with black-height two</title>
+            <desc id="f5d">A red-black tree: black root 4 with two red children 2 and 6; each red node has two black children, namely 1 and 3 under 2, and 5 and 7 under 6. No red node has a red child, and every path from the root to a leaf crosses the same number of black nodes, giving a black-height of two.</desc>
+            <g class="dg-edge">
+              <line x1="340" y1="56" x2="220" y2="132"/>
+              <line x1="340" y1="56" x2="460" y2="132"/>
+              <line x1="220" y1="132" x2="150" y2="210"/>
+              <line x1="220" y1="132" x2="290" y2="210"/>
+              <line x1="460" y1="132" x2="410" y2="210"/>
+              <line x1="460" y1="132" x2="560" y2="210"/>
+            </g>
+            <circle cx="340" cy="56"  r="20" class="dg-node-b"/><text x="340" y="56"  class="dg-nt w">4</text>
+            <circle cx="220" cy="132" r="20" class="dg-node-r"/><text x="220" y="132" class="dg-nt w">2</text>
+            <circle cx="460" cy="132" r="20" class="dg-node-r"/><text x="460" y="132" class="dg-nt w">6</text>
+            <circle cx="150" cy="210" r="20" class="dg-node-b"/><text x="150" y="210" class="dg-nt w">1</text>
+            <circle cx="290" cy="210" r="20" class="dg-node-b"/><text x="290" y="210" class="dg-nt w">3</text>
+            <circle cx="410" cy="210" r="20" class="dg-node-b"/><text x="410" y="210" class="dg-nt w">5</text>
+            <circle cx="560" cy="210" r="20" class="dg-node-b"/><text x="560" y="210" class="dg-nt w">7</text>
+            <!-- legend -->
+            <circle cx="40" cy="266" r="9" class="dg-node-b"/><text x="58" y="266" class="dg-label sm" dominant-baseline="central">black: counts toward black-height</text>
+            <circle cx="360" cy="266" r="9" class="dg-node-r"/><text x="378" y="266" class="dg-label sm" dominant-baseline="central">red: never has a red child</text>
+          </svg>
+          <figcaption><b>Figure 5 &mdash; colours as a budget.</b> Every root-to-leaf path here meets exactly two black nodes (the leaf's <code class="inl">nil</code> child included), so black-height is <code class="inl">2</code>. The reds are &ldquo;free&rdquo; nodes that may be inserted without lengthening the black budget &mdash; but never two in a row, which caps the total height at twice the black-height.</figcaption>
+        </figure>
+
+        <p>The pay-off is in the update cost. A red-black <em>insert</em> finishes with at most <strong>2</strong> rotations; a <em>delete</em> with at most <strong>3</strong> &mdash; both constant, whereas an AVL delete may rotate <code class="inl">O(log n)</code> times. (Recolourings can still ripple up the tree, but recolouring is cheap and rotation-free.) The trade is now stateable in one line, and it is a genuine engineering choice, not a verdict:</p>
+        <div class="note info"><span class="tag">avl vs red-black</span><strong>AVL</strong> &mdash; tighter balance (<code class="inl">&#8804;1.44 log&#8322;n</code>), so <em>lookups</em> are shallower and faster; pays with more restructuring on churn. Favour it for read-heavy tables. <strong>Red-black</strong> &mdash; looser balance (<code class="inl">&#8804;2 log&#8322;n</code>) but <code class="inl">O(1)</code> rotations per update; favour it for write-heavy workloads and as a safe general default &mdash; which is exactly why the libraries chose it.</div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> when memory is not flat</div>
+      <h2>B-trees: changing the cost model changes the tree</h2>
+      <div class="col">
+        <p>Everything so far has assumed Lecture 00's RAM model, where every memory access costs the same <code class="inl">1</code>. Lecture 01 already showed that promise fraying against the cache. Push the data onto a disk or SSD and it shatters completely: a random read does not fetch a byte, it fetches a whole <span class="term">block</span> &mdash; thousands of bytes &mdash; and that single transfer costs as much as millions of arithmetic operations. The honest cost model is no longer &ldquo;count comparisons&rdquo; but the <span class="term">external-memory model</span>: <strong>count block transfers (I/Os)</strong>, each moving <code class="inl">B</code> items at once.</p>
+        <p>Under that model a balanced <em>binary</em> tree is a disaster. Its <code class="inl">log&#8322;n &#8776; 30</code> levels for a billion keys become up to thirty <em>separate</em> block reads, each a random seek, because consecutive nodes on the path live in unrelated blocks. The structure is right; the branching factor is wrong. The fix, due to Bayer and McCreight in 1970, is to <em>match the node to the block</em>: let each node hold not one key but as many as fill a block &mdash; hundreds or thousands &mdash; with one more child pointer than it has keys. This is the <span class="term">B-tree</span>.</p>
+        <p>A B-tree of <span class="term">minimum degree</span> <code class="inl">t</code> keeps every node (bar the root) between <code class="inl">t&minus;1</code> and <code class="inl">2t&minus;1</code> keys, holds all leaves at the <em>same</em> depth, and keeps each node's keys sorted so that its children interleave as separators. With branching factor up to <code class="inl">2t</code>, its height is <code class="inl">O(log&#7359;n)</code> &mdash; a logarithm in base <em>thousands</em>, not base two:</p>
+        <div class="eq">
+          <span class="lbl">the external-memory pay-off</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mtext>I/Os per operation</mtext><mo>=</mo>
+              <mi>O</mi><mo>(</mo>
+              <msub><mi>log</mi><mi>B</mi></msub><mi>n</mi>
+              <mo>)</mo>
+              <mo>=</mo>
+              <mi>O</mi><mfrac><mrow><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi></mrow><mrow><msub><mi>log</mi><mn>2</mn></msub><mi>B</mi></mrow></mfrac>
+            </mrow>
+          </math></div>
+        </div>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 980 320" role="img" aria-labelledby="f6t f6d">
+            <title id="f6t">A B-tree node is a whole disk block, giving high fan-out and few levels</title>
+            <desc id="f6d">A B-tree root block holds two separator keys, 17 and 35, with three child pointers. Each child is itself a block holding several sorted keys. Each block read is one disk I/O. A side panel notes that with fan-out about one thousand, a billion keys fit in a tree of height three, so any record is found in three I/Os, versus about thirty random seeks for a binary tree.</desc>
+
+            <!-- root block -->
+            <text x="40" y="40" class="dg-cap">each node = one disk block = one I/O</text>
+            <g transform="translate(360,60)">
+              <rect x="0" y="0" width="170" height="40" class="dg-fill"/>
+              <line x1="56" y1="0" x2="56" y2="40" stroke="var(--bau-ink)" stroke-width="2"/>
+              <line x1="113" y1="0" x2="113" y2="40" stroke="var(--bau-ink)" stroke-width="2"/>
+              <text x="28"  y="20" class="dg-nt">17</text>
+              <text x="85"  y="20" class="dg-nt">35</text>
+              <text x="142" y="20" class="dg-label sm" dominant-baseline="central">&#8943;</text>
+            </g>
+
+            <!-- pointers to children -->
+            <g class="dg-edge">
+              <line x1="378" y1="100" x2="190" y2="150"/>
+              <line x1="445" y1="100" x2="445" y2="150"/>
+              <line x1="512" y1="100" x2="760" y2="150"/>
+            </g>
+
+            <!-- child 1 -->
+            <g transform="translate(120,150)">
+              <rect x="0" y="0" width="140" height="38" class="dg-cell"/>
+              <line x1="46" y1="0" x2="46" y2="38" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <line x1="93" y1="0" x2="93" y2="38" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <text x="23"  y="19" class="dg-nt">6</text>
+              <text x="69"  y="19" class="dg-nt">11</text>
+              <text x="116" y="19" class="dg-nt">14</text>
+            </g>
+            <!-- child 2 -->
+            <g transform="translate(380,150)">
+              <rect x="0" y="0" width="140" height="38" class="dg-cell"/>
+              <line x1="46" y1="0" x2="46" y2="38" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <line x1="93" y1="0" x2="93" y2="38" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <text x="23"  y="19" class="dg-nt">22</text>
+              <text x="69"  y="19" class="dg-nt">28</text>
+              <text x="116" y="19" class="dg-nt">31</text>
+            </g>
+            <!-- child 3 -->
+            <g transform="translate(700,150)">
+              <rect x="0" y="0" width="140" height="38" class="dg-cell"/>
+              <line x1="46" y1="0" x2="46" y2="38" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <line x1="93" y1="0" x2="93" y2="38" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <text x="23"  y="19" class="dg-nt">40</text>
+              <text x="69"  y="19" class="dg-nt">46</text>
+              <text x="116" y="19" class="dg-nt">51</text>
+            </g>
+            <text x="120" y="212" class="dg-label sm">&#8230; each child fans out again to its own block of children &#8230;</text>
+
+            <!-- stat panel -->
+            <g transform="translate(120,232)">
+              <rect x="0" y="0" width="740" height="64" rx="10" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
+              <text x="18" y="26" class="dg-val dg-blue-f">fan-out &#8776; 1000  &#8658;  10&#8313; keys in height 3  &#8658;  3 I/Os</text>
+              <text x="18" y="50" class="dg-label sm">a binary tree over the same keys: &#8776;30 levels &#8658; up to 30 random seeks &mdash; about 10&times; slower</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 6 &mdash; fat nodes, flat tree.</b> By making each node a block, the B-tree trades many shallow comparisons inside a node (cheap, in cache) for very few block transfers between nodes (expensive). The <code class="inl">B&#8314;</code>-tree variant keeps all values in the leaves and links them, so a range scan walks a sorted linked list of blocks &mdash; which is why it backs essentially every relational database index and filesystem.</figcaption>
+        </figure>
+        <p>This is the same lesson as Lecture 01's array-versus-list timing, escalated: the abstract <code class="inl">&#x398;(log n)</code> was never the whole story; the <em>base</em> of the logarithm, set by how much useful work one memory transfer buys, is where the real performance lives. Change the cost model and the optimal tree changes with it. The binary search tree is the right answer in RAM; the B-tree is the right answer on disk; both are the same idea &mdash; a balanced, ordered, logarithmic-height search structure &mdash; tuned to a different machine.</p>
+        <div class="note info"><span class="tag">cross-link</span>This is the structure under <em>DBMS &middot; indexes</em>: a SQL <code class="inl">CREATE INDEX</code> builds a B&#8314;-tree, and the query planner's love of it is exactly the <code class="inl">log&#7355;n</code> I/O bound made concrete.</div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> the ledger</div>
+      <h2>Every structure, every operation</h2>
+      <div class="col">
+        <p>The whole lecture, tabulated. Read the columns as a story: the linear layouts of Lecture 01 each fail one verb; the balanced trees make all of <em>search / insert / delete</em> logarithmic and worst-case; and only the ordered structures answer the order-dependent queries at all. The hash table &mdash; next lecture &mdash; is previewed in the last column precisely to show what it gives up.</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>Cost of the dictionary operations by representation (n keys)</caption>
+            <thead>
+              <tr>
+                <th scope="col">operation</th>
+                <th scope="col">sorted array</th>
+                <th scope="col">plain BST (worst)</th>
+                <th scope="col">balanced BST (AVL / RB)</th>
+                <th scope="col">B-tree (I/Os)</th>
+                <th scope="col">hash table (L8)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">search</th><td class="mid">O(log n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log&#7355;n)</td><td class="good">O(1) exp.</td></tr>
+              <tr><th scope="row">insert</th><td class="bad">&#x398;(n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log&#7355;n)</td><td class="good">O(1) exp.</td></tr>
+              <tr><th scope="row">delete</th><td class="bad">&#x398;(n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log&#7355;n)</td><td class="good">O(1) exp.</td></tr>
+              <tr><th scope="row">min / max</th><td class="good">O(1)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log&#7355;n)</td><td class="bad">&#x398;(n)</td></tr>
+              <tr><th scope="row">predecessor / successor</th><td class="mid">O(log n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log&#7355;n)</td><td class="bad">&#x398;(n)</td></tr>
+              <tr class="wrap-row"><th scope="row">in-order / sorted scan</th><td class="good">O(n)</td><td class="mid">O(n)</td><td class="good">O(n)</td><td class="good">O(n)</td><td class="bad">O(n log n)</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="6">Green = the structure's strength; red = its failure. The balanced-BST column is the only one with no red &mdash; <em>that</em> is the logarithmic ideal, made worst-case. The hash table wins the top three but cannot answer the bottom three: it forgot the order.</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section id="s13" class="reveal">
+      <div class="eyebrow"><span class="n">13</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>Keep the gap between the clean invariant and the running machine in view. Here is where search trees bite &mdash; the seductive-but-wrong checks, the input that detonates the average, the operation everyone implements halfway.</p>
+
+        <h3>1 &middot; Validating a BST by checking only children</h3>
+        <p>The most common BST bug in existence: testing <code class="inl">left.key &lt; node.key &lt; right.key</code> at each node and calling it valid. The invariant is about whole <em>subtrees</em>, not immediate children. The tree with root <code class="inl">5</code>, right child <code class="inl">7</code>, and <code class="inl">7</code>'s <em>left</em> child <code class="inl">3</code> passes every local check yet is not a BST &mdash; <code class="inl">3</code> sits in <code class="inl">5</code>'s right subtree but is smaller than <code class="inl">5</code>. Validate with a descending <code class="inl">(low, high)</code> bound or by confirming the in-order traversal is strictly increasing (Practice 1).</p>
+
+        <h3>2 &middot; Trusting &ldquo;average&rdquo; balance against real input</h3>
+        <p>A plain BST is <code class="inl">O(log n)</code> only in expectation over random insertion orders &mdash; and real data is the opposite of random. Sorted timestamps, auto-increment keys, or the output of a prior sort drive it straight to the <code class="inl">&#x398;(n)</code> stick of &sect;06. If you cannot guarantee random insertion order &mdash; and you almost never can &mdash; you must use a self-balancing tree or a randomized one (treap, Lecture 22). &ldquo;It tested fine on shuffled data&rdquo; is how this ships and then melts in production on the first bulk import.</p>
+
+        <h3>3 &middot; Implementing insert but botching delete</h3>
+        <p>Insertion always lands at a leaf; deletion has the awkward two-children case and is where hand-rolled trees go wrong. Forgetting that the in-order successor must be spliced out <em>after</em> copying its key, copying the successor's <em>key</em> but not its satellite data, or &mdash; in a balanced tree &mdash; returning up the recursion without re-checking balance/colour, all silently corrupt the structure. In AVL especially, remember that a delete may require rotations at <em>several</em> ancestors, not just one.</p>
+
+        <h3>4 &middot; The comparator that lies</h3>
+        <p>A search tree is only as sound as its ordering. A comparator that is not a strict weak ordering &mdash; non-transitive, or the classic <code class="inl">return a - b</code> on machine integers that <em>overflows</em> for large operands and flips sign &mdash; corrupts placement invisibly: keys get inserted on the wrong side, searches miss elements that are present, and the bug is unreproducible. Compare with explicit <code class="inl">&lt;</code>, never subtraction; ensure <code class="inl">a&lt;b</code>, <code class="inl">b&lt;a</code>, and equality are mutually exclusive and transitive.</p>
+
+        <h3>5 &middot; Undefined duplicate-key policy</h3>
+        <p>What does <code class="inl">insert</code> do when the key already exists? There is no default &mdash; decide. Reject it, overwrite the value, keep a count, or store a bucket. A careless &ldquo;<code class="inl">&lt;</code> goes left, <code class="inl">&#8805;</code> goes right&rdquo; scatters equal keys across the tree and interacts badly with rotations and with <code class="inl">delete</code>, which may now remove the wrong copy. State the policy in the type, not in folklore.</p>
+
+        <h3>6 &middot; Recursion depth on the very tree that is already slow</h3>
+        <p>A recursive <code class="inl">search</code>/<code class="inl">insert</code> on a degenerate BST recurses <code class="inl">n</code> frames deep and overflows the call stack &mdash; so the imbalance that makes the tree slow <em>also</em> makes it crash. Balanced trees cap depth at <code class="inl">O(log n)</code> and dodge this; for any tree you cannot prove balanced, prefer an explicit iterative walk.</p>
+
+        <h3>7 &middot; Forgetting that augmented data must be O(1)-maintainable</h3>
+        <p>Augmenting nodes with extra fields &mdash; subtree size for order statistics (Practice 4), subtree max for interval trees &mdash; only works if the field at a node is computable from its <em>children's</em> fields in <code class="inl">O(1)</code>, so a rotation can fix it locally. Cache a field that depends on the whole subtree in a non-local way and every rotation silently invalidates it. The maintainability of the augmentation is a real proof obligation, not an afterthought.</p>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section id="s14" class="reveal">
+      <div class="eyebrow"><span class="n">14</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Validate a binary search tree</h3>
+          <p class="meta">the invariant &middot; the local-check trap &middot; LeetCode 98</p>
+          <p>Given <code class="inl">root</code> of a binary tree, return <code class="inl">true</code> iff it is a valid BST (left subtree strictly less, right subtree strictly greater, recursively). Constraints: up to <code class="inl">10&#8308;</code> nodes; values span the full signed-integer range, so guard the boundary keys. Examples: <code class="inl">[2,1,3]&#8594;true</code>; <code class="inl">[5,1,4,null,null,3,6]&#8594;false</code> (the <code class="inl">3</code> and <code class="inl">6</code> live in the root's right subtree but <code class="inl">3&lt;5</code>). Give <em>two</em> correct methods &mdash; a descending <code class="inl">(low,high)</code> bound and an in-order monotonicity check &mdash; and state why the naive node-vs-children test fails. Target <code class="inl">O(n)</code> time, <code class="inl">O(h)</code> space.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>AVL insertion with rebalancing</h3>
+          <p class="meta">the balancing mechanism &middot; four cases &middot; build problem</p>
+          <p>Implement <code class="inl">insert(root, key)</code> for an AVL tree, returning the (possibly new) root and maintaining <code class="inl">|balanceFactor| &#8804; 1</code> at every node via the four rotation cases. As a concrete check, give the <strong>pre-order traversal</strong> of the tree obtained by inserting <code class="inl">1,2,3,4,5,6,7</code> in that order into an initially empty AVL tree. Then exhibit a <em>three-key</em> insertion order that forces a <strong>double</strong> rotation, and name which case (LR or RL) it triggers. State why each insert needs at most one single-or-double rotation, and give the per-operation cost.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Lowest common ancestor in a BST</h3>
+          <p class="meta">exploit the ordering &middot; O(h) not O(n) &middot; LeetCode 235</p>
+          <p>Given the <code class="inl">root</code> of a BST and two existing nodes <code class="inl">p</code>, <code class="inl">q</code>, return their lowest common ancestor. Use the ordering, not a general-tree search: from the root, if both keys are smaller go left, if both larger go right, otherwise the current node is the split point. Examples on the BST <code class="inl">[6,2,8,0,4,7,9,null,null,3,5]</code>: <code class="inl">LCA(2,8)=6</code>; <code class="inl">LCA(2,4)=2</code> (a node may be its own ancestor). Achieve <code class="inl">O(h)</code> time and <code class="inl">O(1)</code> extra space, and explain in one line why a general binary tree would force <code class="inl">O(n)</code> &mdash; i.e. what the BST property buys you.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>k-th smallest, then make it fast under updates</h3>
+          <p class="meta">in-order + augmentation &middot; order-statistic tree &middot; LeetCode 230</p>
+          <p>Given the <code class="inl">root</code> of a BST and integer <code class="inl">k</code> (1-indexed), return the k-th smallest key. The base case is a partial in-order traversal in <code class="inl">O(h+k)</code>. Now the real question (LeetCode's follow-up): if the BST is <em>modified often</em> and you must answer many such queries, redesign so each <code class="inl">kthSmallest</code> is <code class="inl">O(log n)</code> on a balanced tree. Specify the augmentation (subtree <code class="inl">size</code>), give <code class="inl">select(k)</code> and its mirror <code class="inl">rank(key)</code>, and &mdash; the crux &mdash; prove the <code class="inl">size</code> field is maintainable in <code class="inl">O(1)</code> per node through both updates and rotations. This is an order-statistic tree; it foreshadows Lecture 10.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15 -->
+    <section id="s15" class="reveal">
+      <div class="eyebrow"><span class="n">15</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>A search tree's entire cost is its height, and balance is the invariant that keeps the height logarithmic no matter how the keys arrive.</strong> The BST ordering law turns search into a descent; the <code class="inl">&#x398;(h)</code> cost law makes height destiny; a single <code class="inl">O(1)</code> <em>rotation</em> changes shape without changing order; and a policy on when to rotate &mdash; AVL's strict <code class="inl">&#177;1</code>, red-black's looser colouring, the B-tree's block-sized fan-out &mdash; converts &ldquo;<code class="inl">O(log n)</code> on average&rdquo; into &ldquo;<code class="inl">O(log n)</code>, guaranteed.&rdquo; And unlike the hash table you meet next, the tree keeps the keys in order, so it answers min, successor, and range for free.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 08</span>
+            <div class="ttl">The Dictionary Problem II: Hashing and Expected-Constant Access</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We bounded the dictionary's worst case at <code class="inl">O(log n)</code> by keeping order. Lecture 08 asks the opposite question: if you are willing to <em>forget</em> the order and trade worst-case determinism for an expectation, can you get all the way to <code class="inl">O(1)</code>? That is hashing &mdash; collisions, load factors, universal and perfect families &mdash; and the concentration bounds (Lecture 05) that keep the tail in check. The two lectures are the two halves of how every map you will ever use is actually built.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-06-sorting-and-the-comparison-barrier.html">← Previous study</a><a href="dsa-08-hashing-and-expected-constant-access.html">Next study →</a></nav>
+</body>
+</html>

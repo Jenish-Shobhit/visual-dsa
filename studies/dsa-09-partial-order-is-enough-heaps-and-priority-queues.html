@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partial Order Is Enough: Heaps &amp; Priority Queues</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.7rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.3rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.wrap-row td, tr.wrap-row th{background:color-mix(in oklab,var(--bau-yellow) 26%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-stroke{stroke:var(--on-surface); fill:none; stroke-width:2}
+  .dg-thin{stroke:var(--outline); fill:none; stroke-width:1}
+  .dg-dash{stroke:var(--outline); fill:none; stroke-width:1.5; stroke-dasharray:5 5}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+  .dg-red{stroke:var(--bau-red)}   .dg-red-f{fill:var(--bau-red)}
+  .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-cell{fill:var(--surface);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill{fill:var(--primary-container);stroke:var(--bau-ink);stroke-width:2}
+  .dg-label{font-family:var(--font-mono); font-size:14px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
+  .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
+
+  /* ===== inline cell strips (HTML, for state traces) ===== */
+  .cells{display:flex; gap:5px; flex-wrap:wrap; margin:.5em 0 1em; font-family:var(--font-mono); font-size:14px; align-items:flex-end}
+  .cells .c{min-width:40px; height:40px; display:grid; place-items:center; border:1.5px solid var(--bau-ink); border-radius:var(--r-xs); background:var(--surface-1); position:relative}
+  .cells .c.fill{background:var(--primary-container); color:var(--on-primary-container); font-weight:650}
+  .cells .c.piv{background:var(--bau-yellow); color:var(--bau-ink); font-weight:700}
+  .cells .c.lo{background:color-mix(in oklab,var(--bau-blue) 18%,var(--surface)); }
+  .cells .c.hi{background:color-mix(in oklab,var(--bau-red) 16%,var(--surface)); }
+  .cells .c.lock{background:color-mix(in oklab,var(--bau-yellow) 30%,var(--surface)); border-style:solid}
+  .cells .sep{align-self:center; color:var(--on-surface-variant); font-weight:700}
+  .cells .lab{align-self:center; font-size:12px; color:var(--on-surface-variant); margin-left:6px}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">09 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: a heap as a triangle of primaries">
+    <path d="M17 1 L33 31 L1 31 Z" fill="none" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="17" cy="9"  r="5" class="dg-red-f"/>
+    <circle cx="11" cy="22" r="5" class="dg-blue-f"/>
+    <rect   x="19" y="17" width="9" height="9" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>09</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="208" height="168" viewBox="0 0 208 168" aria-hidden="true">
+    <!-- a heap drawn as a pyramid of primaries: the root dominates, the leaves are many -->
+    <line x1="104" y1="28" x2="56"  y2="92"  stroke="var(--bau-ink)" stroke-width="2"/>
+    <line x1="104" y1="28" x2="152" y2="92"  stroke="var(--bau-ink)" stroke-width="2"/>
+    <line x1="56"  y1="92" x2="28"  y2="150" stroke="var(--bau-ink)" stroke-width="2"/>
+    <line x1="56"  y1="92" x2="84"  y2="150" stroke="var(--bau-ink)" stroke-width="2"/>
+    <line x1="152" y1="92" x2="124" y2="150" stroke="var(--bau-ink)" stroke-width="2"/>
+    <circle cx="104" cy="28"  r="22" class="dg-red-f"/>
+    <circle cx="56"  cy="92"  r="17" class="dg-blue-f"/>
+    <rect   x="135" y="75" width="34" height="34" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <circle cx="28"  cy="150" r="12" class="dg-blue-f"/>
+    <rect   x="72"  y="138" width="24" height="24" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <circle cx="124" cy="150" r="12" class="dg-red-f"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 09</span> the cheapest order that still answers the question</div>
+    <h1>Partial Order Is Enough: Heaps &amp; Priority Queues</h1>
+    <p class="lede col">A sorted array knows <em>everything</em>: the rank of every element. Most of the time you never use that knowledge — you only ask, again and again, &ldquo;<strong>what is the most extreme thing left?</strong>&rdquo; This lecture builds the structure that answers exactly that question and not one bit more: the <strong>binary heap</strong>, a complete tree that lives invisibly inside a flat array, peeks at its extremum in <code class="inl">O(1)</code>, and repairs itself in <code class="inl">O(log n)</code>. We will derive it from the priority-queue contract, prove the startling fact that you can <strong>build one in <code class="inl">&#x398;(n)</code> time</strong>, and turn it into an in-place sort.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A dilemma to fix the stakes.</strong> You must repeatedly grab the smallest of a changing set of <code class="inl">n</code> numbers and keep adding new ones &mdash; the inner loop of Dijkstra's shortest paths, of Prim's spanning tree, of every event-driven simulation and every <em>top-k</em> over a stream. Keep the set in an <strong>unsorted array</strong>: adding is <code class="inl">O(1)</code>, but finding the smallest is <code class="inl">O(n)</code>. Keep it <strong>sorted</strong>: finding the smallest is <code class="inl">O(1)</code>, but inserting in order is <code class="inl">O(n)</code>. Either way one of the two operations you do constantly is linear, and <code class="inl">n</code> rounds cost <code class="inl">&#x398;(n&#xB2;)</code>.</p>
+        <p style="margin-bottom:0">The heap refuses the trade. Insert <em>and</em> extract-min both cost <code class="inl">O(log n)</code>; peeking the minimum is <code class="inl">O(1)</code>; and assembling a heap out of <code class="inl">n</code> loose items costs only <code class="inl">&#x398;(n)</code>. The same <code class="inl">n</code> rounds now cost <code class="inl">&#x398;(n&nbsp;log&nbsp;n)</code>. The trick that buys this is to stop maintaining a <em>total</em> order and maintain only a <strong>partial</strong> one — just enough so the extremum is always on top.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>The dilemma</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>The priority-queue ADT</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>Partial order is enough</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>A tree hidden in an array</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>Two repairs: sift up &amp; down</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>Build a heap in &#x398;(n)</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Worked: build, then heapsort</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>The operations, tabulated</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Where it breaks</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Practice</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> a question, asked a million times</div>
+      <h2>You don't need the whole order</h2>
+      <div class="col">
+        <p>I think first about what an algorithm is actually <em>asked</em>, because the question fixes the cheapest honest answer. Survey the great repeat-offenders &mdash; Dijkstra, Prim, Huffman coding, discrete-event simulation, the <em>k</em> largest items of a billion-row stream, an operating-system scheduler choosing the next task &mdash; and a single pattern surfaces. None of them ever needs the data fully sorted. Each one runs a loop that does exactly two things: <strong>pull out the current extremum</strong>, and <strong>add some new elements</strong>. Over and over.</p>
+        <p>If that is the whole demand, then sorting is a waste. Sorting establishes a <em>total order</em> &mdash; it pins the rank of every pair of elements &mdash; and we proved last lecture that doing so by comparisons costs <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> up front and gives you a brittle arrangement that any insertion shoves out of place at <code class="inl">O(n)</code> cost. We are paying for knowledge of <em>every</em> rank and using only the <em>top</em> one.</p>
+        <p>So strip the requirement to its skeleton. We want a container that supports a tiny contract &mdash; add an element, look at the extremum, remove the extremum &mdash; and supports all three <em>cheaply while the set keeps changing</em>. That object is the <span class="term">priority queue</span>, and its canonical implementation is the <span class="term">binary heap</span>. The whole lecture is the unfolding of one idea: <strong>maintain only as much order as the question requires.</strong></p>
+        <div class="note info"><span class="tag">the formal lens</span>A data structure is the materialisation of an <em>invariant</em> &mdash; a property you promise to keep true after every operation, traded against the cost of keeping it. A sorted array keeps the strongest invariant (total order) at the highest maintenance price. The heap keeps a deliberately <em>weaker</em> invariant, and the weakness is the whole point: less to maintain means cheaper to maintain. Choosing the minimal sufficient invariant is the central act of data-structure design.</div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>State</strong> the priority-queue ADT precisely &mdash; its operations and their contract &mdash; and separate the <em>interface</em> from any one <em>implementation</em>.</li>
+          <li><strong>Define</strong> the heap property and explain why this partial order is exactly enough to keep the extremum at the root, yet far cheaper to maintain than a total order.</li>
+          <li><strong>Map</strong> a complete binary tree onto a flat array with index arithmetic alone &mdash; parent <code class="inl">&#8970;(i&minus;1)/2&#8971;</code>, children <code class="inl">2i+1</code> and <code class="inl">2i+2</code> &mdash; storing zero pointers.</li>
+          <li><strong>Implement</strong> <code class="inl">sift-up</code> and <code class="inl">sift-down</code>, and from them <code class="inl">insert</code>, <code class="inl">extract-max</code>, and <code class="inl">peek</code>, proving each is <code class="inl">O(log n)</code> or <code class="inl">O(1)</code>.</li>
+          <li><strong>Prove</strong> that bottom-up <code class="inl">build-heap</code> runs in <code class="inl">&#x398;(n)</code>, not <code class="inl">&#x398;(n&nbsp;log&nbsp;n)</code>, by summing work over heights with the series <code class="inl">&#x2211;&#8201;h/2&#x2B0; = 2</code>.</li>
+          <li><strong>Derive</strong> heapsort &mdash; an in-place, <code class="inl">&#x398;(n&nbsp;log&nbsp;n)</code>, <code class="inl">O(1)</code>-space comparison sort &mdash; and diagnose the classic heap bugs: index off-by-ones, the wrong-child swap, and the search/decrease-key blind spots.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>Three ideas, each light. The first two are taught on linked pages of this syllabus; the third we make precise in &sect;05 the moment we need it.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-01-linear-layouts-and-access-disciplines.html">arrays &amp; random access</a>
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotic notation — O / &Theta; / &Omega;</a>
+          <span class="chip">complete binary tree (implicit array layout)</span>
+        </div>
+        <p style="margin-top:1em">One fact you must hold firmly: in a <span class="term">complete binary tree</span> &mdash; every level full except possibly the last, which fills left to right &mdash; a tree of <code class="inl">n</code> nodes has height <code class="inl">&#8970;log&#8322;&nbsp;n&#8971;</code>. That bound is the source of every <code class="inl">log n</code> on this page; the heap is engineered to <em>stay</em> complete precisely so the bound never slips.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> the contract, before the mechanism</div>
+      <h2>The priority-queue ADT</h2>
+      <div class="col">
+        <p>Before a single array, fix the <em>abstraction</em>. An <span class="term">abstract data type</span> is a specification: a set of operations and the promises they keep, said without committing to how they are stored. The <span class="term">priority queue</span> holds a multiset of elements, each with a comparable <em>key</em> (its priority), and promises four operations:</p>
+        <ul>
+          <li><code class="inl">insert(x)</code> &mdash; add element <code class="inl">x</code> to the collection.</li>
+          <li><code class="inl">peek()</code> &mdash; return the element of extremal priority <em>without</em> removing it.</li>
+          <li><code class="inl">extract()</code> &mdash; remove and return the element of extremal priority.</li>
+          <li><code class="inl">build(list)</code> &mdash; form a priority queue from <code class="inl">n</code> given elements at once.</li>
+        </ul>
+        <p>&ldquo;Extremal&rdquo; means the maximum (a <span class="term">max-priority-queue</span>) or the minimum (a <span class="term">min-priority-queue</span>); the two are perfect mirror images, obtained by flipping every comparison. Throughout the build I will work with the <strong>max</strong> version because it makes heapsort fall out naturally; every statement holds for the min version with <code class="inl">&gt;</code> swapped for <code class="inl">&lt;</code>. Some applications add <code class="inl">decrease-key</code> / <code class="inl">increase-key</code> (re-prioritise an element already inside) &mdash; we will meet its sharp edge in &sect;10, because it is what Dijkstra leans on.</p>
+
+        <p>Now the engineering question: which <em>implementation</em> honours this contract cheaply? Hold the ADT fixed and audit the obvious candidates. The deciding column is the one in red.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>Three implementations of the same priority-queue contract (n elements)</caption>
+            <thead>
+              <tr>
+                <th scope="col">implementation</th>
+                <th scope="col">insert</th>
+                <th scope="col">peek extremum</th>
+                <th scope="col">extract extremum</th>
+                <th scope="col">build from n</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Unsorted array / list</th><td class="good mono">O(1)</td><td class="bad mono">O(n)</td><td class="bad mono">O(n)</td><td class="good mono">O(n)</td></tr>
+              <tr><th scope="row">Sorted array (descending)</th><td class="bad mono">O(n)</td><td class="good mono">O(1)</td><td class="good mono">O(1)</td><td class="mid mono">O(n log n)</td></tr>
+              <tr class="wrap-row"><th scope="row">Binary heap</th><td class="good mono">O(log n)</td><td class="good mono">O(1)</td><td class="good mono">O(log n)</td><td class="good mono">&#x398;(n)</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="5">The naive rows each hide one <code>O(n)</code> landmine on an operation the caller runs constantly. The heap row has <em>no</em> linear operation at all (its build is linear, but that is paid once). That single observation is why the heap exists.</td></tr></tfoot>
+          </table>
+        </div>
+        <p>The sorted array is seductive &mdash; two of its operations are <code class="inl">O(1)</code>! &mdash; but the third, <code class="inl">insert</code>, is fatal in any workload that interleaves insertions with extractions, which is precisely the workload &sect;01 catalogued. The heap's genius is to be <em>uniformly</em> good rather than spikily great: nothing it does is ever worse than logarithmic.</p>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> the central insight</div>
+      <h2>Partial order is enough</h2>
+      <div class="col">
+        <p>Here is the move that makes the table's last row possible. A sorted array enforces a <em>total order</em>: for every pair of positions you know which is larger. That is a great deal of enforced structure &mdash; <code class="inl">&#x398;(n)</code> ordering relations along the sequence &mdash; and structure is exactly what costs money to preserve when the set changes. Ask instead for the <em>weakest</em> structure that still keeps the extremum findable in <code class="inl">O(1)</code>.</p>
+
+        <p>The answer is a single local rule. Arrange the elements as the nodes of a binary tree and demand only this:</p>
+
+        <div class="eq" role="note" aria-label="The max-heap property">
+          <span class="lbl">the max-heap property</span>
+          <p style="margin:0; font-size:1.05rem"><strong>Every node's key is <code class="inl">&ge;</code> the keys of its children.</strong> Equivalently: along every root-to-leaf path the keys never increase.</p>
+        </div>
+
+        <p>That is all. Notice what it does <em>not</em> say: it says nothing about the order <em>between</em> siblings, nothing about cousins, nothing about two nodes in different subtrees. A heap is profoundly under-determined &mdash; the same six keys admit many valid heaps &mdash; and that looseness is the saving. We are no longer maintaining <code class="inl">&#x398;(n)</code> pairwise facts; we are maintaining one inequality per parent&ndash;child edge, and there are only <code class="inl">n&minus;1</code> edges, each repairable locally.</p>
+
+        <p>Yet the rule is strong enough to do the one job we need. Apply it transitively: the root is <code class="inl">&ge;</code> its children, which are <code class="inl">&ge;</code> <em>their</em> children, and so on down. So <strong>the root dominates every node in the tree &mdash; the maximum sits at the top, readable in <code class="inl">O(1)</code></strong>. We have purchased exactly the capability the priority queue sells, and nothing more. This is the formal heart of the lecture: the heap property is the <em>minimal</em> invariant that keeps the extremum at a known address.</p>
+
+        <div class="pull">A sorted array answers every question about rank. A heap answers one. <span>Charge only for the question you actually ask.</span></div>
+
+        <p>Two immediate consequences worth naming. First, a heap is <strong>not sorted</strong>: reading the array left to right gives no meaningful order beyond &ldquo;parents precede the children that happen to follow them.&rdquo; Searching a heap for an arbitrary value is still <code class="inl">O(n)</code> &mdash; it is the wrong tool for membership. Second, because the constraint is so local, a single element that violates it can be slid back into compliance by swapping it along <em>one</em> root-to-leaf path &mdash; a walk of length at most the tree's height. That walk is the whole mechanism, and we build it in &sect;06.</p>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> no pointers required</div>
+      <h2>A tree hidden inside an array</h2>
+      <div class="col">
+        <p>A tree usually means nodes and pointers &mdash; each node carrying the addresses of its children, an allocation per element, cache misses on every hop. The heap pays none of that, and the reason is the second design decision: we insist the tree be <span class="term">complete</span>. Every level is entirely full except possibly the last, which is packed from the left with no gaps. A complete tree has a rigid, predictable shape &mdash; and a rigid shape can be addressed by <em>arithmetic</em> instead of pointers.</p>
+
+        <p>Lay the nodes into an array <code class="inl">A</code> in <strong>level order</strong>: the root at index <code class="inl">0</code>, then the two nodes of level&nbsp;1, then the four of level&nbsp;2, left to right. Because completeness forbids holes, the array is dense &mdash; indices <code class="inl">0&hellip;n&minus;1</code> with nothing skipped &mdash; and the family relationships become fixed index formulas. For a node at index <code class="inl">i</code> (zero-based):</p>
+
+        <div class="eq">
+          <span class="lbl">the implicit-tree index arithmetic (0-based)</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mtext>left&#xA0;child</mtext><mo>=</mo><mn>2</mn><mi>i</mi><mo>+</mo><mn>1</mn>
+              <mtext>,&#xA0;&#xA0;&#xA0;&#xA0;</mtext>
+              <mtext>right&#xA0;child</mtext><mo>=</mo><mn>2</mn><mi>i</mi><mo>+</mo><mn>2</mn>
+              <mtext>,&#xA0;&#xA0;&#xA0;&#xA0;</mtext>
+              <mtext>parent</mtext><mo>=</mo>
+              <mrow><mo>&#8970;</mo><mfrac><mrow><mi>i</mi><mo>&#x2212;</mo><mn>1</mn></mrow><mn>2</mn></mfrac><mo>&#8971;</mo></mrow>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>So &ldquo;go to my left child&rdquo; is a multiply-and-add, not a dereference. The structure is <em>implicit</em>: there is no tree object anywhere in memory, only an array and these three formulas. We have stored the shape in our arithmetic and spent zero bytes on it. (This same implicit complete-tree layout returns next lecture for Fenwick and segment trees &mdash; learn it once here.) A worked instance, on the max-heap <code class="inl">[9,&nbsp;8,&nbsp;5,&nbsp;1,&nbsp;3,&nbsp;2]</code>:</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 470" role="img" aria-labelledby="f1t f1d">
+            <title id="f1t">The duality between a heap drawn as a tree and stored as an array</title>
+            <desc id="f1d">A max-heap with six nodes is drawn twice. As a tree: the root index zero holds nine, its children index one holds eight and index two holds five, then index three holds one and index four holds three below the eight, and index five holds two below the five. As an array: the same values nine eight five one three two sit in cells indexed zero to five in level order. Arrows on the array show that the cell at index one points to its children at indices three and two i plus one and two i plus two, namely indices three and four, and up to its parent at index zero. The two pictures are the same object: the tree edges are exactly the index formulas.</desc>
+
+            <text x="24" y="30" class="dg-cap">one object, two views &mdash; the tree IS the array, addressed by arithmetic</text>
+
+            <!-- ===== TREE (left/top) ===== -->
+            <!-- edges -->
+            <line x1="200" y1="92"  x2="120" y2="168" class="dg-stroke"/>
+            <line x1="200" y1="92"  x2="280" y2="168" class="dg-stroke"/>
+            <line x1="120" y1="190" x2="78"  y2="262" class="dg-stroke"/>
+            <line x1="120" y1="190" x2="170" y2="262" class="dg-stroke"/>
+            <line x1="280" y1="190" x2="238" y2="262" class="dg-stroke"/>
+            <!-- nodes: cx,cy r24 -->
+            <g>
+              <circle cx="200" cy="68"  r="24" class="dg-red-f"/><text x="200" y="74" text-anchor="middle" class="dg-val" fill="#fff">9</text>
+              <circle cx="120" cy="168" r="24" class="dg-fill"/><text x="120" y="174" text-anchor="middle" class="dg-val">8</text>
+              <circle cx="280" cy="168" r="24" class="dg-fill"/><text x="280" y="174" text-anchor="middle" class="dg-val">5</text>
+              <circle cx="78"  cy="262" r="24" class="dg-cell"/><text x="78"  y="268" text-anchor="middle" class="dg-val">1</text>
+              <circle cx="170" cy="262" r="24" class="dg-cell"/><text x="170" y="268" text-anchor="middle" class="dg-val">3</text>
+              <circle cx="238" cy="262" r="24" class="dg-cell"/><text x="238" y="268" text-anchor="middle" class="dg-val">2</text>
+            </g>
+            <!-- node index tags -->
+            <g class="dg-label sm" text-anchor="middle">
+              <text x="232" y="58">i=0</text>
+              <text x="86"  y="150">i=1</text>
+              <text x="312" y="158">i=2</text>
+              <text x="78"  y="300">i=3</text>
+              <text x="170" y="300">i=4</text>
+              <text x="238" y="300">i=5</text>
+            </g>
+            <text x="200" y="330" text-anchor="middle" class="dg-label sm dg-red-f">root = max, by transitivity of the heap property</text>
+
+            <!-- ===== ARRAY (bottom) ===== -->
+            <g font-family="var(--font-mono)">
+              <rect x="140" y="372" width="100" height="56" class="dg-cell"/><text x="190" y="406" text-anchor="middle" class="dg-val">9</text>
+              <rect x="240" y="372" width="100" height="56" class="dg-fill"/><text x="290" y="406" text-anchor="middle" class="dg-val">8</text>
+              <rect x="340" y="372" width="100" height="56" class="dg-cell"/><text x="390" y="406" text-anchor="middle" class="dg-val">5</text>
+              <rect x="440" y="372" width="100" height="56" class="dg-cell"/><text x="490" y="406" text-anchor="middle" class="dg-val">1</text>
+              <rect x="540" y="372" width="100" height="56" class="dg-cell"/><text x="590" y="406" text-anchor="middle" class="dg-val">3</text>
+              <rect x="640" y="372" width="100" height="56" class="dg-cell"/><text x="690" y="406" text-anchor="middle" class="dg-val">2</text>
+            </g>
+            <g class="dg-label sm" text-anchor="middle">
+              <text x="190" y="446">0</text><text x="290" y="446">1</text><text x="390" y="446">2</text>
+              <text x="490" y="446">3</text><text x="590" y="446">4</text><text x="690" y="446">5</text>
+            </g>
+            <text x="100" y="406" text-anchor="end" class="dg-label">A</text>
+
+            <!-- arithmetic arrows from cell i=1 (x=290) to children (490,590) and parent (190) -->
+            <path d="M275 372 C 250 348, 205 348, 190 366" class="dg-thin dg-red" fill="none" marker-end="url(#h1r)"/>
+            <text x="214" y="344" class="dg-label sm dg-red-f">parent &#8970;(1&minus;1)/2&#8971;=0</text>
+            <path d="M300 428 C 340 462, 455 462, 490 432" class="dg-thin dg-blue" fill="none" marker-end="url(#h1b)"/>
+            <path d="M300 428 C 360 478, 545 478, 590 432" class="dg-thin dg-blue" fill="none" marker-end="url(#h1b)"/>
+            <text x="470" y="476" text-anchor="middle" class="dg-label sm dg-blue-f">children 2&#183;1+1=3, 2&#183;1+2=4</text>
+
+            <defs>
+              <marker id="h1r" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+              <marker id="h1b" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 1 &mdash; the implicit tree.</b> The picture on top and the array on the bottom are the <em>same</em> data structure. Edges in the tree are not stored; they are recomputed on demand as <code class="inl">2i+1</code>, <code class="inl">2i+2</code>, <code class="inl">&#8970;(i&minus;1)/2&#8971;</code>. Because the tree is complete, the array has no holes, and the arithmetic is always valid.</figcaption>
+        </figure>
+
+        <p>Where do the leaves live? In an <code class="inl">n</code>-element heap, any index <code class="inl">i &ge; &#8970;n/2&#8971;</code> has its first child <code class="inl">2i+1 &ge; n</code>, off the end of the array &mdash; so the <strong>second half of the array, indices <code class="inl">&#8970;n/2&#8971;&hellip;n&minus;1</code>, are the leaves</strong>. That single fact &mdash; half of all nodes are leaves &mdash; is the seed of the linear-time build in &sect;07.</p>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> one element out of place</div>
+      <h2>Two repairs: sift up, sift down</h2>
+      <div class="col">
+        <p>Every heap operation reduces to a single primitive: a lone element violates the heap property while everything else already obeys it, and we slide that element along one path until order is restored. There are exactly two directions it can travel.</p>
+
+        <h3>Sift-up &mdash; the engine of <code class="inl">insert</code></h3>
+        <p>To insert, append the new key at the first free slot &mdash; the next leaf, index <code class="inl">n</code>, which keeps the tree complete &mdash; and then <em>bubble it up</em>. Compare it with its parent; if it is larger (max-heap), it violates the property, so swap them and repeat one level higher. The element rises until it meets a parent at least as large, or reaches the root. Because it climbs at most the height of the tree, <code class="inl">insert</code> is <code class="inl">O(log n)</code>.</p>
+
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">siftUp</span>(A, i):                 <span class="tok-com"># A[i] may be too big for its place</span>
+    <span class="tok-kw">while</span> i &gt; <span class="tok-num">0</span>:
+        parent = (i <span class="tok-op">-</span> <span class="tok-num">1</span>) <span class="tok-op">//</span> <span class="tok-num">2</span>          <span class="tok-com"># integer floor — the parent index</span>
+        <span class="tok-kw">if</span> A[i] &le; A[parent]: <span class="tok-kw">return</span>     <span class="tok-com"># parent dominates ⇒ property restored</span>
+        <span class="tok-fn">swap</span>(A[i], A[parent])
+        i = parent                       <span class="tok-com"># keep climbing the single path</span>
+
+<span class="tok-kw">function</span> <span class="tok-fn">insert</span>(A, x):
+    A.<span class="tok-fn">append</span>(x)                       <span class="tok-com"># new leaf at index n — tree stays complete</span>
+    <span class="tok-fn">siftUp</span>(A, <span class="tok-fn">len</span>(A) <span class="tok-op">-</span> <span class="tok-num">1</span>)             <span class="tok-com"># O(log n)</span></code></pre>
+
+        <h3>Sift-down &mdash; the engine of <code class="inl">extract</code></h3>
+        <p>The maximum is at the root, <code class="inl">A[0]</code> &mdash; trivial to return. The art is repairing the hole it leaves. Move the <em>last</em> leaf into the root (which keeps the tree complete), shrink the array by one, and now <em>sink</em> that interloper down. Compare it with <strong>both</strong> children, swap it with the <em>larger</em> of the two (this is the step everyone gets wrong), and repeat until it dominates its children or becomes a leaf. Again it travels one root-to-leaf path, so <code class="inl">extract</code> is <code class="inl">O(log n)</code>.</p>
+
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">siftDown</span>(A, i, n):              <span class="tok-com"># restore the subtree rooted at i, heap size n</span>
+    <span class="tok-kw">while</span> <span class="tok-kw">true</span>:
+        l = <span class="tok-num">2</span><span class="tok-op">*</span>i <span class="tok-op">+</span> <span class="tok-num">1</span>;  r = <span class="tok-num">2</span><span class="tok-op">*</span>i <span class="tok-op">+</span> <span class="tok-num">2</span>
+        largest = i
+        <span class="tok-kw">if</span> l &lt; n <span class="tok-kw">and</span> A[l] &gt; A[largest]: largest = l
+        <span class="tok-kw">if</span> r &lt; n <span class="tok-kw">and</span> A[r] &gt; A[largest]: largest = r    <span class="tok-com"># compare BOTH children</span>
+        <span class="tok-kw">if</span> largest == i: <span class="tok-kw">return</span>          <span class="tok-com"># dominates its children ⇒ done</span>
+        <span class="tok-fn">swap</span>(A[i], A[largest])
+        i = largest                      <span class="tok-com"># follow the larger child downward</span>
+
+<span class="tok-kw">function</span> <span class="tok-fn">extractMax</span>(A):
+    top = A[<span class="tok-num">0</span>]                         <span class="tok-com"># the root is the maximum — O(1) to read</span>
+    A[<span class="tok-num">0</span>] = A[<span class="tok-fn">len</span>(A) <span class="tok-op">-</span> <span class="tok-num">1</span>]            <span class="tok-com"># last leaf takes the throne</span>
+    A.<span class="tok-fn">pop</span>()                           <span class="tok-com"># drop the now-duplicated leaf</span>
+    <span class="tok-kw">if</span> A: <span class="tok-fn">siftDown</span>(A, <span class="tok-num">0</span>, <span class="tok-fn">len</span>(A))      <span class="tok-com"># sink the interloper — O(log n)</span>
+    <span class="tok-kw">return</span> top</code></pre>
+
+        <p>The asymmetry is worth dwelling on. <code class="inl">siftUp</code> compares against <strong>one</strong> node (the unique parent); <code class="inl">siftDown</code> must compare against <strong>two</strong> (both children) and choose the larger, because swapping with the smaller child would leave that smaller child lording over its larger sibling &mdash; an instant violation. Forgetting this is the single most common heap bug, and it is failure mode&nbsp;2 in &sect;10.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 430" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">A sift-down cascade restoring the heap property</title>
+            <desc id="f2d">Left panel, during: a root holding three violates the max-heap property; its children are nine and five. The algorithm compares with both children, picks the larger nine, and swaps three with nine. The three, now one level down, has children one and four; it compares, picks the larger four, and swaps again. The three is now a leaf and stops. Right panel, after: the tree reads nine at the root, four and five as its children, one and three and two as leaves — a valid max-heap.</desc>
+
+            <text x="24" y="30" class="dg-cap">sift-down: swap with the LARGER child, repeat, until it dominates or lands on a leaf</text>
+
+            <!-- divider -->
+            <line x1="470" y1="54" x2="470" y2="404" class="dg-dash"/>
+            <text x="40"  y="58" class="dg-label sm dg-red-f">during &mdash; 3 sinks from the root</text>
+            <text x="512" y="58" class="dg-label sm dg-blue-f">after &mdash; property restored</text>
+
+            <!-- ===== LEFT: during ===== -->
+            <!-- edges -->
+            <line x1="230" y1="98"  x2="150" y2="170" class="dg-stroke"/>
+            <line x1="230" y1="98"  x2="330" y2="170" class="dg-stroke"/>
+            <line x1="150" y1="192" x2="108" y2="262" class="dg-stroke"/>
+            <line x1="150" y1="192" x2="200" y2="262" class="dg-stroke"/>
+            <line x1="330" y1="192" x2="288" y2="262" class="dg-stroke"/>
+            <!-- nodes -->
+            <circle cx="230" cy="74"  r="22" class="dg-cell" stroke="var(--bau-red)" stroke-width="3"/><text x="230" y="80" text-anchor="middle" class="dg-val dg-red-f">3</text>
+            <circle cx="150" cy="170" r="22" class="dg-fill"/><text x="150" y="176" text-anchor="middle" class="dg-val">9</text>
+            <circle cx="330" cy="170" r="22" class="dg-cell"/><text x="330" y="176" text-anchor="middle" class="dg-val">5</text>
+            <circle cx="108" cy="262" r="22" class="dg-cell"/><text x="108" y="268" text-anchor="middle" class="dg-val">1</text>
+            <circle cx="200" cy="262" r="22" class="dg-cell"/><text x="200" y="268" text-anchor="middle" class="dg-val">4</text>
+            <circle cx="288" cy="262" r="22" class="dg-cell"/><text x="288" y="268" text-anchor="middle" class="dg-val">2</text>
+            <!-- swap path arrows -->
+            <path d="M212 88 L168 156" class="dg-stroke dg-red" stroke-dasharray="4 4" marker-end="url(#f2r)"/>
+            <text x="150" y="120" class="dg-label sm dg-red-f">&#9312; swap 3&#8596;9</text>
+            <path d="M150 192 L196 248" class="dg-stroke dg-red" stroke-dasharray="4 4" marker-end="url(#f2r)"/>
+            <text x="120" y="232" class="dg-label sm dg-red-f">&#9313; swap 3&#8596;4</text>
+            <text x="360" y="262" class="dg-label sm">&#9314; leaf: stop</text>
+
+            <!-- ===== RIGHT: after ===== -->
+            <!-- edges -->
+            <line x1="700" y1="98"  x2="620" y2="170" class="dg-stroke"/>
+            <line x1="700" y1="98"  x2="800" y2="170" class="dg-stroke"/>
+            <line x1="620" y1="192" x2="578" y2="262" class="dg-stroke"/>
+            <line x1="620" y1="192" x2="670" y2="262" class="dg-stroke"/>
+            <line x1="800" y1="192" x2="758" y2="262" class="dg-stroke"/>
+            <!-- nodes -->
+            <circle cx="700" cy="74"  r="22" class="dg-red-f"/><text x="700" y="80" text-anchor="middle" class="dg-val" fill="#fff">9</text>
+            <circle cx="620" cy="170" r="22" class="dg-fill"/><text x="620" y="176" text-anchor="middle" class="dg-val">4</text>
+            <circle cx="800" cy="170" r="22" class="dg-fill"/><text x="800" y="176" text-anchor="middle" class="dg-val">5</text>
+            <circle cx="578" cy="262" r="22" class="dg-cell"/><text x="578" y="268" text-anchor="middle" class="dg-val">1</text>
+            <circle cx="670" cy="262" r="22" class="dg-cell"/><text x="670" y="268" text-anchor="middle" class="dg-val">3</text>
+            <circle cx="758" cy="262" r="22" class="dg-cell"/><text x="758" y="268" text-anchor="middle" class="dg-val">2</text>
+
+            <!-- array states under each -->
+            <text x="40"  y="360" class="dg-label sm">array before:</text>
+            <text x="40"  y="384" class="dg-val">[ 3 &#8201;9&#8201; 5&#8201; 1&#8201; 4&#8201; 2 ]</text>
+            <text x="512" y="360" class="dg-label sm">array after:</text>
+            <text x="512" y="384" class="dg-val">[ 9 &#8201;4&#8201; 5&#8201; 1&#8201; 3&#8201; 2 ]</text>
+
+            <defs>
+              <marker id="f2r" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 2 &mdash; sift-down.</b> The displaced root <code class="inl">3</code> sinks along a single path, at each step trading places with the larger child, until it dominates or hits a leaf. The path length is bounded by the height, giving <code class="inl">O(log n)</code>. This exact step is one iteration of the build in &sect;07.</figcaption>
+        </figure>
+
+        <h3>Worked example A &mdash; insert six keys into a max-heap</h3>
+        <p>Insert <code class="inl">5, 3, 8, 1, 9, 2</code> in order, sifting up after each append. Yellow is the freshly placed key; blue cells have already settled. Watch the two genuine climbs &mdash; <code class="inl">8</code> past <code class="inl">5</code>, and <code class="inl">9</code> all the way to the root.</p>
+
+        <div class="cells" aria-hidden="true"><span class="c piv">5</span><span class="lab">insert 5 &rarr; root, nothing above it</span></div>
+        <div class="cells" aria-hidden="true"><span class="c fill">5</span><span class="c piv">3</span><span class="lab">insert 3: parent 5 &ge; 3, stays</span></div>
+        <div class="cells" aria-hidden="true"><span class="c piv">8</span><span class="c fill">3</span><span class="c lo">5</span><span class="lab">insert 8: 8 &gt; parent 5 &rarr; climbs to root &rArr; [8,3,5]</span></div>
+        <div class="cells" aria-hidden="true"><span class="c fill">8</span><span class="c fill">3</span><span class="c fill">5</span><span class="c piv">1</span><span class="lab">insert 1: parent 3 &ge; 1, stays</span></div>
+        <div class="cells" aria-hidden="true"><span class="c piv">9</span><span class="c lo">8</span><span class="c fill">5</span><span class="c fill">1</span><span class="c lo">3</span><span class="lab">insert 9: 9 &gt; 3, then 9 &gt; 8 &rarr; root &rArr; [9,8,5,1,3]</span></div>
+        <div class="cells" aria-hidden="true"><span class="c fill">9</span><span class="c fill">8</span><span class="c fill">5</span><span class="c fill">1</span><span class="c fill">3</span><span class="c piv">2</span><span class="lab">insert 2: parent 5 &ge; 2, stays &rArr; final</span></div>
+
+        <p>The final array is <code class="inl">[9,&nbsp;8,&nbsp;5,&nbsp;1,&nbsp;3,&nbsp;2]</code> &mdash; the very heap drawn in Figure&nbsp;1. Six inserts, each at most <code class="inl">&#8970;log&#8322;&nbsp;6&#8971; = 2</code> swaps; the maximum, <code class="inl">9</code>, is on top and was found for free.</p>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> the surprising linear bound</div>
+      <h2>Building a heap in <code class="inl">&#x398;(n)</code></h2>
+      <div class="col">
+        <p>Suppose you already hold all <code class="inl">n</code> elements and want a heap. The obvious route &mdash; <code class="inl">insert</code> them one by one &mdash; costs <code class="inl">n</code> sift-ups of up to <code class="inl">log n</code> each, i.e. <code class="inl">O(n&nbsp;log&nbsp;n)</code>. We can do strictly better, and the better way is one of the most counter-intuitive small results in the subject: <strong>a heap can be assembled in linear time.</strong></p>
+
+        <p>The method is <em>bottom-up</em>. Drop all <code class="inl">n</code> elements into the array in any order, then run <code class="inl">siftDown</code> on every <em>internal</em> node, from the last one back to the root:</p>
+
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">buildHeap</span>(A):
+    n = <span class="tok-fn">len</span>(A)
+    <span class="tok-kw">for</span> i <span class="tok-kw">from</span> n<span class="tok-op">//</span><span class="tok-num">2</span> <span class="tok-op">-</span> <span class="tok-num">1</span> <span class="tok-kw">down to</span> <span class="tok-num">0</span>:   <span class="tok-com"># every internal node, deepest first</span>
+        <span class="tok-fn">siftDown</span>(A, i, n)              <span class="tok-com"># leaves (i &ge; n//2) are already valid heaps</span></code></pre>
+
+        <p>Two things make it correct. We <em>skip the leaves</em> &mdash; recall from &sect;05 that indices <code class="inl">&#8970;n/2&#8971;&hellip;n&minus;1</code> are leaves, and a single node trivially satisfies the heap property. And we go <em>deepest-first</em>, so when <code class="inl">siftDown</code> processes node <code class="inl">i</code>, both of its subtrees are <em>already</em> valid heaps &mdash; exactly the precondition <code class="inl">siftDown</code> needs to merge them, through <code class="inl">i</code>, into one larger heap. By induction the root call produces a heap over the whole array.</p>
+
+        <p>Now the cost, and the surprise. A loose bound says <code class="inl">n/2</code> sift-downs of <code class="inl">O(log n)</code> each, giving <code class="inl">O(n&nbsp;log&nbsp;n)</code> &mdash; true but wasteful, because <strong>almost every node is near the bottom, where sift-down barely moves.</strong> A node at <em>height</em> <code class="inl">h</code> (distance to its deepest leaf) costs at most <code class="inl">h</code> swaps, and a heap of <code class="inl">n</code> nodes has at most <code class="inl">&#8968;n/2&#x2B0;&#x207A;&#xB9;&#8969;</code> nodes of height <code class="inl">h</code>. The total work is therefore</p>
+
+        <div class="eq">
+          <span class="lbl">sum the work over heights, not over a flat log&nbsp;n</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo>
+              <mo>&#x2264;</mo>
+              <munderover><mo>&#x2211;</mo><mrow><mi>h</mi><mo>=</mo><mn>0</mn></mrow><mrow><mo>&#8970;</mo><mi>log</mi><mi>n</mi><mo>&#8971;</mo></mrow></munderover>
+              <mfrac><mi>n</mi><msup><mn>2</mn><mrow><mi>h</mi><mo>+</mo><mn>1</mn></mrow></msup></mfrac>
+              <mo>&#x22C5;</mo><mi>h</mi>
+              <mo>=</mo>
+              <mfrac><mi>n</mi><mn>2</mn></mfrac>
+              <munderover><mo>&#x2211;</mo><mrow><mi>h</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>&#x221E;</mi></mrow></munderover>
+              <mfrac><mi>h</mi><msup><mn>2</mn><mi>h</mi></msup></mfrac>
+              <mo>=</mo>
+              <mfrac><mi>n</mi><mn>2</mn></mfrac><mo>&#x22C5;</mo><mn>2</mn>
+              <mo>=</mo>
+              <mi>n</mi>
+              <mo>=</mo>
+              <mi>&#x398;</mi><mo>(</mo><mi>n</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>The series <code class="inl">&#x2211;<sub>h&ge;0</sub> h/2&#x2B0;</code> converges to a <em>constant</em>, <code class="inl">2</code>, and a constant times <code class="inl">n</code> is <code class="inl">&#x398;(n)</code>. The intuition behind the algebra is the picture below: the expensive nodes (high up, big <code class="inl">h</code>) are <em>rare</em>, and the cheap nodes (the leaves, <code class="inl">h = 0</code>) are <em>half of everything</em>. Insertion-order build pays <code class="inl">log n</code> for every element because it processes them in the wrong direction &mdash; cheap ones first; the bottom-up build pays <code class="inl">log n</code> only for the lonely root.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 400" role="img" aria-labelledby="f3t f3d">
+            <title id="f3t">Why building a heap bottom-up is linear: cost weighted by height</title>
+            <desc id="f3d">A heap of fifteen nodes drawn as four levels. The bottom level has eight leaf nodes at height zero, each costing zero work. The next level up has four nodes at height one, each costing at most one. Above that, two nodes at height two cost at most two. The single root at height three costs at most three. A ledger sums node-count times height: eight times zero plus four times one plus two times two plus one times three equals eleven, which is below the value n equal to fifteen, and far below n log n equal to sixty. Many cheap nodes, few expensive ones.</desc>
+
+            <text x="24" y="30" class="dg-cap">cost is dominated by the cheap many, not the expensive few</text>
+
+            <!-- triangle of nodes; r=11 -->
+            <!-- level 0 root height 3 -->
+            <circle cx="360" cy="64" r="13" class="dg-red-f"/>
+            <!-- level1 height2 -->
+            <circle cx="280" cy="124" r="13" class="dg-fill"/><circle cx="440" cy="124" r="13" class="dg-fill"/>
+            <!-- level2 height1 -->
+            <circle cx="240" cy="184" r="13" class="dg-blue-f"/><circle cx="320" cy="184" r="13" class="dg-blue-f"/>
+            <circle cx="400" cy="184" r="13" class="dg-blue-f"/><circle cx="480" cy="184" r="13" class="dg-blue-f"/>
+            <!-- level3 leaves height0 -->
+            <g class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5">
+              <circle cx="220" cy="244" r="13"/><circle cx="260" cy="244" r="13"/>
+              <circle cx="300" cy="244" r="13"/><circle cx="340" cy="244" r="13"/>
+              <circle cx="380" cy="244" r="13"/><circle cx="420" cy="244" r="13"/>
+              <circle cx="460" cy="244" r="13"/><circle cx="500" cy="244" r="13"/>
+            </g>
+            <!-- edges (light) -->
+            <g class="dg-thin">
+              <line x1="360" y1="64" x2="280" y2="124"/><line x1="360" y1="64" x2="440" y2="124"/>
+              <line x1="280" y1="124" x2="240" y2="184"/><line x1="280" y1="124" x2="320" y2="184"/>
+              <line x1="440" y1="124" x2="400" y2="184"/><line x1="440" y1="124" x2="480" y2="184"/>
+              <line x1="240" y1="184" x2="220" y2="244"/><line x1="240" y1="184" x2="260" y2="244"/>
+              <line x1="320" y1="184" x2="300" y2="244"/><line x1="320" y1="184" x2="340" y2="244"/>
+              <line x1="400" y1="184" x2="380" y2="244"/><line x1="400" y1="184" x2="420" y2="244"/>
+              <line x1="480" y1="184" x2="460" y2="244"/><line x1="480" y1="184" x2="500" y2="244"/>
+            </g>
+
+            <!-- per-level annotations on the right -->
+            <g class="dg-label sm">
+              <text x="560" y="68">height 3 &middot; <tspan class="dg-red-f" font-weight="700">1</tspan> node &middot; cost &le; 3</text>
+              <text x="560" y="128">height 2 &middot; <tspan font-weight="700">2</tspan> nodes &middot; cost &le; 2</text>
+              <text x="560" y="188">height 1 &middot; <tspan class="dg-blue-f" font-weight="700">4</tspan> nodes &middot; cost &le; 1</text>
+              <text x="560" y="248">height 0 &middot; <tspan font-weight="700">8</tspan> leaves &middot; cost = 0</text>
+            </g>
+            <line x1="190" y1="270" x2="520" y2="270" class="dg-dash"/>
+            <text x="190" y="292" class="dg-label sm dg-yellow-f" style="fill:var(--bau-ink)">the lower half &mdash; n/2 leaves &mdash; does ZERO work</text>
+
+            <!-- ledger box -->
+            <g transform="translate(190,312)">
+              <rect x="0" y="0" width="560" height="64" rx="10" fill="var(--surface-2)" stroke="var(--bau-ink)" stroke-width="2"/>
+              <text x="18" y="28" class="dg-label">&#x2211; (nodes &#xD7; height) = 8&#xB7;0 + 4&#xB7;1 + 2&#xB7;2 + 1&#xB7;3 = <tspan class="dg-cap">11</tspan></text>
+              <text x="18" y="52" class="dg-label sm">for n=15:  11 &lt; n=15  &#8810;  n&#8201;log&#8201;n = 60.   the sum is &#x398;(n), not &#x398;(n log n).</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 3 &mdash; the linear build, visualised.</b> Work per node grows with height, but node-count <em>halves</em> with height. The product, summed, is a convergent series &mdash; the total is bounded by <code class="inl">n</code>. The leaves, half the structure, contribute nothing at all.</figcaption>
+        </figure>
+
+        <details>
+          <summary>Where the constant 2 comes from &mdash; the series, closed</summary>
+          <div class="body">
+            <p style="margin:.6em 0 0">We used <code class="inl">&#x2211;<sub>h&ge;0</sub> h/2&#x2B0; = 2</code>. It follows from the standard generating identity <code class="inl">&#x2211;<sub>h&ge;0</sub> h&#183;x&#x2B0; = x/(1&minus;x)&#xB2;</code> for <code class="inl">|x| &lt; 1</code>. Substitute <code class="inl">x = 1/2</code>: the numerator is <code class="inl">1/2</code> and the denominator is <code class="inl">(1/2)&#xB2; = 1/4</code>, so the sum is <code class="inl">(1/2)/(1/4) = 2</code>. To derive the identity from scratch, start from the geometric sum <code class="inl">&#x2211; x&#x2B0; = 1/(1&minus;x)</code>, differentiate both sides with respect to <code class="inl">x</code> to get <code class="inl">&#x2211; h&#183;x&#x2B0;&#x207B;&#xB9; = 1/(1&minus;x)&#xB2;</code>, then multiply by <code class="inl">x</code>. The finiteness of this sum &mdash; the fact that the tail decays geometrically &mdash; is the entire reason the build is linear and not log-linear.</p>
+          </div>
+        </details>
+
+        <div class="note info"><span class="tag">read the result carefully</span>Linear <code class="inl">build-heap</code> does <strong>not</strong> beat the sorting barrier. It produces a <em>heap</em> &mdash; a partial order &mdash; in <code class="inl">&#x398;(n)</code>, not a sorted array. To fully sort, you still must extract all <code class="inl">n</code> maxima, and <em>that</em> phase costs <code class="inl">&#x398;(n&nbsp;log&nbsp;n)</code>, landing exactly on the <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> floor from Lecture&nbsp;06. The cheap build is real; it is the extraction that is destiny.</div>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> see it run end to end</div>
+      <h2>Worked example: build a heap, then heapsort it</h2>
+      <div class="col">
+        <p>Take <code class="inl">A = [3, 9, 2, 1, 4, 5]</code>. We will first build a max-heap bottom-up, then sort ascending by repeatedly extracting the max into the space the heap vacates &mdash; the algorithm called <span class="term">heapsort</span>. Everything happens <em>in place</em>, in the one array, with <code class="inl">O(1)</code> extra space.</p>
+
+        <h3>Part A &mdash; bottom-up build</h3>
+        <p>With <code class="inl">n = 6</code>, the internal nodes are indices <code class="inl">0,1,2</code> (since <code class="inl">&#8970;6/2&#8971; = 3</code> begins the leaves). Sift down from <code class="inl">i = 2</code> up to <code class="inl">i = 0</code>.</p>
+        <div class="cells" aria-hidden="true"><span class="c">3</span><span class="c">9</span><span class="c piv">2</span><span class="c">1</span><span class="c">4</span><span class="c hi">5</span><span class="lab">i=2: child 5 &gt; 2 &rarr; swap</span></div>
+        <div class="cells" aria-hidden="true"><span class="c">3</span><span class="c piv">9</span><span class="c">5</span><span class="c lo">1</span><span class="c lo">4</span><span class="c">2</span><span class="lab">i=1: 9 &ge; children 1,4 &rarr; no move</span></div>
+        <div class="cells" aria-hidden="true"><span class="c piv">3</span><span class="c hi">9</span><span class="c">5</span><span class="c">1</span><span class="c">4</span><span class="c">2</span><span class="lab">i=0: 3 sinks &mdash; swap with 9, then with 4</span></div>
+        <div class="cells" aria-hidden="true"><span class="c fill">9</span><span class="c fill">4</span><span class="c fill">5</span><span class="c fill">1</span><span class="c fill">3</span><span class="c fill">2</span><span class="lab">max-heap built: [9,4,5,1,3,2]</span></div>
+        <p>That last <code class="inl">i = 0</code> step is exactly Figure&nbsp;2: <code class="inl">3</code> compares with children <code class="inl">9</code> and <code class="inl">5</code>, swaps with the larger <code class="inl">9</code>; then at its new spot compares with <code class="inl">1</code> and <code class="inl">4</code>, swaps with <code class="inl">4</code>; then it is a leaf. The array is now a valid max-heap, root <code class="inl">9</code>.</p>
+
+        <h3>Part B &mdash; sort by repeated extraction</h3>
+        <p>Heapsort's move: swap the root (the max) with the <em>last</em> element of the current heap, then shrink the heap by one so that maximum is now frozen in its final sorted position, and sift the new root down over the smaller heap. The array splits into a shrinking <strong>heap region</strong> (left) and a growing <strong>sorted region</strong> (right). Repeat until the heap holds one element.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 470" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">Heapsort in place: the boundary between heap and sorted regions marches left</title>
+            <desc id="f4d">Six rows show the array during heapsort. Row zero is the built max-heap nine four five one three two, entirely a heap region. Each later row swaps the root with the last heap element, freezing that maximum into the sorted region on the right shown in yellow, then sifts the new root down. Row one freezes nine; row two freezes five; row three freezes four; row four freezes three; row five freezes two; leaving one alone. The final array reads one two three four five nine, sorted ascending, with the heap region consumed entirely.</desc>
+
+            <text x="24" y="30" class="dg-cap">in-place heapsort: park each extracted max just past the shrinking heap</text>
+
+            <!-- helper grid: 6 columns, x start 150, width 84, step 90; rows y -->
+            <!-- legend -->
+            <rect x="600" y="44" width="16" height="16" class="dg-fill"/><text x="624" y="57" class="dg-label sm">heap region</text>
+            <rect x="730" y="44" width="16" height="16" class="dg-yellow-f" stroke="var(--bau-ink)"/><text x="754" y="57" class="dg-label sm">sorted (frozen)</text>
+
+            <!-- ROW 0 -->
+            <g font-family="var(--font-mono)" transform="translate(0,78)">
+              <text x="40" y="34" class="dg-label sm">built</text>
+              <rect x="150" y="8" width="84" height="44" class="dg-fill"/><text x="192" y="36" text-anchor="middle" class="dg-val">9</text>
+              <rect x="240" y="8" width="84" height="44" class="dg-fill"/><text x="282" y="36" text-anchor="middle" class="dg-val">4</text>
+              <rect x="330" y="8" width="84" height="44" class="dg-fill"/><text x="372" y="36" text-anchor="middle" class="dg-val">5</text>
+              <rect x="420" y="8" width="84" height="44" class="dg-fill"/><text x="462" y="36" text-anchor="middle" class="dg-val">1</text>
+              <rect x="510" y="8" width="84" height="44" class="dg-fill"/><text x="552" y="36" text-anchor="middle" class="dg-val">3</text>
+              <rect x="600" y="8" width="84" height="44" class="dg-fill"/><text x="642" y="36" text-anchor="middle" class="dg-val">2</text>
+            </g>
+            <!-- ROW 1 -->
+            <g font-family="var(--font-mono)" transform="translate(0,138)">
+              <text x="40" y="34" class="dg-label sm dg-red-f">swap 9&#8596;2, sift</text>
+              <rect x="150" y="8" width="84" height="44" class="dg-fill"/><text x="192" y="36" text-anchor="middle" class="dg-val">5</text>
+              <rect x="240" y="8" width="84" height="44" class="dg-fill"/><text x="282" y="36" text-anchor="middle" class="dg-val">4</text>
+              <rect x="330" y="8" width="84" height="44" class="dg-fill"/><text x="372" y="36" text-anchor="middle" class="dg-val">2</text>
+              <rect x="420" y="8" width="84" height="44" class="dg-fill"/><text x="462" y="36" text-anchor="middle" class="dg-val">1</text>
+              <rect x="510" y="8" width="84" height="44" class="dg-fill"/><text x="552" y="36" text-anchor="middle" class="dg-val">3</text>
+              <rect x="600" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="642" y="36" text-anchor="middle" class="dg-val">9</text>
+            </g>
+            <!-- ROW 2 -->
+            <g font-family="var(--font-mono)" transform="translate(0,198)">
+              <text x="40" y="34" class="dg-label sm dg-red-f">swap 5&#8596;3, sift</text>
+              <rect x="150" y="8" width="84" height="44" class="dg-fill"/><text x="192" y="36" text-anchor="middle" class="dg-val">4</text>
+              <rect x="240" y="8" width="84" height="44" class="dg-fill"/><text x="282" y="36" text-anchor="middle" class="dg-val">3</text>
+              <rect x="330" y="8" width="84" height="44" class="dg-fill"/><text x="372" y="36" text-anchor="middle" class="dg-val">2</text>
+              <rect x="420" y="8" width="84" height="44" class="dg-fill"/><text x="462" y="36" text-anchor="middle" class="dg-val">1</text>
+              <rect x="510" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="552" y="36" text-anchor="middle" class="dg-val">5</text>
+              <rect x="600" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="642" y="36" text-anchor="middle" class="dg-val">9</text>
+            </g>
+            <!-- ROW 3 -->
+            <g font-family="var(--font-mono)" transform="translate(0,258)">
+              <text x="40" y="34" class="dg-label sm dg-red-f">swap 4&#8596;1, sift</text>
+              <rect x="150" y="8" width="84" height="44" class="dg-fill"/><text x="192" y="36" text-anchor="middle" class="dg-val">3</text>
+              <rect x="240" y="8" width="84" height="44" class="dg-fill"/><text x="282" y="36" text-anchor="middle" class="dg-val">1</text>
+              <rect x="330" y="8" width="84" height="44" class="dg-fill"/><text x="372" y="36" text-anchor="middle" class="dg-val">2</text>
+              <rect x="420" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="462" y="36" text-anchor="middle" class="dg-val">4</text>
+              <rect x="510" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="552" y="36" text-anchor="middle" class="dg-val">5</text>
+              <rect x="600" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="642" y="36" text-anchor="middle" class="dg-val">9</text>
+            </g>
+            <!-- ROW 4 -->
+            <g font-family="var(--font-mono)" transform="translate(0,318)">
+              <text x="40" y="34" class="dg-label sm dg-red-f">swap 3&#8596;2, sift</text>
+              <rect x="150" y="8" width="84" height="44" class="dg-fill"/><text x="192" y="36" text-anchor="middle" class="dg-val">2</text>
+              <rect x="240" y="8" width="84" height="44" class="dg-fill"/><text x="282" y="36" text-anchor="middle" class="dg-val">1</text>
+              <rect x="330" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="372" y="36" text-anchor="middle" class="dg-val">3</text>
+              <rect x="420" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="462" y="36" text-anchor="middle" class="dg-val">4</text>
+              <rect x="510" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="552" y="36" text-anchor="middle" class="dg-val">5</text>
+              <rect x="600" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="642" y="36" text-anchor="middle" class="dg-val">9</text>
+            </g>
+            <!-- ROW 5 final -->
+            <g font-family="var(--font-mono)" transform="translate(0,378)">
+              <text x="40" y="34" class="dg-label sm dg-blue-f">swap 2&#8596;1 &rarr; sorted</text>
+              <rect x="150" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="192" y="36" text-anchor="middle" class="dg-val">1</text>
+              <rect x="240" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="282" y="36" text-anchor="middle" class="dg-val">2</text>
+              <rect x="330" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="372" y="36" text-anchor="middle" class="dg-val">3</text>
+              <rect x="420" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="462" y="36" text-anchor="middle" class="dg-val">4</text>
+              <rect x="510" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="552" y="36" text-anchor="middle" class="dg-val">5</text>
+              <rect x="600" y="8" width="84" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="642" y="36" text-anchor="middle" class="dg-val">9</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 4 &mdash; heapsort, in place.</b> Each row freezes one more maximum into the yellow sorted tail; the blue heap region shrinks by one and is re-heaped in <code class="inl">O(log n)</code>. After <code class="inl">n&minus;1</code> extractions the array is sorted ascending &mdash; using a <em>max</em>-heap, because parking maxima at the back builds the order from the top down.</figcaption>
+        </figure>
+
+        <p>The result, <code class="inl">[1,2,3,4,5,9]</code>, is sorted with no auxiliary array. Here is the whole algorithm; note that the build is the same <code class="inl">siftDown</code> loop from &sect;07, and the sort phase reuses <code class="inl">siftDown</code> with a shrinking size argument.</p>
+
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">heapsort</span>(A):
+    <span class="tok-fn">buildHeap</span>(A)                     <span class="tok-com"># &#x398;(n): the cheap part</span>
+    <span class="tok-kw">for</span> end <span class="tok-kw">from</span> <span class="tok-fn">len</span>(A) <span class="tok-op">-</span> <span class="tok-num">1</span> <span class="tok-kw">down to</span> <span class="tok-num">1</span>:
+        <span class="tok-fn">swap</span>(A[<span class="tok-num">0</span>], A[end])           <span class="tok-com"># park current max just past the heap</span>
+        <span class="tok-fn">siftDown</span>(A, <span class="tok-num">0</span>, end)          <span class="tok-com"># re-heap A[0..end-1] in O(log n)</span></code></pre>
+
+        <p>Total cost: <code class="inl">&#x398;(n)</code> to build, then <code class="inl">n&minus;1</code> sift-downs of <code class="inl">O(log n)</code> &mdash; <code class="inl">&#x398;(n&nbsp;log&nbsp;n)</code> overall, worst case <em>and</em> average, with <code class="inl">O(1)</code> extra space. That guaranteed worst case and that constant space are heapsort's signature: unlike quicksort it can never degrade to <code class="inl">&#x398;(n&#xB2;)</code>, and unlike merge sort it needs no second array. Its cost is poorer locality &mdash; sift-down leaps across the array &mdash; which is why quicksort usually wins wall-clock races despite the identical asymptotics.</p>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> the whole interface, costed</div>
+      <h2>The operations, tabulated</h2>
+      <div class="col">
+        <p>One table for the binary heap's full behaviour. Read it as the formal contract of &sect;03, now priced. The two rows in red are the heap's genuine weaknesses &mdash; the price of throwing away the total order &mdash; and they are exactly where the next structures in this syllabus earn their keep.</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>Binary heap &mdash; operation costs and what enables them</caption>
+            <thead>
+              <tr>
+                <th scope="col">operation</th>
+                <th scope="col">cost</th>
+                <th scope="col">mechanism</th>
+                <th scope="col">note</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">peek extremum</th><td class="good mono">O(1)</td><td>read <code class="inl">A[0]</code></td><td>the heap property keeps it at the root</td></tr>
+              <tr><th scope="row">insert</th><td class="good mono">O(log n)</td><td>append + sift-up</td><td>climbs one path</td></tr>
+              <tr><th scope="row">extract extremum</th><td class="good mono">O(log n)</td><td>swap root&harr;last + sift-down</td><td>sinks one path</td></tr>
+              <tr><th scope="row">build from n items</th><td class="good mono">&#x398;(n)</td><td>bottom-up sift-down</td><td>the &sect;07 surprise</td></tr>
+              <tr><th scope="row">heapsort (all n)</th><td class="mid mono">&#x398;(n log n)</td><td>build + n extractions</td><td>in place, <code class="inl">O(1)</code> space, worst-case</td></tr>
+              <tr><th scope="row">decrease/increase-key</th><td class="mid mono">O(log n)</td><td>sift in the right direction</td><td><em>only if</em> you know the element's index</td></tr>
+              <tr class="wrap-row"><th scope="row">search arbitrary key</th><td class="bad mono">O(n)</td><td>scan</td><td>no order to exploit &mdash; wrong tool</td></tr>
+              <tr class="wrap-row"><th scope="row">merge two heaps</th><td class="bad mono">&#x398;(n)</td><td>concatenate + rebuild</td><td>binary heaps don't merge cheaply</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="4">Extra space is <code>O(1)</code> beyond the array itself &mdash; the tree is implicit. For cheap <code>merge</code> (or <code>decrease-key</code> as the dominant op) reach for a <em>binomial</em> or <em>Fibonacci</em> heap; for ordered iteration and range queries, a balanced search tree (Lecture&nbsp;07).</td></tr></tfoot>
+          </table>
+        </div>
+        <p>A practitioner's reading. The binary heap is the default priority queue everywhere because it is simple, cache-respecting for its size, allocation-free, and never worse than logarithmic on the operations that matter. Its blind spots are <em>search</em> and <em>merge</em> &mdash; and the subtle one, <code class="inl">decrease-key</code>, which is <code class="inl">O(log n)</code> <em>only</em> when you already hold a handle to the element's current index. Dijkstra's algorithm (Lecture&nbsp;13) needs exactly that, so a real implementation carries a side map from vertex to heap-index, updated on every swap. Forgetting that map silently turns <code class="inl">decrease-key</code> into an <code class="inl">O(n)</code> search and the algorithm into a tar pit &mdash; failure mode&nbsp;6.</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>The heap is small enough to hold entirely in your head, which makes its bugs precise &mdash; almost always an index formula, a comparison direction, or a forgotten side effect. Here is the catalogue I check against every time.</p>
+
+        <h3>1 &middot; Index arithmetic off by one (the 0-vs-1 based trap)</h3>
+        <p>The formulas <code class="inl">2i+1, 2i+2, &#8970;(i&minus;1)/2&#8971;</code> are for <strong>0-based</strong> arrays. Many textbooks use <strong>1-based</strong> indexing, where the formulas become <code class="inl">2i, 2i+1, &#8970;i/2&#8971;</code> &mdash; cleaner, but only if index <code class="inl">0</code> is left unused. Mixing the two conventions in one implementation corrupts the tree shape invisibly: the &ldquo;heap&rdquo; still looks like an array, but parents and children no longer point at each other. Pick one convention and write the three formulas down before any logic.</p>
+
+        <h3>2 &middot; Sifting down toward the <em>smaller</em> child</h3>
+        <p>In a max-heap, <code class="inl">siftDown</code> must swap with the <strong>larger</strong> of the two children. Swap with the smaller and you promote a node above its larger sibling &mdash; an instant violation that the loop then propagates as if it were correct, scrambling the heap. Always compute <code class="inl">largest</code> across <em>both</em> children before swapping (the three-line guard in &sect;06), and remember the right child may not exist &mdash; test <code class="inl">r &lt; n</code>.</p>
+
+        <h3>3 &middot; Using sift-up where sift-down is needed (and vice-versa)</h3>
+        <p>After <code class="inl">extract</code>, the element that lands on the root came from the bottom and is probably <em>too small</em> &mdash; it must sift <strong>down</strong>. After <code class="inl">insert</code>, the new leaf is probably <em>too big</em> for the bottom &mdash; it must sift <strong>up</strong>. Mixing them is a real bug: sift-up on the post-extract root does nothing (the root has no parent) and leaves the heap broken. Match the repair direction to where the rogue element entered.</p>
+
+        <h3>4 &middot; Building top-down instead of bottom-up</h3>
+        <p>Running <code class="inl">siftDown</code> from the <em>root</em> toward the leaves is wrong twice over: it violates <code class="inl">siftDown</code>'s precondition (children must already be heaps), so it can produce a non-heap; and even the insert-one-at-a-time alternative costs <code class="inl">O(n&nbsp;log&nbsp;n)</code>. Build from index <code class="inl">&#8970;n/2&#8971;&minus;1</code> <em>downward to</em> <code class="inl">0</code> &mdash; deepest internal node first &mdash; for both correctness and the <code class="inl">&#x398;(n)</code> bound.</p>
+
+        <h3>5 &middot; Expecting a heap to be sorted</h3>
+        <p>A heap guarantees the root, and nothing else, about array order. <code class="inl">A[1]</code> and <code class="inl">A[2]</code> have no defined relationship; the second-smallest of a max-heap could be either child of the root, never deeper, but the array does not sort itself. If you need the elements in order you must <code class="inl">extract</code> them one by one (that is heapsort) &mdash; reading the backing array is meaningless. Likewise, do not binary-search a heap.</p>
+
+        <h3>6 &middot; <code class="inl">decrease-key</code> without an index map</h3>
+        <p>Re-prioritising an element already in the heap is <code class="inl">O(log n)</code> &mdash; <em>but only if you can find it in <code class="inl">O(1)</code></em>. A bare heap has no such lookup, so the find degrades to an <code class="inl">O(n)</code> scan, demolishing the bound Dijkstra and Prim rely on. The fix is an auxiliary hash map from element to current index, meticulously updated inside every swap in both <code class="inl">siftUp</code> and <code class="inl">siftDown</code>. The most common Dijkstra performance bug is omitting that bookkeeping (or its lazy-deletion alternative: push duplicates and skip stale pops).</p>
+
+        <h3>7 &middot; Heapsort is not stable; quicksort-grade locality it is not</h3>
+        <p>Equal keys can be reordered by the long-range swaps of <code class="inl">siftDown</code>, so heapsort is <strong>unstable</strong> &mdash; do not use it when a secondary order must survive. And although its asymptotics match quicksort's, those array-spanning swaps thrash the cache, so it typically loses real-time races to quicksort. Choose heapsort when you need the <em>guaranteed</em> <code class="inl">&#x398;(n&nbsp;log&nbsp;n)</code> worst case with <code class="inl">O(1)</code> space; choose quicksort for raw speed; choose merge sort for stability.</p>
+
+        <h3>8 &middot; Forgetting the right child can be absent</h3>
+        <p>At the last internal node, the left child may exist while the right does not (an odd number of nodes). Code that reads <code class="inl">A[2i+2]</code> without the <code class="inl">2i+2 &lt; n</code> guard reads past the heap &mdash; into the sorted region during heapsort, or out of bounds entirely. Every child access is conditional on its index being inside the current heap size. This is the bug that makes heapsort &ldquo;mostly work&rdquo; on even-length inputs and corrupt odd-length ones.</p>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>K-th largest element in a stream</h3>
+          <p class="meta">design / ADT &middot; size-k min-heap &middot; LeetCode 703</p>
+          <p>Design a class <code class="inl">KthLargest</code> initialised with an integer <code class="inl">k</code> and a starting array <code class="inl">nums</code>. Each call <code class="inl">add(val)</code> inserts <code class="inl">val</code> into the stream and returns the <code class="inl">k</code>-th largest element seen so far. The trick is the polarity: maintain a <strong>min</strong>-heap holding only the <code class="inl">k</code> largest elements seen, so its root &mdash; the smallest of the top <code class="inl">k</code> &mdash; <em>is</em> the answer. On each <code class="inl">add</code>, push, then pop while the size exceeds <code class="inl">k</code>. State why a min-heap, not a max-heap, and give the per-<code class="inl">add</code> cost.</p>
+          <pre><code><span class="tok-fn">KthLargest</span>(k, nums); &nbsp;<span class="tok-fn">add</span>(val) <span class="tok-op">-&gt;</span> int   <span class="tok-com"># 1 &le; k &le; 1e4, calls up to 1e4</span></code></pre>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Merge k sorted lists</h3>
+          <p class="meta">k-way merge &middot; min-heap of heads &middot; LeetCode 23</p>
+          <p>You are given an array of <code class="inl">k</code> sorted linked lists. Merge them into one sorted list. The naive pairwise merge is <code class="inl">O(kn)</code>; do better with a <strong>min-heap of size <code class="inl">k</code></strong> holding the current head of each list. Repeatedly extract the global minimum, append it to the output, and push that node's successor. Argue the bound: each of the <code class="inl">N</code> total nodes is pushed and popped once at <code class="inl">O(log k)</code>, giving <code class="inl">O(N&nbsp;log&nbsp;k)</code> &mdash; the heap collapses the <code class="inl">k</code>-way comparison to one logarithmic step. State how you break ties so the heap never compares incomparable nodes.</p>
+          <pre><code><span class="tok-fn">mergeKLists</span>(lists) <span class="tok-op">-&gt;</span> ListNode   <span class="tok-com"># 0 &le; k &le; 1e4, total nodes &le; 1e4</span></code></pre>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Find the median from a data stream</h3>
+          <p class="meta">two heaps &middot; balance invariant &middot; LeetCode 295</p>
+          <p>Design a structure with <code class="inl">addNum(x)</code> and <code class="inl">findMedian()</code>, where the median of the values seen so far must be returned in <code class="inl">O(1)</code> and insertion in <code class="inl">O(log n)</code>. Keep <em>two</em> heaps: a <strong>max</strong>-heap for the lower half and a <strong>min</strong>-heap for the upper half, maintaining the invariant that their roots straddle the median and their sizes differ by at most one. The median is then a root (odd total) or the mean of the two roots (even total). Specify the rebalancing rule precisely: after each insert, which heap do you push to, and when do you move a root across?</p>
+          <pre><code><span class="tok-fn">addNum</span>(x) <span class="tok-op">-&gt;</span> void; &nbsp;<span class="tok-fn">findMedian</span>() <span class="tok-op">-&gt;</span> double</code></pre>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Sort a nearly-sorted (k-sorted) array</h3>
+          <p class="meta">bounded-window heap &middot; O(n log k) &middot; partial order pays off</p>
+          <p>An array of <code class="inl">n</code> elements is <em>k-sorted</em>: every element is at most <code class="inl">k</code> positions away from its final sorted position. Sort it in <code class="inl">O(n&nbsp;log&nbsp;k)</code> time and <code class="inl">O(k)</code> extra space &mdash; beating a general sort whenever <code class="inl">k &#8810; n</code>. The idea is a min-heap holding a sliding window of only <code class="inl">k+1</code> elements: because the true minimum of the remaining elements must lie within the next <code class="inl">k+1</code> slots, the heap's root is always the next output. Prove that invariant &mdash; why <code class="inl">k+1</code> and not <code class="inl">k</code>? &mdash; and give the exact push/pop schedule.</p>
+          <pre><code><span class="tok-fn">sortKSorted</span>(arr, k) <span class="tok-op">-&gt;</span> void   <span class="tok-com"># each arr[i] is &le; k slots from sorted position</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>Maintain only as much order as the question requires.</strong> The priority queue asks for the extremum and nothing else, so the heap keeps only a <em>partial</em> order &mdash; one inequality per parent&ndash;child edge &mdash; which keeps the maximum at the root for <code class="inl">O(1)</code> peeking and lets a single out-of-place element be repaired along one root-to-leaf path in <code class="inl">O(log n)</code>. The complete-tree shape lets that whole tree live implicitly in a flat array, addressed by <code class="inl">2i+1, 2i+2, &#8970;(i&minus;1)/2&#8971;</code>, with no pointers. And because the leaves &mdash; half the nodes &mdash; cost nothing, a heap assembles bottom-up in <code class="inl">&#x398;(n)</code>; extracting all <code class="inl">n</code> maxima then sorts in place in <code class="inl">&#x398;(n&nbsp;log&nbsp;n)</code>. Less invariant, less maintenance: that is the whole trade.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 10</span>
+            <div class="ttl">Range Queries on Sequences: Fenwick Trees and Segment Trees</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We kept one extremum cheap. Next we keep a whole <em>range aggregate</em> cheap &mdash; the sum, min, or max of any contiguous slice &mdash; while individual entries change. The structures that do it, the Fenwick (binary-indexed) tree and the segment tree, are built on the very trick you just learned: a complete binary tree laid implicitly into an array, addressed by index arithmetic. The partial order becomes a partial <em>sum</em>, and the same <code class="inl">O(log n)</code> reappears. Heaps also return as load-bearing machinery in Lecture&nbsp;13 (Dijkstra) and Lecture&nbsp;12 (Prim) &mdash; the extract-min you built here is their inner loop.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-08-hashing-and-expected-constant-access.html">← Previous study</a><a href="dsa-10-range-queries-fenwick-and-segment-trees.html">Next study →</a></nav>
+</body>
+</html>

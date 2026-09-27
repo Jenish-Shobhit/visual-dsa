@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minimum Spanning Trees &amp; the Union-Find Structure</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.85rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.5rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.add-row td, tr.add-row th{background:color-mix(in oklab,var(--bau-blue) 12%,var(--surface)) !important}
+  tr.rej-row td, tr.rej-row th{background:color-mix(in oklab,var(--bau-red) 9%,var(--surface)) !important; color:var(--on-surface-variant)}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.1em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue-f{fill:var(--bau-blue)} .dg-red-f{fill:var(--bau-red)} .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-label{font-family:var(--font-mono); font-size:13px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:11px; fill:var(--on-surface-variant)}
+  .dg-cap{font-family:var(--font-display); font-size:14px; font-weight:600; fill:var(--on-surface)}
+  /* graph helpers */
+  .dg-edge{stroke:var(--bau-ink); stroke-width:2.5; fill:none}
+  .dg-edge-mst{stroke:var(--bau-blue); stroke-width:5; fill:none}
+  .dg-edge-rej{stroke:var(--outline); stroke-width:2; fill:none; stroke-dasharray:6 6}
+  .dg-edge-cut{stroke:var(--bau-blue); stroke-width:5; fill:none}
+  .dg-edge-ex{stroke:var(--bau-red); stroke-width:5; fill:none}
+  .dg-edge-cyc{stroke:var(--bau-yellow); stroke-width:9; fill:none; opacity:.55; stroke-linecap:round}
+  .dg-node{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node-s{fill:color-mix(in oklab,var(--bau-blue) 14%,var(--surface)); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node-t{fill:color-mix(in oklab,var(--bau-red) 12%,var(--surface)); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-nt{font-family:var(--font-mono); font-size:16px; font-weight:700; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
+  .dg-wbadge{fill:var(--surface); stroke:var(--bau-ink); stroke-width:1.5}
+  .dg-wbadge.mst{fill:var(--bau-blue); stroke:var(--bau-ink)}
+  .dg-wnum{font-family:var(--font-mono); font-size:14px; font-weight:700; fill:var(--bau-ink); text-anchor:middle; dominant-baseline:central}
+  .dg-wnum.w{fill:#fff}
+  .dg-cutline{stroke:var(--bau-red); stroke-width:2.5; stroke-dasharray:9 7; fill:none}
+  .dg-region{fill:color-mix(in oklab,var(--bau-blue) 9%,transparent); stroke:var(--bau-blue); stroke-width:1.5; stroke-dasharray:4 5}
+  .dg-arrow{stroke:var(--bau-ink); stroke-width:2.5; fill:none}
+  .dg-arrow-new{stroke:var(--bau-blue); stroke-width:2.5; fill:none; stroke-dasharray:6 5}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">12 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>12</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="200" height="150" viewBox="0 0 200 150" aria-hidden="true">
+    <!-- a tiny spanning tree over three primaries -->
+    <line x1="40" y1="40" x2="150" y2="30" stroke="var(--bau-ink)" stroke-width="3"/>
+    <line x1="40" y1="40" x2="70" y2="120" stroke="var(--bau-ink)" stroke-width="3"/>
+    <line x1="150" y1="30" x2="170" y2="110" stroke="var(--bau-ink)" stroke-width="3"/>
+    <circle cx="40" cy="40" r="20" class="dg-blue-f"/>
+    <path d="M150 8 L176 52 L124 52 Z" class="dg-red-f"/>
+    <rect x="54" y="104" width="34" height="34" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <rect x="154" y="94" width="32" height="32" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 12</span> greedy on graphs</div>
+    <h1>Minimum Spanning Trees &amp; the Union-Find Structure</h1>
+    <p class="lede col">You hold a connected, weighted graph &mdash; cities and the cost of every cable that might join them &mdash; and you must wire them all together for the least money. The cheapest connector is a <strong>tree</strong>: connect everything, waste nothing on a cycle. The number of candidate trees is astronomical, yet a stubbornly <em>local</em> rule &mdash; always take the next-cheapest edge that does not close a loop &mdash; finds the single global optimum in nearly the time it takes to read the edges. This lecture is about <em>why</em> that greed is licensed, and the two structures that execute it.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A number to set the stakes.</strong> Take just <strong>50</strong> cities, fully interconnectable. By Cayley's formula the number of distinct spanning trees on <code class="inl">n</code> labelled nodes is <code class="inl">n<sup>n&minus;2</sup></code> &mdash; for <code class="inl">n=50</code> that is <code class="inl">50<sup>48</sup></code>, more than <strong>10<sup>81</sup></strong>. That is larger than the estimated number of atoms in the observable universe.</p>
+        <p style="margin-bottom:0">You could not enumerate them before the stars burn out. And yet the minimum-cost one among all <code class="inl">10<sup>81</sup></code> is pinned down in <code class="inl">O(E&nbsp;log&nbsp;V)</code> &mdash; a few thousand operations &mdash; by a method so simple a clerk could run it. The whole lecture is the proof that the simple method is <em>right</em>, and never merely lucky.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>The connection problem</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>The MST, formalized</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>The cut property</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Kruskal's algorithm</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>Union-Find</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>Prim's algorithm</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Worked: both, end to end</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>The ledger</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Where it breaks</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Practice</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> the problem beneath the structure</div>
+      <h2>The connection problem</h2>
+      <div class="col">
+        <p>I begin, as always, by separating the <em>problem</em> from the <em>engine</em>. The problem is older than computing: a set of points must be joined so that every point can reach every other, and joining any two of them carries a cost. Lay telephone lines between towns; etch traces between pads on a circuit board; choose which roads to clear of snow so the country stays connected; cluster data by linking nearest neighbours. In each, the question is the same &mdash; <em>which connections do I buy so that the whole is connected for the least total cost?</em></p>
+        <p>Strip away the towns and the cables and what remains is a <span class="term">weighted graph</span> <code class="inl">G=(V,E,w)</code>: a set of vertices <code class="inl">V</code>, a set of possible edges <code class="inl">E</code>, and a weight <code class="inl">w(e)</code> on each edge &mdash; its cost. We want a subset of edges that (i) keeps the graph connected and (ii) costs as little as possible. The instant you write that down, one fact falls out: the answer never contains a cycle. A cycle is a redundant loop; delete its heaviest edge and everything is still connected for strictly less money. <strong>A minimum connector is therefore acyclic and connected &mdash; it is a tree.</strong> A tree that touches every vertex is a <span class="term">spanning tree</span>, and the cheapest one is the <span class="term">minimum spanning tree</span>, the MST.</p>
+        <p>That is the whole specification. What makes it a <em>great</em> problem &mdash; the kind that earns a lecture &mdash; is the gulf between how many candidates exist and how easily the best is found. The hero number above (<code class="inl">10<sup>81</sup></code> trees for 50 nodes) is the size of the search space; the algorithms we build search none of it. They make a sequence of irrevocable local choices and arrive at the global optimum by a guarantee, not a search. The name for that style is <span class="term">greedy</span>, and the MST is the cleanest place in all of algorithms to see exactly when greed is provably correct.</p>
+        <div class="note info"><span class="tag">the formal lens</span>Hold the contract fixed &mdash; "a minimum-weight spanning subgraph" &mdash; and notice the contract <em>forces</em> the shape of the answer (a tree) before we choose any algorithm. The cost is a property of the structure; our freedom is only in <em>how we find</em> it.</div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>State</strong> the minimum-spanning-tree problem precisely and explain, in one sentence, why every optimal solution is a tree of exactly <code class="inl">|V|&minus;1</code> edges.</li>
+          <li><strong>Prove</strong> the <span class="term">cut property</span> by an exchange argument &mdash; the single theorem that makes the greedy choice safe &mdash; and state its dual, the cycle property.</li>
+          <li><strong>Execute</strong> Kruskal's and Prim's algorithms by hand on a graph, tracing the data structure each one depends on, and recognise that both are corollaries of the one cut property.</li>
+          <li><strong>Implement</strong> the union-find (disjoint-set) structure with <em>union by rank</em> and <em>path compression</em>, and prove the <code class="inl">O(log n)</code> height bound that rank alone already buys.</li>
+          <li><strong>Account</strong> for the near-constant <code class="inl">&alpha;(n)</code> amortized cost of union-find and quote the complexity of each MST algorithm, choosing the right one for sparse vs. dense input.</li>
+          <li><strong>Diagnose</strong> the classic failures: confusing an MST with a shortest-path tree, mishandling ties and disconnected graphs, and breaking the union-find invariants.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>Four short ideas. The amortized-analysis page is linked because the union-find bound is its sequel &mdash; the very potential-method reasoning, cashed out on a real structure.</p>
+        <div class="chips">
+          <span class="chip">graph representation &amp; traversal</span>
+          <span class="chip">priority queues (heaps)</span>
+          <a class="chip" href="dsa-02-amortized-cost-aggregate-accounting-potential.html">amortized analysis</a>
+          <span class="chip">the greedy idea</span>
+        </div>
+        <p style="margin-top:1em">If you can read a graph stored as an adjacency list, pull the minimum out of a heap in <code class="inl">O(log&nbsp;n)</code>, and recall that &ldquo;amortized&rdquo; means <em>averaged over a worst-case sequence</em> rather than over random inputs, you are ready. We are about to give greed a theorem.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> fix the object before the algorithm</div>
+      <h2>The minimum spanning tree, formalized</h2>
+      <div class="col">
+        <p>Let <code class="inl">G=(V,E)</code> be an <strong>undirected, connected</strong> graph with a real weight <code class="inl">w(e)</code> on each edge. A <span class="term">spanning tree</span> <code class="inl">T &sube; E</code> is a set of edges that is</p>
+        <ul>
+          <li><strong>spanning</strong> &mdash; every vertex is incident to at least one edge of <code class="inl">T</code> (nothing is left out), and</li>
+          <li><strong>a tree</strong> &mdash; connected and acyclic.</li>
+        </ul>
+        <p>Three facts about trees pin the object down, and we will lean on all three. First, <strong>a tree on <code class="inl">|V|</code> vertices has exactly <code class="inl">|V|&minus;1</code> edges</strong> &mdash; one fewer than the vertices it joins. Second, <strong>adding any one non-tree edge to a spanning tree creates exactly one cycle</strong> (the new edge plus the unique tree-path between its endpoints). Third, <strong>removing any one edge from that cycle restores a spanning tree</strong>. These two operations &mdash; add an edge to make a cycle, delete an edge of the cycle &mdash; are the <em>only</em> moves we will ever make, and together they are the engine of the proof in &sect;04.</p>
+
+        <div class="eq">
+          <span class="lbl">the objective</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <munder><mo>min</mo><mrow><mi>T</mi><mtext>&#xA0;spanning&#xA0;tree</mtext></mrow></munder>
+            <mspace width="0.4em"/>
+            <mi>w</mi><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo>
+            <mo>=</mo>
+            <munder><mo>&#x2211;</mo><mrow><mi>e</mi><mo>&#x2208;</mo><mi>T</mi></mrow></munder>
+            <mi>w</mi><mo stretchy="false">(</mo><mi>e</mi><mo stretchy="false">)</mo>
+          </math></div>
+        </div>
+
+        <p>The <span class="term">minimum spanning tree</span> is the spanning tree of least total weight. Note what the objective does <em>not</em> ask for: it says nothing about distances <em>between</em> particular vertices, only about the total. That omission is the source of the most common misconception in &sect;10 &mdash; the MST is not the network of shortest routes. For now, here is the concrete graph we will solve twice, by two different algorithms, later in the lecture.</p>
+
+        <figure>
+          <svg viewBox="0 0 720 470" role="img" aria-labelledby="g1t g1d">
+            <title id="g1t">A weighted graph on six vertices</title>
+            <desc id="g1d">Six vertices A, B, C, D, E, F joined by nine weighted edges, the input to the worked example.</desc>
+            <!-- edges (drawn first, under the nodes) -->
+            <g>
+              <line class="dg-edge" x1="180" y1="70"  x2="90"  y2="255"/><!-- A-C 1 -->
+              <line class="dg-edge" x1="355" y1="235" x2="615" y2="255"/><!-- D-F 2 -->
+              <line class="dg-edge" x1="355" y1="415" x2="615" y2="255"/><!-- E-F 3 -->
+              <line class="dg-edge" x1="90"  y1="255" x2="355" y2="235"/><!-- C-D 4 -->
+              <line class="dg-edge" x1="520" y1="70"  x2="355" y2="235"/><!-- B-D 5 -->
+              <line class="dg-edge" x1="180" y1="70"  x2="520" y2="70"/><!-- A-B 6 -->
+              <line class="dg-edge" x1="180" y1="70"  x2="355" y2="235"/><!-- A-D 7 -->
+              <line class="dg-edge" x1="520" y1="70"  x2="615" y2="255"/><!-- B-F 8 -->
+              <line class="dg-edge" x1="90"  y1="255" x2="355" y2="415"/><!-- C-E 9 -->
+            </g>
+            <!-- weight badges -->
+            <g>
+              <g><rect class="dg-wbadge" x="122" y="151" width="26" height="22" rx="5"/><text class="dg-wnum" x="135" y="163">1</text></g>
+              <g><rect class="dg-wbadge" x="472" y="234" width="26" height="22" rx="5"/><text class="dg-wnum" x="485" y="246">2</text></g>
+              <g><rect class="dg-wbadge" x="472" y="324" width="26" height="22" rx="5"/><text class="dg-wnum" x="485" y="336">3</text></g>
+              <g><rect class="dg-wbadge" x="209" y="234" width="26" height="22" rx="5"/><text class="dg-wnum" x="222" y="246">4</text></g>
+              <g><rect class="dg-wbadge" x="424" y="141" width="26" height="22" rx="5"/><text class="dg-wnum" x="437" y="153">5</text></g>
+              <g><rect class="dg-wbadge" x="337" y="59"  width="26" height="22" rx="5"/><text class="dg-wnum" x="350" y="71">6</text></g>
+              <g><rect class="dg-wbadge" x="254" y="141" width="26" height="22" rx="5"/><text class="dg-wnum" x="267" y="153">7</text></g>
+              <g><rect class="dg-wbadge" x="554" y="151" width="26" height="22" rx="5"/><text class="dg-wnum" x="567" y="163">8</text></g>
+              <g><rect class="dg-wbadge" x="209" y="324" width="26" height="22" rx="5"/><text class="dg-wnum" x="222" y="336">9</text></g>
+            </g>
+            <!-- nodes -->
+            <g>
+              <circle class="dg-node" cx="180" cy="70"  r="27"/><text class="dg-nt" x="180" y="70">A</text>
+              <circle class="dg-node" cx="520" cy="70"  r="27"/><text class="dg-nt" x="520" y="70">B</text>
+              <circle class="dg-node" cx="90"  cy="255" r="27"/><text class="dg-nt" x="90"  y="255">C</text>
+              <circle class="dg-node" cx="355" cy="235" r="27"/><text class="dg-nt" x="355" y="235">D</text>
+              <circle class="dg-node" cx="615" cy="255" r="27"/><text class="dg-nt" x="615" y="255">F</text>
+              <circle class="dg-node" cx="355" cy="415" r="27"/><text class="dg-nt" x="355" y="415">E</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 1 &mdash; the input graph.</b> Six vertices, nine edges, weights all distinct (so the MST will be unique). We will find its minimum spanning tree by Kruskal's edge-greedy method and again by Prim's vertex-greedy method, and watch them agree.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> the theorem that licenses greed</div>
+      <h2>The cut property</h2>
+      <div class="col">
+        <p>Greedy algorithms are usually wrong. Take the locally cheapest move at every step and you typically paint yourself into a corner &mdash; the cheap first bite costs you dearly later. The MST is one of the rare problems where local greed is <em>globally</em> optimal, and the reason is a single structural theorem. Everything else in this lecture is a corollary of it.</p>
+        <p>First a definition. A <span class="term">cut</span> <code class="inl">(S, V&#8726;S)</code> is any partition of the vertices into two non-empty groups. An edge <span class="term">crosses</span> the cut if its two endpoints lie on opposite sides. Picture a line drawn through the graph: the crossing edges are the ones the line severs.</p>
+
+        <div class="band flush" style="margin:1.4em 0">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin:0 0 .3em"><strong>The Cut Property.</strong> Let <code class="inl">(S, V&#8726;S)</code> be any cut of <code class="inl">G</code>. Among all edges crossing the cut, let <code class="inl">e</code> be one of minimum weight. Then <code class="inl">e</code> belongs to <em>some</em> minimum spanning tree of <code class="inl">G</code>. If all crossing weights are distinct, <code class="inl">e</code> belongs to <em>every</em> MST.</p>
+          <p style="margin:0; color:var(--on-surface-variant); font-size:15px">In words: the cheapest way to bridge any partition is always safe to commit to. You never regret taking a lightest crossing edge.</p>
+        </div>
+
+        <p>The proof is an <span class="term">exchange argument</span> &mdash; the workhorse of greedy correctness. We assume an optimal solution that <em>disagrees</em> with our greedy choice and edit it, at no extra cost, into one that <em>agrees</em>. Because the edit never raises the weight, the agreeing solution is optimal too.</p>
+
+        <h3>Proof</h3>
+        <p>Let <code class="inl">e=(u,v)</code> be a minimum-weight edge crossing the cut <code class="inl">(S,V&#8726;S)</code>, with <code class="inl">u&isin;S</code> and <code class="inl">v&isin;V&#8726;S</code>. Take any MST <code class="inl">T</code>. If <code class="inl">T</code> already contains <code class="inl">e</code>, there is nothing to prove. So suppose <code class="inl">e&notin;T</code>.</p>
+        <p>Add <code class="inl">e</code> to <code class="inl">T</code>. By the second tree-fact of &sect;03, this creates <strong>exactly one cycle</strong> <code class="inl">C</code> &mdash; the edge <code class="inl">e</code> together with the unique path in <code class="inl">T</code> from <code class="inl">u</code> to <code class="inl">v</code>. That path starts at <code class="inl">u&isin;S</code> and ends at <code class="inl">v&isin;V&#8726;S</code>, so it must step across the cut at least once. Pick such a crossing edge on it and call it <code class="inl">e&prime;</code>. Now <code class="inl">e&prime;</code> also crosses the cut, and <code class="inl">e</code> was a <em>minimum</em>-weight crossing edge, so</p>
+
+        <div class="eq">
+          <span class="lbl">the exchange inequality</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>w</mi><mo stretchy="false">(</mo><mi>e</mi><mo stretchy="false">)</mo>
+            <mo>&#x2264;</mo>
+            <mi>w</mi><mo stretchy="false">(</mo><msup><mi>e</mi><mo>&#x2032;</mo></msup><mo stretchy="false">)</mo>
+            <mspace width="2em"/>
+            <mtext>so</mtext>
+            <mspace width="1em"/>
+            <mi>w</mi><mo stretchy="false">(</mo><msup><mi>T</mi><mo>&#x2032;</mo></msup><mo stretchy="false">)</mo>
+            <mo>=</mo>
+            <mi>w</mi><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo>
+            <mo>&#x2212;</mo><mi>w</mi><mo stretchy="false">(</mo><msup><mi>e</mi><mo>&#x2032;</mo></msup><mo stretchy="false">)</mo>
+            <mo>+</mo><mi>w</mi><mo stretchy="false">(</mo><mi>e</mi><mo stretchy="false">)</mo>
+            <mo>&#x2264;</mo>
+            <mi>w</mi><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo>
+          </math></div>
+        </div>
+
+        <p>Form <code class="inl">T&prime; = T &minus; e&prime; + e</code>: delete the cycle edge <code class="inl">e&prime;</code>, keep the new edge <code class="inl">e</code>. Removing an edge from a cycle cannot disconnect the graph, and we still have exactly <code class="inl">|V|&minus;1</code> edges, so <code class="inl">T&prime;</code> is again a spanning tree. By the inequality, <code class="inl">w(T&prime;)&le;w(T)</code>. But <code class="inl">T</code> was an MST, so no spanning tree is lighter &mdash; hence <code class="inl">w(T&prime;)=w(T)</code>, and <code class="inl">T&prime;</code> is itself an MST, one that <em>contains</em> <code class="inl">e</code>. Therefore <code class="inl">e</code> lies in some MST. If the weights are distinct the inequality is strict unless <code class="inl">e&prime;=e</code>, which forces <code class="inl">e</code> into <em>every</em> MST. <strong>&#9633;</strong></p>
+
+        <figure>
+          <svg viewBox="0 0 720 380" role="img" aria-labelledby="g2t g2d">
+            <title id="g2t">The cut-property exchange argument</title>
+            <desc id="g2d">A spanning tree split by a cut. Adding the light crossing edge e creates a cycle that also contains a heavier crossing tree-edge e-prime; swapping e for e-prime keeps a spanning tree of no greater weight.</desc>
+            <!-- S region -->
+            <rect class="dg-region" x="24" y="40" width="320" height="300" rx="28"/>
+            <text class="dg-cap" x="44" y="70" fill="var(--bau-blue)">S</text>
+            <text class="dg-cap" x="640" y="70" fill="var(--bau-red)">V \ S</text>
+            <!-- cut line -->
+            <line class="dg-cutline" x1="360" y1="20" x2="360" y2="360"/>
+            <text class="dg-label sm" x="368" y="34">the cut</text>
+            <!-- the highlighted cycle (under everything): u - s2 - s3 - t3 - v - u -->
+            <path class="dg-edge-cyc" d="M300 175 L150 250 L250 320 L500 315 L440 175 Z"/>
+            <!-- tree edges (solid black) -->
+            <g>
+              <line class="dg-edge" x1="300" y1="175" x2="110" y2="95"/><!-- u-s1 -->
+              <line class="dg-edge" x1="300" y1="175" x2="150" y2="250"/><!-- u-s2 -->
+              <line class="dg-edge" x1="150" y1="250" x2="250" y2="320"/><!-- s2-s3 -->
+              <line class="dg-edge" x1="500" y1="315" x2="440" y2="175"/><!-- t3-v -->
+              <line class="dg-edge" x1="500" y1="315" x2="640" y2="245"/><!-- t3-t2 -->
+              <line class="dg-edge" x1="640" y1="245" x2="610" y2="95"/><!-- t2-t1 -->
+            </g>
+            <!-- e' : the heavier crossing tree edge, removed (red) -->
+            <line class="dg-edge-ex" x1="250" y1="320" x2="500" y2="315"/>
+            <!-- e : the light crossing edge, added (blue) -->
+            <line class="dg-edge-cut" x1="300" y1="175" x2="440" y2="175"/>
+            <!-- nodes -->
+            <g>
+              <circle class="dg-node-s" cx="110" cy="95"  r="20"/><text class="dg-nt" x="110" y="95" font-size="13">s&#8321;</text>
+              <circle class="dg-node-s" cx="150" cy="250" r="20"/><text class="dg-nt" x="150" y="250" font-size="13">s&#8322;</text>
+              <circle class="dg-node-s" cx="250" cy="320" r="20"/><text class="dg-nt" x="250" y="320" font-size="13">s&#8323;</text>
+              <circle class="dg-node-s" cx="300" cy="175" r="22"/><text class="dg-nt" x="300" y="175">u</text>
+              <circle class="dg-node-t" cx="440" cy="175" r="22"/><text class="dg-nt" x="440" y="175">v</text>
+              <circle class="dg-node-t" cx="500" cy="315" r="20"/><text class="dg-nt" x="500" y="315" font-size="13">t&#8323;</text>
+              <circle class="dg-node-t" cx="640" cy="245" r="20"/><text class="dg-nt" x="640" y="245" font-size="13">t&#8322;</text>
+              <circle class="dg-node-t" cx="610" cy="95"  r="20"/><text class="dg-nt" x="610" y="95" font-size="13">t&#8321;</text>
+            </g>
+            <!-- labels for e and e' -->
+            <text class="dg-label" x="318" y="163" fill="var(--bau-blue)" font-weight="700">e (add)</text>
+            <text class="dg-label" x="320" y="335" fill="var(--bau-red)" font-weight="700">e&#8242; (remove)</text>
+          </svg>
+          <figcaption><b>Figure 2 &mdash; the proof, drawn.</b> The tree (black) is split by the cut. The light crossing edge <b style="color:var(--bau-blue)">e&nbsp;=&nbsp;(u,v)</b> closes the <span style="background:color-mix(in oklab,var(--bau-yellow) 45%,transparent)">highlighted cycle</span>, which must cross back over a heavier tree edge <b style="color:var(--bau-red)">e&prime;</b>. Swap <code class="inl">e&prime;</code> out for <code class="inl">e</code>: still a spanning tree, no heavier. That single move is the entire correctness proof of both algorithms below.</figcaption>
+        </figure>
+
+        <h3>The dual: the cycle property</h3>
+        <p>Turn the argument inside out and you get its mirror, which we will need in Practice&nbsp;4. <strong>The cycle property:</strong> for any cycle in <code class="inl">G</code>, a maximum-weight edge of that cycle belongs to <em>no</em> MST (to no MST at all, if its weight is the unique maximum). The proof is the same exchange run backwards: if an MST contained the heaviest edge <code class="inl">f</code> of a cycle, delete <code class="inl">f</code> &mdash; the tree splits into two parts &mdash; and the cycle supplies a lighter edge re-joining them, giving a strictly cheaper spanning tree, a contradiction. The cut property tells you what to <em>take</em>; the cycle property tells you what to <em>drop</em>. Kruskal is, quite literally, both at once.</p>
+
+        <div class="pull col">One theorem &mdash; the lightest edge across any cut is safe &mdash; and <span>both</span> algorithms are merely two orders in which to apply it.</div>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> greed by edge weight</div>
+      <h2>Kruskal's algorithm</h2>
+      <div class="col">
+        <p>Kruskal (1956) reads the cut property in its bluntest form: <em>consider the edges from cheapest to dearest, and take each one unless it would close a cycle.</em> Build a forest that starts as <code class="inl">|V|</code> isolated vertices and merges as edges are accepted, stopping when a single tree spans everything.</p>
+
+        <pre><code><span class="tok-kw">def</span> <span class="tok-fn">kruskal</span>(V, E, w):              <span class="tok-com"># E = list of edges (u, v)</span>
+    T = []                            <span class="tok-com"># the MST edges we accept</span>
+    dsu = <span class="tok-fn">DSU</span>(V)                     <span class="tok-com"># every vertex its own component</span>
+    <span class="tok-kw">for</span> (u, v) <span class="tok-kw">in</span> <span class="tok-fn">sorted</span>(E, key=w):    <span class="tok-com"># lightest edge first</span>
+        <span class="tok-kw">if</span> dsu.<span class="tok-fn">find</span>(u) != dsu.<span class="tok-fn">find</span>(v):  <span class="tok-com"># endpoints in different trees?</span>
+            T.<span class="tok-fn">append</span>((u, v))           <span class="tok-com"># safe by the cut property</span>
+            dsu.<span class="tok-fn">union</span>(u, v)           <span class="tok-com"># merge the two components</span>
+            <span class="tok-kw">if</span> <span class="tok-fn">len</span>(T) == <span class="tok-fn">len</span>(V) - <span class="tok-num">1</span>:    <span class="tok-com"># spanning tree complete</span>
+                <span class="tok-kw">break</span>
+    <span class="tok-kw">return</span> T</code></pre>
+
+        <h3>Why it is correct</h3>
+        <p>The cut property does all the work, but you must point it at the right cut. Suppose Kruskal accepts the edge <code class="inl">e=(u,v)</code>. At that instant, let <code class="inl">S</code> be the set of vertices in <code class="inl">u</code>'s current tree. Two observations:</p>
+        <ul>
+          <li><code class="inl">e</code> crosses the cut <code class="inl">(S, V&#8726;S)</code>, because <code class="inl">v</code> is in a <em>different</em> tree, hence not in <code class="inl">S</code>.</li>
+          <li><code class="inl">e</code> is a <strong>minimum</strong>-weight edge crossing that cut. Why: any crossing edge has one endpoint in <code class="inl">S</code> and one outside, so it has not yet been accepted (an accepted crossing edge would have merged the two sides into one tree). Edges are examined in increasing weight, and we are examining <code class="inl">e</code> now, so every still-unaccepted edge &mdash; including every other crossing edge &mdash; is at least as heavy as <code class="inl">e</code>.</li>
+        </ul>
+        <p>By the cut property, <code class="inl">e</code> is safe: there is an MST extending the forest we have built so far. By induction over the accepted edges, the final forest &mdash; a single spanning tree &mdash; is an MST. The rejection step is the cycle property in disguise: an edge skipped because its endpoints already share a tree is a maximum-weight edge of the cycle it would have formed (all the others were lighter and accepted earlier), so it belongs to no MST. <strong>Kruskal accepts exactly the cut-property edges and drops exactly the cycle-property edges.</strong></p>
+        <div class="note"><span class="tag">the bottleneck</span>Correctness is free; the cost lives entirely in one question, asked <code class="inl">E</code> times: <em>are <code class="inl">u</code> and <code class="inl">v</code> already in the same tree, and if not, merge them.</em> Answer it naively &mdash; relabel a component, or run a search per edge &mdash; and Kruskal degrades toward <code class="inl">O(VE)</code>. The whole algorithm hinges on a structure that does <em>find</em> and <em>union</em> in almost no time. That structure is next.</div>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> the engine under kruskal</div>
+      <h2>Union-Find: the disjoint-set structure</h2>
+      <div class="col">
+        <p>The abstract type Kruskal demands is a <span class="term">disjoint-set</span> structure, also called <span class="term">union-find</span> or DSU. It maintains a partition of <code class="inl">{0,&hellip;,n&minus;1}</code> into disjoint sets and supports three operations:</p>
+        <ul>
+          <li><code class="inl">make_set(x)</code> &mdash; start <code class="inl">x</code> alone in its own set;</li>
+          <li><code class="inl">find(x)</code> &mdash; return a canonical <em>representative</em> of <code class="inl">x</code>'s set, so that <code class="inl">find(a)==find(b)</code> iff <code class="inl">a</code> and <code class="inl">b</code> are in the same set;</li>
+          <li><code class="inl">union(x, y)</code> &mdash; merge the two sets containing <code class="inl">x</code> and <code class="inl">y</code>.</li>
+        </ul>
+        <p>The representation is deceptively plain: a <strong>forest of up-trees</strong>, stored as a single array <code class="inl">parent[]</code>. Each element points at its parent; the root of each tree &mdash; the element that points at itself &mdash; is the representative. <code class="inl">find</code> walks parent pointers to the root; <code class="inl">union</code> hangs one root beneath the other. Nothing more.</p>
+        <p>Left naive, this is a trap. Union in the wrong direction and you can grow a single chain of length <code class="inl">n</code>; then <code class="inl">find</code> walks the whole chain at <code class="inl">O(n)</code>, and Kruskal is quadratic again. Two heuristics &mdash; cheap, local, and famous &mdash; rescue it.</p>
+
+        <h3>Heuristic 1 &mdash; union by rank</h3>
+        <p>Keep an integer <code class="inl">rank[x]</code>, an upper bound on the height of <code class="inl">x</code>'s subtree. When you union two roots, <strong>hang the lower-rank root beneath the higher-rank one</strong>, so the tree never gets taller than it must. Only when the two ranks are <em>equal</em> does the surviving root's rank tick up by one.</p>
+
+        <h3>Heuristic 2 &mdash; path compression</h3>
+        <p>During <code class="inl">find</code>, after you have located the root, <strong>point every node you walked past directly at the root</strong>. The next <code class="inl">find</code> on any of them is a single hop. The walk you already paid for doubles as a flattening of the path &mdash; this is the amortization, the same &ldquo;pay-it-forward&rdquo; bookkeeping of <a class="inline" href="dsa-02-amortized-cost-aggregate-accounting-potential.html">Lecture&nbsp;02</a>, now cashed out on pointers.</p>
+
+        <pre><code><span class="tok-kw">class</span> <span class="tok-fn">DSU</span>:
+    <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, n):
+        self.parent = <span class="tok-fn">list</span>(<span class="tok-fn">range</span>(n))   <span class="tok-com"># parent[x] = x  -> x is its own root</span>
+        self.rank   = [<span class="tok-num">0</span>] * n          <span class="tok-com"># upper bound on subtree height</span>
+
+    <span class="tok-kw">def</span> <span class="tok-fn">find</span>(self, x):                 <span class="tok-com"># with PATH COMPRESSION</span>
+        <span class="tok-kw">if</span> self.parent[x] != x:
+            self.parent[x] = self.<span class="tok-fn">find</span>(self.parent[x])  <span class="tok-com"># re-point straight to root</span>
+        <span class="tok-kw">return</span> self.parent[x]
+
+    <span class="tok-kw">def</span> <span class="tok-fn">union</span>(self, x, y):              <span class="tok-com"># with UNION BY RANK</span>
+        rx, ry = self.<span class="tok-fn">find</span>(x), self.<span class="tok-fn">find</span>(y)
+        <span class="tok-kw">if</span> rx == ry: <span class="tok-kw">return</span> <span class="tok-kw">False</span>      <span class="tok-com"># already joined -> would close a cycle</span>
+        <span class="tok-kw">if</span> self.rank[rx] &lt; self.rank[ry]:
+            rx, ry = ry, rx               <span class="tok-com"># rx is the taller root</span>
+        self.parent[ry] = rx              <span class="tok-com"># hang shorter under taller</span>
+        <span class="tok-kw">if</span> self.rank[rx] == self.rank[ry]:
+            self.rank[rx] += <span class="tok-num">1</span>            <span class="tok-com"># equal heights -> height grows by one</span>
+        <span class="tok-kw">return</span> <span class="tok-kw">True</span></code></pre>
+
+        <figure>
+          <svg viewBox="0 0 720 350" role="img" aria-labelledby="g3t g3d">
+            <title id="g3t">Union by rank and path compression</title>
+            <desc id="g3d">Left: union by rank hangs the shorter tree under the taller root. Right: path compression re-points every node on a find path directly to the root.</desc>
+            <!-- divider -->
+            <line x1="360" y1="24" x2="360" y2="326" stroke="var(--outline-variant)" stroke-width="1.5"/>
+            <text class="dg-cap" x="30" y="40">union by rank</text>
+            <text class="dg-cap" x="392" y="40">path compression: find(4)</text>
+
+            <!-- PANEL A: union by rank -->
+            <!-- tree 1 (rank 2): root a -->
+            <g>
+              <line class="dg-arrow" x1="70" y1="150" x2="100" y2="92"/>
+              <line class="dg-arrow" x1="150" y1="150" x2="116" y2="92"/>
+              <line class="dg-arrow" x1="150" y1="222" x2="150" y2="172"/>
+              <circle class="dg-node" cx="108" cy="78" r="20"/><text class="dg-nt" x="108" y="78" font-size="14">a</text>
+              <circle class="dg-node" cx="62" cy="162" r="18"/><text class="dg-nt" x="62" y="162" font-size="13">b</text>
+              <circle class="dg-node" cx="150" cy="162" r="18"/><text class="dg-nt" x="150" y="162" font-size="13">c</text>
+              <circle class="dg-node" cx="150" cy="236" r="18"/><text class="dg-nt" x="150" y="236" font-size="13">d</text>
+              <text class="dg-label sm" x="132" y="74" fill="var(--bau-red)">rank 2</text>
+            </g>
+            <!-- tree 2 (rank 1): root e, child f -->
+            <g>
+              <line class="dg-arrow" x1="262" y1="172" x2="262" y2="118"/>
+              <circle class="dg-node" cx="262" cy="100" r="20"/><text class="dg-nt" x="262" y="100" font-size="14">e</text>
+              <circle class="dg-node" cx="262" cy="186" r="18"/><text class="dg-nt" x="262" y="186" font-size="13">f</text>
+              <text class="dg-label sm" x="286" y="96" fill="var(--bau-red)">rank 1</text>
+            </g>
+            <!-- new pointer e -> a (dashed blue) -->
+            <line class="dg-arrow-new" x1="244" y1="92" x2="128" y2="82"/>
+            <text class="dg-label sm" x="150" y="300" fill="var(--bau-blue)">union(d, f): hang e (rank 1) under a (rank 2);</text>
+            <text class="dg-label sm" x="150" y="318" fill="var(--bau-blue)">rank(a) stays 2 &#8212; no taller.</text>
+
+            <!-- PANEL B: path compression -->
+            <!-- before: chain 4 -> 3 -> 2 -> 1 -->
+            <g>
+              <line class="dg-arrow" x1="430" y1="232" x2="430" y2="180"/>
+              <line class="dg-arrow" x1="430" y1="160" x2="430" y2="116"/>
+              <line class="dg-arrow" x1="430" y1="96"  x2="430" y2="78"/>
+              <circle class="dg-node" cx="430" cy="60"  r="18"/><text class="dg-nt" x="430" y="60" font-size="13">1</text>
+              <circle class="dg-node" cx="430" cy="98"  r="18"/><text class="dg-nt" x="430" y="98" font-size="13">2</text>
+              <circle class="dg-node" cx="430" cy="162" r="18"/><text class="dg-nt" x="430" y="162" font-size="13">3</text>
+              <circle class="dg-node" cx="430" cy="250" r="18"/><text class="dg-nt" x="430" y="250" font-size="13">4</text>
+              <text class="dg-label sm" x="452" y="56">root</text>
+              <text class="dg-label sm" x="404" y="290">before</text>
+            </g>
+            <!-- arrow between -->
+            <text x="500" y="160" font-size="26" fill="var(--bau-blue)">&#8594;</text>
+            <!-- after: 2,3,4 all -> 1 -->
+            <g>
+              <line class="dg-arrow-new" x1="556" y1="150" x2="630" y2="84"/>
+              <line class="dg-arrow-new" x1="640" y1="150" x2="642" y2="86"/>
+              <line class="dg-arrow-new" x1="708" y1="150" x2="654" y2="84"/>
+              <circle class="dg-node" cx="640" cy="64"  r="18"/><text class="dg-nt" x="640" y="64" font-size="13">1</text>
+              <circle class="dg-node" cx="556" cy="168" r="18"/><text class="dg-nt" x="556" y="168" font-size="13">2</text>
+              <circle class="dg-node" cx="640" cy="168" r="18"/><text class="dg-nt" x="640" y="168" font-size="13">3</text>
+              <circle class="dg-node" cx="708" cy="168" r="18"/><text class="dg-nt" x="708" y="168" font-size="13">4</text>
+              <text class="dg-label sm" x="604" y="208">after</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 3 &mdash; the two heuristics, on the actual pointer forest.</b> Arrows run from child to parent (toward the root). <b>Left:</b> union by rank attaches the shorter tree under the taller, so height grows only when two equal-rank roots meet. <b>Right:</b> path compression replays the <code class="inl">find(4)</code> walk and re-points every node on it straight at the root, so the chain never re-forms.</figcaption>
+        </figure>
+
+        <h3>The bound that union by rank alone buys</h3>
+        <p>Path compression makes the structure spectacular, but it is subtle to analyse. Rank alone is enough for a clean, complete proof of a strong bound &mdash; and it is worth doing, because it explains <em>why</em> the trees stay shallow.</p>
+        <p><strong>Claim.</strong> Under union by rank, a root of rank <code class="inl">r</code> has at least <code class="inl">2<sup>r</sup></code> elements in its tree.</p>
+        <p><em>Proof by induction on the number of unions.</em> A fresh root has rank&nbsp;0 and one element; <code class="inl">2<sup>0</sup>=1</code>. A root's rank rises to <code class="inl">r+1</code> only when two rank-<code class="inl">r</code> roots merge; by the hypothesis each carried at least <code class="inl">2<sup>r</sup></code> elements, so the union carries at least <code class="inl">2<sup>r</sup>+2<sup>r</sup>=2<sup>r+1</sup></code>. When ranks differ, the larger root's rank is unchanged while its element count only grows, so the bound holds. <strong>&#9633;</strong></p>
+        <p>Since a tree has at most <code class="inl">n</code> elements, <code class="inl">2<sup>r</sup>&le;n</code>, so every rank &mdash; and therefore every tree height, and therefore every <code class="inl">find</code> &mdash; is at most <code class="inl">log&#8322;n</code>:</p>
+
+        <div class="eq">
+          <span class="lbl">union by rank alone</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <msup><mn>2</mn><mrow><mi>rank</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo></mrow></msup>
+            <mo>&#x2264;</mo>
+            <mtext>size</mtext><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo>
+            <mo>&#x2264;</mo><mi>n</mi>
+            <mspace width="1.4em"/><mo>&#x27F9;</mo><mspace width="1.4em"/>
+            <mtext>height</mtext><mo>&#x2264;</mo><mi>rank</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo>
+            <mo>&#x2264;</mo>
+            <msub><mi>log</mi><mn>2</mn></msub><mi>n</mi>
+          </math></div>
+        </div>
+
+        <h3>The headline: near-constant with both</h3>
+        <p>Add path compression and the bound collapses further. Tarjan's analysis (1975), built on the potential method of Lecture&nbsp;02, proves that a sequence of <code class="inl">m</code> operations on <code class="inl">n</code> elements costs</p>
+        <div class="eq">
+          <span class="lbl">rank + path compression (amortized)</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>O</mi><mo stretchy="false">(</mo><mi>m</mi><mo>&#x22C5;</mo><mi>&#x3B1;</mo><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo>
+            <mspace width="2em"/>
+            <mtext>where</mtext>
+            <mspace width="0.6em"/>
+            <mi>&#x3B1;</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo><mo>&#x2264;</mo><mn>4</mn>
+            <mspace width="0.6em"/>
+            <mtext>for every conceivable&#xA0;</mtext><mi>n</mi>
+          </math></div>
+        </div>
+        <p><code class="inl">&alpha;(n)</code> is the <em>inverse Ackermann function</em>. It grows so unfathomably slowly that it does not reach 5 until <code class="inl">n</code> exceeds a tower of powers of two taller than the number of atoms in the universe written out as exponents. For any input that will ever exist, <code class="inl">&alpha;(n)&le;4</code> &mdash; a constant in all but the strictest theory. If you want a bound you can prove yourself in an afternoon, the intermediate <code class="inl">O(m&middot;log<sup>*</sup>n)</code> (iterated logarithm) is reachable and already absurdly small (<code class="inl">log<sup>*</sup>n&le;5</code> for <code class="inl">n&le;2<sup>65536</sup></code>).</p>
+        <div class="note info"><span class="tag">use the roots</span>The two most common DSU bugs both come from forgetting that operations act on <em>representatives</em>: always <code class="inl">union(find(x), find(y))</code>, never <code class="inl">parent[y]=x</code> on raw elements; and after compression, <code class="inl">rank</code> is only an upper bound on height, never the exact height &mdash; do not try to recompute it.</div>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> greed by vertex</div>
+      <h2>Prim's algorithm</h2>
+      <div class="col">
+        <p>Kruskal grows many little trees that eventually fuse. Prim (1957; Jarn&iacute;k, 1930) grows <em>one</em> tree from a seed. Keep a set <code class="inl">S</code> of vertices already in the tree; at every step, take the lightest edge crossing the cut <code class="inl">(S, V&#8726;S)</code> and absorb the new vertex it reaches. That is the cut property applied to one specific, growing cut &mdash; so correctness is immediate: at each step the added edge is a minimum crossing edge of <code class="inl">(S, V&#8726;S)</code>, hence safe, hence the tree stays a subset of some MST.</p>
+        <p>The only engineering question is how to find that lightest crossing edge fast. Maintain, for every vertex <code class="inl">v</code> not yet in the tree, the weight <code class="inl">key[v]</code> of the cheapest edge linking <code class="inl">v</code> to <code class="inl">S</code> &mdash; and store the vertices in a <strong>min-priority queue</strong> keyed by <code class="inl">key</code>. Extract the minimum to absorb a vertex; then <em>relax</em> its neighbours, lowering their keys if the new vertex offers a cheaper link.</p>
+
+        <pre><code><span class="tok-kw">def</span> <span class="tok-fn">prim</span>(V, adj, w, s):              <span class="tok-com"># adj[u] = list of (v, weight)</span>
+    key    = {v: <span class="tok-num">float</span>(<span class="tok-str">'inf'</span>) <span class="tok-kw">for</span> v <span class="tok-kw">in</span> V}
+    parent = {v: <span class="tok-kw">None</span> <span class="tok-kw">for</span> v <span class="tok-kw">in</span> V}
+    key[s] = <span class="tok-num">0</span>
+    Q = <span class="tok-fn">MinPQ</span>(V, key)                  <span class="tok-com"># priority queue over vertices</span>
+    <span class="tok-kw">while</span> Q:
+        u = Q.<span class="tok-fn">extract_min</span>()             <span class="tok-com"># nearest non-tree vertex joins S</span>
+        <span class="tok-kw">for</span> (v, weight) <span class="tok-kw">in</span> adj[u]:
+            <span class="tok-kw">if</span> v <span class="tok-kw">in</span> Q <span class="tok-kw">and</span> weight &lt; key[v]:  <span class="tok-com"># a cheaper edge into the tree</span>
+                key[v]    = weight
+                parent[v] = u
+                Q.<span class="tok-fn">decrease_key</span>(v, weight)
+    <span class="tok-kw">return</span> {(v, parent[v]) <span class="tok-kw">for</span> v <span class="tok-kw">in</span> V <span class="tok-kw">if</span> parent[v] <span class="tok-kw">is</span> <span class="tok-kw">not</span> <span class="tok-kw">None</span>}</code></pre>
+
+        <p>Look closely and you will recognise the skeleton: a priority queue, an extract-min, and a relaxation of neighbours. It is <em>exactly</em> the shape of Dijkstra's shortest-path algorithm in the next lecture &mdash; the only difference is the key. Prim keys a vertex by the weight of the single edge that would attach it, <code class="inl">key[v]=w(u,v)</code>; Dijkstra keys it by the whole accumulated distance, <code class="inl">dist[u]+w(u,v)</code>. Same machine, two greedily-different definitions of &ldquo;nearest.&rdquo;</p>
+        <div class="note"><span class="tag">lazy vs. eager</span>Two implementations exist. <em>Eager</em> Prim keeps one entry per vertex and uses <code class="inl">decrease_key</code> (the code above). <em>Lazy</em> Prim skips <code class="inl">decrease_key</code>, instead pushing every edge it sees and discarding stale ones when popped (an edge whose endpoints are both already in <code class="inl">S</code>). Lazy is simpler to code with a plain binary heap; forget the staleness check and it returns nonsense.</div>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> the same tree, two ways</div>
+      <h2>Worked example, end to end</h2>
+      <div class="col">
+        <p>Take Figure&nbsp;1 and solve it twice. Because all nine weights are distinct, the MST is unique &mdash; so both algorithms must land on the very same five edges, even though they <em>discover</em> them in different orders. Watching that happen is the surest way to feel the cut property at work.</p>
+
+        <h3>Kruskal: sort the edges, sweep upward</h3>
+        <p>Sorted by weight, the edges are <code class="inl">AC(1), DF(2), EF(3), CD(4), BD(5), AB(6), AD(7), BF(8), CE(9)</code>. Sweep, accepting an edge only when <code class="inl">find</code> says its endpoints live in different components.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>Kruskal's trace on Figure 1 &mdash; components shown after each decision</caption>
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">Edge</th><th scope="col">w</th><th scope="col">find(u) vs find(v)</th><th scope="col">Action</th><th scope="col">Components after</th></tr>
+            </thead>
+            <tbody>
+              <tr class="add-row"><td>1</td><td>A&ndash;C</td><td>1</td><td>differ</td><td class="good">ADD</td><td class="mono">{A,C} {B} {D} {E} {F}</td></tr>
+              <tr class="add-row"><td>2</td><td>D&ndash;F</td><td>2</td><td>differ</td><td class="good">ADD</td><td class="mono">{A,C} {B} {D,F} {E}</td></tr>
+              <tr class="add-row"><td>3</td><td>E&ndash;F</td><td>3</td><td>differ</td><td class="good">ADD</td><td class="mono">{A,C} {B} {D,F,E}</td></tr>
+              <tr class="add-row"><td>4</td><td>C&ndash;D</td><td>4</td><td>differ</td><td class="good">ADD</td><td class="mono">{A,C,D,F,E} {B}</td></tr>
+              <tr class="add-row"><td>5</td><td>B&ndash;D</td><td>5</td><td>differ</td><td class="good">ADD</td><td class="mono">{A,B,C,D,E,F} &mdash; spanning</td></tr>
+              <tr class="rej-row"><td>6</td><td>A&ndash;B</td><td>6</td><td>same</td><td class="bad">reject</td><td class="mono">cycle A&ndash;C&ndash;D&ndash;B&ndash;A</td></tr>
+              <tr class="rej-row"><td>7</td><td>A&ndash;D</td><td>7</td><td>same</td><td class="bad">reject</td><td class="mono">cycle A&ndash;C&ndash;D&ndash;A</td></tr>
+              <tr class="rej-row"><td>8</td><td>B&ndash;F</td><td>8</td><td>same</td><td class="bad">reject</td><td class="mono">cycle B&ndash;D&ndash;F&ndash;B</td></tr>
+              <tr class="rej-row"><td>9</td><td>C&ndash;E</td><td>9</td><td>same</td><td class="bad">reject</td><td class="mono">cycle C&ndash;D&ndash;F&ndash;E&ndash;C</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="6">Accepted after edge 5; the loop breaks at <code>|T| = 5 = |V| &minus; 1</code>. MST weight = 1+2+3+4+5 = <b>15</b>.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <p>Here the example is almost too kind: the five lightest edges happen to form a tree, so Kruskal accepts <code class="inl">1,2,3,4,5</code> and rejects every heavier edge as a cycle-closer. That is not guaranteed in general &mdash; usually some light edge is rejected and a heavier one accepted &mdash; but it makes the cut/cycle dichotomy vivid: the first five are cut-property edges, the last four are cycle-property edges.</p>
+
+        <h3>Prim: grow one tree from A</h3>
+        <p>Seed <code class="inl">S=\{A\}</code>. The priority-queue keys are the cheapest known edges from each outside vertex into <code class="inl">S</code>. Extract the minimum, absorb it, relax.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>Prim's trace on Figure 1, seeded at A &mdash; keys are min edge-weight into the tree</caption>
+            <thead>
+              <tr><th scope="col">Step</th><th scope="col">Extract (key)</th><th scope="col">Edge added</th><th scope="col">Relaxations</th><th scope="col">Frontier keys after</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>0</td><td class="mid">&mdash; seed A</td><td class="mid">&mdash;</td><td class="mono">A&#8594;C:1, A&#8594;B:6, A&#8594;D:7</td><td class="mono">C:1, B:6, D:7</td></tr>
+              <tr><td>1</td><td class="good">C (1)</td><td>A&ndash;C</td><td class="mono">C&#8594;D:4&lt;7, C&#8594;E:9</td><td class="mono">D:4, B:6, E:9</td></tr>
+              <tr><td>2</td><td class="good">D (4)</td><td>C&ndash;D</td><td class="mono">D&#8594;F:2, D&#8594;B:5&lt;6</td><td class="mono">F:2, B:5, E:9</td></tr>
+              <tr><td>3</td><td class="good">F (2)</td><td>D&ndash;F</td><td class="mono">F&#8594;E:3&lt;9, F&#8594;B:8 (8&gt;5 skip)</td><td class="mono">E:3, B:5</td></tr>
+              <tr><td>4</td><td class="good">E (3)</td><td>F&ndash;E</td><td class="mono">E&#8594;C: in S</td><td class="mono">B:5</td></tr>
+              <tr><td>5</td><td class="good">B (5)</td><td>D&ndash;B</td><td class="mono">&mdash; all in S</td><td class="mono">&empty;</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="5">Edges added in order A&ndash;C(1), C&ndash;D(4), D&ndash;F(2), F&ndash;E(3), D&ndash;B(5). Total weight <b>15</b> &mdash; the same tree.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <p>Read the two &ldquo;Edge added&rdquo; columns side by side. Kruskal commits the edges in pure weight order <code class="inl">1,2,3,4,5</code>; Prim commits them in <em>proximity</em> order <code class="inl">1,4,2,3,5</code> &mdash; whatever is cheapest from the current frontier. Different journeys, identical destination, because the destination is forced by the cut property and the weights are distinct.</p>
+
+        <figure>
+          <svg viewBox="0 0 720 470" role="img" aria-labelledby="g4t g4d">
+            <title id="g4t">The minimum spanning tree of Figure 1</title>
+            <desc id="g4d">The same six-vertex graph with the five MST edges drawn bold blue and the four rejected edges drawn faint and dashed; total weight fifteen.</desc>
+            <!-- rejected edges (faint, dashed) -->
+            <g>
+              <line class="dg-edge-rej" x1="180" y1="70"  x2="520" y2="70"/><!-- A-B 6 -->
+              <line class="dg-edge-rej" x1="180" y1="70"  x2="355" y2="235"/><!-- A-D 7 -->
+              <line class="dg-edge-rej" x1="520" y1="70"  x2="615" y2="255"/><!-- B-F 8 -->
+              <line class="dg-edge-rej" x1="90"  y1="255" x2="355" y2="415"/><!-- C-E 9 -->
+            </g>
+            <!-- MST edges (bold blue) -->
+            <g>
+              <line class="dg-edge-mst" x1="180" y1="70"  x2="90"  y2="255"/><!-- A-C 1 -->
+              <line class="dg-edge-mst" x1="355" y1="235" x2="615" y2="255"/><!-- D-F 2 -->
+              <line class="dg-edge-mst" x1="355" y1="415" x2="615" y2="255"/><!-- E-F 3 -->
+              <line class="dg-edge-mst" x1="90"  y1="255" x2="355" y2="235"/><!-- C-D 4 -->
+              <line class="dg-edge-mst" x1="520" y1="70"  x2="355" y2="235"/><!-- B-D 5 -->
+            </g>
+            <!-- weight badges (MST blue, rejected faint) -->
+            <g>
+              <g><rect class="dg-wbadge mst" x="122" y="151" width="26" height="22" rx="5"/><text class="dg-wnum w" x="135" y="163">1</text></g>
+              <g><rect class="dg-wbadge mst" x="472" y="234" width="26" height="22" rx="5"/><text class="dg-wnum w" x="485" y="246">2</text></g>
+              <g><rect class="dg-wbadge mst" x="472" y="324" width="26" height="22" rx="5"/><text class="dg-wnum w" x="485" y="336">3</text></g>
+              <g><rect class="dg-wbadge mst" x="209" y="234" width="26" height="22" rx="5"/><text class="dg-wnum w" x="222" y="246">4</text></g>
+              <g><rect class="dg-wbadge mst" x="424" y="141" width="26" height="22" rx="5"/><text class="dg-wnum w" x="437" y="153">5</text></g>
+              <g><rect class="dg-wbadge" x="337" y="59"  width="26" height="22" rx="5" opacity="0.55"/><text class="dg-wnum" x="350" y="71" opacity="0.55">6</text></g>
+              <g><rect class="dg-wbadge" x="254" y="141" width="26" height="22" rx="5" opacity="0.55"/><text class="dg-wnum" x="267" y="153" opacity="0.55">7</text></g>
+              <g><rect class="dg-wbadge" x="554" y="151" width="26" height="22" rx="5" opacity="0.55"/><text class="dg-wnum" x="567" y="163" opacity="0.55">8</text></g>
+              <g><rect class="dg-wbadge" x="209" y="324" width="26" height="22" rx="5" opacity="0.55"/><text class="dg-wnum" x="222" y="336" opacity="0.55">9</text></g>
+            </g>
+            <!-- nodes -->
+            <g>
+              <circle class="dg-node" cx="180" cy="70"  r="27"/><text class="dg-nt" x="180" y="70">A</text>
+              <circle class="dg-node" cx="520" cy="70"  r="27"/><text class="dg-nt" x="520" y="70">B</text>
+              <circle class="dg-node" cx="90"  cy="255" r="27"/><text class="dg-nt" x="90"  y="255">C</text>
+              <circle class="dg-node" cx="355" cy="235" r="27"/><text class="dg-nt" x="355" y="235">D</text>
+              <circle class="dg-node" cx="615" cy="255" r="27"/><text class="dg-nt" x="615" y="255">F</text>
+              <circle class="dg-node" cx="355" cy="415" r="27"/><text class="dg-nt" x="355" y="415">E</text>
+            </g>
+            <!-- total badge -->
+            <g>
+              <rect x="556" y="392" width="140" height="46" rx="10" fill="var(--bau-ink)"/>
+              <text x="626" y="415" text-anchor="middle" font-family="var(--font-mono)" font-size="15" fill="var(--bau-yellow)" font-weight="700">&#931; w = 15</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 4 &mdash; the minimum spanning tree.</b> Five <b style="color:var(--bau-blue)">blue</b> edges (D is the hub) join all six vertices for total weight 15; the four <span style="color:var(--on-surface-variant)">dashed</span> edges were rejected as cycle-closers. Notice the MST path from A to B runs A&ndash;C&ndash;D&ndash;B (weight 10), even though the direct edge A&ndash;B costs only 6 &mdash; the seed of the misconception in &sect;10.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> the cost ledger</div>
+      <h2>The ledger</h2>
+      <div class="col">
+        <p>All routes to the MST cost about <code class="inl">O(E&nbsp;log&nbsp;V)</code> &mdash; the spread is in the constants and in which input shape each prefers. The headline stats first, then the full table.</p>
+
+        <div class="stats">
+          <div class="stat lead"><div class="big">&alpha;(n)&le;4</div><span class="lab">union-find op, amortized &mdash; effectively constant</span></div>
+          <div class="stat"><div class="big">10<sup>81</sup></div><span class="lab">spanning trees of 50 nodes (n<sup>n&minus;2</sup>)</span></div>
+          <div class="stat"><div class="big">O(E&nbsp;log&nbsp;V)</div><span class="lab">to pin the single cheapest of them</span></div>
+          <div class="stat"><div class="big">1</div><span class="lab">theorem (the cut property) proves both algorithms</span></div>
+        </div>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>Cost of the MST algorithms and their engine</caption>
+            <thead>
+              <tr><th scope="col">Method</th><th scope="col">Data structure</th><th scope="col">Time</th><th scope="col">Best for</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Kruskal</th><td>sort + union-find</td><td class="mono">O(E log E) = O(E log V)</td><td>sparse graphs; edges given as a list</td></tr>
+              <tr><th scope="row">Prim (binary heap)</th><td>heap + adjacency list</td><td class="mono">O(E log V)</td><td>sparse graphs; the everyday default</td></tr>
+              <tr><th scope="row">Prim (Fibonacci heap)</th><td>Fibonacci heap</td><td class="mono">O(E + V log V)</td><td>dense graphs; the theoretical best</td></tr>
+              <tr><th scope="row">Prim (no heap, array)</th><td>plain key[] array</td><td class="mono">O(V&sup2;)</td><td>dense graphs (E &asymp; V&sup2;); trivial to code</td></tr>
+              <tr><th scope="row">union-find op</th><td>rank + path compression</td><td class="mono">O(&alpha;(V)) amortized</td><td>the find/union the others lean on</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="4">Why Kruskal's sort bound equals Prim's: E &le; V&sup2;, so log E &le; 2 log V, hence O(E log E) = O(E log V). For a dense graph (E &asymp; V&sup2;) the no-heap O(V&sup2;) Prim beats both.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <p>Two readings worth carrying away. First, <strong>Kruskal's cost is dominated by the sort</strong>, not the union-find &mdash; the <code class="inl">E</code> find/union calls together cost only <code class="inl">O(E&middot;&alpha;(V))</code>, dwarfed by the <code class="inl">O(E&nbsp;log&nbsp;V)</code> to order the edges. Hand Kruskal pre-sorted edges (or integer weights it can radix-sort) and it runs in near-linear <code class="inl">O(E&middot;&alpha;(V))</code>. Second, <strong>the choice between Kruskal and Prim is a choice about your input</strong>: a list of edges with no adjacency structure favours Kruskal; a dense graph already in adjacency form favours array-Prim's tight <code class="inl">O(V&sup2;)</code>.</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>The MST is forgiving in theory and treacherous in practice. Every trap below is something the formal lens flags early &mdash; a confusion of objectives, or a violated invariant.</p>
+
+        <h3>1. An MST is not a shortest-path tree</h3>
+        <p>The single most expensive misconception. The objective minimizes <em>total edge weight</em>, and says <em>nothing</em> about the distance between any particular pair. In Figure&nbsp;4 the MST route from A to B is A&ndash;C&ndash;D&ndash;B at cost 10, while the direct edge A&ndash;B costs 6 &mdash; the MST is happy to make two vertices far apart if it saves on the global total. If you need shortest routes from a source, you want Dijkstra (Lecture&nbsp;13), a different greedy on a different key. Never use an MST to answer a distance query.</p>
+
+        <h3>2. Forgetting union-find &mdash; quadratic Kruskal</h3>
+        <p>Testing &ldquo;same component?&rdquo; by a BFS/DFS per edge, or by scanning a component-label array and relabelling on every merge, makes Kruskal <code class="inl">O(VE)</code> or worse. The entire competitiveness of Kruskal rests on the <code class="inl">&alpha;(V)</code> find/union. If you have written Kruskal and it is slow, this is almost always why.</p>
+
+        <h3>3. The two heuristics, half-applied</h3>
+        <p>Union by rank <em>or</em> path compression alone already gives <code class="inl">O(log n)</code> per operation; you need <em>both</em> for the <code class="inl">&alpha;(n)</code> magic. Two subtle bugs live here: (a) bumping <code class="inl">rank</code> on every union instead of only when the two ranks are equal &mdash; this inflates ranks and breaks the size bound; (b) unioning raw elements (<code class="inl">parent[y]=x</code>) instead of their roots (<code class="inl">parent[find(y)]=find(x)</code>) &mdash; this silently corrupts the partition.</p>
+
+        <h3>4. Ties &mdash; the MST is not unique</h3>
+        <p>When edge weights repeat, there can be many minimum spanning trees, and the cut property only promises a lightest crossing edge is in <em>some</em> MST, not every one. Kruskal and Prim still each return <em>a</em> correct MST &mdash; but two correct implementations may return <em>different</em> trees, and any test that hard-codes one expected edge set is wrong. (This is exactly why Practice&nbsp;4 distinguishes <em>critical</em> from <em>pseudo-critical</em> edges.)</p>
+
+        <h3>5. Negative weights are fine; disconnection is not</h3>
+        <p>Unlike shortest paths, the MST is perfectly happy with negative weights &mdash; the cut and cycle arguments never look at the sign of a weight, only at comparisons. What does break the <em>problem</em> is a disconnected graph: there is no spanning tree at all. Kruskal then yields a minimum spanning <em>forest</em> (it simply runs out of safe edges with fewer than <code class="inl">|V|&minus;1</code> accepted, leaving one tree per component); Prim spans only the component of its seed. Decide deliberately which you want, and detect disconnection (Practice&nbsp;3 turns on exactly this count).</p>
+
+        <h3>6. The directed trap</h3>
+        <p>MST is an <strong>undirected</strong> notion. The directed analogue &mdash; a minimum-weight arborescence rooted at a vertex &mdash; is a genuinely different and harder problem; the cut property fails for it, and the greedy edge-picking here gives wrong answers. It needs the Chu&ndash;Liu/Edmonds algorithm, not Kruskal. If your edges have direction, stop and reach for a different tool.</p>
+
+        <div class="note warn"><span class="tag">the litmus test</span>Before you run any MST code, ask two questions the objective settles instantly: <em>Is my graph undirected and connected?</em> and <em>Do I actually want minimum total weight &mdash; or minimum distances?</em> The first guards the problem's preconditions; the second guards against the shortest-path confusion that wrecks more MST uses than every implementation bug combined.</div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Min Cost to Connect All Points</h3>
+          <p class="meta">MST from scratch &middot; dense graph &middot; LeetCode 1584</p>
+          <p>You are given <code class="inl">points</code>, an array of <code class="inl">n</code> distinct points <code class="inl">[x<sub>i</sub>, y<sub>i</sub>]</code> on the plane. The cost of connecting two points is their <em>Manhattan</em> distance <code class="inl">|x<sub>i</sub>&minus;x<sub>j</sub>| + |y<sub>i</sub>&minus;y<sub>j</sub>|</code>. Return the minimum total cost to connect all points so that there is exactly one simple path between any two. Constraints: <code class="inl">1 &le; n &le; 1000</code>. Example: <code class="inl">points=[[0,0],[2,2],[3,10],[5,2],[7,0]] &#8594; 20</code>. The graph is <em>complete</em> (every pair is an edge), so choose your algorithm with the <code class="inl">E&asymp;V&sup2;</code> density in mind and justify the complexity you achieve.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Redundant Connection</h3>
+          <p class="meta">pure union-find &middot; the cycle test &middot; LeetCode 684</p>
+          <p>A tree on <code class="inl">n</code> nodes labelled <code class="inl">1&hellip;n</code> had exactly one extra edge added, creating a single cycle. You are given <code class="inl">edges</code> (length <code class="inl">n</code>, 1-indexed) in the order added. Return the one edge that can be removed so the result is again a tree; if several qualify, return the one that appears <em>last</em> in the input. Example: <code class="inl">edges=[[1,2],[1,3],[2,3]] &#8594; [2,3]</code>. This is the <em>reject</em> step of Kruskal in isolation: which property of &sect;04 tells you the first edge whose endpoints already share a component is the answer &mdash; and why does processing in input order automatically satisfy the &ldquo;last&rdquo; tie-break? Target <code class="inl">O(n&middot;&alpha;(n))</code>.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Number of Operations to Make Network Connected</h3>
+          <p class="meta">components &middot; the |V|&minus;1 floor &middot; LeetCode 1319</p>
+          <p>There are <code class="inl">n</code> computers <code class="inl">0&hellip;n&minus;1</code> joined by <code class="inl">connections[i]=[a,b]</code> (each an existing cable). You may unplug any cable and replug it between any two computers. Return the minimum number of such moves to make the whole network connected, or <code class="inl">&minus;1</code> if it is impossible. Examples: <code class="inl">n=4, connections=[[0,1],[0,2],[1,2]] &#8594; 1</code>; <code class="inl">n=6, connections=[[0,1],[0,2],[0,3],[1,2],[1,3]] &#8594; 2</code>. Two sub-questions decide it: when is it <em>impossible</em> (count edges against the spanning-tree floor), and once it is possible, why is the answer exactly <code class="inl">(\#components &minus; 1)</code> regardless of <em>which</em> spare cable you move? Use union-find to count components.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Find Critical and Pseudo-Critical Edges in an MST</h3>
+          <p class="meta">cut &amp; cycle properties, mastered &middot; capstone &middot; LeetCode 1489</p>
+          <p>Given an undirected weighted graph with <code class="inl">n</code> vertices and <code class="inl">edges[i]=[u<sub>i</sub>, v<sub>i</sub>, w<sub>i</sub>]</code>, classify every edge by index. An edge is <strong>critical</strong> if it appears in <em>every</em> MST; it is <strong>pseudo-critical</strong> if it appears in <em>some</em> but not all MSTs. Return <code class="inl">[critical, pseudo_critical]</code> as two lists of indices. Constraints: <code class="inl">2 &le; n &le; 100</code>, up to <code class="inl">200</code> edges. The whole problem is the &sect;04 dichotomy made operational: characterise &ldquo;critical&rdquo; by what happens to the MST weight when you <em>forbid</em> an edge, and &ldquo;pseudo-critical&rdquo; by what happens when you <em>force</em> one in &mdash; using a Kruskal you can run with an edge excluded or pre-included. State both tests precisely and watch the original indices survive the sort.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>The lightest edge crossing any cut is always safe &mdash; that one theorem, the cut property, makes greed optimal, and both MST algorithms are just two orders in which to apply it.</strong> Kruskal sweeps edges by weight and leans on union-find to test &ldquo;same component?&rdquo; in <code class="inl">&alpha;(n)</code>-amortized time; Prim grows one tree and leans on a priority queue to find the cheapest frontier edge. Union by rank keeps the disjoint-set trees shallow (provably <code class="inl">O(log n)</code>), and path compression flattens them the moment you touch them &mdash; together, near-constant. And never forget the boundary: an MST minimizes the <em>total</em>, not any distance between two vertices.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 13</span>
+            <div class="ttl">Single-Source Shortest Paths and the Relaxation Paradigm: Dijkstra and Bellman-Ford</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">Prim already hinted at it: a priority queue, an extract-min, a relaxation of neighbours. Keep that exact skeleton and change only the key &mdash; from &ldquo;weight of the attaching edge&rdquo; to &ldquo;accumulated distance from a source&rdquo; &mdash; and Prim becomes <strong>Dijkstra</strong>. Lecture&nbsp;13 follows that thread into the shortest-path world, where greed survives only while weights stay non-negative, and where negative edges force a wholly different, relaxation-until-stable idea (Bellman&ndash;Ford). The MST taught you <em>when</em> greed is provably right; shortest paths will teach you exactly where it stops.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-11-graphs-and-their-traversals.html">← Previous study</a><a href="dsa-13-single-source-shortest-paths.html">Next study →</a></nav>
+</body>
+</html>

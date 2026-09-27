@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear Layouts &amp; Access Disciplines</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.95rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.6rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.wrap-row td, tr.wrap-row th{background:color-mix(in oklab,var(--bau-yellow) 26%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-stroke{stroke:var(--on-surface); fill:none; stroke-width:2}
+  .dg-thin{stroke:var(--outline); fill:none; stroke-width:1}
+  .dg-dash{stroke:var(--outline); fill:none; stroke-width:1.5; stroke-dasharray:5 5}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+  .dg-red{stroke:var(--bau-red)}   .dg-red-f{fill:var(--bau-red)}
+  .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-cell{fill:var(--surface);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill{fill:var(--primary-container);stroke:var(--bau-ink);stroke-width:2}
+  .dg-label{font-family:var(--font-mono); font-size:14px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
+  .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
+
+  /* ===== inline cell strips (HTML, for state traces) ===== */
+  .cells{display:flex; gap:5px; flex-wrap:wrap; margin:.5em 0 1em; font-family:var(--font-mono); font-size:14px; align-items:flex-end}
+  .cells .c{min-width:40px; height:40px; display:grid; place-items:center; border:1.5px solid var(--bau-ink); border-radius:var(--r-xs); background:var(--surface-1); position:relative}
+  .cells .c.fill{background:var(--primary-container); color:var(--on-primary-container); font-weight:650}
+  .cells .c .ix{position:absolute; top:-1.35em; left:0; right:0; text-align:center; font-size:10.5px; color:var(--on-surface-variant)}
+  .cells .c.h::after{content:"head"; position:absolute; bottom:-1.5em; left:50%; transform:translateX(-50%); font-size:10px; color:#fff; background:var(--bau-blue); padding:1px 4px; border-radius:3px; white-space:nowrap}
+  .cells .c.t::before{content:"tail"; position:absolute; top:-1.5em; left:50%; transform:translateX(-50%); font-size:10px; color:#fff; background:var(--bau-red); padding:1px 4px; border-radius:3px; white-space:nowrap}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"–"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">01 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>01</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="190" height="150" viewBox="0 0 190 150" aria-hidden="true">
+    <rect x="70" y="70" width="78" height="78" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <circle cx="48" cy="48" r="46" class="dg-blue-f"/>
+    <path d="M120 4 L186 4 L153 64 Z" class="dg-red-f"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 01</span> where cost becomes concrete</div>
+    <h1>Linear Layouts &amp; Access Disciplines</h1>
+    <p class="lede col">A sequence — the ordered list <code class="inl">a&#8320;, a&#8321;, &hellip;, a&#8345;&#8331;&#8321;</code> — is a single <em>idea</em>. But you cannot store an idea; you must lay it out in memory. There are exactly two primitive ways to do so, <strong>contiguous</strong> and <strong>linked</strong>, and the choice silently fixes the price of every operation you will ever run. This lecture makes that choice, and the four containers built on it — <strong>array, linked list, stack, queue</strong> — fully concrete.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Sum one million integers two ways: once striding across an <strong>array</strong>, once chasing the <code class="inl">next</code> pointers of a <strong>linked list</strong> holding the same values. Both visit <code class="inl">n</code> elements. Both are <code class="inl">&#x398;(n)</code>. In Lecture 00's RAM model they cost <em>exactly the same</em> — one step per element.</p>
+        <p style="margin-bottom:0">On real silicon the array finishes roughly <strong>10&ndash;50&times; sooner</strong>. The RAM model charged them equally; the memory hierarchy did not. That entire gap hides inside the constant Big-O throws away — and learning to see it, and choose for it, is the craft this lecture begins.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>Layout is destiny</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>The sequence ADT</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>The array: address arithmetic</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Editing an array: the shift</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>The linked list</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>The trade-off, tabulated</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>The hidden charge: cache</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Access disciplines</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Worked: the ring buffer</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Worked: the stack at work</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Where it breaks</span></a></li>
+      <li><a href="#s13"><span class="num">13</span><span>Practice</span></a></li>
+      <li><a href="#s14"><span class="num">14</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> layout is destiny</div>
+      <h2>The idea, and the engine beneath it</h2>
+      <div class="col">
+        <p>Start with a distinction this lesson makes mechanical. There is the <em>operation</em> — the abstract thing we wish to perform — and there is the <em>engine</em> that carries it out. Ada Lovelace described how the Analytical Engine weaves algebraic patterns much as the Jacquard loom weaves flowers and leaves; the pattern is one thing, the arrangement of cards and wheels that realises it is quite another. Confuse the two and you understand neither.</p>
+        <p>A <span class="term">sequence</span> is such a pattern: an ordered run of elements, with a notion of <em>first</em>, <em>next</em>, and <em>position</em>. That is the idea. To run it on a machine you must commit to an <em>arrangement in memory</em> — and here nature offers only two primitives. You may place the elements <strong>side by side</strong>, each at a computable distance from the first (a <span class="term">contiguous</span> layout, the array). Or you may scatter them and have each element <strong>point to the next</strong> (a <span class="term">linked</span> layout, the list). Every richer structure in this course — trees, heaps, hash tables, graphs — is assembled from these two atoms.</p>
+        <p>The thesis of the lecture is blunt: <strong>the layout you choose <em>is</em> the cost model you accept.</strong> Contiguity buys instant arithmetic access and pays for edits in the middle; linking buys instant splicing and pays for reaching the middle at all. No layout is cheap everywhere — that is not pessimism, it is a conservation law we will see again and again. Choose the layout and you have already chosen which operations are free and which are dear.</p>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>Derive</strong> the array's <code class="inl">&#x398;(1)</code> indexing from the address formula <code class="inl">base + i&middot;s</code> — and explain precisely why a linked list cannot match it.</li>
+          <li><strong>Read off</strong>, for any sequence operation, its cost on a contiguous array versus a singly- or doubly-linked list, and justify each cell from the layout rather than memorising a table.</li>
+          <li><strong>Explain</strong> why two structures with identical <code class="inl">&#x398;</code>-bounds can differ 10&ndash;50&times; in practice, and name exactly where the RAM model of Lecture 00 stops describing reality.</li>
+          <li><strong>Implement</strong> and prove the <code class="inl">O(1)</code> guarantees of the four primitive containers — <strong>stack, queue, deque, ring buffer</strong> — and say why restricting an interface is what <em>buys</em> the guarantee.</li>
+          <li><strong>Derive</strong> the ring buffer's modular index arithmetic and resolve the notorious <em>full-versus-empty</em> ambiguity three different ways.</li>
+          <li><strong>Diagnose</strong> the classic failures: off-by-one wraps, iterator invalidation, the &ldquo;<code class="inl">O(1)</code> linked-list insert&rdquo; half-truth, and singly-versus-doubly deletion.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>Two ideas from Lecture 00, each a phrase you should hold comfortably. Both are taught on the page linked below.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotic notation — O / &Theta; / &Omega;</a>
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">the RAM cost model</a>
+        </div>
+        <p style="margin-top:1em">If you can read <code class="inl">&#x398;(1)</code> as &ldquo;a bounded number of steps, independent of <code class="inl">n</code>&rdquo; and you trust that the RAM model charges <code class="inl">1</code> for a memory access at any index, you are ready. We are about to interrogate that second promise.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> separate the interface from the representation</div>
+      <h2>The sequence, as an abstract type</h2>
+      <div class="col">
+        <p>Before any memory, fix the <em>interface</em>. An <span class="term">abstract data type</span> (ADT) is a set of values together with the operations permitted on them — a contract stated in terms of behaviour, saying nothing about storage. The <strong>Sequence</strong> ADT holds an ordered collection <code class="inl">a&#8320; &hellip; a&#8345;&#8331;&#8321;</code> and offers, at minimum:</p>
+        <ul>
+          <li><code class="inl">access(i)</code> — return the element at position <code class="inl">i</code>;</li>
+          <li><code class="inl">insert(i, x)</code> / <code class="inl">delete(i)</code> — splice an element in or out at position <code class="inl">i</code>, shifting the meaning of later positions;</li>
+          <li><code class="inl">first / last / next(p)</code> — navigate by position rather than index;</li>
+          <li><code class="inl">length()</code>.</li>
+        </ul>
+        <p>Notice the contract is silent on cost. That silence is the whole game. A <span class="term">data structure</span> is a <em>representation</em> of an ADT — a concrete arrangement in memory — and it is the representation, not the contract, that assigns a price to each operation. The same Sequence contract, realised as an array or as a linked list, yields two completely different cost profiles. So the engineering question is never &ldquo;what is the best data structure?&rdquo; in the abstract; it is &ldquo;which operations does my workload run most often, and which layout makes <em>those</em> cheap?&rdquo;</p>
+        <div class="note info"><span class="tag">the formal lens</span>One contract, many engines. When you find yourself arguing about a structure, first write down the operation <em>mix</em> — the frequencies. The optimal representation is a function of that mix, and of nothing else.</div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> the contiguous layout</div>
+      <h2>The array: access as arithmetic</h2>
+      <div class="col">
+        <p>Place the <code class="inl">n</code> elements in a single unbroken block of memory, element <code class="inl">i</code> immediately after element <code class="inl">i&minus;1</code>. Let the block begin at address <code class="inl">base</code> and let each element occupy <code class="inl">s</code> bytes — the <span class="term">stride</span>. Then the address of element <code class="inl">i</code> is not <em>searched for</em>; it is <em>computed</em>:</p>
+
+        <div class="eq">
+          <span class="lbl">address of the i-th element</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>addr</mi><mo>(</mo><mi>A</mi><mo>[</mo><mi>i</mi><mo>]</mo><mo>)</mo>
+              <mo>=</mo>
+              <mi>base</mi><mo>+</mo><mi>i</mi><mo>&#xB7;</mo><mi>s</mi>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>One multiplication, one addition — a fixed amount of work whatever <code class="inl">i</code> is. Reaching <code class="inl">A[5]</code> costs no more than reaching <code class="inl">A[0]</code>. <em>This</em> is what &ldquo;random access&rdquo; means and why the RAM model's <code class="inl">&#x398;(1)</code> indexing is, for arrays, a faithful description of the hardware: the array is precisely the structure the RAM model was abstracted from. With <code class="inl">base = 1000</code> and a 4-byte stride, <code class="inl">addr(A[5]) = 1000 + 5&middot;4 = 1020</code>, computed directly.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 360" role="img" aria-labelledby="f1t f1d">
+            <title id="f1t">Two memory layouts for the same four-element sequence</title>
+            <desc id="f1d">Top: an array storing values in contiguous cells whose addresses are base plus i times stride, so any index is reached by one arithmetic step. Bottom: a linked list of the same values scattered at unrelated addresses, each node pointing to the next, so reaching the i-th node requires following i pointers.</desc>
+
+            <!-- ARRAY -->
+            <text x="24" y="40" class="dg-cap">Contiguous &mdash; the array</text>
+            <text x="24" y="62" class="dg-label sm">addresses are computed: base + i&#xB7;s</text>
+            <g>
+              <!-- cells -->
+              <g>
+                <rect x="40"  y="80" width="92" height="60" class="dg-fill"/>
+                <rect x="132" y="80" width="92" height="60" class="dg-fill"/>
+                <rect x="224" y="80" width="92" height="60" class="dg-fill"/>
+                <rect x="316" y="80" width="92" height="60" class="dg-fill"/>
+                <rect x="408" y="80" width="92" height="60" class="dg-cell"/>
+                <rect x="500" y="80" width="92" height="60" class="dg-cell"/>
+              </g>
+              <!-- values -->
+              <text x="86"  y="117" text-anchor="middle" class="dg-val">A</text>
+              <text x="178" y="117" text-anchor="middle" class="dg-val">B</text>
+              <text x="270" y="117" text-anchor="middle" class="dg-val">C</text>
+              <text x="362" y="117" text-anchor="middle" class="dg-val">D</text>
+              <text x="454" y="117" text-anchor="middle" class="dg-label sm">&middot;</text>
+              <text x="546" y="117" text-anchor="middle" class="dg-label sm">&middot;</text>
+              <!-- index labels -->
+              <text x="86"  y="74" text-anchor="middle" class="dg-label sm">[0]</text>
+              <text x="178" y="74" text-anchor="middle" class="dg-label sm">[1]</text>
+              <text x="270" y="74" text-anchor="middle" class="dg-label sm">[2]</text>
+              <text x="362" y="74" text-anchor="middle" class="dg-label sm">[3]</text>
+              <!-- address labels -->
+              <text x="86"  y="160" text-anchor="middle" class="dg-label sm">1000</text>
+              <text x="178" y="160" text-anchor="middle" class="dg-label sm">1004</text>
+              <text x="270" y="160" text-anchor="middle" class="dg-label sm">1008</text>
+              <text x="362" y="160" text-anchor="middle" class="dg-label sm">1012</text>
+              <text x="454" y="160" text-anchor="middle" class="dg-label sm">1016</text>
+              <text x="546" y="160" text-anchor="middle" class="dg-label sm">1020</text>
+              <!-- arithmetic callout -->
+              <g transform="translate(636,80)">
+                <rect x="0" y="0" width="280" height="60" rx="8" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
+                <text x="16" y="26" class="dg-label">addr(A[3]) = 1000 + 3&#xB7;4</text>
+                <text x="16" y="48" class="dg-val dg-blue-f">= 1012 &nbsp;&mdash; one step, any i</text>
+              </g>
+            </g>
+
+            <!-- LINKED -->
+            <text x="24" y="222" class="dg-cap">Linked &mdash; the list</text>
+            <text x="24" y="244" class="dg-label sm">addresses are unrelated: follow next, i times</text>
+
+            <!-- head pointer -->
+            <text x="40" y="300" class="dg-label sm">head</text>
+            <line x1="72" y1="305" x2="118" y2="305" class="dg-stroke dg-blue" marker-end="url(#ah)"/>
+
+            <!-- node A @ 0x3A0 -->
+            <g transform="translate(120,278)">
+              <rect x="0" y="0" width="58" height="54" class="dg-fill"/>
+              <rect x="58" y="0" width="34" height="54" class="dg-cell"/>
+              <text x="29" y="33" text-anchor="middle" class="dg-val">A</text>
+              <circle cx="75" cy="27" r="4" class="dg-ink"/>
+              <text x="46" y="-6" text-anchor="middle" class="dg-label sm">0x3A0</text>
+            </g>
+            <!-- node B @ 0x118 -->
+            <g transform="translate(330,300)">
+              <rect x="0" y="0" width="58" height="54" class="dg-fill"/>
+              <rect x="58" y="0" width="34" height="54" class="dg-cell"/>
+              <text x="29" y="33" text-anchor="middle" class="dg-val">B</text>
+              <circle cx="75" cy="27" r="4" class="dg-ink"/>
+              <text x="46" y="-6" text-anchor="middle" class="dg-label sm">0x118</text>
+            </g>
+            <!-- node C @ 0x7C4 -->
+            <g transform="translate(540,272)">
+              <rect x="0" y="0" width="58" height="54" class="dg-fill"/>
+              <rect x="58" y="0" width="34" height="54" class="dg-cell"/>
+              <text x="29" y="33" text-anchor="middle" class="dg-val">C</text>
+              <circle cx="75" cy="27" r="4" class="dg-ink"/>
+              <text x="46" y="-6" text-anchor="middle" class="dg-label sm">0x7C4</text>
+            </g>
+            <!-- node D @ 0x250 -->
+            <g transform="translate(750,300)">
+              <rect x="0" y="0" width="58" height="54" class="dg-fill"/>
+              <rect x="58" y="0" width="34" height="54" class="dg-cell"/>
+              <text x="29" y="33" text-anchor="middle" class="dg-val">D</text>
+              <text x="75" y="33" text-anchor="middle" class="dg-val dg-red-f">&empty;</text>
+              <text x="46" y="-6" text-anchor="middle" class="dg-label sm">0x250</text>
+            </g>
+
+            <!-- pointer arcs (scattered) -->
+            <path d="M212 300 C 260 250, 300 250, 348 322" class="dg-stroke dg-red" marker-end="url(#ah2)"/>
+            <path d="M422 322 C 470 360, 510 330, 558 300" class="dg-stroke dg-red" marker-end="url(#ah2)"/>
+            <path d="M632 296 C 680 250, 720 268, 768 322" class="dg-stroke dg-red" marker-end="url(#ah2)"/>
+
+            <defs>
+              <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+              <marker id="ah2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 1 — the two atoms.</b> The array reaches any element by arithmetic on its <em>index</em>; the list must walk its <em>pointers</em>. Same four values, opposite access costs: <code class="inl">&#x398;(1)</code> versus <code class="inl">&#x398;(i)</code>. Everything in this lecture follows from this one picture.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> the price of contiguity</div>
+      <h2>Editing an array: the shift cascade</h2>
+      <div class="col">
+        <p>Contiguity is a strict promise: position <code class="inl">i</code> lives at <code class="inl">base + i&middot;s</code>, with no gaps. To <code class="inl">insert(2, X)</code> into a full-packed array you must <em>make room</em> at slot 2, which means every element from slot 2 onward slides one place to the right to keep the promise intact. Insert near the front and you move almost the whole array; on average you touch <code class="inl">n/2</code> elements, so insertion and deletion at an arbitrary position are <code class="inl">&#x398;(n)</code>.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 900 250" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">Inserting into the middle of an array forces a cascade of shifts</title>
+            <desc id="f2d">A six-slot array holds A B C D E. Inserting X at index 2 requires D, E, C to each move one slot to the right before X can be written into the vacated slot 2. Every element from the insertion point onward is rewritten, which is order n work.</desc>
+
+            <text x="24" y="36" class="dg-cap">insert(2, X) into  [ A B C D E _ ]</text>
+
+            <!-- before row -->
+            <text x="24" y="80" class="dg-label sm">before</text>
+            <g>
+              <rect x="110" y="58" width="74" height="56" class="dg-fill"/><text x="147" y="92" text-anchor="middle" class="dg-val">A</text><text x="147" y="52" text-anchor="middle" class="dg-label sm">0</text>
+              <rect x="184" y="58" width="74" height="56" class="dg-fill"/><text x="221" y="92" text-anchor="middle" class="dg-val">B</text><text x="221" y="52" text-anchor="middle" class="dg-label sm">1</text>
+              <rect x="258" y="58" width="74" height="56" class="dg-fill" stroke="var(--bau-red)" stroke-width="3"/><text x="295" y="92" text-anchor="middle" class="dg-val">C</text><text x="295" y="52" text-anchor="middle" class="dg-label sm">2</text>
+              <rect x="332" y="58" width="74" height="56" class="dg-fill"/><text x="369" y="92" text-anchor="middle" class="dg-val">D</text><text x="369" y="52" text-anchor="middle" class="dg-label sm">3</text>
+              <rect x="406" y="58" width="74" height="56" class="dg-fill"/><text x="443" y="92" text-anchor="middle" class="dg-val">E</text><text x="443" y="52" text-anchor="middle" class="dg-label sm">4</text>
+              <rect x="480" y="58" width="74" height="56" class="dg-cell"/><text x="517" y="52" text-anchor="middle" class="dg-label sm">5</text>
+            </g>
+            <!-- shift arrows -->
+            <path d="M295 120 C 320 150, 360 150, 369 130" class="dg-stroke dg-red" marker-end="url(#ah3)"/>
+            <path d="M369 120 C 394 150, 434 150, 443 130" class="dg-stroke dg-red" marker-end="url(#ah3)"/>
+            <path d="M443 120 C 468 150, 508 150, 517 130" class="dg-stroke dg-red" marker-end="url(#ah3)"/>
+            <text x="300" y="172" class="dg-label sm dg-red-f">each element from index 2 on slides right by one &mdash; 3 writes here, n&minus;i in general</text>
+
+            <!-- after row -->
+            <text x="24" y="220" class="dg-label sm">after</text>
+            <g>
+              <rect x="110" y="186" width="74" height="44" class="dg-fill"/><text x="147" y="214" text-anchor="middle" class="dg-val">A</text>
+              <rect x="184" y="186" width="74" height="44" class="dg-fill"/><text x="221" y="214" text-anchor="middle" class="dg-val">B</text>
+              <rect x="258" y="186" width="74" height="44" class="dg-fill" stroke="var(--bau-blue)" stroke-width="3"/><text x="295" y="214" text-anchor="middle" class="dg-val dg-blue-f">X</text>
+              <rect x="332" y="186" width="74" height="44" class="dg-fill"/><text x="369" y="214" text-anchor="middle" class="dg-val">C</text>
+              <rect x="406" y="186" width="74" height="44" class="dg-fill"/><text x="443" y="214" text-anchor="middle" class="dg-val">D</text>
+              <rect x="480" y="186" width="74" height="44" class="dg-fill"/><text x="517" y="214" text-anchor="middle" class="dg-val">E</text>
+            </g>
+
+            <!-- side ledger -->
+            <g transform="translate(600,58)">
+              <rect x="0" y="0" width="276" height="172" rx="10" fill="var(--surface-2)" stroke="var(--outline-variant)"/>
+              <text x="18" y="30" class="dg-cap">the ledger</text>
+              <text x="18" y="60" class="dg-label sm">access(i)</text><text x="258" y="60" text-anchor="end" class="dg-val dg-blue-f">&#x398;(1)</text>
+              <text x="18" y="90" class="dg-label sm">insert / delete at end</text><text x="258" y="90" text-anchor="end" class="dg-val dg-blue-f">&#x398;(1)*</text>
+              <text x="18" y="120" class="dg-label sm">insert / delete at front</text><text x="258" y="120" text-anchor="end" class="dg-val dg-red-f">&#x398;(n)</text>
+              <text x="18" y="150" class="dg-label sm">insert / delete at i</text><text x="258" y="150" text-anchor="end" class="dg-val dg-red-f">&#x398;(n)</text>
+              <text x="18" y="168" class="dg-label sm" style="font-size:10px">* amortised, with room &mdash; Lecture 02</text>
+            </g>
+
+            <defs>
+              <marker id="ah3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 2 — contiguity's bill.</b> The same property that makes <code class="inl">access(i)</code> instant — &ldquo;no gaps&rdquo; — is what forces the cascade on an interior edit. The array's strength and weakness are the <em>same</em> invariant, seen from two directions.</figcaption>
+        </figure>
+
+        <p>The end is the happy exception. Appending or removing at the <em>last</em> slot disturbs no one — provided spare capacity exists. Manufacturing that spare capacity cheaply, so that a sequence of appends is <code class="inl">&#x398;(1)</code> <em>on average</em> even though an occasional append must grow and copy the whole block, is the <strong>dynamic array</strong>, and its amortised analysis is the entire subject of Lecture 02. For now, hold the asterisk: append is <code class="inl">&#x398;(1)</code> amortised.</p>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> the linked layout</div>
+      <h2>The linked list: splice freely, but walk to arrive</h2>
+      <div class="col">
+        <p>Abandon contiguity entirely. Store each element in its own little parcel — a <span class="term">node</span> — holding the value and the address of the next parcel. The nodes may sit anywhere in memory; the <code class="inl">next</code> pointers thread them into an order. A single <code class="inl">head</code> pointer names the first node; the last node points at <code class="inl">&empty;</code> (null).</p>
+
+        <pre><code><span class="tok-kw">record</span> Node { value; next }        <span class="tok-com">// one datum + one pointer to the next node</span>
+
+<span class="tok-fn">INSERT-FRONT</span>(L, x):                 <span class="tok-com">// O(1) — allocate, point, repoint. No shifting.</span>
+  n <span class="tok-op">&#8592;</span> <span class="tok-kw">new</span> Node(value = x, next = L.head)
+  L.head <span class="tok-op">&#8592;</span> n
+
+<span class="tok-fn">GET</span>(L, i):                          <span class="tok-com">// &#x398;(i) — there is no address shortcut; walk.</span>
+  p <span class="tok-op">&#8592;</span> L.head
+  <span class="tok-kw">repeat</span> i <span class="tok-kw">times</span>: p <span class="tok-op">&#8592;</span> p.next
+  <span class="tok-kw">return</span> p.value</code></pre>
+
+        <p>Now the costs invert. To insert at the front you allocate a node and repoint <code class="inl">head</code> — a fixed amount of work, <code class="inl">&#x398;(1)</code>, with <em>nothing</em> shifted, because there is no contiguity promise to keep. More generally, if you already <em>hold</em> a node, splicing a new neighbour in or cutting one out is pure pointer surgery: <code class="inl">&#x398;(1)</code>. That is the linked list's gift.</p>
+        <p>But ask for <code class="inl">access(i)</code> and the gift is revoked. The nodes' addresses are unrelated — look again at Figure 1 — so <code class="inl">base + i&middot;s</code> is meaningless. The only route to the <code class="inl">i</code>-th node is to start at <code class="inl">head</code> and follow <code class="inl">next</code> exactly <code class="inl">i</code> times: <code class="inl">&#x398;(i)</code> work, <code class="inl">&#x398;(n)</code> in the worst case. The array trades cheap edits for instant access; the list trades instant access for cheap edits. Neither escapes the bargain.</p>
+
+        <div class="pull">The array reaches by <span>computing</span>; the list reaches by <span>walking</span>. Cheap access and cheap splicing are bought with different currencies — and you cannot pay in both at once.</div>
+
+        <h3>Singly vs. doubly linked — a second pointer changes what you can delete</h3>
+        <p>A <strong>singly</strong>-linked node knows only its successor. So to delete a node you must repoint its <em>predecessor</em>'s <code class="inl">next</code> around it — and a singly-linked node cannot name its predecessor. Hand me a pointer to a node and ask me to delete it, and I must walk from <code class="inl">head</code> to find who points <em>at</em> it: <code class="inl">&#x398;(n)</code>. Add a second pointer, <code class="inl">prev</code>, making the list <strong>doubly</strong>-linked, and that same deletion becomes <code class="inl">&#x398;(1)</code> — I can reach both neighbours and stitch them together directly. The price is one extra pointer of space per node, and two pointers to maintain on every edit. This is the exact trade that makes the doubly-linked list the backbone of LRU caches and of most language runtimes' deque types.</p>
+        <details>
+          <summary>Why can a singly-linked list still delete in O(1) given a node — sometimes?</summary>
+          <div class="body">There is a sly trick: to &ldquo;delete&rdquo; node <code class="inl">p</code>, copy <code class="inl">p.next</code>'s value into <code class="inl">p</code>, then splice out <code class="inl">p.next</code> instead. You have effectively removed <code class="inl">p</code>'s value in <code class="inl">&#x398;(1)</code> without its predecessor. The catch: it fails when <code class="inl">p</code> is the <em>last</em> node (there is no <code class="inl">p.next</code> to copy), and it relocates the survivor, invalidating any pointer someone else held to <code class="inl">p.next</code>. A genuine <code class="inl">&#x398;(1)</code> delete-given-a-node needs the <code class="inl">prev</code> pointer. The trick is a classic interview answer and a classic source of subtle bugs.</div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> the bargain, fully tabulated</div>
+      <h2>One contract, three engines</h2>
+      <div class="col">
+        <p>Here is the whole bargain on one page. Read every cell back to the layout that causes it: a <code class="inl">&#x398;(1)</code> is something the arrangement <em>delivers</em>; a <code class="inl">&#x398;(n)</code> is a bill the arrangement <em>sends</em>. Do not memorise this — <em>derive</em> it. If you can regenerate any row from Figures 1 and 2, you own the idea.</p>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <caption>Cost of each Sequence operation by representation (n elements)</caption>
+          <thead>
+            <tr>
+              <th scope="col">operation</th>
+              <th scope="col">array (contiguous)</th>
+              <th scope="col">singly linked</th>
+              <th scope="col">doubly linked</th>
+              <th scope="col">why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">access(i) by index</th><td class="good">&#x398;(1)</td><td class="bad">&#x398;(i)</td><td class="bad">&#x398;(i)</td><td class="mono">addr arithmetic vs. walk</td></tr>
+            <tr><th scope="row">search (unsorted)</th><td class="mid">&#x398;(n)</td><td class="mid">&#x398;(n)</td><td class="mid">&#x398;(n)</td><td class="mono">must scan either way</td></tr>
+            <tr><th scope="row">insert at front</th><td class="bad">&#x398;(n)</td><td class="good">&#x398;(1)</td><td class="good">&#x398;(1)</td><td class="mono">shift all vs. repoint head</td></tr>
+            <tr><th scope="row">insert at end</th><td class="good">&#x398;(1)*</td><td class="good">&#x398;(1)&#8224;</td><td class="good">&#x398;(1)&#8224;</td><td class="mono">* amortised &nbsp;&#8224; with tail ptr</td></tr>
+            <tr><th scope="row">insert after a held node</th><td class="bad">&#x398;(n)</td><td class="good">&#x398;(1)</td><td class="good">&#x398;(1)</td><td class="mono">shift vs. pointer surgery</td></tr>
+            <tr><th scope="row">delete at front</th><td class="bad">&#x398;(n)</td><td class="good">&#x398;(1)</td><td class="good">&#x398;(1)</td><td class="mono">shift down vs. advance head</td></tr>
+            <tr><th scope="row">delete at end</th><td class="good">&#x398;(1)</td><td class="bad">&#x398;(n)</td><td class="good">&#x398;(1)&#8224;</td><td class="mono">singly: must find predecessor</td></tr>
+            <tr><th scope="row">delete a <em>given</em> node</th><td class="bad">&#x398;(n)</td><td class="bad">&#x398;(n)</td><td class="good">&#x398;(1)</td><td class="mono">the doubly-linked superpower</td></tr>
+            <tr><th scope="row">space overhead / element</th><td class="good">~0 (+slack)</td><td class="mid">+1 pointer</td><td class="mid">+2 pointers</td><td class="mono">pointers are not free</td></tr>
+            <tr><th scope="row">cache locality (the constant)</th><td class="good">excellent</td><td class="bad">poor</td><td class="bad">poor</td><td class="mono">&sect;08 — same &#x398;, different reality</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="5">Blue = the layout delivers it; red = the layout bills you for it. Every structure later in this course inherits some row of this table.</td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> where the model breaks</div>
+      <h2>The hidden charge: cache locality</h2>
+      <div class="col">
+        <p>Now mark the boundary of the model. The last row of the table holds equal <code class="inl">&#x398;</code>-bounds yet says &ldquo;excellent&rdquo; against &ldquo;poor.&rdquo; That is not sloppiness; it is the RAM model failing honestly, and it is the most practically important idea in this lecture.</p>
+        <p>The RAM model of Lecture 00 charges <code class="inl">1</code> for <em>any</em> memory access, at <em>any</em> address. Real machines do not. Memory is a <span class="term">hierarchy</span>: a tiny, ~4-cycle L1 cache; larger, slower L2/L3; and main memory (DRAM) a couple of <em>hundred</em> cycles away. Crucially, hardware never fetches one byte — it fetches a whole <span class="term">cache line</span>, typically 64 bytes, and a <em>prefetcher</em> races ahead to pull in the next lines when it detects a sequential stride.</p>
+        <div class="stats">
+          <div class="stat lead"><div class="big">~50&times;</div><span class="lab">cost of a DRAM miss vs. an L1 hit (~200 cyc vs. ~4 cyc)</span></div>
+          <div class="stat"><div class="big">64 B</div><span class="lab">one cache line &mdash; ~16 ints fetched per access</span></div>
+          <div class="stat"><div class="big">1 miss</div><span class="lab">array scan amortised over ~16 elements</span></div>
+          <div class="stat"><div class="big">~1 miss</div><span class="lab">linked list &mdash; per element, scattered</span></div>
+        </div>
+        <p>Watch what this does to our two <code class="inl">&#x398;(n)</code> scans. The array's elements sit in one run; the very first access drags in a line holding the next ~16, and the prefetcher keeps the pipe full. Across a million elements you pay a small handful of misses for every sixteen reads. The linked list's nodes are scattered, so each <code class="inl">p &#8592; p.next</code> jumps to an unrelated address — a likely miss, every single step, with nothing to prefetch because the next address is not known until the current node is read. Same instruction count; one is a smooth read of memory, the other a storm of misses.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 900 270" role="img" aria-labelledby="f3t f3d">
+            <title id="f3t">Why two equal-Theta scans diverge: cache lines and locality</title>
+            <desc id="f3d">Memory drawn as a strip of 64-byte cache lines. The array occupies two adjacent lines, so a sequential scan of all its elements causes only a couple of misses and the prefetcher loads ahead. The linked list places its nodes in six different lines, so traversal incurs a cache miss at nearly every step.</desc>
+
+            <!-- array strip -->
+            <text x="24" y="40" class="dg-cap">array &mdash; one contiguous run</text>
+            <g>
+              <rect x="24" y="56" width="180" height="48" fill="var(--primary-container)" stroke="var(--bau-ink)" stroke-width="2"/>
+              <rect x="204" y="56" width="180" height="48" fill="var(--primary-container)" stroke="var(--bau-ink)" stroke-width="2"/>
+              <rect x="384" y="56" width="180" height="48" class="dg-cell"/>
+              <rect x="564" y="56" width="180" height="48" class="dg-cell"/>
+              <!-- elements packed -->
+              <g class="dg-blue-f">
+                <circle cx="44" cy="80" r="6"/><circle cx="64" cy="80" r="6"/><circle cx="84" cy="80" r="6"/><circle cx="104" cy="80" r="6"/><circle cx="124" cy="80" r="6"/><circle cx="144" cy="80" r="6"/><circle cx="164" cy="80" r="6"/><circle cx="184" cy="80" r="6"/>
+                <circle cx="224" cy="80" r="6"/><circle cx="244" cy="80" r="6"/><circle cx="264" cy="80" r="6"/><circle cx="284" cy="80" r="6"/><circle cx="304" cy="80" r="6"/><circle cx="324" cy="80" r="6"/>
+              </g>
+              <text x="114" y="124" text-anchor="middle" class="dg-label sm">line 0 (64 B)</text>
+              <text x="294" y="124" text-anchor="middle" class="dg-label sm">line 1</text>
+              <!-- prefetch arrow -->
+              <path d="M120 44 C 300 8, 460 8, 640 44" class="dg-stroke dg-blue" marker-end="url(#ah4)"/>
+              <text x="380" y="20" text-anchor="middle" class="dg-label sm dg-blue-f">prefetcher runs ahead</text>
+              <text x="600" y="86" class="dg-val dg-blue-f">~2 misses total</text>
+            </g>
+
+            <!-- list strip -->
+            <text x="24" y="176" class="dg-cap">linked list &mdash; nodes scattered</text>
+            <g>
+              <rect x="24" y="192" width="120" height="48" class="dg-cell"/>
+              <rect x="144" y="192" width="120" height="48" class="dg-cell"/>
+              <rect x="264" y="192" width="120" height="48" class="dg-cell"/>
+              <rect x="384" y="192" width="120" height="48" class="dg-cell"/>
+              <rect x="504" y="192" width="120" height="48" class="dg-cell"/>
+              <rect x="624" y="192" width="120" height="48" class="dg-cell"/>
+              <!-- one node per line, with MISS tags -->
+              <circle cx="84"  cy="216" r="8" class="dg-red-f"/>
+              <circle cx="324" cy="216" r="8" class="dg-red-f"/>
+              <circle cx="204" cy="216" r="8" class="dg-red-f"/>
+              <circle cx="564" cy="216" r="8" class="dg-red-f"/>
+              <circle cx="444" cy="216" r="8" class="dg-red-f"/>
+              <circle cx="684" cy="216" r="8" class="dg-red-f"/>
+              <!-- pointer jumps -->
+              <path d="M84 208 C 130 168, 170 168, 200 208" class="dg-thin dg-red" marker-end="url(#ah4r)"/>
+              <path d="M204 208 C 250 250, 290 250, 320 224" class="dg-thin dg-red" marker-end="url(#ah4r)"/>
+              <path d="M324 208 C 370 168, 410 168, 440 208" class="dg-thin dg-red" marker-end="url(#ah4r)"/>
+              <path d="M444 208 C 490 250, 530 250, 560 224" class="dg-thin dg-red" marker-end="url(#ah4r)"/>
+              <path d="M564 208 C 610 168, 650 168, 680 208" class="dg-thin dg-red" marker-end="url(#ah4r)"/>
+              <text x="600" y="184" class="dg-val dg-red-f">~1 miss / node</text>
+            </g>
+
+            <defs>
+              <marker id="ah4" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+              <marker id="ah4r" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 3 — the constant the RAM model hides.</b> Big-O counts <em>operations</em>; the machine charges for <em>memory traffic</em>. When two algorithms tie on the former, locality decides the latter — and it is why a flat array routinely beats a &ldquo;theoretically equal&rdquo; linked list by an order of magnitude.</figcaption>
+        </figure>
+
+        <div class="note"><span class="tag">the boundary, named</span>The RAM model is not <em>wrong</em> — it is an abstraction with a stated domain of validity, and uniform-cost memory is exactly the assumption that lapses here. Use <code class="inl">&#x398;</code> to rule out the catastrophes of <em>kind</em> (Lecture 00); use locality to win the contests of <em>constant</em>. A mature engineer holds both lenses and knows which one the situation is testing.</div>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> power through constraint</div>
+      <h2>Access disciplines: stack, queue, deque</h2>
+      <div class="col">
+        <p>So far we let the caller touch any position. Now comes the lecture's second great idea, and it runs against intuition: <strong>restricting</strong> the interface <em>increases</em> what we can promise. If the caller agrees to only ever touch the <em>ends</em> of the sequence, then both layouts — which charged <code class="inl">&#x398;(n)</code> for interior edits — can serve every operation in <code class="inl">&#x398;(1)</code>. An <span class="term">access discipline</span> is a Sequence that has voluntarily given up middle access in exchange for guaranteed-cheap end access. Constraint is not weakness here; it is leverage.</p>
+
+        <p>Three disciplines exhaust the useful end-restrictions:</p>
+        <ul>
+          <li><strong>Stack</strong> — <span class="term">LIFO</span>, last-in-first-out. Both <code class="inl">push</code> and <code class="inl">pop</code> act on <em>one</em> end (the &ldquo;top&rdquo;). The most recently added element is the first removed.</li>
+          <li><strong>Queue</strong> — <span class="term">FIFO</span>, first-in-first-out. <code class="inl">enqueue</code> adds at the <em>back</em>; <code class="inl">dequeue</code> removes from the <em>front</em>. Elements leave in arrival order.</li>
+          <li><strong>Deque</strong> — double-ended queue. Insert and remove at <em>either</em> end; the general primitive of which stack and queue are restrictions.</li>
+        </ul>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 900 290" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">Stack LIFO discipline versus queue FIFO discipline</title>
+            <desc id="f4d">Left: a vertical stack where push and pop both act at the top, so the last element in is the first out. Right: a horizontal queue where enqueue adds at the back and dequeue removes at the front, so the first element in is the first out.</desc>
+
+            <!-- STACK -->
+            <text x="150" y="40" text-anchor="middle" class="dg-cap">stack &mdash; LIFO</text>
+            <g>
+              <rect x="96" y="92"  width="108" height="40" class="dg-fill"/><text x="150" y="118" text-anchor="middle" class="dg-val">D</text>
+              <rect x="96" y="132" width="108" height="40" class="dg-fill"/><text x="150" y="158" text-anchor="middle" class="dg-val">C</text>
+              <rect x="96" y="172" width="108" height="40" class="dg-fill"/><text x="150" y="198" text-anchor="middle" class="dg-val">B</text>
+              <rect x="96" y="212" width="108" height="40" class="dg-fill"/><text x="150" y="238" text-anchor="middle" class="dg-val">A</text>
+              <!-- container floor & walls -->
+              <path d="M88 84 L88 260 L212 260 L212 84" class="dg-stroke"/>
+              <text x="244" y="98" class="dg-label sm">top</text>
+              <!-- push/pop both at top -->
+              <path d="M150 70 L150 88" class="dg-stroke dg-blue" marker-end="url(#ah5)"/>
+              <text x="60" y="66" class="dg-label sm dg-blue-f">push</text>
+              <path d="M236 76 C 300 60, 300 110, 214 100" class="dg-stroke dg-red" marker-end="url(#ah5r)"/>
+              <text x="250" y="70" class="dg-label sm dg-red-f">pop</text>
+              <text x="150" y="284" text-anchor="middle" class="dg-label sm">last in (D) leaves first</text>
+            </g>
+
+            <!-- QUEUE -->
+            <text x="560" y="40" text-anchor="middle" class="dg-cap">queue &mdash; FIFO</text>
+            <g>
+              <rect x="396" y="150" width="74" height="56" class="dg-fill"/><text x="433" y="184" text-anchor="middle" class="dg-val">A</text>
+              <rect x="470" y="150" width="74" height="56" class="dg-fill"/><text x="507" y="184" text-anchor="middle" class="dg-val">B</text>
+              <rect x="544" y="150" width="74" height="56" class="dg-fill"/><text x="581" y="184" text-anchor="middle" class="dg-val">C</text>
+              <rect x="618" y="150" width="74" height="56" class="dg-fill"/><text x="655" y="184" text-anchor="middle" class="dg-val">D</text>
+              <path d="M388 142 L388 214 M700 142 L700 214" class="dg-stroke"/>
+              <!-- dequeue at front (left) -->
+              <path d="M396 178 L348 178" class="dg-stroke dg-red" marker-end="url(#ah5r)"/>
+              <text x="352" y="138" class="dg-label sm dg-red-f">dequeue</text>
+              <text x="433" y="142" text-anchor="middle" class="dg-label sm">front</text>
+              <!-- enqueue at back (right) -->
+              <path d="M748 178 L700 178" class="dg-stroke dg-blue" marker-end="url(#ah5)"/>
+              <text x="712" y="138" class="dg-label sm dg-blue-f">enqueue</text>
+              <text x="655" y="142" text-anchor="middle" class="dg-label sm">back</text>
+              <text x="560" y="248" text-anchor="middle" class="dg-label sm">first in (A) leaves first</text>
+            </g>
+
+            <defs>
+              <marker id="ah5" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+              <marker id="ah5r" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 4 — the two disciplines.</b> A stack folds the sequence so both working ends coincide at the top; a queue keeps them apart, front and back. Each can be backed by <em>either</em> atom — an array (with end indices) or a linked list (with head/tail pointers) — and either way every operation is <code class="inl">&#x398;(1)</code>.</figcaption>
+        </figure>
+
+        <p>Why does the restriction pay off? Because every operation now touches a fixed end, and both atoms can service an end cheaply: an array keeps an integer <code class="inl">top</code> (or <code class="inl">head</code>/<code class="inl">tail</code>) index and writes there directly; a linked list keeps <code class="inl">head</code> and <code class="inl">tail</code> pointers and repoints them. No scan, no shift, no walk. The stack and queue ADTs are not <em>weaker</em> sequences — they are sequences that bought a guarantee by selling away a freedom they did not need.</p>
+
+        <h3>Backing a queue with an array — the naive trap, and the ring</h3>
+        <p>A stack on an array is trivial: push and pop at index <code class="inl">top</code>. A queue is subtler. <code class="inl">enqueue</code> at the back is fine, but <code class="inl">dequeue</code> from the <em>front</em> — index 0 — tempts you to shift everything left, restoring the <code class="inl">&#x398;(n)</code> we were trying to escape. The fix is to stop moving the data and instead move the <em>boundaries</em>: keep a <code class="inl">head</code> index that advances on dequeue, and let the back wrap around to reuse the slots the front has vacated. A fixed array used this way, with indices taken <em>modulo</em> the capacity, is the <span class="term">ring buffer</span> (circular buffer) — the canonical <code class="inl">&#x398;(1)</code> bounded queue, and the structure behind every audio buffer, network stack, and producer&ndash;consumer pipe you have ever used.</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> worked example A</div>
+      <h2>The ring buffer, derived and traced</h2>
+      <div class="col">
+        <p>Let us build it from the invariant and run it by hand. Take a fixed array <code class="inl">buf[0&hellip;C&minus;1]</code> of capacity <code class="inl">C</code>. Store two facts: <code class="inl">head</code>, the index of the front element, and <code class="inl">size</code>, how many elements are live. The back is <em>not</em> stored — it is <em>derived</em>, because the slot after the last element is exactly <code class="inl">head + size</code> places past the front, wrapped into range:</p>
+
+        <div class="eq">
+          <span class="lbl">the write index for the next enqueue</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>idx</mi><mo>=</mo>
+              <mo>(</mo><mi>head</mi><mo>+</mo><mi>size</mi><mo>)</mo>
+              <mspace width="0.3em"/>
+              <mo lspace="0.2em" rspace="0.2em">mod</mo>
+              <mspace width="0.2em"/>
+              <mi>C</mi>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>The <code class="inl">mod C</code> is the whole trick: when the arithmetic runs off the end of the array it wraps to the beginning, reclaiming slots the front has freed. Tracking <code class="inl">size</code> directly (rather than a second <code class="inl">tail</code> index) sidesteps the famous full-versus-empty ambiguity before it can arise — we will dwell on that in &sect;12.</p>
+
+        <pre><code><span class="tok-kw">record</span> Ring { buf[0&#8230;C&minus;1];  head <span class="tok-op">&#8592;</span> <span class="tok-num">0</span>;  size <span class="tok-op">&#8592;</span> <span class="tok-num">0</span> }
+
+<span class="tok-fn">ENQUEUE</span>(R, x):                       <span class="tok-com">// O(1)</span>
+  <span class="tok-kw">if</span> R.size = C: <span class="tok-kw">return</span> FULL
+  R.buf[(R.head + R.size) <span class="tok-kw">mod</span> C] <span class="tok-op">&#8592;</span> x
+  R.size <span class="tok-op">&#8592;</span> R.size + <span class="tok-num">1</span>
+
+<span class="tok-fn">DEQUEUE</span>(R):                          <span class="tok-com">// O(1)</span>
+  <span class="tok-kw">if</span> R.size = <span class="tok-num">0</span>: <span class="tok-kw">return</span> EMPTY
+  x <span class="tok-op">&#8592;</span> R.buf[R.head]
+  R.head <span class="tok-op">&#8592;</span> (R.head + <span class="tok-num">1</span>) <span class="tok-kw">mod</span> C
+  R.size <span class="tok-op">&#8592;</span> R.size &minus; <span class="tok-num">1</span>
+  <span class="tok-kw">return</span> x</code></pre>
+
+        <p>Now the trace. Take <code class="inl">C = 4</code> and run this sequence of operations; watch <code class="inl">head</code>, <code class="inl">size</code>, and the physical array. A dot <code class="inl">&middot;</code> marks a slot that is logically empty (stale), even if an old value still physically sits there.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>Ring buffer trace, capacity C = 4 — note step 6, the wrap</caption>
+            <thead>
+              <tr>
+                <th scope="col">#</th><th scope="col">operation</th><th scope="col">returns</th>
+                <th scope="col">head</th><th scope="col">size</th>
+                <th scope="col">buf[0..3]</th><th scope="col">queue (front&#8594;rear)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">0</th><td>— (start)</td><td>—</td><td>0</td><td>0</td><td class="mono">[ &middot; &middot; &middot; &middot; ]</td><td class="mono">(empty)</td></tr>
+              <tr><th scope="row">1</th><td>enqueue 10</td><td>—</td><td>0</td><td>1</td><td class="mono">[ 10 &middot; &middot; &middot; ]</td><td class="mono">10</td></tr>
+              <tr><th scope="row">2</th><td>enqueue 20</td><td>—</td><td>0</td><td>2</td><td class="mono">[ 10 20 &middot; &middot; ]</td><td class="mono">10 20</td></tr>
+              <tr><th scope="row">3</th><td>enqueue 30</td><td>—</td><td>0</td><td>3</td><td class="mono">[ 10 20 30 &middot; ]</td><td class="mono">10 20 30</td></tr>
+              <tr><th scope="row">4</th><td>dequeue</td><td class="good">10</td><td>1</td><td>2</td><td class="mono">[ &middot; 20 30 &middot; ]</td><td class="mono">20 30</td></tr>
+              <tr><th scope="row">5</th><td>enqueue 40</td><td>—</td><td>1</td><td>3</td><td class="mono">[ &middot; 20 30 40 ]</td><td class="mono">20 30 40</td></tr>
+              <tr class="wrap-row"><th scope="row">6</th><td>enqueue 50 &nbsp;&larr; wraps</td><td>—</td><td>1</td><td>4</td><td class="mono">[ 50 20 30 40 ]</td><td class="mono">20 30 40 50</td></tr>
+              <tr><th scope="row">7</th><td>dequeue</td><td class="good">20</td><td>2</td><td>3</td><td class="mono">[ 50 &middot; 30 40 ]</td><td class="mono">30 40 50</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="7">Step 6: <code>idx = (head + size) mod C = (1 + 3) mod 4 = 0</code>. The value 50 lands in slot 0 — physically <em>before</em> the front at slot 1, yet logically the <em>rear</em>. Physical order has decoupled from logical order; <code>mod C</code> keeps them reconciled.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <p>Look hard at step 6. After it, the array reads <code class="inl">[50, 20, 30, 40]</code> but the <em>queue</em> is <code class="inl">20, 30, 40, 50</code>: the front is slot 1, and the rear, 50, has wrapped into slot 0. The buffer is now full (<code class="inl">size = C = 4</code>); a further enqueue would correctly return <code class="inl">FULL</code> rather than clobber the front. Here is that full state drawn as the physical strip and as the ring it really is:</p>
+
+        <p class="mono" style="font-size:13px;margin:.2em 0 .2em;color:var(--on-surface-variant)">physical array after step 6 (full):</p>
+        <div class="cells" aria-hidden="false">
+          <div class="c fill"><span class="ix">0</span>50</div>
+          <div class="c fill h"><span class="ix">1</span>20</div>
+          <div class="c fill"><span class="ix">2</span>30</div>
+          <div class="c fill"><span class="ix">3</span>40</div>
+        </div>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 760 400" role="img" aria-labelledby="f5t f5d">
+            <title id="f5t">The ring buffer after the wrap, drawn as a circular array</title>
+            <desc id="f5d">Eight conceptual slots are unnecessary; this buffer has four slots arranged in a ring. The front pointer head marks slot 1 holding 20, and elements proceed clockwise 20, 30, 40 then wrap to slot 0 holding 50 as the rear. The next write index, head plus size mod C, points back at slot 1, which is why a full buffer is detected by size equals capacity rather than by pointer position.</desc>
+
+            <!-- dashed ring -->
+            <circle cx="300" cy="200" r="120" class="dg-dash"/>
+            <text x="300" y="196" text-anchor="middle" class="dg-cap">C = 4</text>
+            <text x="300" y="218" text-anchor="middle" class="dg-label sm">size = 4 (full)</text>
+
+            <!-- four slots at top, right, bottom, left -->
+            <!-- slot 0 : top -->
+            <circle cx="300" cy="80" r="40" class="dg-fill"/>
+            <text x="300" y="86" text-anchor="middle" class="dg-val">50</text>
+            <text x="300" y="34" text-anchor="middle" class="dg-label sm">slot 0 (rear)</text>
+            <!-- slot 1 : right -->
+            <circle cx="420" cy="200" r="40" class="dg-fill"/>
+            <text x="420" y="206" text-anchor="middle" class="dg-val">20</text>
+            <text x="486" y="204" text-anchor="middle" class="dg-label sm">slot 1</text>
+            <!-- slot 2 : bottom -->
+            <circle cx="300" cy="320" r="40" class="dg-fill"/>
+            <text x="300" y="326" text-anchor="middle" class="dg-val">30</text>
+            <text x="300" y="380" text-anchor="middle" class="dg-label sm">slot 2</text>
+            <!-- slot 3 : left -->
+            <circle cx="180" cy="200" r="40" class="dg-fill"/>
+            <text x="180" y="206" text-anchor="middle" class="dg-val">40</text>
+            <text x="116" y="204" text-anchor="middle" class="dg-label sm">slot 3</text>
+
+            <!-- flow arrows front->rear : slot1(20)->slot2(30)->slot3(40)->slot0(50) -->
+            <path d="M408 234 A 120 120 0 0 1 334 312" class="dg-stroke dg-blue" marker-end="url(#ah6)"/>
+            <path d="M266 312 A 120 120 0 0 1 192 234" class="dg-stroke dg-blue" marker-end="url(#ah6)"/>
+            <path d="M192 166 A 120 120 0 0 1 266 88"  class="dg-stroke dg-blue" marker-end="url(#ah6)"/>
+
+            <!-- head pointer to slot 1 -->
+            <text x="600" y="150" class="dg-val dg-blue-f">head &#8594; slot 1</text>
+            <path d="M598 158 C 540 180, 500 196, 462 200" class="dg-stroke dg-blue" marker-end="url(#ah6)"/>
+            <!-- next-write pointer also slot 1 -->
+            <text x="600" y="250" class="dg-val dg-red-f">(head+size) mod 4 = 1</text>
+            <text x="600" y="272" class="dg-label sm dg-red-f">next write would be slot 1 &mdash;</text>
+            <text x="600" y="290" class="dg-label sm dg-red-f">but size=C, so: FULL</text>
+            <path d="M598 258 C 545 235, 505 214, 462 206" class="dg-stroke dg-red" marker-end="url(#ah6r)"/>
+
+            <defs>
+              <marker id="ah6" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--bau-blue)"/></marker>
+              <marker id="ah6r" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 5 — the ring, made literal.</b> The array is bent into a circle so that &ldquo;run off the end&rdquo; becomes &ldquo;come back to the start.&rdquo; The front (<code class="inl">head</code>) and the next write index <code class="inl">(head+size) mod C</code> coincide here — which is precisely why a ring buffer must distinguish <em>full</em> from <em>empty</em> by some means other than pointer position. We track <code class="inl">size</code>.</figcaption>
+        </figure>
+
+        <p>Every operation did a constant amount of arithmetic and one array write or read: <code class="inl">&#x398;(1)</code> worst-case, no shifting, ever. We have a true bounded FIFO. To make it <em>unbounded</em>, grow the backing array when full — and that growth is, once more, the amortised story of Lecture 02.</p>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> worked example B</div>
+      <h2>The stack at work: matching brackets</h2>
+      <div class="col">
+        <p>A second worked example, to show why the LIFO discipline is not a toy but a precise tool for a precise structure: <em>nesting</em>. Decide whether a string of brackets <code class="inl">()[]{}</code> is well-formed — every opener closed, in the right order. The governing fact is that the <em>most recently opened</em> bracket must be the <em>first</em> one closed. &ldquo;Most recent out first&rdquo; is the definition of a stack; the problem and the structure are the same shape.</p>
+
+        <pre><code><span class="tok-fn">MATCH</span>(s):
+  st <span class="tok-op">&#8592;</span> empty stack
+  <span class="tok-kw">for</span> c <span class="tok-kw">in</span> s:
+    <span class="tok-kw">if</span> c <span class="tok-kw">in</span> <span class="tok-str">"([{"</span>:  push(st, c)              <span class="tok-com">// an opener: remember it</span>
+    <span class="tok-kw">else</span>:                                  <span class="tok-com">// a closer: it must match the latest opener</span>
+      <span class="tok-kw">if</span> empty(st) <span class="tok-kw">or</span> top(st) &#8800; partner(c):
+        <span class="tok-kw">return</span> false
+      pop(st)
+  <span class="tok-kw">return</span> empty(st)                          <span class="tok-com">// well-formed iff nothing left open</span></code></pre>
+
+        <p>Trace the valid string <code class="inl">([]{})</code>. The stack grows on openers and shrinks on matched closers; it must end empty.</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>MATCH("([]{})") — a valid string</caption>
+            <thead>
+              <tr><th scope="col">read</th><th scope="col">kind</th><th scope="col">action</th><th scope="col">stack (bottom&#8594;top)</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row" class="mono">(</th><td>opener</td><td>push (</td><td class="mono">(</td></tr>
+              <tr><th scope="row" class="mono">[</th><td>opener</td><td>push [</td><td class="mono">( [</td></tr>
+              <tr><th scope="row" class="mono">]</th><td>closer</td><td>top is [ = partner(]) &#10003; pop</td><td class="mono">(</td></tr>
+              <tr><th scope="row" class="mono">{</th><td>opener</td><td>push {</td><td class="mono">( {</td></tr>
+              <tr><th scope="row" class="mono">}</th><td>closer</td><td>top is { = partner(}) &#10003; pop</td><td class="mono">(</td></tr>
+              <tr><th scope="row" class="mono">)</th><td>closer</td><td>top is ( = partner()) &#10003; pop</td><td class="mono">(empty)</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="4">End of string, stack empty &rarr; <b class="mono" style="color:var(--bau-blue)">VALID</b>.</td></tr></tfoot>
+          </table>
+        </div>
+
+        <p>Now the instructive failure, <code class="inl">([)]</code> — two pairs that <em>interleave</em> instead of nest. The counts of each bracket are balanced, so any non-stack heuristic that merely counts is fooled. The stack is not:</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>MATCH("([)]") — balanced counts, but mis-nested</caption>
+            <thead>
+              <tr><th scope="col">read</th><th scope="col">kind</th><th scope="col">action</th><th scope="col">stack (bottom&#8594;top)</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row" class="mono">(</th><td>opener</td><td>push (</td><td class="mono">(</td></tr>
+              <tr><th scope="row" class="mono">[</th><td>opener</td><td>push [</td><td class="mono">( [</td></tr>
+              <tr><th scope="row" class="mono">)</th><td>closer</td><td>top is [ , partner()) = ( &#8800; [ </td><td class="mono bad">return false</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="4">The closer <code>)</code> arrives while <code>[</code> is still the latest opener &rarr; <b class="mono" style="color:var(--bau-red)">INVALID</b>, caught at the third character.</td></tr></tfoot>
+          </table>
+        </div>
+        <p>One linear pass, <code class="inl">&#x398;(n)</code> time and <code class="inl">&#x398;(n)</code> stack space in the worst case (all openers), and the LIFO order does the bookkeeping for free. The same skeleton — a stack tracking the innermost unfinished thing — drives expression evaluation, the call stack itself, depth-first search (Lecture 11), and undo histories. Recognise the shape and the structure picks itself.</p>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>Keep the gap between the clean model and the running machine in view. Here is where these structures bite — the edge cases, the seductive-but-wrong shortcuts, the off-by-ones that survive every &ldquo;it worked on my example.&rdquo;</p>
+
+        <h3>1 &middot; The full-vs-empty ambiguity in a ring buffer</h3>
+        <p>If you track <code class="inl">head</code> and <code class="inl">tail</code> indices and nothing else, then <code class="inl">head == tail</code> means the ring is empty <em>and also</em> means it is full — the two states are indistinguishable, because the pointers wrapped all the way around. Three honest fixes, each a real engineering choice: <strong>(a)</strong> store an explicit <code class="inl">size</code> (or <code class="inl">count</code>) as we did — cleanest; <strong>(b)</strong> sacrifice one slot, declaring &ldquo;full&rdquo; when <code class="inl">(tail+1) mod C == head</code>, so the two states never collide, at the cost of one unusable cell; <strong>(c)</strong> keep a boolean <code class="inl">full</code> flag. Pick one deliberately. The bug is choosing none and shipping a buffer that silently reports empty when it is jammed full.</p>
+
+        <h3>2 &middot; Negative modulo on <code class="inl">insertFront</code> / decrement</h3>
+        <p>Moving a head index <em>backwards</em> — as a deque's <code class="inl">insertFront</code> must — you compute <code class="inl">head = (head &minus; 1) mod C</code>. In most languages <code class="inl">(&minus;1) mod C</code> is <code class="inl">&minus;1</code>, not <code class="inl">C&minus;1</code>, and you index out of bounds. Always wrap as <code class="inl">head = (head &minus; 1 + C) mod C</code>. This single missing <code class="inl">+ C</code> is among the most common bugs in handwritten ring code.</p>
+
+        <h3>3 &middot; The &ldquo;O(1) linked-list insert&rdquo; half-truth</h3>
+        <p>&ldquo;Linked lists insert in <code class="inl">O(1)</code>&rdquo; is true <em>only once you already hold the node</em> at the insertion point. <code class="inl">insert(i, x)</code> from an index must first <em>find</em> position <code class="inl">i</code> — a <code class="inl">&#x398;(i)</code> walk — so the honest cost is <code class="inl">&#x398;(i)</code>, the same order as the array's shift. The <code class="inl">O(1)</code> applies to the splice, not the search. Quoting the splice cost as if it were the whole operation is how linked lists get chosen for workloads they then lose.</p>
+
+        <h3>4 &middot; Deleting from a singly-linked list without the predecessor</h3>
+        <p>You cannot stitch a node out of a singly-linked list without repointing the node <em>before</em> it, and a singly-linked node cannot name its predecessor. Either walk from <code class="inl">head</code> to find it (<code class="inl">&#x398;(n)</code>), keep a <code class="inl">prev</code> pointer as you traverse, or use a doubly-linked list. The copy-the-successor trick from &sect;06 fails on the tail node — guard it.</p>
+
+        <h3>5 &middot; Iterator / index invalidation across a mutation</h3>
+        <p>Hold an index into an array, then insert or delete before it: your index now points at the wrong element — every position past the edit shifted. Hold a raw pointer to an array element, then trigger a dynamic-array <em>regrowth</em>: the whole block was reallocated and copied elsewhere, and your pointer now dangles into freed memory. Linked-list node pointers survive their neighbours' edits (a virtue), but a pointer to a node you yourself <code class="inl">free</code> is a use-after-free waiting to happen. Never cache a position across a structural mutation unless the structure guarantees stability.</p>
+
+        <h3>6 &middot; Equal Big-O, unequal reality — picking a list where an array wins</h3>
+        <p>From &sect;08: a linked list and an array can share a <code class="inl">&#x398;(n)</code> bound while the array runs 10&ndash;50&times; faster from locality alone. For a stack or a plain traversal — pure end-access, sequential reads — prefer the contiguous backing every time. Reach for the linked list when you genuinely need <code class="inl">&#x398;(1)</code> splicing of interior nodes you already hold, or stable node identity across edits. &ldquo;It's <code class="inl">O(1)</code> on paper&rdquo; is not a reason; the constant is real money.</p>
+
+        <h3>7 &middot; Forgetting the bound, or the empty case</h3>
+        <p>A bounded stack or ring must define behaviour on <code class="inl">push</code>-when-full and <code class="inl">pop</code>-when-empty: reject, block, or overwrite — but <em>decide</em>, because the default is a crash or silent corruption. And every <code class="inl">pop</code>/<code class="inl">dequeue</code>/<code class="inl">top</code> needs an empty-guard <em>before</em> it touches storage. In garbage-collected languages, also null out the popped slot — a stale reference left in the array keeps a dead object alive (the classic <code class="inl">ArrayStack</code> memory leak); in manual-memory languages, free the node and drop the pointer.</p>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section id="s13" class="reveal">
+      <div class="eyebrow"><span class="n">13</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Design a circular deque</h3>
+          <p class="meta">ring buffer &middot; modular arithmetic &middot; both ends</p>
+          <p>Implement <code class="inl">MyCircularDeque(k)</code> on a fixed array of capacity <code class="inl">k</code>, every operation <code class="inl">O(1)</code> time and <code class="inl">O(k)</code> space: <code class="inl">insertFront(v)</code>, <code class="inl">insertLast(v)</code>, <code class="inl">deleteFront()</code>, <code class="inl">deleteLast()</code>, <code class="inl">getFront()</code>, <code class="inl">getRear()</code>, <code class="inl">isEmpty()</code>, <code class="inl">isFull()</code>. The four mutators return a boolean (false if the operation is impossible); <code class="inl">getFront</code>/<code class="inl">getRear</code> return <code class="inl">&minus;1</code> when empty. State your representation (which of <code class="inl">head</code>, <code class="inl">tail</code>, <code class="inl">size</code> you keep and why), and handle the negative-modulo wrap on <code class="inl">insertFront</code>. Argue full-vs-empty cannot be confused under your scheme.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Implement a FIFO queue using only two stacks</h3>
+          <p class="meta">stack&#8596;queue duality &middot; amortised analysis</p>
+          <p>Using two LIFO stacks (and no other container), implement <code class="inl">Queue</code> with <code class="inl">push(x)</code>, <code class="inl">pop()</code>, <code class="inl">peek()</code>, <code class="inl">empty()</code> obeying FIFO order. Then prove your <code class="inl">pop</code>/<code class="inl">peek</code> run in <code class="inl">O(1)</code> <em>amortised</em> time even though a single call may be <code class="inl">&#x398;(n)</code>. Give the amortised argument explicitly — an accounting or potential argument is ideal: define a potential <code class="inl">&Phi;</code> over the two stacks and show each operation's amortised cost is constant. (This previews Lecture 02.)</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Reverse a singly-linked list in place</h3>
+          <p class="meta">pointer surgery &middot; O(1) extra space</p>
+          <p>Given <code class="inl">head</code> of a singly-linked list, reverse it and return the new head, using <code class="inl">O(1)</code> auxiliary space and a single pass. Specify your loop invariant precisely (what <code class="inl">prev</code>, <code class="inl">cur</code>, and the saved <code class="inl">next</code> denote at the top of each iteration), and identify the one line whose omission would either lose the tail of the list or create a cycle. Then give the recursive formulation and state its space cost and why it differs.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Min-stack: track the minimum in O(1)</h3>
+          <p class="meta">augmented invariant &middot; O(1) all ops</p>
+          <p>Design a stack supporting <code class="inl">push(x)</code>, <code class="inl">pop()</code>, <code class="inl">top()</code>, and <code class="inl">getMin()</code> — the current minimum — each in <code class="inl">O(1)</code> worst-case time. State the auxiliary invariant you maintain and prove it survives both <code class="inl">push</code> and <code class="inl">pop</code> (mind duplicate minima — what must happen on ties so that a later <code class="inl">pop</code> keeps <code class="inl">getMin</code> correct?). For credit on space, give a variant using <code class="inl">O(1)</code> extra memory beyond the values themselves, and name the hazard that variant introduces.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section id="s14" class="reveal">
+      <div class="eyebrow"><span class="n">14</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>A sequence is one idea with two physical layouts, and the layout you pick <em>is</em> the cost model you accept.</strong> Contiguous arrays compute access in <code class="inl">&#x398;(1)</code> and bill <code class="inl">&#x398;(n)</code> for interior edits; linked lists splice in <code class="inl">&#x398;(1)</code> and bill <code class="inl">&#x398;(n)</code> to arrive. Restricting access to the <em>ends</em> — stack (LIFO), queue (FIFO), deque, ring buffer — buys <code class="inl">&#x398;(1)</code> on both layouts. And when two structures tie on <code class="inl">&#x398;</code>, locality breaks the tie: the constant the RAM model discards is real money on real silicon.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 02</span>
+            <div class="ttl">Amortized Cost: Aggregate, Accounting, and Potential, on the Doubling Array</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We left an asterisk on every &ldquo;append is <code class="inl">&#x398;(1)</code>&rdquo; and on the growing ring buffer. Lecture 02 cashes it: how an occasional <code class="inl">&#x398;(n)</code> copy, spread across a run of cheap appends, averages to <code class="inl">&#x398;(1)</code> per operation — the <strong>dynamic array</strong> — and the three ways to prove it (aggregate, accounting, potential). The structures you built here are about to get their honest, amortised price tags.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-00-cost-of-a-computation.html">← Previous study</a><a href="dsa-02-amortized-cost-aggregate-accounting-potential.html">Next study →</a></nav>
+</body>
+</html>

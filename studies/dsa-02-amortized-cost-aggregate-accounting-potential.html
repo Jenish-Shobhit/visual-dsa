@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amortized Cost: Aggregate, Accounting &amp; Potential</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.95rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.6rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.wrap-row td, tr.wrap-row th{background:color-mix(in oklab,var(--bau-yellow) 26%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-stroke{stroke:var(--on-surface); fill:none; stroke-width:2}
+  .dg-thin{stroke:var(--outline); fill:none; stroke-width:1}
+  .dg-dash{stroke:var(--outline); fill:none; stroke-width:1.5; stroke-dasharray:5 5}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+  .dg-red{stroke:var(--bau-red)}   .dg-red-f{fill:var(--bau-red)}
+  .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-cell{fill:var(--surface);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill{fill:var(--primary-container);stroke:var(--bau-ink);stroke-width:2}
+  .dg-label{font-family:var(--font-mono); font-size:14px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
+  .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
+
+  /* ===== three-up method cards ===== */
+  .three{display:grid; grid-template-columns:repeat(3,1fr); gap:calc(var(--sp)*2.5); align-items:stretch; margin:1.5em 0}
+  @media (max-width:760px){.three{grid-template-columns:1fr}}
+  .three .band{margin:0}
+  .method-tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block}
+  .method-h{font-family:var(--font-display); font-weight:700; font-size:1.18rem; margin:.15em 0 .35em}
+  .three .band:nth-child(1){border-top:5px solid var(--bau-blue)}
+  .three .band:nth-child(2){border-top:5px solid var(--bau-red)}
+  .three .band:nth-child(3){border-top:5px solid var(--bau-yellow)}
+
+  /* ===== coin glyph (Bauhaus circle = a unit of prepaid work) ===== */
+  .coin{display:inline-grid; place-items:center; width:1.3em; height:1.3em; border-radius:50%;
+    background:var(--bau-yellow); border:1.5px solid var(--bau-ink); color:var(--bau-ink);
+    font-family:var(--font-mono); font-size:.66em; font-weight:700; vertical-align:-.2em; line-height:1}
+  .big-amort{font-family:var(--font-display); font-weight:700; color:var(--bau-red)}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">02 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>02</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="190" height="150" viewBox="0 0 190 150" aria-hidden="true">
+    <rect x="70" y="70" width="78" height="78" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <circle cx="48" cy="48" r="46" class="dg-blue-f"/>
+    <path d="M120 4 L186 4 L153 64 Z" class="dg-red-f"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 02</span> when an expensive step is already paid for</div>
+    <h1>Amortized Cost</h1>
+    <p class="lede col">Lecture 01 left an asterisk on every &ldquo;append is <code class="inl">&#x398;(1)</code>.&rdquo; Here we cash it. A single append to a growing array can copy <em>the entire array</em> — a genuine <code class="inl">&#x398;(n)</code> spike — and yet a run of <code class="inl">n</code> appends costs under <code class="inl">3n</code> steps in total, fewer than three apiece. This lecture explains how an operation that is <em>sometimes</em> linear can be <em>always</em> constant on average, and gives you the three instruments that prove it: the <strong>aggregate</strong>, the <strong>accountant's ledger</strong>, and the <strong>potential</strong>.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Append a million items to an initially empty dynamic array. One unlucky append among them copies all <strong>1,000,000</strong> existing elements to a bigger block — a Big-&Theta;(n) operation, plainly not constant. So is the structure &ldquo;<code class="inl">O(1)</code> append&rdquo; a lie?</p>
+        <p style="margin-bottom:0">No. The million appends together perform fewer than <strong>3,000,000</strong> primitive steps. The spikes are real but rare, and the cheap steps in between have <em>already paid</em> for them. That is not an average over luck — it is a guarantee over <em>every</em> sequence. Learning to see, and to prove, that guarantee is the whole of this lecture.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>The asterisk comes due</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>What amortized means</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>The doubling array, precisely</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Why double, not add?</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>Method I — Aggregate</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>Method II — Accounting</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Method III — Potential</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Worked: one trace, three ledgers</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>The three are one idea</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Shrinking without thrashing</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Horizon: union-find</span></a></li>
+      <li><a href="#s13"><span class="num">13</span><span>Where it breaks</span></a></li>
+      <li><a href="#s14"><span class="num">14</span><span>Practice</span></a></li>
+      <li><a href="#s15"><span class="num">15</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> the asterisk comes due</div>
+      <h2>An operation that is sometimes linear, yet always constant</h2>
+      <div class="col">
+        <p>I drew a sharp line in Lecture 01 between the <em>operation</em> — the abstract thing we wish to perform — and the <em>engine</em> that carries it out. We met the engine's bill there: contiguity makes <code class="inl">access(i)</code> a single arithmetic step but charges <code class="inl">&#x398;(n)</code> to edit the interior, because the no-gaps promise forces a cascade of shifts. I attached an asterisk to one happy exception. Appending at the <em>end</em> disturbs no one — <em>provided spare capacity exists.</em> Manufacturing that spare capacity cheaply is the whole trick, and the asterisk now comes due.</p>
+        <p>Here is the difficulty stated plainly. A <span class="term">dynamic array</span> keeps a backing block larger than it strictly needs, so most appends just drop a value into a waiting slot — one step. But the block has a fixed size. When it fills, there is nowhere to put the next element, so we must allocate a <em>larger</em> block and copy every existing element across. That copy is <code class="inl">&#x398;(n)</code>. So <code class="inl">append</code> has two faces: a constant-time common case and a linear-time rare case. Its <em>worst-case-per-operation</em> cost is therefore <code class="inl">&#x398;(n)</code>, and if that were the honest figure, dynamic arrays would be useless.</p>
+        <p>They are not useless; they are the default sequence in every language's standard library. The resolution is that worst-case-per-operation is the <em>wrong lens</em> here. It prices each append as if every one might be the expensive one — but they cannot all be expensive, because each costly copy <em>doubles</em> the runway before the next. The expensive operations are forced to be rare by the very mechanism that makes them expensive. To see that, we need a lens that prices a <em>sequence</em>, not an isolated call. That lens is <span class="term">amortized analysis</span>, and it is the second of this course's three ways to measure cost — worst-case, amortized, and (later, Lecture 05) expected.</p>
+        <div class="note info"><span class="tag">the formal lens</span>Amortization is what you reach for whenever a structure has occasional expensive operations whose cost is <em>structurally bounded</em> by the cheap operations preceding them. The art is to make &ldquo;preceding cheap work pays for the rare spike&rdquo; into a theorem, not a hope.</div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>State precisely</strong> what amortized cost is — a worst-case bound on the average over a sequence — and distinguish it cleanly from worst-case-per-operation and from average/expected cost.</li>
+          <li><strong>Prove</strong> the doubling array's <code class="inl">O(1)</code> amortized append three independent ways: by <strong>aggregate</strong> (sum it all up), by <strong>accounting</strong> (assign credits), and by the <strong>potential</strong> method (a function of state).</li>
+          <li><strong>Derive</strong> why the growth must be <em>geometric</em>: that doubling (or any factor <code class="inl">a&gt;1</code>) gives <code class="inl">&#x398;(1)</code> amortized while adding a constant gives <code class="inl">&#x398;(n)</code> — and read off the time&ndash;space trade-off in the factor.</li>
+          <li><strong>Build</strong> a potential function, verify its two obligations (<code class="inl">&#x3A6;</code> starts at 0 and never goes negative), and compute amortized cost as <code class="inl">actual + &Delta;&#x3A6;</code>.</li>
+          <li><strong>Diagnose</strong> the failures: the halve-at-half-full thrash, arithmetic growth, mistaking amortized for worst-case under a real-time deadline, and a potential that dips below its start.</li>
+          <li><strong>Recognise</strong> the same telescoping argument when it returns — in the binary counter, the two-stack queue, KMP's failure links (Lecture 18), and union-find's near-constant operations (Lecture 12).</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>Three ideas, each a phrase you should hold comfortably. The first two are taught in Lecture 00; the third in Lecture 01.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotic notation — O / &Theta; / &Omega;</a>
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">the RAM cost model</a>
+          <a class="chip" href="dsa-01-linear-layouts-and-access-disciplines.html">arrays &amp; linked structures</a>
+        </div>
+        <p style="margin-top:1em">If you can read <code class="inl">&#x398;(1)</code> as &ldquo;a bounded number of steps, independent of <code class="inl">n</code>,&rdquo; trust the RAM model's charge of <code class="inl">1</code> per memory access, and recall from Lecture 01 that an array append is free only when capacity remains, you are ready. We now make &ldquo;manufacture the capacity cheaply&rdquo; exact.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> the definition, and what it is not</div>
+      <h2>What &ldquo;amortized&rdquo; actually means</h2>
+      <div class="col">
+        <p>The word is borrowed from finance: to <em>amortise</em> a debt is to spread a large one-off cost into small regular instalments. We do the same to a large one-off computation. The definition is deceptively simple and worth stating with care.</p>
+        <div class="note"><span class="tag" style="color:var(--bau-ink)">definition</span>The <span class="term">amortized cost</span> of an operation is a value <code class="inl">&#x3B1;</code> such that, for <em>every</em> sequence of <code class="inl">m</code> operations starting from an empty structure, the <em>total actual cost</em> is at most <code class="inl">m&#xB7;&#x3B1;</code>. Equivalently: assign each operation a charge so the charges always sum to an upper bound on the true work. We then say each operation &ldquo;costs <code class="inl">&#x3B1;</code> amortized.&rdquo;</div>
+        <p>Read the quantifier slowly: <em>for every sequence.</em> There is no probability here, no typical input, no luck. Amortized cost is a <strong>deterministic worst-case guarantee</strong> — just a worst case taken over a whole run rather than over a single call. If I tell you append is <code class="inl">O(1)</code> amortized, I am promising that an adversary who hand-picks the cruellest million appends still cannot make them total more than about three million steps. That is a far stronger and more useful promise than it first sounds.</p>
+
+        <p>Two confusions to kill immediately, because both are everywhere.</p>
+        <h3>Amortized is not worst-case-per-operation</h3>
+        <p>A single append is still <code class="inl">&#x398;(n)</code> in the worst case — that fact is untouched. Amortized analysis does not make the costly step cheap; it proves the costly step is <em>rare enough</em> that the average over the sequence is constant. The individual spike survives. If your setting cannot tolerate the spike — a hard deadline on <em>each</em> operation — amortized <code class="inl">O(1)</code> is not the guarantee you need (we return to this in &sect;13).</p>
+        <h3>Amortized is not average-case</h3>
+        <p>This is the subtle one, and the one I care most that you get right. <span class="term">Average-case</span> (or <em>expected</em>) cost averages over a <em>distribution of inputs or random coin-flips</em>: a hash table is <code class="inl">O(1)</code> <em>expected</em> because, if the keys land badly, it can degrade — you were merely unlikely to be unlucky. <span class="term">Amortized</span> cost averages over the <em>operations in one fixed sequence</em>, with no randomness at all: a dynamic array is <code class="inl">O(1)</code> <em>amortized</em> because no sequence, however chosen, can be expensive. One is a statement about probability; the other is a theorem about arithmetic. Conflating them is the most common error in this entire subject.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>Three lenses on cost — the trio this course uses</caption>
+            <thead>
+              <tr><th scope="col">lens</th><th scope="col">averages over&hellip;</th><th scope="col">randomness?</th><th scope="col">guarantee</th><th scope="col">canonical example</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">worst-case / op</th><td>nothing — each call alone</td><td>none</td><td>strongest, often pessimistic</td><td class="mono">array insert = &#x398;(n)</td></tr>
+              <tr class="wrap-row"><th scope="row">amortized</th><td>the operations in any one sequence</td><td><b>none</b> — deterministic</td><td>holds for <b>every</b> sequence</td><td class="mono">array append = &#x398;(1)</td></tr>
+              <tr><th scope="row">average / expected</th><td>a distribution of inputs or coin-flips</td><td>essential</td><td>holds <em>in expectation</em>; can be unlucky</td><td class="mono">hash insert = O(1) exp.</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="5">Worst-case (Lec. 00) &middot; amortized (here) &middot; expected (Lec. 05) — three different promises. Never substitute one word for another.</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> the worked structure</div>
+      <h2>The doubling array, precisely</h2>
+      <div class="col">
+        <p>Fix the engine before we price it. A <span class="term">dynamic array</span> <code class="inl">D</code> holds two numbers and a block of memory: a backing array <code class="inl">D.A</code> of <span class="term">capacity</span> <code class="inl">C</code> (its physical length), and a <span class="term">size</span> <code class="inl">n &le; C</code> (how many slots are live). The invariant is simply <code class="inl">0 &le; n &le; C</code>; the slack <code class="inl">C &minus; n</code> is the runway of waiting slots.</p>
+
+        <pre><code><span class="tok-fn">APPEND</span>(D, x):
+  <span class="tok-kw">if</span> D.n == D.C:                 <span class="tok-com">// full — no runway left</span>
+    <span class="tok-fn">GROW</span>(D)                       <span class="tok-com">// the rare, costly case</span>
+  D.A[D.n] <span class="tok-op">&#8592;</span> x                  <span class="tok-com">// the common case: one write</span>
+  D.n <span class="tok-op">&#8592;</span> D.n + 1
+
+<span class="tok-fn">GROW</span>(D):
+  newC <span class="tok-op">&#8592;</span> <span class="tok-kw">if</span> D.C == 0 <span class="tok-kw">then</span> 1 <span class="tok-kw">else</span> 2 <span class="tok-op">&#xD7;</span> D.C   <span class="tok-com">// DOUBLE the capacity</span>
+  B <span class="tok-op">&#8592;</span> allocate array of length newC
+  <span class="tok-kw">for</span> i <span class="tok-kw">in</span> 0 .. D.n&minus;1:        <span class="tok-com">// copy every live element across</span>
+    B[i] <span class="tok-op">&#8592;</span> D.A[i]
+  D.A <span class="tok-op">&#8592;</span> B;  D.C <span class="tok-op">&#8592;</span> newC      <span class="tok-com">// old block is freed</span></code></pre>
+
+        <p>The cost model, in the RAM units of Lecture 00: a cheap append is <strong>1</strong> (a single write). A growing append copies the <code class="inl">n</code> live elements and then writes the new one, costing <strong><code class="inl">n + 1</code></strong>. We start from an empty array with no backing store (<code class="inl">C = 0</code>); the first append allocates a single cell, copying nothing. The doubling rule — <code class="inl">C &rarr; 2C</code> — is the one design choice that makes everything work, and &sect;05 shows why no gentler rule will do.</p>
+
+        <p>The picture below is the physical event hidden inside <code class="inl">GROW</code>: a full block of capacity <code class="inl">C</code> is abandoned for a fresh block of capacity <code class="inl">2C</code>, every element copied across, leaving the new block <em>exactly half full</em>. That &ldquo;half full just after growth&rdquo; fact is the seed of the entire analysis — remember it.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 330" role="img" aria-labelledby="f1t f1d">
+            <title id="f1t">The GROW event: copying a full capacity-four block into a fresh capacity-eight block</title>
+            <desc id="f1d">A full array of capacity four holding A B C D is abandoned. A new array of capacity eight is allocated; the four elements are copied across into its first four slots, and a fifth element E is written. The new block is exactly half full, with four empty slots of fresh runway.</desc>
+
+            <!-- OLD block -->
+            <text x="24" y="40" class="dg-cap">old block &mdash; capacity 4, full (n = C)</text>
+            <g>
+              <rect x="40"  y="58" width="70" height="58" class="dg-fill"/><text x="75"  y="94" text-anchor="middle" class="dg-val">A</text>
+              <rect x="110" y="58" width="70" height="58" class="dg-fill"/><text x="145" y="94" text-anchor="middle" class="dg-val">B</text>
+              <rect x="180" y="58" width="70" height="58" class="dg-fill"/><text x="215" y="94" text-anchor="middle" class="dg-val">C</text>
+              <rect x="250" y="58" width="70" height="58" class="dg-fill"/><text x="285" y="94" text-anchor="middle" class="dg-val">D</text>
+              <text x="40" y="134" class="dg-label sm">[0]</text>
+              <text x="290" y="134" text-anchor="end" class="dg-label sm">[3] &mdash; no runway</text>
+            </g>
+            <text x="180" y="160" text-anchor="middle" class="dg-label sm dg-red-f">append E &rarr; full &rarr; must GROW &amp; copy all 4</text>
+
+            <!-- copy arrows -->
+            <g>
+              <path d="M75 120 C 110 175, 430 175, 470 196"  class="dg-thin dg-red" marker-end="url(#g1)"/>
+              <path d="M145 120 C 200 178, 470 178, 540 196" class="dg-thin dg-red" marker-end="url(#g1)"/>
+              <path d="M215 120 C 280 180, 540 180, 610 196" class="dg-thin dg-red" marker-end="url(#g1)"/>
+              <path d="M285 120 C 360 182, 600 182, 680 196" class="dg-thin dg-red" marker-end="url(#g1)"/>
+            </g>
+
+            <!-- NEW block -->
+            <text x="430" y="190" class="dg-cap">new block &mdash; capacity 8, half full after the copy</text>
+            <g transform="translate(0,8)">
+              <rect x="435" y="196" width="70" height="58" class="dg-fill"/><text x="470" y="232" text-anchor="middle" class="dg-val">A</text>
+              <rect x="505" y="196" width="70" height="58" class="dg-fill"/><text x="540" y="232" text-anchor="middle" class="dg-val">B</text>
+              <rect x="575" y="196" width="70" height="58" class="dg-fill"/><text x="610" y="232" text-anchor="middle" class="dg-val">C</text>
+              <rect x="645" y="196" width="70" height="58" class="dg-fill"/><text x="680" y="232" text-anchor="middle" class="dg-val">D</text>
+              <rect x="715" y="196" width="70" height="58" class="dg-cell" stroke="var(--bau-blue)" stroke-width="3"/><text x="750" y="232" text-anchor="middle" class="dg-val dg-blue-f">E</text>
+              <rect x="785" y="196" width="70" height="58" class="dg-cell"/>
+              <rect x="855" y="196" width="35" height="58" class="dg-cell"/>
+              <text x="800" y="288" text-anchor="middle" class="dg-label sm dg-blue-f">fresh runway: 3 free slots</text>
+            </g>
+
+            <defs>
+              <marker id="g1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 1 — the GROW event.</b> The expensive case made physical: <code class="inl">n</code> copies plus one write. Note the outcome — the new block is <em>exactly half full</em>, so the next <code class="inl">C</code> appends are all cheap before another GROW can occur. The spike <em>builds its own runway</em>.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> the one design choice that matters</div>
+      <h2>Why double, and not merely add?</h2>
+      <div class="col">
+        <p>It is tempting to grow more frugally — &ldquo;when full, just add room for ten more.&rdquo; That instinct, growing by a fixed constant <code class="inl">k</code>, is a catastrophe, and seeing why is the cleanest way to understand why doubling works.</p>
+        <p><strong>Arithmetic growth (add <code class="inl">k</code> each time).</strong> Now the array fills again after only <code class="inl">k</code> appends, so over <code class="inl">n</code> appends we resize about <code class="inl">n/k</code> times, and the <code class="inl">j</code>-th resize copies <code class="inl">jk</code> elements. The total copy work is an <em>arithmetic</em> series:</p>
+        <div class="eq">
+          <span class="lbl">total copies under arithmetic growth</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <munderover><mo>&#x2211;</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi><mo>/</mo><mi>k</mi></mrow></munderover>
+              <mi>j</mi><mi>k</mi>
+              <mo>=</mo>
+              <mi>k</mi><mo>&#xB7;</mo>
+              <mfrac><mrow><mo>(</mo><mi>n</mi><mo>/</mo><mi>k</mi><mo>)</mo><mo>(</mo><mi>n</mi><mo>/</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></mfrac>
+              <mo>&#x2248;</mo>
+              <mfrac><msup><mi>n</mi><mn>2</mn></msup><mrow><mn>2</mn><mi>k</mi></mrow></mfrac>
+              <mo>=</mo>
+              <mi>&#x398;</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Total work <code class="inl">&#x398;(n&#xB2;)</code> over <code class="inl">n</code> appends means <code class="inl">&#x398;(n)</code> <em>amortized</em> per append — no better than rebuilding from scratch each time. And note: enlarging <code class="inl">k</code> only shrinks the constant. Even <code class="inl">k = 1{,}000{,}000</code> leaves append <code class="inl">&#x398;(n)</code> amortized; for <code class="inl">n = 10^9</code> it is still quadratic. The defect is qualitative, not a matter of tuning.</p>
+        <p><strong>Geometric growth (multiply by <code class="inl">a &gt; 1</code>).</strong> Multiply the capacity instead, and the resize <em>sizes</em> themselves form a geometric series running <em>backwards</em> from <code class="inl">n</code>: roughly <code class="inl">n, n/a, n/a&#xB2;, &hellip;</code> Summed, a geometric series is dominated by its largest term, so the total is a constant multiple of <code class="inl">n</code>:</p>
+        <div class="eq">
+          <span class="lbl">amortized copies per append, growth factor a</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mfrac><mn>1</mn><mi>n</mi></mfrac>
+              <mo>&#xB7;</mo>
+              <mi>n</mi><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mfrac><mn>1</mn><mi>a</mi></mfrac><mo>+</mo><mfrac><mn>1</mn><msup><mi>a</mi><mn>2</mn></msup></mfrac><mo>+</mo><mo>&#x22EF;</mo><mo>)</mo></mrow>
+              <mo>=</mo>
+              <mfrac><mi>a</mi><mrow><mi>a</mi><mo>&#x2212;</mo><mn>1</mn></mrow></mfrac>
+            </mrow>
+          </math></div>
+        </div>
+        <p>For <code class="inl">a = 2</code> that is <code class="inl">2</code> copies amortized; add the one write and you get the headline <span class="big-amort">3</span>. The factor is a dial trading time against space, and real libraries set it knowingly:</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>The growth factor is a time&ndash;space dial</caption>
+            <thead>
+              <tr><th scope="col">factor <span class="mono">a</span></th><th scope="col">amortized copies <span class="mono">a/(a&minus;1)</span></th><th scope="col">worst-case wasted space</th><th scope="col">seen in</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row" class="mono">add k (a&rarr;1)</th><td class="bad">&#x398;(n) &mdash; diverges</td><td class="good">tiny</td><td>the tempting bug</td></tr>
+              <tr><th scope="row" class="mono">1.5&#xD7;</th><td class="mid">3.0</td><td>~33%</td><td>Java ArrayList, MSVC, folly</td></tr>
+              <tr class="wrap-row"><th scope="row" class="mono">2&#xD7;</th><td class="good">2.0</td><td>~50%</td><td>this lecture, many libcxx builds</td></tr>
+              <tr><th scope="row" class="mono">3&#xD7;</th><td class="good">1.5</td><td>~67%</td><td>aggressive, copy-averse</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="4">Smaller <span class="mono">a</span> wastes less memory but copies more; larger <span class="mono">a</span> copies less but reserves more. Any <span class="mono">a&gt;1</span> gives <span class="mono">O(1)</span> amortized. (Some allocators favour 1.5&#xD7; so a freed block can be reused by the next growth.)</td></tr></tfoot>
+          </table>
+        </div>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 360" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">Cumulative cost of n appends: geometric growth stays linear, arithmetic growth turns quadratic</title>
+            <desc id="f2d">Two curves of total cost against number of appends. The geometric (doubling) curve rises as a straight line through small staircase jumps at the resize points one, two, four, eight, sixteen, which spread further apart. The arithmetic (add k) curve bends upward as a parabola, its resize points evenly and densely spaced, overtaking the doubling curve.</desc>
+
+            <!-- axes -->
+            <line x1="80" y1="300" x2="900" y2="300" class="dg-stroke"/>
+            <line x1="80" y1="300" x2="80" y2="40" class="dg-stroke"/>
+            <text x="490" y="338" text-anchor="middle" class="dg-label">number of appends &#8594;</text>
+            <text x="36" y="170" class="dg-label" transform="rotate(-90 36 170)" text-anchor="middle">total cost &#8594;</text>
+
+            <!-- arithmetic parabola (quadratic) -->
+            <path d="M80 300 Q 460 296 900 60" class="dg-stroke dg-red" stroke-width="2.5" fill="none"/>
+            <text x="760" y="96" class="dg-label dg-red-f">arithmetic: add k</text>
+            <text x="760" y="116" class="dg-label sm dg-red-f">&#x398;(n&#xB2;) total &rarr; &#x398;(n) amortized</text>
+            <!-- dense even resize ticks on arithmetic -->
+            <g class="dg-red-f">
+              <circle cx="170" cy="299" r="3"/><circle cx="260" cy="296" r="3"/><circle cx="350" cy="290" r="3"/>
+              <circle cx="440" cy="280" r="3"/><circle cx="530" cy="262" r="3"/><circle cx="620" cy="236" r="3"/>
+              <circle cx="710" cy="198" r="3"/><circle cx="800" cy="146" r="3"/>
+            </g>
+
+            <!-- geometric line -->
+            <path d="M80 300 L 900 232" class="dg-stroke dg-blue" stroke-width="2.5" fill="none"/>
+            <text x="600" y="248" class="dg-label dg-blue-f">geometric: &#xD7;2</text>
+            <text x="600" y="268" class="dg-label sm dg-blue-f">&lt; 3n total &rarr; O(1) amortized</text>
+            <!-- sparse, spreading resize ticks on geometric -->
+            <g class="dg-blue-f">
+              <circle cx="92"  cy="299" r="3.5"/><circle cx="110" cy="298" r="3.5"/><circle cx="140" cy="296" r="3.5"/>
+              <circle cx="200" cy="291" r="3.5"/><circle cx="320" cy="281" r="3.5"/><circle cx="560" cy="261" r="3.5"/>
+            </g>
+            <text x="150" y="284" class="dg-label sm">resizes spread apart: 1,2,4,8,16&hellip;</text>
+
+            <!-- crossover note -->
+            <line x1="455" y1="300" x2="455" y2="282" class="dg-dash"/>
+            <text x="455" y="320" text-anchor="middle" class="dg-label sm">curves cross; beyond here arithmetic loses badly</text>
+          </svg>
+          <figcaption><b>Figure 2 — geometry beats arithmetic.</b> Doubling's resize points spread out geometrically, so their costs form a convergent-ratio series and the total stays linear. Adding a constant keeps the resizes dense and equally costly, so their total grows like the area of a triangle — quadratic. The growth <em>rule</em>, not the growth <em>amount</em>, decides the asymptotics.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <div class="pull col">Amortisation does not make the costly step cheap. It proves the costly step was <span>already paid for</span>.</div>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> method I</div>
+      <h2>Aggregate analysis: just add it all up</h2>
+      <div class="col">
+        <p>The bluntest method, and the one to try first. Compute the total cost <code class="inl">T(n)</code> of any <code class="inl">n</code> operations directly, then declare the amortized cost to be <code class="inl">T(n)/n</code>. No credits, no functions — just an honest sum. It works whenever the total is easy to bound from above.</p>
+        <p>For <code class="inl">n</code> appends starting from empty, separate the bill into the two kinds of work. The <strong>writes</strong> are easy: exactly one per append, <code class="inl">n</code> in all. The <strong>copies</strong> happen only at resizes, when the size passes a power of two; the copy amounts are <code class="inl">1, 2, 4, &hellip;</code> up to the last resize, which copies fewer than <code class="inl">n</code> elements. That is a geometric series, and the decisive fact about a geometric series is that <em>its sum is barely more than its largest term</em>:</p>
+        <div class="eq">
+          <span class="lbl">total copies = a doubling series &lt; 2n</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mn>1</mn><mo>+</mo><mn>2</mn><mo>+</mo><mn>4</mn><mo>+</mo><mo>&#x22EF;</mo><mo>+</mo><msup><mn>2</mn><mi>k</mi></msup>
+              <mo>=</mo>
+              <msup><mn>2</mn><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msup><mo>&#x2212;</mo><mn>1</mn>
+              <mo>&lt;</mo>
+              <mn>2</mn><mo>&#xB7;</mo><msup><mn>2</mn><mi>k</mi></msup>
+              <mo>&#x2264;</mo>
+              <mn>2</mn><mi>n</mi>
+            </mrow>
+          </math></div>
+        </div>
+        <p>So <code class="inl">T(n) &lt; n (writes) + 2n (copies) = 3n</code>, and the amortized cost per append is</p>
+        <div class="eq">
+          <span class="lbl">aggregate amortized cost</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mover><mi>c</mi><mo>&#x2015;</mo></mover>
+              <mo>=</mo>
+              <mfrac><mrow><mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><mi>n</mi></mfrac>
+              <mo>&lt;</mo>
+              <mfrac><mrow><mn>3</mn><mi>n</mi></mrow><mi>n</mi></mfrac>
+              <mo>=</mo>
+              <mn>3</mn>
+              <mo>=</mo>
+              <mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>That is the whole proof. The single insight carrying it is the one drawn in &sect;04: each resize copies what all <em>previous</em> resizes copied, plus one — so the last resize alone is as expensive as the entire history before it, and the grand total is just twice the final copy. The rarity of the spikes is not assumed; it is forced by doubling and counted exactly.</p>
+        <p>Aggregate analysis has a limitation worth naming. It hands every operation the <em>same</em> amortized cost, <code class="inl">T(n)/n</code>. That is fine when one operation dominates, but when a structure mixes operations of genuinely different amortized cost — cheap pushes and an expensive-but-rare flush, say — we want to charge them <em>differently</em> and still bound the total. For that we need a ledger.</p>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> method II</div>
+      <h2>The accounting (banker's) method: pay it forward</h2>
+      <div class="col">
+        <p>Now we run a bank. Each operation is <em>charged</em> an amortized cost we get to choose — the price at the counter. When an operation is charged <em>more</em> than its real work, the surplus is stored as <span class="term">credit</span> on a specific spot in the structure. When an operation's real work <em>exceeds</em> its charge, it pays the difference out of stored credit. One law governs the whole scheme:</p>
+        <div class="note"><span class="tag" style="color:var(--bau-ink)">the banker's invariant</span>The total stored credit must never go negative. The bank may not lend against money it does not have. If credit stays <code class="inl">&ge; 0</code> after every operation, then total charges <code class="inl">&ge;</code> total actual cost &mdash; so the charges are a valid amortized bound.</div>
+        <p>Why does the invariant suffice? Total credit <code class="inl">=</code> total charged <code class="inl">&minus;</code> total spent. Credit <code class="inl">&ge; 0</code> says total charged <code class="inl">&ge;</code> total spent <code class="inl">=</code> total actual cost. The charges therefore upper-bound the true work — which is exactly the definition of amortized cost from &sect;03.</p>
+
+        <p><strong>The scheme for the doubling array: charge <span class="big-amort">3</span> coins per append.</strong> Spend them like this:</p>
+        <ul>
+          <li><span class="coin">1</span> pays for the immediate write of the new element. (Real work, done now.)</li>
+          <li><span class="coin">2</span> are <em>banked on the new element itself</em>, to prepay copy work later.</li>
+        </ul>
+        <p>Why exactly two? Here is the accountant's intuition, and it is lovely. When the array next doubles, every element must be copied — but only the elements added <em>since the previous</em> doubling still carry credit; the older half spent theirs in that previous doubling and are now &ldquo;freeloaders.&rdquo; Because the array is always half full just after a doubling (&sect;04, Figure 1), the new half is exactly as numerous as the old half. So give each new element <em>two</em> coins: one to copy <em>itself</em> at the next doubling, and one to copy <em>one freeloader</em> from the old half. Every copy at the next doubling is then prepaid, and the bank never dips below zero.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 340" role="img" aria-labelledby="f3t f3d">
+            <title id="f3t">The banker's ledger: two coins on each newly added element prepay all copies at the next doubling</title>
+            <desc id="f3d">A full array of capacity eight. Its first four elements, added before the last doubling, carry no coins and are labelled freeloaders. Its last four elements each carry two coins. When the array doubles, each new element spends one coin to copy itself and one coin to copy a freeloader, so all eight copies are prepaid and the credit returns to zero.</desc>
+
+            <text x="24" y="34" class="dg-cap">full array, capacity 8 &mdash; about to double</text>
+
+            <!-- old half: freeloaders, no coins -->
+            <g>
+              <rect x="40"  y="120" width="64" height="58" class="dg-cell"/><text x="72"  y="156" text-anchor="middle" class="dg-val">A</text>
+              <rect x="104" y="120" width="64" height="58" class="dg-cell"/><text x="136" y="156" text-anchor="middle" class="dg-val">B</text>
+              <rect x="168" y="120" width="64" height="58" class="dg-cell"/><text x="200" y="156" text-anchor="middle" class="dg-val">C</text>
+              <rect x="232" y="120" width="64" height="58" class="dg-cell"/><text x="264" y="156" text-anchor="middle" class="dg-val">D</text>
+              <text x="168" y="206" text-anchor="middle" class="dg-label sm dg-red-f">old half &mdash; freeloaders, 0 credit</text>
+              <text x="168" y="106" text-anchor="middle" class="dg-label sm">added before last doubling</text>
+            </g>
+
+            <!-- new half: two coins each -->
+            <g>
+              <rect x="300" y="120" width="64" height="58" class="dg-fill"/><text x="332" y="156" text-anchor="middle" class="dg-val">E</text>
+              <rect x="364" y="120" width="64" height="58" class="dg-fill"/><text x="396" y="156" text-anchor="middle" class="dg-val">F</text>
+              <rect x="428" y="120" width="64" height="58" class="dg-fill"/><text x="460" y="156" text-anchor="middle" class="dg-val">G</text>
+              <rect x="492" y="120" width="64" height="58" class="dg-fill"/><text x="524" y="156" text-anchor="middle" class="dg-val">H</text>
+              <text x="428" y="206" text-anchor="middle" class="dg-label sm dg-blue-f">new half &mdash; 2 credits each = 8 credits</text>
+              <text x="428" y="106" text-anchor="middle" class="dg-label sm">added since last doubling</text>
+              <!-- coins -->
+              <g font-family="var(--font-mono)" font-size="13" font-weight="700" fill="var(--bau-ink)" text-anchor="middle">
+                <circle cx="318" cy="100" r="11" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="318" y="105">1</text>
+                <circle cx="346" cy="100" r="11" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="346" y="105">1</text>
+                <circle cx="382" cy="100" r="11" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="382" y="105">1</text>
+                <circle cx="410" cy="100" r="11" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="410" y="105">1</text>
+                <circle cx="446" cy="100" r="11" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="446" y="105">1</text>
+                <circle cx="474" cy="100" r="11" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="474" y="105">1</text>
+                <circle cx="510" cy="100" r="11" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="510" y="105">1</text>
+                <circle cx="538" cy="100" r="11" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="538" y="105">1</text>
+              </g>
+            </g>
+
+            <!-- ledger box -->
+            <g transform="translate(600,86)">
+              <rect x="0" y="0" width="316" height="170" rx="10" fill="var(--surface-2)" stroke="var(--outline-variant)"/>
+              <text x="18" y="30" class="dg-cap">at the doubling, 8 coins pay 8 copies</text>
+              <text x="18" y="62" class="dg-label sm">each new element spends:</text>
+              <text x="34" y="86" class="dg-label sm dg-blue-f">&#x2022; 1 coin &rarr; copy itself</text>
+              <text x="34" y="108" class="dg-label sm dg-red-f">&#x2022; 1 coin &rarr; copy one freeloader</text>
+              <text x="18" y="138" class="dg-label sm">4 new &#xD7; 2 = 8 credits = 8 copies</text>
+              <text x="18" y="160" class="dg-val dg-blue-f">credit after &rarr; 0  (invariant held)</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 3 — the banker's ledger.</b> Two coins per append is precisely enough: the new half is as large as the old half (the half-full fact again), so each new element prepays its own future copy <em>and</em> one orphaned older element's. Charge 3, store 2, and the bank never breaks. Amortized cost <code class="inl">= 3 = O(1)</code>.</figcaption>
+        </figure>
+
+        <details>
+          <summary>Where exactly is the credit stored, formally?</summary>
+          <div class="body">
+            <p>Attach the credit to <em>elements</em>, not to the array as a whole. State the invariant as: <em>after every operation, the number of stored coins equals twice the number of elements in the upper half of the current block</em> — i.e. <code class="inl">2&#xB7;max(0, n &minus; C/2)</code>. A cheap append adds one element to the upper half and banks its 2 coins, preserving it. A doubling spends all upper-half coins to perform the copies, then the new block is half full so the upper half is empty and credit is <code class="inl">0</code> — still satisfying the invariant. You will notice this stored-coin formula is <code class="inl">2n - C</code> whenever <code class="inl">n &ge; C/2</code>. Hold that thought; in &sect;08 it becomes the potential function, and in &sect;10 we see the accounting method and the potential method were the same method all along.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> method III</div>
+      <h2>The potential method: stored energy in the structure</h2>
+      <div class="col">
+        <p>The accounting method tracks credit operation by operation. The <span class="term">potential method</span> does something more elegant: it makes the total stored credit a <em>function of the structure's current state</em>, written <code class="inl">&#x3A6;(D)</code> — think of it as potential energy latent in the configuration, prepaid work waiting to be spent. We never again track coins by hand; we just read <code class="inl">&#x3A6;</code> off the state before and after. The amortized cost of an operation is its actual cost plus the change in potential:</p>
+        <div class="eq">
+          <span class="lbl">amortized cost via potential</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mover><mi>c</mi><mo>^</mo></mover><mi>i</mi>
+              <mo>=</mo>
+              <msub><mi>c</mi><mi>i</mi></msub>
+              <mo>+</mo>
+              <mi>&#x3A6;</mi><mo>(</mo><msub><mi>D</mi><mi>i</mi></msub><mo>)</mo>
+              <mo>&#x2212;</mo>
+              <mi>&#x3A6;</mi><mo>(</mo><msub><mi>D</mi><mrow><mi>i</mi><mo>&#x2212;</mo><mn>1</mn></mrow></msub><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Why is this legal? Sum the amortized costs over a whole run and the potential terms <strong>telescope</strong> — each <code class="inl">&#x3A6;(D_i)</code> appears once with a plus and once with a minus, cancelling all but the endpoints:</p>
+        <div class="eq">
+          <span class="lbl">the telescoping sum &mdash; the engine of the method</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></munderover>
+              <msub><mover><mi>c</mi><mo>^</mo></mover><mi>i</mi></msub>
+              <mo>=</mo>
+              <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></munderover>
+              <msub><mi>c</mi><mi>i</mi></msub>
+              <mo>+</mo>
+              <mi>&#x3A6;</mi><mo>(</mo><msub><mi>D</mi><mi>m</mi></msub><mo>)</mo>
+              <mo>&#x2212;</mo>
+              <mi>&#x3A6;</mi><mo>(</mo><msub><mi>D</mi><mn>0</mn></msub><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>So if we choose <code class="inl">&#x3A6;</code> with <strong>two obligations</strong> — <code class="inl">&#x3A6;(D_0) = 0</code> and <code class="inl">&#x3A6;(D_i) &ge; 0</code> for all <code class="inl">i</code> — then the trailing terms can only help us: <code class="inl">&#x3A3; c_i = &#x3A3; &#x109;_i &minus; &#x3A6;(D_m) &le; &#x3A3; &#x109;_i</code>. The actual total is bounded by the amortized total. <strong>These two obligations are the entire discipline of the method; forget either and the bound is invalid</strong> (see &sect;13).</p>
+
+        <h3>The right potential for the doubling array</h3>
+        <p>Choose, exactly as &sect;07's stored-coin formula suggested:</p>
+        <div class="eq">
+          <span class="lbl">the potential function</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>&#x3A6;</mi><mo>(</mo><mi>D</mi><mo>)</mo>
+              <mo>=</mo>
+              <mn>2</mn><mi>n</mi><mo>&#x2212;</mo><mi>C</mi>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Sanity-check the two obligations and the geometry. Just after a doubling the array is half full (<code class="inl">n = C/2</code>), giving <code class="inl">&#x3A6; = 2(C/2) - C = 0</code> — the structure is &ldquo;discharged.&rdquo; As we append, <code class="inl">n</code> climbs while <code class="inl">C</code> holds, so <code class="inl">&#x3A6;</code> rises by 2 each step until the array is full (<code class="inl">n = C</code>), where <code class="inl">&#x3A6; = 2C - C = C = n</code> — fully charged, holding exactly enough potential to pay for copying all <code class="inl">n</code> elements. The doubling array keeps <code class="inl">n &ge; C/2</code> throughout (it is half full right after each growth and only climbs), so <code class="inl">&#x3A6; = 2n &minus; C &ge; 0</code> always, and starting empty gives <code class="inl">&#x3A6;(D_0) = 0</code>. Both obligations met.</p>
+
+        <p>Now the two-line payoff. Compute the amortized cost in each of the two cases:</p>
+        <div class="two">
+          <div class="eq" style="margin:0">
+            <span class="lbl">cheap append (n &lt; C): actual = 1</span>
+            <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+              <mrow>
+                <mover><mi>c</mi><mo>^</mo></mover>
+                <mo>=</mo>
+                <mn>1</mn>
+                <mo>+</mo>
+                <mo>(</mo>
+                <mtext>&#x3A6;</mtext><mo>&#x2191;</mo><mn>2</mn>
+                <mo>)</mo>
+                <mo>=</mo>
+                <mn>1</mn><mo>+</mo><mn>2</mn>
+                <mo>=</mo>
+                <mn>3</mn>
+              </mrow>
+            </math></div>
+          </div>
+          <div class="eq" style="margin:0">
+            <span class="lbl">resize append (n = C): actual = n+1</span>
+            <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+              <mrow>
+                <mover><mi>c</mi><mo>^</mo></mover>
+                <mo>=</mo>
+                <mo>(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo>)</mo>
+                <mo>+</mo>
+                <mo>(</mo><mn>2</mn><mo>&#x2212;</mo><mi>n</mi><mo>)</mo>
+                <mo>=</mo>
+                <mn>3</mn>
+              </mrow>
+            </math></div>
+          </div>
+        </div>
+        <p>Look at what happened in the resize case. The actual cost spiked to <code class="inl">n+1</code> — but the potential <em>crashed</em> by almost exactly the same amount. Before the resize the array was full and fully charged (<code class="inl">&#x3A6; = n</code>); after, it is half full and discharged (<code class="inl">&#x3A6; = 2</code>). That <code class="inl">&minus;(n-2)</code> drop is the structure spending its stored energy to pay for the copy, leaving an amortized cost of a flat <span class="big-amort">3</span>. <strong>The spike in actual cost and the crash in potential cancel by design.</strong> That cancellation is the whole beauty of the method, and the figure below is its portrait.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 380" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">The potential sawtooth: potential rises by two each cheap append and crashes at each resize, exactly cancelling the actual-cost spike</title>
+            <desc id="f4d">Across seventeen appends, the actual per-operation cost is one for cheap appends and rises to spikes of size two, three, five, nine, and seventeen at the resizes (appends two, three, five, nine, seventeen). The potential climbs in steps of two between resizes, forming a rising sawtooth, and plunges back to two at every resize. At every operation the amortized cost, actual plus the change in potential, equals three — drawn as a flat dashed line.</desc>
+
+            <!-- baseline -->
+            <line x1="70" y1="320" x2="910" y2="320" class="dg-stroke"/>
+            <text x="490" y="358" text-anchor="middle" class="dg-label">append number  (resizes at 2, 3, 5, 9, 17)</text>
+            <text x="34" y="180" class="dg-label" transform="rotate(-90 34 180)" text-anchor="middle">cost / potential &#8594;</text>
+
+            <!-- actual-cost spikes (bars) at resize appends -->
+            <g class="dg-red-f" opacity="0.9">
+              <!-- positions x for appends 1..17 along 90..890 step 50 -->
+              <rect x="84"  y="312" width="12" height="8"/>            <!-- 1: 1 -->
+              <rect x="134" y="304" width="12" height="16"/>           <!-- 2: 2 -->
+              <rect x="184" y="296" width="12" height="24"/>           <!-- 3: 3 -->
+              <rect x="234" y="312" width="12" height="8"/>            <!-- 4: 1 -->
+              <rect x="284" y="280" width="12" height="40"/>           <!-- 5: 5 -->
+              <rect x="334" y="312" width="12" height="8"/>            <!-- 6 -->
+              <rect x="384" y="312" width="12" height="8"/>            <!-- 7 -->
+              <rect x="434" y="312" width="12" height="8"/>            <!-- 8 -->
+              <rect x="484" y="248" width="12" height="72"/>           <!-- 9: 9 -->
+              <rect x="534" y="312" width="12" height="8"/>            <!-- 10 -->
+              <rect x="584" y="312" width="12" height="8"/>
+              <rect x="634" y="312" width="12" height="8"/>
+              <rect x="684" y="312" width="12" height="8"/>
+              <rect x="734" y="312" width="12" height="8"/>
+              <rect x="784" y="312" width="12" height="8"/>
+              <rect x="834" y="312" width="12" height="8"/>            <!-- 16 -->
+              <rect x="884" y="184" width="12" height="136"/>          <!-- 17: 17 -->
+            </g>
+            <text x="884" y="176" text-anchor="middle" class="dg-label sm dg-red-f">actual = 17</text>
+            <text x="120" y="250" class="dg-label sm dg-red-f">actual-cost spikes at resizes</text>
+
+            <!-- potential sawtooth (Phi = 2n - C), scaled same as bars (1 unit = 8px) -->
+            <!-- Phi after each op: 1,2,2,4,2,4,6,8,2,4,6,8,10,12,14,16,2 -->
+            <polyline points="90,312 140,304 190,304 240,288 290,304 340,288 390,272 440,256 490,304 540,288 590,272 640,256 690,240 740,224 790,208 840,192 890,304"
+              class="dg-stroke dg-blue" stroke-width="2.5" fill="none"/>
+            <g class="dg-blue-f">
+              <circle cx="90" cy="312" r="3"/><circle cx="140" cy="304" r="3"/><circle cx="190" cy="304" r="3"/>
+              <circle cx="240" cy="288" r="3"/><circle cx="290" cy="304" r="3"/><circle cx="340" cy="288" r="3"/>
+              <circle cx="390" cy="272" r="3"/><circle cx="440" cy="256" r="3"/><circle cx="490" cy="304" r="3"/>
+              <circle cx="540" cy="288" r="3"/><circle cx="840" cy="192" r="3"/><circle cx="890" cy="304" r="3"/>
+            </g>
+            <text x="690" y="216" class="dg-label sm dg-blue-f">potential &#x3A6; = 2n &#x2212; C (rises +2, crashes at resize)</text>
+
+            <!-- amortized flat line at 3 (=> y = 320 - 24) -->
+            <line x1="70" y1="296" x2="910" y2="296" class="dg-stroke dg-dash" stroke="var(--bau-ink)"/>
+            <text x="76" y="290" class="dg-label sm">amortized = actual + &#x394;&#x3A6; = 3, flat</text>
+
+            <!-- annotation: cancellation at op 17 -->
+            <path d="M884 184 C 905 230, 905 270, 890 300" class="dg-thin dg-red" marker-end="url(#s4)"/>
+            <text x="700" y="120" class="dg-label sm">at op 17: actual &#8593;17 but &#x3A6; crashes 16&#8594;2,</text>
+            <text x="700" y="138" class="dg-label sm">so amortized = 17 + (2&#x2212;16) = 3</text>
+            <defs>
+              <marker id="s4" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 4 — the potential sawtooth.</b> The blue sawtooth is <code class="inl">&#x3A6; = 2n - C</code>: it climbs <code class="inl">+2</code> per cheap append, storing energy, and plunges at each resize as that energy is spent on copies. Wherever a red spike stabs upward, the sawtooth drops by the same height. Their sum — the amortized cost — is the flat dashed line at 3.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> worked example</div>
+      <h2>One trace, three ledgers</h2>
+      <div class="col">
+        <p>Theory earns its keep on a concrete run. Append seventeen elements into an empty dynamic array and watch all three methods certify the <em>same</em> total, from the <em>same</em> trace. Resizes fire at appends <strong>1, 2, 3, 5, 9, 17</strong> (each time the size reaches a power of two), copying <code class="inl">0, 1, 2, 4, 8, 16</code> elements respectively. Read the table as four parallel stories of one history:</p>
+        <ul>
+          <li><strong>actual</strong> — the true work: <code class="inl">1</code> for a write, <code class="inl">n+1</code> when it must grow.</li>
+          <li><strong>aggregate</strong> — the running sum <code class="inl">&#x3A3;</code> actual; the amortized claim is &ldquo;this column stays below <code class="inl">3&#xD7;</code>(row).&rdquo;</li>
+          <li><strong>bank</strong> — accounting credit if we charge 3 each: <code class="inl">3k - &#x3A3;</code>actual. It must never go negative.</li>
+          <li><strong>&#x3A6; and amortized</strong> — the potential <code class="inl">2n &minus; C</code> and <code class="inl">&#x109; = </code>actual<code class="inl"> + &#x394;&#x3A6;</code>.</li>
+        </ul>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>17 appends into an empty doubling array — resize rows shaded</caption>
+            <thead>
+              <tr>
+                <th scope="col">append</th><th scope="col">grow?</th><th scope="col">cap C</th><th scope="col">size n</th>
+                <th scope="col">actual</th><th scope="col">&#x3A3; actual</th><th scope="col">bank (3k&minus;&#x3A3;)</th>
+                <th scope="col">&#x3A6;=2n&minus;C</th><th scope="col">amortized</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="wrap-row"><th scope="row">1</th><td>0&rarr;1</td><td class="mono">1</td><td class="mono">1</td><td class="mono">1</td><td class="mono">1</td><td class="mono good">2</td><td class="mono">1</td><td class="mono">2</td></tr>
+              <tr class="wrap-row"><th scope="row">2</th><td>1&rarr;2 (cp 1)</td><td class="mono">2</td><td class="mono">2</td><td class="mono bad">2</td><td class="mono">3</td><td class="mono good">3</td><td class="mono">2</td><td class="mono">3</td></tr>
+              <tr class="wrap-row"><th scope="row">3</th><td>2&rarr;4 (cp 2)</td><td class="mono">4</td><td class="mono">3</td><td class="mono bad">3</td><td class="mono">6</td><td class="mono good">3</td><td class="mono">2</td><td class="mono">3</td></tr>
+              <tr><th scope="row">4</th><td>&mdash;</td><td class="mono">4</td><td class="mono">4</td><td class="mono">1</td><td class="mono">7</td><td class="mono good">5</td><td class="mono">4</td><td class="mono">3</td></tr>
+              <tr class="wrap-row"><th scope="row">5</th><td>4&rarr;8 (cp 4)</td><td class="mono">8</td><td class="mono">5</td><td class="mono bad">5</td><td class="mono">12</td><td class="mono good">3</td><td class="mono">2</td><td class="mono">3</td></tr>
+              <tr><th scope="row">6</th><td>&mdash;</td><td class="mono">8</td><td class="mono">6</td><td class="mono">1</td><td class="mono">13</td><td class="mono good">5</td><td class="mono">4</td><td class="mono">3</td></tr>
+              <tr><th scope="row">7</th><td>&mdash;</td><td class="mono">8</td><td class="mono">7</td><td class="mono">1</td><td class="mono">14</td><td class="mono good">7</td><td class="mono">6</td><td class="mono">3</td></tr>
+              <tr><th scope="row">8</th><td>&mdash;</td><td class="mono">8</td><td class="mono">8</td><td class="mono">1</td><td class="mono">15</td><td class="mono good">9</td><td class="mono">8</td><td class="mono">3</td></tr>
+              <tr class="wrap-row"><th scope="row">9</th><td>8&rarr;16 (cp 8)</td><td class="mono">16</td><td class="mono">9</td><td class="mono bad">9</td><td class="mono">24</td><td class="mono good">3</td><td class="mono">2</td><td class="mono">3</td></tr>
+              <tr><th scope="row">10</th><td>&mdash;</td><td class="mono">16</td><td class="mono">10</td><td class="mono">1</td><td class="mono">25</td><td class="mono good">5</td><td class="mono">4</td><td class="mono">3</td></tr>
+              <tr><th scope="row">11&ndash;15</th><td>&mdash;</td><td class="mono">16</td><td class="mono">11&ndash;15</td><td class="mono">1 ea</td><td class="mono">26&ndash;30</td><td class="mono good">7,9,11,13,15</td><td class="mono">6,8,10,12,14</td><td class="mono">3</td></tr>
+              <tr><th scope="row">16</th><td>&mdash;</td><td class="mono">16</td><td class="mono">16</td><td class="mono">1</td><td class="mono">31</td><td class="mono good">17</td><td class="mono">16</td><td class="mono">3</td></tr>
+              <tr class="wrap-row"><th scope="row">17</th><td>16&rarr;32 (cp 16)</td><td class="mono">32</td><td class="mono">17</td><td class="mono bad">17</td><td class="mono">48</td><td class="mono good">3</td><td class="mono">2</td><td class="mono">3</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="9">Totals: &#x3A3; actual = <b>48</b> &lt; 3&#xD7;17 = 51. &#x3A3; amortized = 2 + 3&#xD7;16 = <b>50</b>. Reconciliation: &#x3A3;amortized &#x2212; &#x3A3;actual = 50 &#x2212; 48 = <b>2</b> = &#x3A6;<sub>final</sub>. Bank stays &#x2265; 2 throughout; every amortized cost &#x2264; 3. All three methods agree.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <p>Three independent instruments, one verdict. The <strong>aggregate</strong> sees <code class="inl">48 &lt; 3n</code> and divides. The <strong>accountant</strong> watches the bank column never break zero (its minimum is 2). The <strong>potential</strong> watches every row's amortized cost land on a flat 3, and reconciles the books exactly: the gap between what we charged (50) and what we spent (48) is precisely the energy still stored at the end (<code class="inl">&#x3A6;_{final} = 2</code>). Notice too the resize rows — actual 2, 3, 5, 9, 17 — are exactly where <code class="inl">&#x3A6;</code> drops back to 2: the spikes and the discharges are the same events.</p>
+
+        <p>One small wrinkle worth seeing: append 1 has amortized cost 2, not 3, because expanding from <code class="inl">C=0</code> copies nothing. The bank therefore ends one coin richer than <code class="inl">&#x3A6;</code> (bank <code class="inl">= &#x3A6; + 1</code> after the first op). It is the same coin, counted in two notations — which is the subject of the next section.</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> the abstraction beneath</div>
+      <h2>The three methods are one idea</h2>
+      <div class="col">
+        <p>I am, by temperament, unsatisfied until three surface techniques resolve into one structure. They do here, and seeing it is worth more than any single proof.</p>
+        <p>Begin with the accounting method's invariant from &sect;07: the stored credit, as a function of state, is <code class="inl">2n - C</code>. Now read the potential function of &sect;08: <code class="inl">&#x3A6;(D) = 2n - C</code>. <strong>They are identical.</strong> The potential function is nothing but the accountant's total bank balance, re-expressed as a formula in the structure's state instead of tracked transaction by transaction. Accounting is the potential method done by hand; the potential method is accounting with the bookkeeping closed into an equation. Choosing &ldquo;3 coins, store 2&rdquo; <em>is</em> choosing <code class="inl">&#x3A6; = 2n - C</code>.</p>
+        <div class="three">
+          <div class="band">
+            <span class="method-tag">Method I</span>
+            <div class="method-h">Aggregate</div>
+            <p style="margin:0; font-size:15px">Bound the <em>total</em> directly; divide by <code class="inl">m</code>. One amortized price for all. The honest brute-force check — and the sanity test the other two must match.</p>
+          </div>
+          <div class="band">
+            <span class="method-tag">Method II</span>
+            <div class="method-h">Accounting</div>
+            <p style="margin:0; font-size:15px">Assign per-operation charges; bank the surplus on parts of the structure; keep credit <code class="inl">&ge; 0</code>. Lets different operations carry different prices.</p>
+          </div>
+          <div class="band">
+            <span class="method-tag">Method III</span>
+            <div class="method-h">Potential</div>
+            <p style="margin:0; font-size:15px">Write the bank balance as <code class="inl">&#x3A6;(state)</code>; read <code class="inl">&#x109; = c + &#x394;&#x3A6;</code>. The same ledger, closed-form and telescoping. The most reusable.</p>
+          </div>
+        </div>
+        <p>So why teach all three? Because they differ in <em>ergonomics</em>, not in truth. Aggregate is fastest when one cost dominates and the sum is easy. Accounting gives the clearest <em>intuition</em> — &ldquo;this element prepays that copy&rdquo; — and shines when operations deserve unequal charges. The potential method is the most <em>powerful and transferable</em>: once you can name the stored energy of a structure as a function of its state, the proof becomes two lines of arithmetic, and the very same move scales up to structures whose ledgers no human would track by hand. Which brings us to the horizon.</p>
+        <div class="note info"><span class="tag">the formal lens</span>When a problem offers three methods, look for the invariant they share. Here it is the quantity <code class="inl">2n - C</code> — &ldquo;twice the elements past half-full.&rdquo; Find that quantity and the choice of method becomes mere convenience.</div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> the symmetric danger</div>
+      <h2>Shrinking without thrashing</h2>
+      <div class="col">
+        <p>A dynamic array usually supports deletion too, and a tidy engineer wants the block to shrink when it empties so memory is reclaimed. The obvious rule is the trap: <em>&ldquo;halve the capacity when the array falls to half full.&rdquo;</em> Pair it with &ldquo;double when full&rdquo; and you have built a machine that can be driven to <code class="inl">&#x398;(n)</code> on <em>every single operation.</em></p>
+        <p>Sit the array exactly at the boundary <code class="inl">n = C/2</code> and feed it <code class="inl">append, delete, append, delete, &hellip;</code> The append fills it, triggering a <em>doubling</em> (copy <code class="inl">C</code>). The delete drops it to half full, triggering a <em>halving</em> (copy <code class="inl">C/2</code>). Each operation copies <code class="inl">&#x398;(n)</code> elements; nothing is ever amortised because no cheap operations accumulate between the expensive ones. The amortized bound is destroyed. The cause, in potential terms: after each resize the structure sits <em>right at</em> the next resize's trigger, with zero runway — exactly what doubling was careful to avoid.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 250" role="img" aria-labelledby="f5t f5d">
+            <title id="f5t">Halve-at-half-full thrashes; halve-at-quarter-full leaves a safe buffer</title>
+            <desc id="f5d">Two number lines of load factor from empty to full. In the bad rule the grow trigger at full and the shrink trigger at one half sit adjacent, so an operation at the boundary bounces between resizes every step. In the good rule the shrink trigger is moved down to one quarter, leaving a wide buffer between one quarter and full, so after any resize the array is half full and needs many operations before the next resize.</desc>
+
+            <!-- BAD rule -->
+            <text x="24" y="34" class="dg-cap">bad: shrink at half &mdash; triggers are adjacent</text>
+            <line x1="60" y1="70" x2="900" y2="70" class="dg-stroke"/>
+            <text x="60" y="100" class="dg-label sm">0</text>
+            <line x1="480" y1="62" x2="480" y2="78" class="dg-stroke dg-red"/><text x="480" y="100" text-anchor="middle" class="dg-label sm dg-red-f">&#xBD; shrink</text>
+            <line x1="900" y1="62" x2="900" y2="78" class="dg-stroke dg-blue"/><text x="900" y="100" text-anchor="end" class="dg-label sm dg-blue-f">full: grow</text>
+            <path d="M520 56 C 600 24, 800 24, 880 56" class="dg-thin dg-red" marker-end="url(#t1)"/>
+            <path d="M860 84 C 780 116, 580 116, 500 84" class="dg-thin dg-red" marker-end="url(#t1)"/>
+            <text x="690" y="132" text-anchor="middle" class="dg-label sm dg-red-f">every op bounces between the two &rarr; &#x398;(n) each</text>
+
+            <!-- GOOD rule -->
+            <text x="24" y="186" class="dg-cap">good: shrink at quarter &mdash; a buffer of cheap ops between resizes</text>
+            <line x1="60" y1="216" x2="900" y2="216" class="dg-stroke"/>
+            <line x1="270" y1="208" x2="270" y2="224" class="dg-stroke dg-red"/><text x="270" y="244" text-anchor="middle" class="dg-label sm dg-red-f">&#xBC; shrink</text>
+            <line x1="480" y1="210" x2="480" y2="222" class="dg-thin"/><text x="480" y="244" text-anchor="middle" class="dg-label sm">&#xBD; (rest point)</text>
+            <line x1="900" y1="208" x2="900" y2="224" class="dg-stroke dg-blue"/><text x="900" y="244" text-anchor="end" class="dg-label sm dg-blue-f">full: grow</text>
+            <path d="M285 200 L 880 200" class="dg-dash dg-blue"/>
+            <text x="585" y="194" text-anchor="middle" class="dg-label sm dg-blue-f">wide buffer: after any resize, array is half full &rarr; &#x398;(C) cheap ops first</text>
+
+            <defs>
+              <marker id="t1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 5 — hysteresis defeats the thrash.</b> Move the shrink trigger from <code class="inl">&#xBD;</code> down to <code class="inl">&#xBC;</code>. Now after either resize the array lands at half full, a comfortable distance from <em>both</em> triggers, guaranteeing <code class="inl">&#x398;(C)</code> cheap operations before the next resize — which is exactly what restores <code class="inl">O(1)</code> amortized for appends <em>and</em> deletes.</figcaption>
+        </figure>
+
+        <p><strong>The fix is hysteresis: grow at full (double), but shrink only at <em>quarter</em> full (halve).</strong> The gap between the two thresholds is the runway. After a doubling the array is half full; after a halving it is also half full (<code class="inl">n = C/4</code> elements in the new capacity <code class="inl">C/2</code>). Either way it rests at the midpoint, so <code class="inl">&#x398;(C)</code> operations of either kind must occur before the next resize fires. The amortized bound returns for both operations.</p>
+
+        <details>
+          <summary>The potential function that proves both directions O(1)</summary>
+          <div class="body">
+            <p>The asymmetry of the thresholds forces a two-piece potential, the &ldquo;distance from half full&rdquo; in each regime:</p>
+            <div class="eq" style="margin:.4em 0">
+              <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+                <mrow>
+                  <mi>&#x3A6;</mi>
+                  <mo>=</mo>
+                  <mrow>
+                    <mo>{</mo>
+                    <mtable columnalign="left">
+                      <mtr><mtd><mn>2</mn><mi>n</mi><mo>&#x2212;</mo><mi>C</mi></mtd><mtd><mtext>if&#xA0;</mtext><mi>n</mi><mo>&#x2265;</mo><mi>C</mi><mo>/</mo><mn>2</mn></mtd></mtr>
+                      <mtr><mtd><mi>C</mi><mo>/</mo><mn>2</mn><mo>&#x2212;</mo><mi>n</mi></mtd><mtd><mtext>if&#xA0;</mtext><mi>n</mi><mo>&lt;</mo><mi>C</mi><mo>/</mo><mn>2</mn></mtd></mtr>
+                    </mtable>
+                  </mrow>
+                </mrow>
+              </math></div>
+            </div>
+            <p>It is <code class="inl">0</code> at exactly half full (both branches agree), rises toward either trigger, and is <code class="inl">&ge; 0</code> everywhere with <code class="inl">&#x3A6;(empty) = 0</code>. A grow fires when <code class="inl">&#x3A6;</code> (upper branch) has climbed to <code class="inl">C</code>; a shrink fires when <code class="inl">&#x3A6;</code> (lower branch) has climbed to <code class="inl">C/4</code>. In both cases the stored potential is large enough to pay the copy, and a routine case-check shows every operation is amortized <code class="inl">O(1)</code>. This is the classic CLRS dynamic-table result; the quarter-full threshold is what makes it go through.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> horizon</div>
+      <h2>The same trick bounds union-find</h2>
+      <div class="col">
+        <p>I want you to leave this lecture seeing the potential method not as a fact about arrays but as a <em>general instrument</em>, because its most striking use is still ten lectures away. In Lecture 12 we build <span class="term">union-find</span> (the disjoint-set structure) to track connected components — the engine inside Kruskal's minimum-spanning-tree algorithm. It supports <code class="inl">find</code> (which set is <code class="inl">x</code> in?) and <code class="inl">union</code> (merge two sets), and with two optimisations — <em>union by rank</em> and <em>path compression</em> — its operations run in <span class="term">inverse-Ackermann</span> time:</p>
+        <div class="eq">
+          <span class="lbl">union-find with both heuristics</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mtext>m operations on n elements</mtext>
+              <mo>:</mo>
+              <mi>O</mi><mo>(</mo><mi>m</mi><mo>&#xB7;</mo><mi>&#x3B1;</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>)</mo>
+              <mtext>&#xA0;amortized,&#xA0;</mtext>
+              <mi>&#x3B1;</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>&#x2264;</mo><mn>4</mn>
+              <mtext>&#xA0;for all practical n</mtext>
+            </mrow>
+          </math></div>
+        </div>
+        <p>The function <code class="inl">&#x3B1;(n)</code>, the inverse of Ackermann's explosively-growing function, is below 5 for any <code class="inl">n</code> you could ever store — effectively a constant, though provably <em>not</em> one. No single <code class="inl">find</code> is <code class="inl">O(1)</code> worst-case; the near-constant cost is purely amortized, and the proof is a potential argument exactly in the shape you just learned. The difference is only in the <em>potential function</em>: instead of <code class="inl">2n - C</code>, one assigns each node a potential derived from its rank and how far its rank sits below its parent's, so that the rare expensive <code class="inl">find</code> — the one that walks a long path — is paid for by the potential released when path compression flattens that path. Same telescoping sum; same &ldquo;spike cancels a potential drop&rdquo;; a vastly cleverer <code class="inl">&#x3A6;</code>.</p>
+        <p>That is the promise of this method, and the reason it is worth mastering on the humble array first: <strong>the technique you just used to tame a doubling array is, structurally, the technique that tames one of the most subtle data structures in the field.</strong> When you meet it again in Lecture 12, you will recognise the machinery — and the recognition is the point.</p>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section id="s13" class="reveal">
+      <div class="eyebrow"><span class="n">13</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>Keep the gap between the clean theorem and the running machine in view. Amortized analysis is unusually easy to <em>misquote</em> — here is where it bites.</p>
+
+        <h3>1 &middot; Amortized is not a per-operation guarantee &mdash; the real-time trap</h3>
+        <p>The single resize really does cost <code class="inl">&#x398;(n)</code>. If your system has a hard deadline on <em>every</em> operation — a 60-frames-per-second render loop with 16ms per frame, an audio callback, a pacemaker — then &ldquo;<code class="inl">O(1)</code> amortized&rdquo; is cold comfort the frame the array decides to copy a million elements. Remedies: <strong>pre-reserve</strong> capacity when the final size is known (one growth up front, then all cheap appends), or <strong>de-amortize</strong> by spreading the copy incrementally across many operations so each does <code class="inl">O(1)</code> worst-case work (this is Practice Problem 3). Know which guarantee your setting demands.</p>
+
+        <h3>2 &middot; Amortized is not average-case</h3>
+        <p>Worth repeating because it is the field's favourite slip. There is no probability in our proof; the bound holds for the adversary's worst sequence. Do not &ldquo;defend&rdquo; an amortized bound by saying expensive operations are unlikely — they are not unlikely, they are <em>infrequent by construction</em>, which is stronger. And do not import amortized reasoning to justify a hash table's <code class="inl">O(1)</code>: that one really is probabilistic and really can be unlucky (Lecture 08).</p>
+
+        <h3>3 &middot; The halve-at-half-full thrash</h3>
+        <p>The &sect;11 disaster, restated because it is a real bug in real code: making the shrink threshold meet the grow threshold lets an adversary (or an unlucky workload) force <code class="inl">&#x398;(n)</code> on every operation. Always leave hysteresis — shrink at a quarter, not a half. The same logic forbids shrinking eagerly after a single delete.</p>
+
+        <h3>4 &middot; Arithmetic growth — the frugal-looking <code class="inl">&#x398;(n)</code></h3>
+        <p>&ldquo;Grow by 10 each time&rdquo; or &ldquo;<code class="inl">capacity += 1</code>&rdquo; looks thrifty and quietly makes append <code class="inl">&#x398;(n)</code> amortized (&sect;05). It is one of the most common performance bugs in hand-rolled containers, and it hides because small tests never reveal the quadratic. Growth must be <em>multiplicative</em>.</p>
+
+        <h3>5 &middot; A potential that dips below its start</h3>
+        <p>The method is only valid if <code class="inl">&#x3A6;(D_i) &ge; &#x3A6;(D_0)</code> for all <code class="inl">i</code> (with <code class="inl">&#x3A6;(D_0)=0</code> the usual normalisation). If your <code class="inl">&#x3A6;</code> can go negative, the telescoped <code class="inl">-&#x3A6;(D_m)</code> term becomes <em>positive</em> and your &ldquo;bound&rdquo; can sit <em>below</em> the true cost — a proof that proves nothing. Always discharge both obligations explicitly: <code class="inl">&#x3A6;</code> starts at zero, and <code class="inl">&#x3A6;</code> never drops below it. A negative potential is the single most common error in student potential proofs.</p>
+
+        <h3>6 &middot; Amortization can break under persistence / backtracking</h3>
+        <p>The whole argument assumes a <em>single linear timeline</em> of operations, so that spent potential stays spent. If a structure is <em>persistent</em> — you can save an old version and resume from it — an adversary can return to a fully-charged state (an about-to-resize array) and trigger the expensive operation again and again, each time from the same saved state, paying the spike repeatedly without the cheap operations that funded it. The amortized bound is then <em>false</em>. This is why naive amortized structures need care (and techniques like lazy evaluation) to survive in a functional setting. Amortized bounds are about histories, not snapshots.</p>
+
+        <h3>7 &middot; Forgetting to free, or to null, the old block</h3>
+        <p>An engine-level mistake, not an analysis one: after <code class="inl">GROW</code> copies into the new block, the old block must be released, and in a garbage-collected language any references the array held to popped objects must be nulled (the classic loitering-reference leak from Lecture 01's stack). The amortized <em>time</em> bound says nothing about <em>space</em> hygiene; mind both.</p>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section id="s14" class="reveal">
+      <div class="eyebrow"><span class="n">14</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Design a dynamic array with deletion &mdash; and prove both directions O(1) amortized</h3>
+          <p class="meta">doubling &amp; halving &middot; hysteresis &middot; potential method</p>
+          <p>Implement a resizable array backing a stack: <code class="inl">push(x)</code> and <code class="inl">pop()</code>, each <code class="inl">O(1)</code> <em>amortized</em>, on a fixed backing array that you grow and shrink. <strong>(a)</strong> Specify the grow and shrink rules so the bound holds, and show that the naive &ldquo;halve at half full&rdquo; rule admits a sequence of <code class="inl">m</code> operations costing <code class="inl">&#x398;(m&#xB7;n)</code>. <strong>(b)</strong> Give a potential function and prove both <code class="inl">push</code> and <code class="inl">pop</code> are <code class="inl">O(1)</code> amortized under your rules; verify <code class="inl">&#x3A6; &ge; 0</code> and <code class="inl">&#x3A6;(empty) = 0</code>. <strong>(c)</strong> State the worst-case single-operation cost and the worst-case wasted space.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>The binary counter</h3>
+          <p class="meta">aggregate &amp; potential &middot; the canonical second example</p>
+          <p>A <code class="inl">k</code>-bit binary counter starts at 0 and supports <code class="inl">INCREMENT</code>, which flips the trailing run of 1-bits to 0 and sets the next bit to 1 (e.g. <code class="inl">0111 &rarr; 1000</code>). A single increment can flip up to <code class="inl">k</code> bits. Prove that <code class="inl">n</code> increments cost <code class="inl">O(n)</code> total — i.e. <code class="inl">O(1)</code> amortized per increment — <strong>(a)</strong> by aggregate analysis (count how often each bit flips), and <strong>(b)</strong> by the potential method with <code class="inl">&#x3A6; = </code> the number of 1-bits currently set. Show your <code class="inl">&#x3A6;</code> satisfies both obligations, and compute the amortized cost of an increment that resets <code class="inl">t</code> ones. <strong>(c)</strong> What breaks if the counter overflows its <code class="inl">k</code> bits?</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>De-amortize the doubling array &mdash; make every append O(1) worst-case</h3>
+          <p class="meta">incremental resizing &middot; real-time guarantee</p>
+          <p>The single resize spike (&sect;13, failure 1) is unacceptable under a hard per-operation deadline. Redesign <code class="inl">append</code> so that <em>every</em> call is <code class="inl">O(1)</code> <strong>worst-case</strong>, not merely amortized, by copying the old block into the new one <em>incrementally</em> — a constant number of elements per append — while both blocks are live during a growth phase. <strong>(a)</strong> Describe the two-array invariant and how a read finds an element mid-migration. <strong>(b)</strong> Choose the per-append copy quota and prove the migration finishes before the new block itself fills (so a second growth never overtakes an unfinished first). <strong>(c)</strong> State the time per operation and the peak space overhead, and contrast both with the plain doubling array.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>The multipop stack</h3>
+          <p class="meta">accounting &amp; potential &middot; a single op can be &#x398;(n)</p>
+          <p>Augment a stack with <code class="inl">MULTIPOP(k)</code>, which pops <code class="inl">min(k, size)</code> elements in one call, alongside ordinary <code class="inl">push(x)</code> and <code class="inl">pop()</code>. A single <code class="inl">MULTIPOP</code> can cost <code class="inl">&#x398;(n)</code>. Prove that <em>any</em> sequence of <code class="inl">n</code> operations on an initially empty stack costs <code class="inl">O(n)</code> total — so all operations are <code class="inl">O(1)</code> amortized — <strong>(a)</strong> by an accounting argument (what does each <code class="inl">push</code> prepay, and for what?), and <strong>(b)</strong> by the potential method with <code class="inl">&#x3A6; = </code> the current number of elements on the stack. Give the amortized cost of <code class="inl">push</code>, <code class="inl">pop</code>, and a <code class="inl">MULTIPOP</code> that removes <code class="inl">t</code> items, and confirm they sum correctly over a run.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15 -->
+    <section id="s15" class="reveal">
+      <div class="eyebrow"><span class="n">15</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>Amortized cost is a worst-case average over a sequence, not an average over luck — and an expensive operation is no problem if the cheap operations have already paid for it.</strong> The doubling array makes every append <code class="inl">O(1)</code> amortized because each <code class="inl">&#x398;(n)</code> copy doubles the runway before the next, so the copies form a geometric series summing to under <code class="inl">2n</code>. Prove it three ways that are secretly one: <strong>aggregate</strong> (total <code class="inl">&lt; 3n</code>), <strong>accounting</strong> (charge 3, bank 2 per element), <strong>potential</strong> (<code class="inl">&#x3A6; = 2n &minus; C</code>, and <code class="inl">&#x109; = c + &#x394;&#x3A6; = 3</code>). Growth must be multiplicative; shrinking must keep hysteresis; and the very same potential argument will return to tame union-find.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 03</span>
+            <div class="ttl">Divide, Solve, Combine: Recurrences and the Master Theorem</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We have priced a structure by summing across its operations. Next we price <em>algorithms</em> that split a problem into smaller copies of itself — merge sort, binary search, Karatsuba multiplication — and learn to solve the recurrences that result, by recursion trees and the Master Theorem. The doubling we exploited here returns there as the branching of a divide-and-conquer tree, and sets up the question Lecture 04 answers: can we multiply faster still?</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-01-linear-layouts-and-access-disciplines.html">← Previous study</a><a href="dsa-03-divide-solve-combine.html">Next study →</a></nav>
+</body>
+</html>

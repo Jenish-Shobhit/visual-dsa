@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Fast Fourier Transform</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.95rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.6rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.wrap-row td, tr.wrap-row th{background:color-mix(in oklab,var(--bau-yellow) 26%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-stroke{stroke:var(--on-surface); fill:none; stroke-width:2}
+  .dg-thin{stroke:var(--outline); fill:none; stroke-width:1}
+  .dg-dash{stroke:var(--outline); fill:none; stroke-width:1.5; stroke-dasharray:5 5}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+  .dg-red{stroke:var(--bau-red)}   .dg-red-f{fill:var(--bau-red)}
+  .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-cell{fill:var(--surface);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill{fill:var(--primary-container);stroke:var(--bau-ink);stroke-width:2}
+  .dg-label{font-family:var(--font-mono); font-size:14px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
+  .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">04 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>04</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="200" height="160" viewBox="0 0 200 160" aria-hidden="true">
+    <circle cx="56" cy="56" r="52" class="dg-blue-f"/>
+    <path d="M120 8 L192 8 L156 72 Z" class="dg-red-f"/>
+    <rect x="86" y="84" width="74" height="74" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <circle cx="56" cy="56" r="20" fill="var(--surface)"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 04</span> the transform that broke the quadratic wall</div>
+    <h1>The Fast Fourier Transform</h1>
+    <p class="lede col">To multiply two polynomials — or two enormous integers — schoolbook arithmetic pairs every digit with every other: <code class="inl">&#x398;(n&#178;)</code>. Lecture&nbsp;03 shaved that to <code class="inl">&#x398;(n<sup>1.585</sup>)</code> with Karatsuba. This lecture does something stranger and far stronger. It does not multiply faster. It <strong>changes what a polynomial <em>is</em></strong> — looks at it from a second representation in which multiplication is nearly free — and pays only a <code class="inl">&#x398;(n&#160;log&#160;n)</code> toll to travel there and back.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Multiply two integers of one million digits each. Schoolbook does about <code class="inl">10&#178; = 10<sup>12</sup></code> &mdash; a trillion &mdash; digit&middot;digit products. Karatsuba needs roughly <code class="inl">(10&#8310;)<sup>1.585</sup>&#8776;3&times;10&#8313;</code>. The FFT route needs about <code class="inl">n&#160;log&#8322;&#160;n &#8776; 2&times;10&#8311;</code>.</p>
+        <p style="margin-bottom:0">That is a <strong>50,000&times;</strong> gap over schoolbook, opened not by a cleverer multiplication but by a change of <em>coordinates</em>. The same transform that powers this is, by line-count, the most-run numerical algorithm on Earth &mdash; inside every audio codec, every JPEG, every radio. And Gauss wrote it down in <strong>1805</strong>, 150 years before there was a computer to run it on.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>The idea vs. the engine</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>Multiplication is convolution</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>A polynomial's two faces</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>The cost moves to the door</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>The magic points: roots of unity</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>Divide &amp; conquer: the FFT</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>The butterfly</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Interpolation = inverse transform</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Worked end to end</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>The algorithm &amp; its bill</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Where it breaks</span></a></li>
+      <li><a href="#s13"><span class="num">13</span><span>Practice</span></a></li>
+      <li><a href="#s14"><span class="num">14</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> the idea vs. the engine</div>
+      <h2>One object, told in two languages</h2>
+      <div class="col">
+        <p>Start with a useful separation: there is the <em>operation</em> we wish to perform, and there is the <em>representation</em> in which we perform it. Confuse them and a problem looks hard that is merely badly coordinated. Ada Lovelace described how the Analytical Engine weaves algebraic patterns as the Jacquard loom weaves leaves &mdash; but only once the pattern has been arranged onto cards the loom can read. The art is in the arranging.</p>
+        <p>The Fast Fourier Transform is the purest illustration of that art in all of computing. The operation &mdash; multiply two polynomials &mdash; is genuinely <code class="inl">&#x398;(n&#178;)</code> in the obvious representation, where a polynomial <em>is</em> its list of coefficients. The trick is to notice that a polynomial has a <strong>second, equally faithful representation</strong>, and that in that second language the very same multiplication is almost free. The whole algorithm is the cost of translation: out of coefficient-language, a fast cheap multiply, and back.</p>
+        <p>So this lecture is not really about Fourier, or about signal processing, or even about complex numbers &mdash; those are the <em>engine</em>. It is about a move you will make again and again in this course: when an operation is expensive, do not grind harder at it. Ask whether a change of representation makes it disappear. The FFT is the canonical case where it does.</p>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>Recognise</strong> polynomial (and big-integer) multiplication as a <em>convolution</em> of coefficient vectors, and state why the obvious method is <code class="inl">&#x398;(n&#178;)</code>.</li>
+          <li><strong>Move</strong> a polynomial between its <em>coefficient</em> and <em>point&#8209;value</em> representations, and explain why multiplication costs <code class="inl">&#x398;(n)</code> in the second and <code class="inl">&#x398;(n&#178;)</code> in the first.</li>
+          <li><strong>Derive</strong> why the complex <code class="inl">n</code>-th roots of unity are the unique evaluation points that let evaluation split recursively &mdash; the squaring map that halves the problem.</li>
+          <li><strong>Build</strong> the FFT from the even/odd identity <code class="inl">A(x)=A<sub>e</sub>(x&#178;)+x&#160;A<sub>o</sub>(x&#178;)</code>, solve its recurrence <code class="inl">T(n)=2T(n/2)+&#x398;(n)</code> to <code class="inl">&#x398;(n&#160;log&#160;n)</code>, and read the butterfly.</li>
+          <li><strong>Justify</strong> interpolation as the <em>same</em> transform run with conjugate roots and a <code class="inl">1/n</code> scaling &mdash; via the summation lemma &mdash; and assemble the full <code class="inl">&#x398;(n&#160;log&#160;n)</code> multiply.</li>
+          <li><strong>Diagnose</strong> the real failures: too-small transform length (circular wraparound), floating-point round-off, non&#8209;power&#8209;of&#8209;two sizes, and forgotten carries.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>Four ideas, each a short phrase you should hold comfortably. The first two are taught in earlier lectures of this very syllabus.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotics — O / &Theta; / &Omega;</a>
+          <span class="chip">divide &amp; conquer + the Master Theorem</span>
+          <span class="chip">complex numbers — roots of unity</span>
+          <span class="chip">polynomials — degree, coefficients</span>
+        </div>
+        <p style="margin-top:1em">You need only this much of complex numbers: <code class="inl">i&#178;=&minus;1</code>; a unit-modulus number <code class="inl">e<sup>i&theta;</sup>=cos&theta;+i&#160;sin&theta;</code> is the point on the unit circle at angle <code class="inl">&theta;</code>; and multiplying two such points <em>adds</em> their angles. From Lecture&nbsp;03 you need the reflex that a recurrence <code class="inl">T(n)=2T(n/2)+&#x398;(n)</code> solves to <code class="inl">&#x398;(n&#160;log&#160;n)</code>. We are about to manufacture exactly that recurrence.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> the operation, named precisely</div>
+      <h2>Multiplication <em>is</em> convolution</h2>
+      <div class="col">
+        <p>Fix the operation before any cleverness. A polynomial of degree <code class="inl">&lt;n</code> is an ordered list of <code class="inl">n</code> coefficients:</p>
+        <div class="eq">
+          <span class="lbl">a polynomial, in coefficient form</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>A</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo>
+              <munderover><mo>&#8721;</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>&#8722;</mo><mn>1</mn></mrow></munderover>
+              <msub><mi>a</mi><mi>j</mi></msub><msup><mi>x</mi><mi>j</mi></msup>
+              <mo>=</mo>
+              <msub><mi>a</mi><mn>0</mn></msub><mo>+</mo>
+              <msub><mi>a</mi><mn>1</mn></msub><mi>x</mi><mo>+</mo>
+              <mo>&#8943;</mo><mo>+</mo>
+              <msub><mi>a</mi><mrow><mi>n</mi><mo>&#8722;</mo><mn>1</mn></mrow></msub><msup><mi>x</mi><mrow><mi>n</mi><mo>&#8722;</mo><mn>1</mn></mrow></msup>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Multiply two of them, <code class="inl">A</code> and <code class="inl">B</code>, each with <code class="inl">n</code> coefficients. The product <code class="inl">C=A&middot;B</code> has degree <code class="inl">2n&minus;2</code> &mdash; that is <code class="inl">2n&minus;1</code> coefficients &mdash; and each one is a sum of all the cross-products whose exponents add up correctly:</p>
+        <div class="eq">
+          <span class="lbl">the convolution — coefficient k of the product</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <msub><mi>c</mi><mi>k</mi></msub><mo>=</mo>
+              <munder><mo>&#8721;</mo><mrow><mi>i</mi><mo>+</mo><mi>j</mi><mo>=</mo><mi>k</mi></mrow></munder>
+              <msub><mi>a</mi><mi>i</mi></msub><msub><mi>b</mi><mi>j</mi></msub>
+              <mo>=</mo>
+              <munderover><mo>&#8721;</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mi>k</mi></munderover>
+              <msub><mi>a</mi><mi>i</mi></msub><msub><mi>b</mi><mrow><mi>k</mi><mo>&#8722;</mo><mi>i</mi></mrow></msub>
+            </mrow>
+          </math></div>
+        </div>
+        <p>This operation &mdash; the vector <code class="inl">c</code> whose <code class="inl">k</code>-th entry sums <code class="inl">a<sub>i</sub>b<sub>j</sub></code> over all <code class="inl">i+j=k</code> &mdash; is the <span class="term">convolution</span> of <code class="inl">a</code> and <code class="inl">b</code>, written <code class="inl">c = a &#8727; b</code>. It is everywhere: a moving average convolves a signal with a window; a probability distribution of the sum of two dice is the convolution of their distributions; a polynomial product is the convolution of coefficients. <strong>Solve fast multiplication and you have solved fast convolution</strong> &mdash; they are one problem.</p>
+        <p>The direct method computes every <code class="inl">a<sub>i</sub>b<sub>j</sub></code> exactly once: <code class="inl">n&#178;</code> products, <code class="inl">&#x398;(n&#178;)</code> work. Integers are the same story in disguise: a number written in base <code class="inl">10</code> is just a polynomial evaluated at <code class="inl">x=10</code>, so multiplying two <code class="inl">n</code>-digit numbers is convolving their digit vectors, then propagating carries. Everything below about polynomials transfers verbatim to the integers.</p>
+        <div class="note info"><span class="tag">the formal lens</span>Name the operation as a map on vectors, not on &ldquo;polynomials.&rdquo; The instant you see <em>convolution</em>, you may forget multiplication ever mentioned <code class="inl">x</code>: you are transforming one length-<code class="inl">2n</code> vector into another. That re-framing is what exposes the structure the next sections exploit.</div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> the second representation</div>
+      <h2>A polynomial's two faces</h2>
+      <div class="col">
+        <p>Here is the lever. A polynomial of degree <code class="inl">&lt;n</code> can be pinned down in two utterly different ways, and they carry exactly the same information.</p>
+        <p><strong>Face one &mdash; coefficients.</strong> The list <code class="inl">(a&#8320;,a&#8321;,&#8230;,a<sub>n&minus;1</sub>)</code>. This is what we have been using.</p>
+        <p><strong>Face two &mdash; point&#8209;values.</strong> Pick any <code class="inl">n</code> <em>distinct</em> input points <code class="inl">x&#8320;,&#8230;,x<sub>n&minus;1</sub></code> and list what the polynomial evaluates to at each: <code class="inl">{(x&#8320;,A(x&#8320;)),&#8230;,(x<sub>n&minus;1</sub>,A(x<sub>n&minus;1</sub>))}</code>. The deep fact that makes this a faithful representation is the <span class="term">uniqueness of interpolation</span>: through <code class="inl">n</code> points with distinct <code class="inl">x</code>-coordinates there passes <em>exactly one</em> polynomial of degree <code class="inl">&lt;n</code>. (Two such agreeing at <code class="inl">n</code> points would differ by a degree-<code class="inl">&lt;n</code> polynomial with <code class="inl">n</code> roots &mdash; impossible unless it is zero.) So the <code class="inl">n</code> values, like the <code class="inl">n</code> coefficients, name the polynomial without ambiguity.</p>
+        <p>Now watch what multiplication costs in each language. In coefficients it is the <code class="inl">&#x398;(n&#178;)</code> convolution. In point&#8209;values, if we have <code class="inl">A</code> and <code class="inl">B</code> evaluated <em>at the same points</em>, the product's value at each point is just the product of the two values:</p>
+        <div class="eq">
+          <span class="lbl">multiplication in point-value form is pointwise</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>C</mi><mo>(</mo><msub><mi>x</mi><mi>k</mi></msub><mo>)</mo>
+              <mo>=</mo>
+              <mi>A</mi><mo>(</mo><msub><mi>x</mi><mi>k</mi></msub><mo>)</mo>
+              <mo>&#8901;</mo>
+              <mi>B</mi><mo>(</mo><msub><mi>x</mi><mi>k</mi></msub><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>One multiplication per point. <code class="inl">&#x398;(n)</code> for the whole product, against <code class="inl">&#x398;(n&#178;)</code> for the same answer in the other language. The catch &mdash; and it is the only catch &mdash; is that <code class="inl">C</code> has degree <code class="inl">2n&minus;2</code>, so it needs <code class="inl">2n&minus;1</code> point&#8209;values to be determined. We must therefore evaluate <code class="inl">A</code> and <code class="inl">B</code> at <strong>at least <code class="inl">2n&minus;1</code> points</strong> (we will pad up to the next power of two), treating each as a degree-<code class="inl">&lt;2n</code> polynomial with high coefficients zero.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 960 430" role="img" aria-labelledby="f1t f1d">
+            <title id="f1t">The two roads from coefficients of A and B to coefficients of their product</title>
+            <desc id="f1d">A commutative diagram. Top-left: A and B as coefficient vectors. Top-right: C as a coefficient vector. The direct top road is schoolbook convolution costing Theta of n squared. The lower road descends by the forward FFT to point-value form in Theta n log n, crosses by pointwise multiplication in Theta n, then climbs back by the inverse FFT in Theta n log n. The detour is asymptotically faster than the direct road.</desc>
+
+            <!-- boxes -->
+            <g>
+              <rect x="40" y="48" width="300" height="92" rx="10" class="dg-fill"/>
+              <text x="62" y="84" class="dg-cap">A, B &mdash; coefficients</text>
+              <text x="62" y="112" class="dg-label sm">(a&#8320; &#8230; a&#8345;&#8331;&#8321;), (b&#8320; &#8230; b&#8345;&#8331;&#8321;)</text>
+
+              <rect x="620" y="48" width="300" height="92" rx="10" class="dg-fill"/>
+              <text x="642" y="84" class="dg-cap">C = A&middot;B &mdash; coefficients</text>
+              <text x="642" y="112" class="dg-label sm">(c&#8320; &#8230; c&#8322;&#8345;&#8331;&#8322;)</text>
+
+              <rect x="40" y="300" width="300" height="92" rx="10" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
+              <text x="62" y="336" class="dg-cap">A, B at the N roots of unity</text>
+              <text x="62" y="364" class="dg-label sm">N point-values each</text>
+
+              <rect x="620" y="300" width="300" height="92" rx="10" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
+              <text x="642" y="336" class="dg-cap">C at the N roots of unity</text>
+              <text x="642" y="364" class="dg-label sm">N point-values</text>
+            </g>
+
+            <!-- top road (slow) -->
+            <line x1="340" y1="94" x2="616" y2="94" class="dg-stroke dg-red" marker-end="url(#a-red)"/>
+            <rect x="392" y="58" width="172" height="26" rx="6" fill="color-mix(in oklab,var(--bau-red) 14%,var(--surface))"/>
+            <text x="478" y="76" text-anchor="middle" class="dg-label sm dg-red-f" style="font-weight:700">direct &mdash; &#x398;(n&#178;)</text>
+            <text x="478" y="120" text-anchor="middle" class="dg-label sm">schoolbook convolution</text>
+
+            <!-- left down (forward FFT) -->
+            <line x1="190" y1="140" x2="190" y2="296" class="dg-stroke dg-blue" marker-end="url(#a-blue)"/>
+            <text x="200" y="214" class="dg-label sm dg-blue-f" style="font-weight:700">FFT: evaluate</text>
+            <text x="200" y="234" class="dg-label sm">&#x398;(n log n)</text>
+
+            <!-- bottom across (pointwise) -->
+            <line x1="340" y1="346" x2="616" y2="346" class="dg-stroke dg-blue" marker-end="url(#a-blue)"/>
+            <rect x="396" y="310" width="164" height="26" rx="6" fill="color-mix(in oklab,var(--bau-blue) 12%,var(--surface))"/>
+            <text x="478" y="328" text-anchor="middle" class="dg-label sm dg-blue-f" style="font-weight:700">pointwise &times; &mdash; &#x398;(n)</text>
+
+            <!-- right up (inverse FFT) -->
+            <line x1="770" y1="296" x2="770" y2="140" class="dg-stroke dg-blue" marker-end="url(#a-blue)"/>
+            <text x="600" y="214" class="dg-label sm dg-blue-f" style="font-weight:700; text-anchor:start">inverse FFT: interpolate</text>
+            <text x="690" y="234" class="dg-label sm">&#x398;(n log n)</text>
+
+            <defs>
+              <marker id="a-red" markerWidth="11" markerHeight="11" refX="8" refY="5.5" orient="auto"><path d="M0 0 L11 5.5 L0 11 z" fill="var(--bau-red)"/></marker>
+              <marker id="a-blue" markerWidth="11" markerHeight="11" refX="8" refY="5.5" orient="auto"><path d="M0 0 L11 5.5 L0 11 z" fill="var(--bau-blue)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 1 &mdash; the two roads.</b> The red road multiplies in coefficient-language: <code class="inl">&#x398;(n&#178;)</code>. The blue detour drops into point&#8209;value land, where multiplication is a cheap <code class="inl">&#x398;(n)</code> pointwise step, and the only real cost is the two translations. This single picture <em>is</em> the FFT strategy; everything that follows just makes each blue arrow concrete.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> where the difficulty went</div>
+      <h2>The cost moved to the door</h2>
+      <div class="col">
+        <p>Look hard at Figure&nbsp;1, because it contains a trap as well as a strategy. We have made the <em>middle</em> step cheap, but we have not yet said what the two blue translations cost. <span class="term">Evaluation</span> &mdash; turning <code class="inl">n</code> coefficients into <code class="inl">n</code> values &mdash; and <span class="term">interpolation</span> &mdash; turning <code class="inl">n</code> values back into <code class="inl">n</code> coefficients &mdash; are where the whole problem now lives.</p>
+        <p>And here is the trap: if we choose the evaluation points <em>carelessly</em>, evaluation is itself <code class="inl">&#x398;(n&#178;)</code>. Evaluating one polynomial at one point by Horner's rule is <code class="inl">&#x398;(n)</code>; do that at <code class="inl">n</code> arbitrary points and you are back to <code class="inl">&#x398;(n&#178;)</code>, having gained nothing. The detour would be a scenic route to the same toll.</p>
+        <div class="pull">The points are not a detail. <span>Choosing the evaluation points is the entire algorithm.</span></div>
+        <p>So the question sharpens to something precise and answerable: <strong>is there a set of <code class="inl">n</code> points so specially structured that evaluating any polynomial at all of them, together, costs less than doing them one at a time?</strong> We want the <code class="inl">n</code> evaluations to <em>share work</em>. The answer is yes, and it is forced &mdash; almost uniquely &mdash; by a single requirement we will now reverse-engineer. This is the move my method always reaches for: do not optimise the computation as given; find the abstraction (here, the right <em>points</em>) at which the computation reorganises itself.</p>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> reverse-engineering the points</div>
+      <h2>The magic points: complex roots of unity</h2>
+      <div class="col">
+        <p>Let us derive the points from what we need of them, rather than pulling them from a hat. To evaluate <code class="inl">A</code> at many points by divide and conquer, split its coefficients by the <em>parity</em> of their index &mdash; evens in one bucket, odds in another:</p>
+        <div class="eq">
+          <span class="lbl">split a polynomial into even- and odd-indexed coefficients</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <msub><mi>A</mi><mtext>e</mtext></msub><mo>(</mo><mi>y</mi><mo>)</mo>
+              <mo>=</mo>
+              <msub><mi>a</mi><mn>0</mn></msub><mo>+</mo>
+              <msub><mi>a</mi><mn>2</mn></msub><mi>y</mi><mo>+</mo>
+              <msub><mi>a</mi><mn>4</mn></msub><msup><mi>y</mi><mn>2</mn></msup><mo>+</mo><mo>&#8943;</mo>
+              <mo>,</mo>
+              <mspace width="1.4em"/>
+              <msub><mi>A</mi><mtext>o</mtext></msub><mo>(</mo><mi>y</mi><mo>)</mo>
+              <mo>=</mo>
+              <msub><mi>a</mi><mn>1</mn></msub><mo>+</mo>
+              <msub><mi>a</mi><mn>3</mn></msub><mi>y</mi><mo>+</mo>
+              <msub><mi>a</mi><mn>5</mn></msub><msup><mi>y</mi><mn>2</mn></msup><mo>+</mo><mo>&#8943;</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Each half has <code class="inl">n/2</code> coefficients. They reassemble into <code class="inl">A</code> by the one identity this whole lecture turns on &mdash; verify it term by term:</p>
+        <div class="eq">
+          <span class="lbl">the even/odd identity — the algebraic heart of the FFT</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>A</mi><mo>(</mo><mi>x</mi><mo>)</mo>
+              <mo>=</mo>
+              <msub><mi>A</mi><mtext>e</mtext></msub><mo>(</mo><msup><mi>x</mi><mn>2</mn></msup><mo>)</mo>
+              <mo>+</mo>
+              <mi>x</mi><mo>&#8901;</mo>
+              <msub><mi>A</mi><mtext>o</mtext></msub><mo>(</mo><msup><mi>x</mi><mn>2</mn></msup><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>To evaluate <code class="inl">A</code> at our <code class="inl">n</code> points, this identity says we need <code class="inl">A<sub>e</sub></code> and <code class="inl">A<sub>o</sub></code> at the <em>squares</em> of those points. Two subproblems &mdash; good. But each is a polynomial in <code class="inl">x&#178;</code> evaluated over the set <code class="inl">{x&#8320;&#178;,&#8230;,x<sub>n&minus;1</sub>&#178;}</code>, and in general squaring <code class="inl">n</code> distinct numbers gives <code class="inl">n</code> distinct squares. The subproblems would still be size <code class="inl">n</code>, not <code class="inl">n/2</code>. <strong>No saving &mdash; unless the squares collide.</strong></p>
+        <p>So demand it. We want a set of <code class="inl">n</code> points whose squares number only <code class="inl">n/2</code> &mdash; a set that <em>collapses by half</em> under squaring, and keeps collapsing, recursively, all the way down. A set closed under squaring, shrinking by half each time. On the real line no such set of distinct points exists. On the complex plane there is exactly one natural family: the <span class="term">n-th roots of unity</span>, the <code class="inl">n</code> solutions of <code class="inl">z<sup>n</sup>=1</code>.</p>
+        <div class="eq">
+          <span class="lbl">the n-th roots of unity</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <msubsup><mi>&#969;</mi><mi>n</mi><mi>k</mi></msubsup>
+              <mo>=</mo>
+              <msup><mi>e</mi><mrow><mn>2</mn><mi>&#960;</mi><mi>i</mi><mi>k</mi><mo>/</mo><mi>n</mi></mrow></msup>
+              <mo>,</mo>
+              <mspace width="1.2em"/>
+              <mi>k</mi><mo>=</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>,</mo><mo>&#8230;</mo><mo>,</mo><mi>n</mi><mo>&#8722;</mo><mn>1</mn>
+              <mspace width="1.6em"/>
+              <mtext>where</mtext>
+              <mspace width="0.6em"/>
+              <msub><mi>&#969;</mi><mi>n</mi></msub><mo>=</mo><msup><mi>e</mi><mrow><mn>2</mn><mi>&#960;</mi><mi>i</mi><mo>/</mo><mi>n</mi></mrow></msup>
+            </mrow>
+          </math></div>
+        </div>
+        <p>They sit equally spaced around the unit circle. Now square one: <code class="inl">(&#969;<sub>n</sub><sup>k</sup>)&#178; = &#969;<sub>n</sub><sup>2k</sup> = &#969;<sub>n/2</sub><sup>k</sup></code> &mdash; squaring an <code class="inl">n</code>-th root yields an <code class="inl">(n/2)</code>-th root. And it is exactly two-to-one: the points <code class="inl">&#969;<sub>n</sub><sup>k</sup></code> and <code class="inl">&#969;<sub>n</sub><sup>k+n/2</sup></code> &mdash; diametrically opposite, since <code class="inl">&#969;<sub>n</sub><sup>n/2</sup>=e<sup>i&#960;</sup>=&minus;1</code> makes them negatives of one another &mdash; square to the <em>same</em> value. So the <code class="inl">n</code> roots, squared, give precisely <code class="inl">n/2</code> distinct points, which are themselves the <code class="inl">(n/2)</code>-th roots of unity: <strong>the structure we demanded, delivered exactly, and self-similar at every level.</strong></p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 960 470" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">The eight 8th-roots of unity on the unit circle and how squaring collapses them to four</title>
+            <desc id="f2d">Left: the unit circle with eight equally spaced 8th-roots of unity marked at multiples of 45 degrees, omega-8 to the 0 equals 1 at the right, omega-8 to the 2 equals i at the top, omega-8 to the 4 equals minus 1 at the left, omega-8 to the 6 equals minus i at the bottom. Dashed diameters join each antipodal pair k and k plus 4, which are negatives of each other and square to the same point. Right: a smaller circle showing the four 4th-roots of unity, the squared images, with an arrow labelled z maps to z squared from the large circle to the small one.</desc>
+
+            <!-- big circle -->
+            <circle cx="250" cy="235" r="185" class="dg-thin"/>
+            <line x1="55" y1="235" x2="445" y2="235" class="dg-dash"/>
+            <line x1="250" y1="40" x2="250" y2="430" class="dg-dash"/>
+            <text x="455" y="252" class="dg-label sm">Re</text>
+            <text x="258" y="36" class="dg-label sm">Im</text>
+
+            <!-- antipodal diameters (dashed, colour-paired) -->
+            <line x1="435" y1="235" x2="65" y2="235" stroke="var(--bau-red)" stroke-width="1.5" stroke-dasharray="4 5" opacity=".55"/>
+            <line x1="380" y1="104" x2="120" y2="366" stroke="var(--bau-blue)" stroke-width="1.5" stroke-dasharray="4 5" opacity=".55"/>
+            <line x1="250" y1="50" x2="250" y2="420" stroke="var(--bau-yellow)" stroke-width="2" stroke-dasharray="4 5" opacity=".8"/>
+            <line x1="120" y1="104" x2="380" y2="366" stroke="var(--bau-ink)" stroke-width="1.5" stroke-dasharray="4 5" opacity=".4"/>
+
+            <!-- 8 roots -->
+            <g>
+              <circle cx="435" cy="235" r="8" class="dg-red-f"/>
+              <text x="448" y="228" class="dg-val">&#969;&#8304;=1</text>
+              <circle cx="380" cy="104" r="8" class="dg-blue-f"/>
+              <text x="388" y="98" class="dg-val">&#969;&#185;</text>
+              <circle cx="250" cy="50" r="8" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <text x="262" y="44" class="dg-val">&#969;&#178;=i</text>
+              <circle cx="120" cy="104" r="8" class="dg-ink"/>
+              <text x="58" y="98" class="dg-val">&#969;&#179;</text>
+              <circle cx="65" cy="235" r="8" class="dg-red-f"/>
+              <text x="20" y="228" class="dg-val">&#969;&#8308;=&#8722;1</text>
+              <circle cx="120" cy="366" r="8" class="dg-blue-f"/>
+              <text x="56" y="388" class="dg-val">&#969;&#8309;</text>
+              <circle cx="250" cy="420" r="8" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <text x="232" y="444" class="dg-val">&#969;&#8310;=&#8722;i</text>
+              <circle cx="380" cy="366" r="8" class="dg-ink"/>
+              <text x="388" y="388" class="dg-val">&#969;&#8311;</text>
+            </g>
+            <text x="250" y="235" text-anchor="middle" class="dg-label sm" dy="-6">the 8th roots</text>
+            <text x="250" y="235" text-anchor="middle" class="dg-label sm" dy="12">&#969;&#8312;<tspan dy="-4" font-size="9">k</tspan></text>
+
+            <!-- squaring arrow -->
+            <path d="M470 235 C 560 200, 590 200, 650 235" class="dg-stroke dg-blue" fill="none" marker-end="url(#a-sq)"/>
+            <text x="560" y="195" text-anchor="middle" class="dg-label" style="font-weight:700; fill:var(--bau-blue)">z &#8614; z&#178;</text>
+            <text x="560" y="258" text-anchor="middle" class="dg-label sm">8 points &#8594; 4</text>
+
+            <!-- small circle: 4th roots -->
+            <circle cx="800" cy="235" r="118" class="dg-thin"/>
+            <line x1="678" y1="235" x2="922" y2="235" class="dg-dash"/>
+            <line x1="800" y1="113" x2="800" y2="357" class="dg-dash"/>
+            <g>
+              <circle cx="918" cy="235" r="7" class="dg-red-f"/><text x="900" y="226" class="dg-val">1</text>
+              <circle cx="800" cy="117" r="7" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="810" y="112" class="dg-val">i</text>
+              <circle cx="682" cy="235" r="7" class="dg-red-f"/><text x="650" y="226" class="dg-val">&#8722;1</text>
+              <circle cx="800" cy="353" r="7" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="810" y="372" class="dg-val">&#8722;i</text>
+            </g>
+            <text x="800" y="235" text-anchor="middle" class="dg-label sm">the 4th roots</text>
+
+            <defs>
+              <marker id="a-sq" markerWidth="11" markerHeight="11" refX="8" refY="5.5" orient="auto"><path d="M0 0 L11 5.5 L0 11 z" fill="var(--bau-blue)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 2 &mdash; why these points and no others.</b> Each coloured diameter joins an antipodal pair <code class="inl">&#969;<sup>k</sup></code>, <code class="inl">&#969;<sup>k+4</sup>=&minus;&#969;<sup>k</sup></code>. The two ends square to one point, so eight roots collapse to four &mdash; the 4th roots &mdash; which collapse to two, then one. That self-similar halving is precisely the recursive structure divide and conquer needs, and the roots of unity are the only points that have it.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> the recursion</div>
+      <h2>Divide and conquer: the FFT</h2>
+      <div class="col">
+        <p>Assemble it. To evaluate <code class="inl">A</code> (degree <code class="inl">&lt;n</code>, with <code class="inl">n</code> a power of two) at all <code class="inl">n</code> roots of unity <code class="inl">&#969;<sub>n</sub><sup>0</sup>,&#8230;,&#969;<sub>n</sub><sup>n&minus;1</sup></code>:</p>
+        <ol>
+          <li><strong>Divide.</strong> Form <code class="inl">A<sub>e</sub></code> and <code class="inl">A<sub>o</sub></code>, each of <code class="inl">n/2</code> coefficients.</li>
+          <li><strong>Conquer.</strong> Recursively evaluate <code class="inl">A<sub>e</sub></code> and <code class="inl">A<sub>o</sub></code> at the <code class="inl">n/2</code> roots <code class="inl">&#969;<sub>n/2</sub><sup>0</sup>,&#8230;,&#969;<sub>n/2</sub><sup>n/2&minus;1</sup></code> &mdash; which are exactly the squares of our points.</li>
+          <li><strong>Combine.</strong> For each <code class="inl">k</code> in <code class="inl">0&#8230;n/2&minus;1</code>, the identity <code class="inl">A(x)=A<sub>e</sub>(x&#178;)+x&#160;A<sub>o</sub>(x&#178;)</code> reads off two outputs from one pair of recursive values, because <code class="inl">&#969;<sub>n</sub><sup>k+n/2</sup>=&minus;&#969;<sub>n</sub><sup>k</sup></code> while their squares are equal:</li>
+        </ol>
+        <div class="eq">
+          <span class="lbl">the combine step — two outputs from one shared computation</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mtable columnalign="left" rowspacing="6pt">
+              <mtr><mtd>
+                <mi>A</mi><mo>(</mo><msubsup><mi>&#969;</mi><mi>n</mi><mi>k</mi></msubsup><mo>)</mo>
+                <mo>=</mo>
+                <msub><mi>A</mi><mtext>e</mtext></msub><mo>(</mo><msubsup><mi>&#969;</mi><mrow><mi>n</mi><mo>/</mo><mn>2</mn></mrow><mi>k</mi></msubsup><mo>)</mo>
+                <mo>+</mo>
+                <msubsup><mi>&#969;</mi><mi>n</mi><mi>k</mi></msubsup>
+                <msub><mi>A</mi><mtext>o</mtext></msub><mo>(</mo><msubsup><mi>&#969;</mi><mrow><mi>n</mi><mo>/</mo><mn>2</mn></mrow><mi>k</mi></msubsup><mo>)</mo>
+              </mtd></mtr>
+              <mtr><mtd>
+                <mi>A</mi><mo>(</mo><msubsup><mi>&#969;</mi><mi>n</mi><mrow><mi>k</mi><mo>+</mo><mi>n</mi><mo>/</mo><mn>2</mn></mrow></msubsup><mo>)</mo>
+                <mo>=</mo>
+                <msub><mi>A</mi><mtext>e</mtext></msub><mo>(</mo><msubsup><mi>&#969;</mi><mrow><mi>n</mi><mo>/</mo><mn>2</mn></mrow><mi>k</mi></msubsup><mo>)</mo>
+                <mo>&#8722;</mo>
+                <msubsup><mi>&#969;</mi><mi>n</mi><mi>k</mi></msubsup>
+                <msub><mi>A</mi><mtext>o</mtext></msub><mo>(</mo><msubsup><mi>&#969;</mi><mrow><mi>n</mi><mo>/</mo><mn>2</mn></mrow><mi>k</mi></msubsup><mo>)</mo>
+              </mtd></mtr>
+            </mtable>
+          </math></div>
+        </div>
+        <p>Two outputs &mdash; one in the top half of the answer, one in the bottom half &mdash; from one multiplication <code class="inl">&#969;<sub>n</sub><sup>k</sup>&middot;A<sub>o</sub>(&hellip;)</code> computed once. That sharing is what makes the combine step <code class="inl">&#x398;(n)</code> rather than <code class="inl">&#x398;(n&#178;)</code>. The work obeys</p>
+        <div class="eq">
+          <span class="lbl">the FFT recurrence (Lecture 03's Master Theorem, case 2)</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo>
+              <mo>=</mo>
+              <mn>2</mn><mspace width="0.15em"/><mi>T</mi><mo>(</mo><mi>n</mi><mo>/</mo><mn>2</mn><mo>)</mo>
+              <mo>+</mo>
+              <mi>&#x398;</mi><mo>(</mo><mi>n</mi><mo>)</mo>
+              <mo>=</mo>
+              <mi>&#x398;</mi><mo>(</mo><mi>n</mi><mspace width="0.25em"/><mi>log</mi><mspace width="0.15em"/><mi>n</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>This is the merge-sort recurrence exactly. Two halves, linear glue, logarithmically many levels &mdash; the same shape Lecture&nbsp;03 taught you to recognise on sight. The map from coefficients to values at the roots of unity is the <span class="term">Discrete Fourier Transform</span> (DFT); this recursive way of computing it in <code class="inl">&#x398;(n&#160;log&#160;n)</code> instead of the definition's <code class="inl">&#x398;(n&#178;)</code> is the <span class="term">Fast Fourier Transform</span>.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 960 380" role="img" aria-labelledby="f3t f3d">
+            <title id="f3t">The FFT recursion tree for eight coefficients, splitting by index parity</title>
+            <desc id="f3d">A three-level recursion tree. The root holds all eight coefficients a0 through a7. It splits into an even child a0 a2 a4 a6 and an odd child a1 a3 a5 a7. Each splits again into pairs, and those into single coefficients at the leaves. The right margin notes that each of the log base 2 of 8 equals 3 levels does Theta of n combine work across the level, for a total of Theta of n log n.</desc>
+
+            <!-- level 0 -->
+            <rect x="330" y="24" width="300" height="40" rx="8" class="dg-fill"/>
+            <text x="480" y="49" text-anchor="middle" class="dg-val">[ a&#8320; a&#8321; a&#8322; a&#8323; a&#8324; a&#8325; a&#8326; a&#8327; ]</text>
+
+            <!-- edges to level 1 -->
+            <line x1="400" y1="64" x2="240" y2="108" class="dg-thin"/>
+            <line x1="560" y1="64" x2="720" y2="108" class="dg-thin"/>
+            <text x="300" y="92" class="dg-label sm dg-blue-f" style="font-weight:700">even</text>
+            <text x="640" y="92" class="dg-label sm dg-red-f" style="font-weight:700">odd</text>
+
+            <!-- level 1 -->
+            <rect x="120" y="110" width="240" height="38" rx="8" fill="color-mix(in oklab,var(--bau-blue) 12%,var(--surface))" stroke="var(--bau-blue)" stroke-width="2"/>
+            <text x="240" y="134" text-anchor="middle" class="dg-val">[ a&#8320; a&#8322; a&#8324; a&#8326; ]</text>
+            <rect x="600" y="110" width="240" height="38" rx="8" fill="color-mix(in oklab,var(--bau-red) 12%,var(--surface))" stroke="var(--bau-red)" stroke-width="2"/>
+            <text x="720" y="134" text-anchor="middle" class="dg-val">[ a&#8321; a&#8323; a&#8325; a&#8327; ]</text>
+
+            <!-- edges to level 2 -->
+            <line x1="190" y1="148" x2="130" y2="192" class="dg-thin"/>
+            <line x1="290" y1="148" x2="350" y2="192" class="dg-thin"/>
+            <line x1="670" y1="148" x2="610" y2="192" class="dg-thin"/>
+            <line x1="770" y1="148" x2="830" y2="192" class="dg-thin"/>
+
+            <!-- level 2 -->
+            <g font-family="var(--font-mono)">
+              <rect x="70"  y="194" width="120" height="34" rx="7" class="dg-cell"/><text x="130" y="216" text-anchor="middle" class="dg-val">[ a&#8320; a&#8324; ]</text>
+              <rect x="290" y="194" width="120" height="34" rx="7" class="dg-cell"/><text x="350" y="216" text-anchor="middle" class="dg-val">[ a&#8322; a&#8326; ]</text>
+              <rect x="550" y="194" width="120" height="34" rx="7" class="dg-cell"/><text x="610" y="216" text-anchor="middle" class="dg-val">[ a&#8321; a&#8325; ]</text>
+              <rect x="770" y="194" width="120" height="34" rx="7" class="dg-cell"/><text x="830" y="216" text-anchor="middle" class="dg-val">[ a&#8323; a&#8327; ]</text>
+            </g>
+
+            <!-- edges to leaves -->
+            <g class="dg-thin">
+              <line x1="105" y1="228" x2="90"  y2="268"/><line x1="155" y1="228" x2="170" y2="268"/>
+              <line x1="325" y1="228" x2="310" y2="268"/><line x1="375" y1="228" x2="390" y2="268"/>
+              <line x1="585" y1="228" x2="570" y2="268"/><line x1="635" y1="228" x2="650" y2="268"/>
+              <line x1="805" y1="228" x2="790" y2="268"/><line x1="855" y1="228" x2="870" y2="268"/>
+            </g>
+
+            <!-- leaves -->
+            <g font-family="var(--font-mono)">
+              <rect x="66"  y="270" width="48" height="30" rx="6" class="dg-cell"/><text x="90"  y="290" text-anchor="middle" class="dg-val">a&#8320;</text>
+              <rect x="146" y="270" width="48" height="30" rx="6" class="dg-cell"/><text x="170" y="290" text-anchor="middle" class="dg-val">a&#8324;</text>
+              <rect x="286" y="270" width="48" height="30" rx="6" class="dg-cell"/><text x="310" y="290" text-anchor="middle" class="dg-val">a&#8322;</text>
+              <rect x="366" y="270" width="48" height="30" rx="6" class="dg-cell"/><text x="390" y="290" text-anchor="middle" class="dg-val">a&#8326;</text>
+              <rect x="546" y="270" width="48" height="30" rx="6" class="dg-cell"/><text x="570" y="290" text-anchor="middle" class="dg-val">a&#8321;</text>
+              <rect x="626" y="270" width="48" height="30" rx="6" class="dg-cell"/><text x="650" y="290" text-anchor="middle" class="dg-val">a&#8325;</text>
+              <rect x="766" y="270" width="48" height="30" rx="6" class="dg-cell"/><text x="790" y="290" text-anchor="middle" class="dg-val">a&#8323;</text>
+              <rect x="846" y="270" width="48" height="30" rx="6" class="dg-cell"/><text x="870" y="290" text-anchor="middle" class="dg-val">a&#8327;</text>
+            </g>
+
+            <!-- level accounting -->
+            <g>
+              <line x1="30" y1="44"  x2="30" y2="290" class="dg-dash"/>
+              <text x="922" y="48"  text-anchor="end" class="dg-label sm">level 0 &middot; combine &#x398;(n)</text>
+              <text x="922" y="134" text-anchor="end" class="dg-label sm">level 1 &middot; combine &#x398;(n)</text>
+              <text x="922" y="216" text-anchor="end" class="dg-label sm">level 2 &middot; combine &#x398;(n)</text>
+              <text x="922" y="292" text-anchor="end" class="dg-label sm">leaves &middot; 1-point DFTs</text>
+              <text x="48" y="338" class="dg-cap">log&#8322; n = 3 levels &times; &#x398;(n) each = &#x398;(n log n)</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 3 &mdash; the divide structure.</b> Splitting by index parity halves the coefficient count each level, bottoming out at single coefficients (a 1-point DFT is the value itself). There are <code class="inl">log&#8322;&#160;n</code> levels; each spends <code class="inl">&#x398;(n)</code> on its butterflies. The product is the bound &mdash; the very recursion tree from Lecture&nbsp;03, now drawn for the transform.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> the combine step, drawn</div>
+      <h2>The butterfly</h2>
+      <div class="col">
+        <p>The combine step has a shape so distinctive it earned a name. Take one recursive even-value <code class="inl">E=A<sub>e</sub>(&#969;<sub>n/2</sub><sup>k</sup>)</code> and one odd-value <code class="inl">O=A<sub>o</sub>(&#969;<sub>n/2</sub><sup>k</sup>)</code>. Compute the <span class="term">twiddle factor</span> <code class="inl">t=&#969;<sub>n</sub><sup>k</sup>&middot;O</code> once. Then two outputs fall out:</p>
+        <div class="eq">
+          <span class="lbl">one butterfly — two outputs, one multiply</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>A</mi><mo>(</mo><msubsup><mi>&#969;</mi><mi>n</mi><mi>k</mi></msubsup><mo>)</mo>
+              <mo>=</mo>
+              <mi>E</mi><mo>+</mo><mi>t</mi>
+              <mspace width="2em"/>
+              <mi>A</mi><mo>(</mo><msubsup><mi>&#969;</mi><mi>n</mi><mrow><mi>k</mi><mo>+</mo><mi>n</mi><mo>/</mo><mn>2</mn></mrow></msubsup><mo>)</mo>
+              <mo>=</mo>
+              <mi>E</mi><mo>&#8722;</mo><mi>t</mi>
+              <mspace width="2em"/>
+              <mtext>with</mtext>
+              <mspace width="0.6em"/>
+              <mi>t</mi><mo>=</mo><msubsup><mi>&#969;</mi><mi>n</mi><mi>k</mi></msubsup><mi>O</mi>
+            </mrow>
+          </math></div>
+        </div>
+        <p>An <code class="inl">E</code> shared, an <code class="inl">O</code> twiddled once, an add and a subtract. Cross two lines, fork two outputs &mdash; the wings give it its name. A full FFT level is just <code class="inl">n/2</code> of these butterflies side by side; the whole transform is <code class="inl">log&#160;n</code> stacked levels of them. Below, the network for <code class="inl">n=4</code> &mdash; the exact size of the worked example in &sect;10.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 960 400" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">A single butterfly close-up and the full four-point FFT butterfly network</title>
+            <desc id="f4d">Left: one butterfly takes inputs E on top and O on the bottom, multiplies O by the twiddle t equals omega-n to the k, and outputs E plus t on top and E minus t on the bottom. Right: the four-point FFT network. Inputs a0, a2, a1, a3 in bit-reversed order enter on the left. Stage one pairs a0 with a2 and a1 with a3 using twiddle 1. Stage two combines across with twiddles omega-4 to the 0 equals 1 and omega-4 to the 1 equals i, producing outputs A-hat 0, A-hat 1, A-hat 2, A-hat 3.</desc>
+
+            <!-- ===== close-up butterfly ===== -->
+            <text x="40" y="40" class="dg-cap">one butterfly</text>
+            <circle cx="80"  cy="110" r="6" class="dg-blue-f"/><text x="40" y="115" class="dg-val">E</text>
+            <circle cx="80"  cy="230" r="6" class="dg-red-f"/><text x="40" y="235" class="dg-val">O</text>
+            <line x1="80" y1="110" x2="300" y2="110" class="dg-stroke dg-blue"/>
+            <line x1="80" y1="230" x2="300" y2="110" class="dg-stroke dg-red"/>
+            <line x1="80" y1="110" x2="300" y2="230" class="dg-stroke dg-blue"/>
+            <line x1="80" y1="230" x2="300" y2="230" class="dg-stroke dg-red"/>
+            <!-- twiddle markers on the O lines -->
+            <rect x="150" y="158" width="74" height="24" rx="6" fill="var(--bau-yellow)" stroke="var(--bau-ink)" stroke-width="1.5"/>
+            <text x="187" y="175" text-anchor="middle" class="dg-label sm" style="fill:var(--bau-ink); font-weight:700">&times; t</text>
+            <text x="187" y="206" text-anchor="middle" class="dg-label sm">t = &#969;&#8345;<tspan dy="-4" font-size="10">k</tspan><tspan dy="4">&middot;O</tspan></text>
+            <circle cx="300" cy="110" r="6" class="dg-ink"/><text x="312" y="106" class="dg-val">E + t</text>
+            <circle cx="300" cy="230" r="6" class="dg-ink"/><text x="312" y="234" class="dg-val">E &#8722; t</text>
+            <text x="60" y="300" class="dg-label sm">two outputs, one multiply, one add, one subtract</text>
+
+            <!-- divider -->
+            <line x1="470" y1="20" x2="470" y2="380" class="dg-dash"/>
+
+            <!-- ===== n=4 network ===== -->
+            <text x="520" y="40" class="dg-cap">the n = 4 FFT network</text>
+            <!-- inputs (bit-reversed order) -->
+            <g font-family="var(--font-mono)">
+              <text x="512" y="100" class="dg-val">a&#8320;</text>
+              <text x="512" y="170" class="dg-val">a&#8322;</text>
+              <text x="512" y="270" class="dg-val">a&#8321;</text>
+              <text x="512" y="340" class="dg-val">a&#8323;</text>
+            </g>
+            <text x="500" y="64" class="dg-label sm">bit-reversed in</text>
+
+            <!-- stage 1 nodes -->
+            <g>
+              <circle cx="560" cy="95"  r="5" class="dg-ink"/>
+              <circle cx="560" cy="165" r="5" class="dg-ink"/>
+              <circle cx="560" cy="265" r="5" class="dg-ink"/>
+              <circle cx="560" cy="335" r="5" class="dg-ink"/>
+              <!-- butterfly (a0,a2) -->
+              <line x1="560" y1="95"  x2="700" y2="95"  class="dg-stroke dg-blue"/>
+              <line x1="560" y1="165" x2="700" y2="95"  class="dg-stroke dg-red"/>
+              <line x1="560" y1="95"  x2="700" y2="165" class="dg-stroke dg-blue"/>
+              <line x1="560" y1="165" x2="700" y2="165" class="dg-stroke dg-red"/>
+              <!-- butterfly (a1,a3) -->
+              <line x1="560" y1="265" x2="700" y2="265" class="dg-stroke dg-blue"/>
+              <line x1="560" y1="335" x2="700" y2="265" class="dg-stroke dg-red"/>
+              <line x1="560" y1="265" x2="700" y2="335" class="dg-stroke dg-blue"/>
+              <line x1="560" y1="335" x2="700" y2="335" class="dg-stroke dg-red"/>
+            </g>
+            <text x="600" y="384" text-anchor="middle" class="dg-label sm">stage 1 &middot; t = 1</text>
+
+            <!-- stage 1 outputs / stage 2 inputs -->
+            <g>
+              <circle cx="700" cy="95"  r="5" class="dg-ink"/><text x="706" y="88" class="dg-label sm">u&#8320;</text>
+              <circle cx="700" cy="165" r="5" class="dg-ink"/><text x="706" y="184" class="dg-label sm">u&#8321;</text>
+              <circle cx="700" cy="265" r="5" class="dg-ink"/><text x="706" y="258" class="dg-label sm">v&#8320;</text>
+              <circle cx="700" cy="335" r="5" class="dg-ink"/><text x="706" y="354" class="dg-label sm">v&#8321;</text>
+              <!-- butterfly (u0,v0) twiddle w4^0=1 -->
+              <line x1="700" y1="95"  x2="860" y2="95"  class="dg-stroke dg-blue"/>
+              <line x1="700" y1="265" x2="860" y2="95"  class="dg-stroke dg-red"/>
+              <line x1="700" y1="95"  x2="860" y2="265" class="dg-stroke dg-blue"/>
+              <line x1="700" y1="265" x2="860" y2="265" class="dg-stroke dg-red"/>
+              <!-- butterfly (u1,v1) twiddle w4^1=i -->
+              <line x1="700" y1="165" x2="860" y2="165" class="dg-stroke dg-blue"/>
+              <line x1="700" y1="335" x2="860" y2="165" class="dg-stroke dg-red"/>
+              <line x1="700" y1="165" x2="860" y2="335" class="dg-stroke dg-blue"/>
+              <line x1="700" y1="335" x2="860" y2="335" class="dg-stroke dg-red"/>
+              <!-- twiddle labels -->
+              <rect x="760" y="206" width="64" height="22" rx="6" fill="var(--bau-yellow)" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <text x="792" y="222" text-anchor="middle" class="dg-label sm" style="fill:var(--bau-ink); font-weight:700">&times;1</text>
+              <rect x="760" y="250" width="64" height="22" rx="6" fill="var(--bau-yellow)" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <text x="792" y="266" text-anchor="middle" class="dg-label sm" style="fill:var(--bau-ink); font-weight:700">&times;i</text>
+            </g>
+            <text x="780" y="384" text-anchor="middle" class="dg-label sm">stage 2 &middot; t = 1, i</text>
+
+            <!-- outputs -->
+            <g font-family="var(--font-mono)">
+              <circle cx="860" cy="95"  r="5" class="dg-blue-f"/><text x="872" y="100" class="dg-val">&#194;&#8320;</text>
+              <circle cx="860" cy="165" r="5" class="dg-blue-f"/><text x="872" y="170" class="dg-val">&#194;&#8321;</text>
+              <circle cx="860" cy="265" r="5" class="dg-blue-f"/><text x="872" y="270" class="dg-val">&#194;&#8322;</text>
+              <circle cx="860" cy="335" r="5" class="dg-blue-f"/><text x="872" y="340" class="dg-val">&#194;&#8323;</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 4 &mdash; the butterfly and the n=4 network.</b> Inputs enter <em>bit-reversed</em> (<code class="inl">a&#8320;,a&#8322;,a&#8321;,a&#8323;</code>) so that the recursion's even/odd splits line up into adjacent pairs. Two stages of two butterflies each &mdash; <code class="inl">(n/2)&#160;log&#160;n = 2&times;2 = 4</code> butterflies &mdash; turn four coefficients into four point&#8209;values. With <code class="inl">A=[1,2,0,0]</code>: stage&nbsp;1 gives <code class="inl">u&#8320;=1,u&#8321;=1,v&#8320;=2,v&#8321;=2</code>; stage&nbsp;2 gives <code class="inl">&#194;=[3,&#160;1+2i,&#160;&minus;1,&#160;1&minus;2i]</code>.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> the road home</div>
+      <h2>Interpolation is the same transform, inverted</h2>
+      <div class="col">
+        <p>We can now go down the left arrow of Figure&nbsp;1 in <code class="inl">&#x398;(n&#160;log&#160;n)</code> and across the bottom in <code class="inl">&#x398;(n)</code>. The right arrow &mdash; interpolation, recovering <code class="inl">C</code>'s coefficients from its values at the roots &mdash; looks like it could be a different, harder problem. It is not. It is the <em>same</em> FFT, with two tiny edits.</p>
+        <p>Write the DFT as a matrix. Stacking <code class="inl">A(&#969;<sub>n</sub><sup>j</sup>)=&#8721;<sub>k</sub>a<sub>k</sub>&#969;<sub>n</sub><sup>jk</sup></code> for all <code class="inl">j</code> is multiplication of the coefficient vector by the <span class="term">Vandermonde matrix</span> <code class="inl">V</code> with entries <code class="inl">V<sub>jk</sub>=&#969;<sub>n</sub><sup>jk</sup></code>. Interpolation is therefore multiplication by <code class="inl">V<sup>&minus;1</sup></code>. The miracle is how clean that inverse is, and the engine is one lemma about how roots of unity sum.</p>
+        <div class="eq">
+          <span class="lbl">the summation lemma — the geometric series that makes it all work</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <munderover><mo>&#8721;</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>&#8722;</mo><mn>1</mn></mrow></munderover>
+              <msubsup><mi>&#969;</mi><mi>n</mi><mrow><mi>k</mi><mo>(</mo><mi>j</mi><mo>&#8722;</mo><mi>l</mi><mo>)</mo></mrow></msubsup>
+              <mo>=</mo>
+              <mrow><mo>{</mo>
+                <mtable columnalign="left left">
+                  <mtr><mtd><mi>n</mi></mtd><mtd><mtext>if&#160;</mtext><mi>j</mi><mo>=</mo><mi>l</mi></mtd></mtr>
+                  <mtr><mtd><mn>0</mn></mtd><mtd><mtext>if&#160;</mtext><mi>j</mi><mo>&#8800;</mo><mi>l</mi></mtd></mtr>
+                </mtable>
+              </mrow>
+            </mrow>
+          </math></div>
+        </div>
+        <p>When <code class="inl">j=l</code> every term is <code class="inl">&#969;<sub>n</sub><sup>0</sup>=1</code>, summing to <code class="inl">n</code>. When <code class="inl">j&#8800;l</code> it is a geometric series in the ratio <code class="inl">&#969;<sub>n</sub><sup>j&minus;l</sup>&#8800;1</code> whose terms run once around the circle and cancel to <code class="inl">0</code>. This says <code class="inl">V</code> times its own conjugate-transpose is <code class="inl">n</code> times the identity &mdash; so the inverse is just the conjugate, scaled:</p>
+        <div class="eq">
+          <span class="lbl">the inverse transform — conjugate the roots, divide by n</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <msub><mi>a</mi><mi>j</mi></msub>
+              <mo>=</mo>
+              <mfrac><mn>1</mn><mi>n</mi></mfrac>
+              <munderover><mo>&#8721;</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>&#8722;</mo><mn>1</mn></mrow></munderover>
+              <msub><mover><mi>a</mi><mo>^</mo></mover><mi>k</mi></msub>
+              <msubsup><mi>&#969;</mi><mi>n</mi><mrow><mo>&#8722;</mo><mi>j</mi><mi>k</mi></mrow></msubsup>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Compare it to the forward transform: identical, but with <code class="inl">&#969;<sub>n</sub></code> replaced by its conjugate <code class="inl">&#969;<sub>n</sub><sup>&minus;1</sup></code> (run the circle backwards) and a final divide by <code class="inl">n</code>. <strong>So the inverse FFT is the forward FFT with two edits</strong> &mdash; you reuse the very same butterfly code. A clean way to say it in one line: <code class="inl">IFFT(y)=&#8203;conj(FFT(conj(y)))/n</code>. The road home costs exactly what the road out did.</p>
+        <details>
+          <summary>show the one-line proof that V&#183;conj(V) = nI</summary>
+          <div class="body">
+            <p>The <code class="inl">(j,l)</code> entry of <code class="inl">V&#183;conj(V)</code> is <code class="inl">&#8721;<sub>k</sub> V<sub>jk</sub>&#160;conj(V<sub>kl</sub>) = &#8721;<sub>k</sub> &#969;<sub>n</sub><sup>jk</sup>&#969;<sub>n</sub><sup>&minus;kl</sup> = &#8721;<sub>k</sub> &#969;<sub>n</sub><sup>k(j&minus;l)</sup></code>. By the summation lemma that is <code class="inl">n</code> when <code class="inl">j=l</code> and <code class="inl">0</code> otherwise &mdash; i.e. <code class="inl">n&#160;I</code>. Hence <code class="inl">V<sup>&minus;1</sup> = (1/n)&#160;conj(V)</code>, whose <code class="inl">(j,k)</code> entry is <code class="inl">(1/n)&#969;<sub>n</sub><sup>&minus;jk</sup></code>. That is the inverse formula above. The whole interpolation problem is dispatched by one geometric-series cancellation.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> worked end to end</div>
+      <h2>Multiplying <code class="inl">(1+2x)(3+4x)</code> by FFT</h2>
+      <div class="col">
+        <p>Nothing convinces like watching every complex number land. We multiply <code class="inl">A(x)=1+2x</code> by <code class="inl">B(x)=3+4x</code>. By hand the answer is <code class="inl">3+10x+8x&#178;</code> &mdash; we will recover exactly that, the long way, and the agreement is the proof the machinery works.</p>
+
+        <h3>Step 0 &mdash; choose the length</h3>
+        <p>The product has degree <code class="inl">2</code>, so it needs <code class="inl">3</code> point&#8209;values; round up to the next power of two, <code class="inl">N=4</code>. Pad both inputs to length <code class="inl">4</code>: <code class="inl">A=[1,2,0,0]</code>, <code class="inl">B=[3,4,0,0]</code>. Our points are the 4th roots of unity <code class="inl">{1, i, &minus;1, &minus;i}</code>.</p>
+
+        <h3>Step 1 &mdash; forward FFT (evaluate at the four roots)</h3>
+        <p>Evaluate by the butterfly network of Figure&nbsp;4 (or just plug the four roots into the polynomials &mdash; both routes agree):</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>Step 1 — point-values of A and B at the 4th roots of unity</caption>
+            <thead>
+              <tr><th scope="col">point <span class="mono">x</span></th><th scope="col"><span class="mono">A(x)=1+2x</span></th><th scope="col"><span class="mono">B(x)=3+4x</span></th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row" class="mono">1</th><td class="mono">1+2 = 3</td><td class="mono">3+4 = 7</td></tr>
+              <tr><th scope="row" class="mono">i</th><td class="mono">1+2i</td><td class="mono">3+4i</td></tr>
+              <tr><th scope="row" class="mono">&minus;1</th><td class="mono">1&minus;2 = &minus;1</td><td class="mono">3&minus;4 = &minus;1</td></tr>
+              <tr><th scope="row" class="mono">&minus;i</th><td class="mono">1&minus;2i</td><td class="mono">3&minus;4i</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="3">&#194; = [&#160;3,&#160; 1+2i,&#160; &minus;1,&#160; 1&minus;2i&#160;] &nbsp;&middot;&nbsp; B&#770; = [&#160;7,&#160; 3+4i,&#160; &minus;1,&#160; 3&minus;4i&#160;]</td></tr></tfoot>
+          </table>
+        </div>
+
+        <h3>Step 2 &mdash; pointwise multiply <code class="inl">&#x398;(n)</code></h3>
+        <p>Multiply the two value-vectors entry by entry. The only care needed is ordinary complex arithmetic, <code class="inl">i&#178;=&minus;1</code>:</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>Step 2 — Ĉ = Â ⊙ B̂, multiplied componentwise</caption>
+            <thead>
+              <tr><th scope="col">k</th><th scope="col">&#194;[k]</th><th scope="col">B&#770;[k]</th><th scope="col">&#264;[k] = &#194;[k]&middot;B&#770;[k]</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row" class="mono">0</th><td class="mono">3</td><td class="mono">7</td><td class="mono good">21</td></tr>
+              <tr><th scope="row" class="mono">1</th><td class="mono">1+2i</td><td class="mono">3+4i</td><td class="mono good">3+4i+6i+8i&#178; = &minus;5+10i</td></tr>
+              <tr><th scope="row" class="mono">2</th><td class="mono">&minus;1</td><td class="mono">&minus;1</td><td class="mono good">1</td></tr>
+              <tr><th scope="row" class="mono">3</th><td class="mono">1&minus;2i</td><td class="mono">3&minus;4i</td><td class="mono good">3&minus;4i&minus;6i+8i&#178; = &minus;5&minus;10i</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="4">&#264; = [&#160;21,&#160; &minus;5+10i,&#160; 1,&#160; &minus;5&minus;10i&#160;] &mdash; the product, still in point-value form</td></tr></tfoot>
+          </table>
+        </div>
+
+        <h3>Step 3 &mdash; inverse FFT (interpolate back)</h3>
+        <p>Apply <code class="inl">c<sub>j</sub> = &#188;&#8721;<sub>k</sub> &#264;[k]&#160;&#969;<sub>4</sub><sup>&minus;jk</sup></code>. The inverse roots <code class="inl">&#969;<sub>4</sub><sup>&minus;k</sup></code> are <code class="inl">{1, &minus;i, &minus;1, i}</code> &mdash; the same four points, traversed backwards. Each coefficient is a four-term sum, then a divide by <code class="inl">4</code>:</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>Step 3 — recover the coefficients c₀ … c₃ (the conjugate roots, then ÷4)</caption>
+            <thead>
+              <tr><th scope="col">j</th><th scope="col">&#8721;<sub>k</sub> &#264;[k]&middot;&#969;&#8324;<sup>&minus;jk</sup></th><th scope="col">&divide; 4</th><th scope="col">c<sub>j</sub></th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row" class="mono">0</th><td class="mono">21 + (&minus;5+10i) + 1 + (&minus;5&minus;10i) = 12</td><td class="mono">12 / 4</td><td class="mono good">3</td></tr>
+              <tr><th scope="row" class="mono">1</th><td class="mono">21 + (10+5i) + (&minus;1) + (10&minus;5i) = 40</td><td class="mono">40 / 4</td><td class="mono good">10</td></tr>
+              <tr><th scope="row" class="mono">2</th><td class="mono">21 &minus; (&minus;5+10i) + 1 &minus; (&minus;5&minus;10i) = 32</td><td class="mono">32 / 4</td><td class="mono good">8</td></tr>
+              <tr><th scope="row" class="mono">3</th><td class="mono">21 + (&minus;10&minus;5i) + (&minus;1) + (&minus;10+5i) = 0</td><td class="mono">0 / 4</td><td class="mono good">0</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="4">c = [&#160;3,&#160; 10,&#160; 8,&#160; 0&#160;] &nbsp;&rarr;&nbsp; C(x) = 3 + 10x + 8x&#178;</td></tr></tfoot>
+          </table>
+        </div>
+        <p>Exactly the schoolbook answer, <code class="inl">3+10x+8x&#178;</code>. Notice three things worth keeping. The imaginary parts <em>cancelled to zero</em> in every coefficient &mdash; they must, because the true answer is real; surviving imaginary dust signals a bug or round-off. The final <code class="inl">c<sub>3</sub>=0</code> is the padding coefficient correctly reporting &ldquo;degree&nbsp;2, nothing here.&rdquo; And every step was <code class="inl">&#x398;(n&#160;log&#160;n)</code> or cheaper &mdash; on four points the constant dwarfs the asymptotics, but at <code class="inl">n=10&#8310;</code> this is the route that wins by <code class="inl">50{,}000&times;</code>.</p>
+        <details>
+          <summary>show the j = 1 sum in full (where the conjugate roots earn their keep)</summary>
+          <div class="body">
+            <p>For <code class="inl">j=1</code> the multipliers are <code class="inl">&#969;<sub>4</sub><sup>&minus;k</sup>=[1,&minus;i,&minus;1,i]</code>. So the sum is <code class="inl">21&middot;1 + (&minus;5+10i)(&minus;i) + 1&middot;(&minus;1) + (&minus;5&minus;10i)(i)</code>. Compute the middles: <code class="inl">(&minus;5+10i)(&minus;i)=5i&minus;10i&#178;=10+5i</code> and <code class="inl">(&minus;5&minus;10i)(i)=&minus;5i&minus;10i&#178;=10&minus;5i</code>. Total: <code class="inl">21+10+5i&minus;1+10&minus;5i=40</code>. Divide by <code class="inl">4</code>: <code class="inl">c<sub>1</sub>=10</code>. The imaginary parts <code class="inl">+5i</code> and <code class="inl">&minus;5i</code> annihilate &mdash; the conjugate symmetry of a real signal's transform, doing its job.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> the assembled algorithm</div>
+      <h2>The full multiply, and its bill</h2>
+      <div class="col">
+        <p>Here is the whole thing, four lines of strategy made literal. <code class="inl">FFT</code> is the recursion of &sect;07&ndash;08; <code class="inl">IFFT</code> is its two-edit twin from &sect;09.</p>
+        <pre><code><span class="tok-fn">FFT</span>(a):                          <span class="tok-com"># a: length n, n a power of two</span>
+  n <span class="tok-op">&#8592;</span> length(a)
+  <span class="tok-kw">if</span> n <span class="tok-op">==</span> <span class="tok-num">1</span>: <span class="tok-kw">return</span> a            <span class="tok-com"># a 1-point DFT is the value itself</span>
+  E <span class="tok-op">&#8592;</span> <span class="tok-fn">FFT</span>(a[<span class="tok-num">0</span>::<span class="tok-num">2</span>])             <span class="tok-com"># even-indexed coefficients</span>
+  O <span class="tok-op">&#8592;</span> <span class="tok-fn">FFT</span>(a[<span class="tok-num">1</span>::<span class="tok-num">2</span>])             <span class="tok-com"># odd-indexed coefficients</span>
+  y <span class="tok-op">&#8592;</span> array(n);  w <span class="tok-op">&#8592;</span> <span class="tok-num">1</span>;  wn <span class="tok-op">&#8592;</span> exp(<span class="tok-num">2</span>&#960;i / n)
+  <span class="tok-kw">for</span> k <span class="tok-kw">in</span> <span class="tok-num">0</span> .. n/<span class="tok-num">2</span> &#8722; <span class="tok-num">1</span>:
+    t <span class="tok-op">&#8592;</span> w <span class="tok-op">*</span> O[k]                 <span class="tok-com"># the twiddle, computed ONCE</span>
+    y[k]        <span class="tok-op">&#8592;</span> E[k] <span class="tok-op">+</span> t        <span class="tok-com"># A(&#969;&#8345;&#7503;)</span>
+    y[k <span class="tok-op">+</span> n/<span class="tok-num">2</span>]  <span class="tok-op">&#8592;</span> E[k] <span class="tok-op">&#8722;</span> t        <span class="tok-com"># A(&#8722;&#969;&#8345;&#7503;), the antipode</span>
+    w <span class="tok-op">&#8592;</span> w <span class="tok-op">*</span> wn                   <span class="tok-com"># advance to the next root</span>
+  <span class="tok-kw">return</span> y
+
+<span class="tok-fn">IFFT</span>(y):
+  <span class="tok-kw">return</span> conj(<span class="tok-fn">FFT</span>(conj(y))) / length(y)   <span class="tok-com"># conjugate roots, &divide; n</span>
+
+<span class="tok-fn">MULTIPLY</span>(A, B):                    <span class="tok-com"># coefficient vectors</span>
+  N <span class="tok-op">&#8592;</span> next power of two &#8805; len(A) <span class="tok-op">+</span> len(B) &#8722; <span class="tok-num">1</span>
+  pad A, B to length N with zeros
+  C&#770; <span class="tok-op">&#8592;</span> [ <span class="tok-fn">FFT</span>(A)[k] <span class="tok-op">*</span> <span class="tok-fn">FFT</span>(B)[k]  <span class="tok-kw">for</span> k <span class="tok-kw">in</span> <span class="tok-num">0</span>..N&#8722;<span class="tok-num">1</span> ]   <span class="tok-com"># &#x398;(n)</span>
+  c <span class="tok-op">&#8592;</span> <span class="tok-fn">IFFT</span>(C&#770;)
+  <span class="tok-kw">return</span> [ round(real(c[k])) <span class="tok-kw">for</span> k <span class="tok-kw">in</span> <span class="tok-num">0</span>..N&#8722;<span class="tok-num">1</span> ]    <span class="tok-com"># integer coeffs</span></code></pre>
+
+        <p>Three transforms and a linear pass: <code class="inl">&#x398;(n&#160;log&#160;n)</code> overall. Set against the alternatives we have met, the ledger is decisive.</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>Multiplying two degree-n polynomials — the three methods</caption>
+            <thead>
+              <tr><th scope="col">method</th><th scope="col">idea</th><th scope="col">time</th><th scope="col">first wins at roughly</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Schoolbook</th><td>every coefficient times every coefficient</td><td class="bad">&#x398;(n&#178;)</td><td class="mid">&mdash; (baseline)</td></tr>
+              <tr><th scope="row">Karatsuba (Lec 03)</th><td>3 half-size multiplies, not 4</td><td class="mid">&#x398;(n<sup>1.585</sup>)</td><td class="mid">tens of terms</td></tr>
+              <tr class="wrap-row"><th scope="row">FFT</th><td>evaluate &middot; pointwise multiply &middot; interpolate</td><td class="good">&#x398;(n log n)</td><td class="good">hundreds&ndash;thousands of terms</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="4">Each row beats the one above only past a crossover; for a 3-term multiply, schoolbook wins outright.</td></tr></tfoot>
+          </table>
+        </div>
+
+        <h3>What this unlocks</h3>
+        <p>The payoff is wider than fast multiplication. <strong>Big integers</strong>: digits are coefficients in base <code class="inl">10</code> (or, in practice, base <code class="inl">2<sup>16</sup></code>); convolve, then propagate carries &mdash; this is how arbitrary-precision libraries multiply million-digit numbers, and a refinement underlies the <code class="inl">O(n&#160;log&#160;n)</code> integer multiplication of Harvey&ndash;van&nbsp;der&nbsp;Hoeven (2019). <strong>Convolutions everywhere</strong>: signal filtering, image blurs, large-kernel correlations, and probability &mdash; the distribution of a sum of independent variables is the convolution of their distributions, so the FFT computes it in <code class="inl">&#x398;(n&#160;log&#160;n)</code>. <strong>String matching</strong> with wildcards (Practice&nbsp;3) reduces to a few convolutions. The lesson generalises past this one transform: <em>find the basis in which your operation diagonalises, and it becomes pointwise.</em></p>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>The FFT is beautiful in theory and treacherous in the small print. The clean derivation hid four practical hazards; here is where a correct-looking implementation silently returns garbage.</p>
+
+        <h3>1 &middot; Too-short transform &rarr; circular wraparound</h3>
+        <p>This is the cardinal sin. If you transform at only <code class="inl">n</code> points when the product has <code class="inl">2n&minus;1</code> coefficients, you do not get the product &mdash; you get its <em>circular</em> convolution, where coefficients past index <code class="inl">n&minus;1</code> wrap around and add back onto the low coefficients, corrupting them. The DFT of length <code class="inl">N</code> computes convolution <em>modulo</em> <code class="inl">x<sup>N</sup>&minus;1</code>. Always pick <code class="inl">N &#8805; deg&#160;A + deg&#160;B + 1</code> (then round up to a power of two). The symptom &mdash; low coefficients too large by exactly a high coefficient &mdash; is unmistakable once you know it.</p>
+
+        <h3>2 &middot; Floating-point round-off</h3>
+        <p>The roots of unity are irrational complex numbers; the arithmetic is in <code class="inl">double</code>. Integer answers emerge as <code class="inl">2.9999999998</code> or carry <code class="inl">1.3&times;10<sup>&minus;13</sup>i</code> of imaginary dust, so you must <code class="inl">round</code> the real part. That is safe only while the rounding error stays below <code class="inl">0.5</code>. The error grows with <code class="inl">N</code> and with the coefficient magnitude &mdash; very roughly you are fine while <code class="inl">N&middot;(max|coef|)&#178;</code> sits comfortably under <code class="inl">2<sup>52</sup></code>. Beyond that, split coefficients into smaller limbs, or abandon complex numbers for the <span class="term">Number-Theoretic Transform</span> (NTT): the identical algorithm run in a modular field <code class="inl">&#8484;<sub>p</sub></code> with a primitive root of unity in place of <code class="inl">e<sup>2&#960;i/n</sup></code> &mdash; exact integer arithmetic, zero round-off.</p>
+
+        <h3>3 &middot; <code class="inl">N</code> not a power of two</h3>
+        <p>The radix-2 split assumes <code class="inl">n</code> halves cleanly to the leaf. Hand it <code class="inl">N=6</code> and the recursion stalls. Pad up to the next power of two (the extra coefficients are zero and harmless). General sizes need mixed-radix or Bluestein's algorithm &mdash; out of scope here; in practice, just pad.</p>
+
+        <h3>4 &middot; The inverse's two edits, half-done</h3>
+        <p>Forgetting the final <code class="inl">/N</code> scales every coefficient by <code class="inl">N</code>; using <code class="inl">+i</code> where the inverse needs the conjugate <code class="inl">&minus;i</code> reverses and scrambles the output. Both produce plausible-looking nonsense. If your round-trip <code class="inl">IFFT(FFT(a))</code> does not return <code class="inl">a</code> on a random vector, you have one of these &mdash; test that invariant first, before testing any multiply.</p>
+
+        <h3>5 &middot; Forgotten carries (integers)</h3>
+        <p>Convolving digit vectors gives <em>digit columns</em>, not digits: a column can exceed the base. The vector <code class="inl">[3,10,8]</code> from <code class="inl">(1+2x)(3+4x)</code> is correct as a polynomial, but to print it in base&nbsp;10 you must carry the <code class="inl">10</code>. Check it at <code class="inl">x=10</code>: <code class="inl">A(10)=21</code>, <code class="inl">B(10)=43</code>, and <code class="inl">21&middot;43=903</code>; meanwhile <code class="inl">3+10&middot;10+8&middot;100=903</code> as well. The coefficients are right; you still owe the carry pass to turn columns into digits.</p>
+
+        <h3>6 &middot; FFT-ing a tiny multiply</h3>
+        <p>Below the crossover, the FFT's constant factor and round-off risk make it <em>lose</em> to schoolbook. Do not transform a 3-coefficient product. Real libraries branch on size: schoolbook for small, Karatsuba for medium, FFT/NTT only when <code class="inl">n</code> is large enough to pay back the overhead.</p>
+
+        <div class="note warn"><span class="tag">the boundary of the model</span>It is tempting to trust the clean algebra &mdash; <code class="inl">V<sup>&minus;1</sup>=(1/n)&#160;conj(V)</code> is exact, after all. The gap I must keep in view is that the <em>machine</em> works in finite-precision <code class="inl">double</code>, not in &#8450;. The mathematics is exact; the engine rounds. Respecting that gap &mdash; bounding the error, or stepping into <code class="inl">&#8484;<sub>p</sub></code> where the arithmetic is exact &mdash; is the difference between a correct multiply and one that fails silently on large input.</div>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section id="s13" class="reveal">
+      <div class="eyebrow"><span class="n">13</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Multiply two big integers given as strings</h3>
+          <p class="meta">convolution + carry &middot; schoolbook vs FFT crossover</p>
+          <p>Given non-negative integers <code class="inl">num1</code>, <code class="inl">num2</code> as digit strings (no leading zeros except <code class="inl">"0"</code> itself), return their product as a string, without any big-integer library. Model each number as a polynomial in base <code class="inl">10</code>: convolve the digit vectors, then propagate carries. Signature <code class="inl">multiply(num1: str, num2: str) -&gt; str</code>; example <code class="inl">"123"&times;"45"="5535"</code>. State the schoolbook complexity in the lengths, identify exactly which step is the convolution, and say at what input size you would switch to an FFT/NTT convolution and why.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Pair-sum frequencies via self-convolution</h3>
+          <p class="meta">self-convolution &middot; diagonal correction</p>
+          <p>Given an array <code class="inl">a</code> of <code class="inl">n</code> non-negative integers with maximum value <code class="inl">M</code>, return an array <code class="inl">ans</code> of length <code class="inl">2M+1</code> where <code class="inl">ans[t]</code> is the number of <em>unordered</em> pairs <code class="inl">{i,j}</code> with <code class="inl">i&lt;j</code> and <code class="inl">a[i]+a[j]=t</code>. Build the value-frequency array <code class="inl">f</code> and convolve it with itself by FFT. Then derive the correction that turns the ordered, self-pair-including convolution <code class="inl">g=f&#8727;f</code> into the unordered <code class="inl">i&lt;j</code> count &mdash; precisely, handle the diagonal (where <code class="inl">i=j</code>) and the double-counting of order. Example <code class="inl">a=[1,2,3]</code> &rarr; one pair each at sums <code class="inl">3,4,5</code>. Give the complexity in <code class="inl">n</code> and <code class="inl">M</code> and beat the <code class="inl">&#x398;(n&#178;)</code> brute force.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Wildcard string matching in O(n log n)</h3>
+          <p class="meta">three convolutions &middot; the sum-of-cubes trick</p>
+          <p>Given text <code class="inl">T</code> (length <code class="inl">n</code>) and pattern <code class="inl">P</code> (length <code class="inl">m</code>) over a small alphabet, where <code class="inl">P</code> may contain the wildcard <code class="inl">'?'</code> matching any character, return every start index <code class="inl">s</code> (<code class="inl">0&#8804;s&#8804;n&minus;m</code>) at which <code class="inl">P</code> matches <code class="inl">T[s..s+m&minus;1]</code>. Map characters to positive integers and the wildcard to <code class="inl">0</code>. Show that the mismatch score <code class="inl">M(s)=&#8721;<sub>j</sub> P[j]&middot;T[s+j]&middot;(P[j]&minus;T[s+j])&#178;</code> is non-negative and equals <code class="inl">0</code> exactly at a match, then expand it into three correlations &mdash; each an FFT convolution after reversing <code class="inl">P</code> &mdash; for an <code class="inl">O((n+m)&#160;log(n+m))</code> algorithm. Identify why the wildcard must map to <code class="inl">0</code>, and the precision hazard the cubes introduce.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Implement FFT, its inverse, and the round-trip guarantee</h3>
+          <p class="meta">recursive transform &middot; inverse by conjugation &middot; precision bound</p>
+          <p>Implement <code class="inl">fft(a)</code> (recursive radix-2) and <code class="inl">ifft(y)</code> via the identity <code class="inl">ifft(y)=conj(fft(conj(y)))/N</code>, then <code class="inl">multiply(A,B)</code> returning integer coefficients. Your harness must (a) verify <code class="inl">ifft(fft(a))=a</code> on random complex vectors to a tolerance, and (b) match a schoolbook multiply on random integer polynomials. Then answer two questions in writing: <em>why</em> does replacing <code class="inl">&#969;<sub>n</sub></code> by <code class="inl">&#969;<sub>n</sub><sup>&minus;1</sup></code> and dividing by <code class="inl">N</code> invert the transform (cite the summation lemma), and what bound on <code class="inl">N</code> and coefficient size keeps the final <code class="inl">round()</code> provably correct? Name the exact alternative when that bound is exceeded.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section id="s14" class="reveal">
+      <div class="eyebrow"><span class="n">14</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>An operation that is expensive in one representation can be free in another &mdash; so change representation.</strong> Polynomial multiplication is <code class="inl">&#x398;(n&#178;)</code> on coefficients but <code class="inl">&#x398;(n)</code> on point&#8209;values; the FFT pays only <code class="inl">&#x398;(n&#160;log&#160;n)</code> to evaluate and interpolate, because the complex roots of unity are the unique points whose squares halve recursively, giving the divide-and-conquer recurrence <code class="inl">T(n)=2T(n/2)+&#x398;(n)</code>. Interpolation is the same transform with conjugate roots and a <code class="inl">1/n</code> scale. Mind the length (or convolution wraps) and the precision (or rounding lies).</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 05</span>
+            <div class="ttl">Probability for Algorithms: Expectation, Indicator Variables, and Concentration Bounds</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We have now seen two of the three cost lenses &mdash; worst-case asymptotics (Lec&nbsp;00) and the amortised average (Lec&nbsp;02). Lecture&nbsp;05 completes the trio with the <em>expected</em> cost under randomness: linearity of expectation, indicator variables, and the Markov, Chebyshev, and Chernoff bounds &mdash; the toolkit behind randomized quicksort, hashing, and every randomized structure to come. From transforms back to the arithmetic of chance.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-03-divide-solve-combine.html">← Previous study</a><a href="dsa-05-probability-for-algorithms.html">Next study →</a></nav>
+</body>
+</html>

@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Probability for Algorithms</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.95rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.6rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.wrap-row td, tr.wrap-row th{background:color-mix(in oklab,var(--bau-yellow) 26%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+  .eq.red{border-left-color:var(--bau-red)}
+  .eq.red .lbl{color:var(--bau-red)}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-stroke{stroke:var(--on-surface); fill:none; stroke-width:2}
+  .dg-thin{stroke:var(--outline); fill:none; stroke-width:1}
+  .dg-dash{stroke:var(--outline); fill:none; stroke-width:1.5; stroke-dasharray:5 5}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+  .dg-red{stroke:var(--bau-red)}   .dg-red-f{fill:var(--bau-red)}
+  .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-cell{fill:var(--surface);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill{fill:var(--primary-container);stroke:var(--bau-ink);stroke-width:2}
+  .dg-label{font-family:var(--font-mono); font-size:14px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
+  .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
+
+  /* ===== inline cell strips (HTML, for state traces) ===== */
+  .cells{display:flex; gap:5px; flex-wrap:wrap; margin:.5em 0 1em; font-family:var(--font-mono); font-size:14px; align-items:flex-end}
+  .cells .c{min-width:40px; height:40px; display:grid; place-items:center; border:1.5px solid var(--bau-ink); border-radius:var(--r-xs); background:var(--surface-1); position:relative}
+  .cells .c.fill{background:var(--primary-container); color:var(--on-primary-container); font-weight:650}
+  .cells .c.one{background:var(--bau-blue); color:#fff; font-weight:650}
+  .cells .c .ix{position:absolute; top:-1.35em; left:0; right:0; text-align:center; font-size:10.5px; color:var(--on-surface-variant)}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">05 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>05</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="190" height="150" viewBox="0 0 190 150" aria-hidden="true">
+    <rect x="70" y="70" width="78" height="78" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <circle cx="48" cy="48" r="46" class="dg-blue-f"/>
+    <path d="M120 4 L186 4 L153 64 Z" class="dg-red-f"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 05</span> the third lens on cost</div>
+    <h1>Probability for Algorithms</h1>
+    <p class="lede col">Expectation, indicator variables, and concentration bounds &mdash; the small, sharp toolkit that lets us reason about algorithms which <em>flip their own coins</em>. With it we will prove not just what an algorithm costs <em>on average</em>, but that it almost never costs much more.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Sort a billion items with <strong>quicksort</strong>. Its <em>worst case</em> is <code class="inl">&#x398;(n&sup2;)</code> &mdash; about <code class="inl">10&#185;&#8312;</code> comparisons, roughly <strong>thirty years</strong> of computing. Its <em>expected case</em> is <code class="inl">&#8776; 2n&nbsp;ln&nbsp;n</code> &mdash; about <code class="inl">4&times;10&#185;&#8304;</code> comparisons, <strong>under a minute</strong>.</p>
+        <p style="margin-bottom:0">Both numbers describe the <em>same program on the same machine</em>. The only thing that changed is a coin we chose to flip when picking each pivot. Worst-case asymptotics (Lecture 00) and amortized cost (Lecture 02) both reason about a fixed, adversarial world. This lecture installs the <strong>third cost lens &mdash; expected cost under randomness</strong> &mdash; and, crucially, the machinery to prove the bad case stays <em>improbable</em>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>Possible vs probable</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>The probability space</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>Expectation</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Linearity &mdash; the loom</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>Indicator variables</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>Worked: quicksort's count</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Variance</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>The three bounds</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Worked: one tail, three caps</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Where it breaks</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Practice</span></a></li>
+      <li><a href="#s13"><span class="num">13</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> possible vs probable</div>
+      <h2>What changes when the algorithm flips a coin</h2>
+      <div class="col">
+        <p>Ada Lovelace observed that the Analytical Engine does not <em>originate</em> anything &mdash; it can do only what we know how to order it to perform. A coin appears to violate that creed: how can a machine that merely follows orders make a choice? It cannot. What we do instead is something more honest and far more powerful. We hand the machine a stream of <em>random bits</em> as an additional input, and we order it, deterministically, to <em>use</em> them. The randomness is not in the engine; it is a resource we feed it. The question then becomes formal again: <strong>over the distribution of those bits, what does the algorithm cost?</strong></p>
+
+        <p>This is the move that rescues quicksort. There are two quite different stories one can tell, and confusing them is the most common error in this subject, so let me draw the line sharply.</p>
+
+        <ul class="obj" style="margin:1.2em 0">
+          <li><strong>Average-case analysis.</strong> The algorithm is deterministic; the <em>input</em> is drawn from some assumed distribution. The cost is averaged over inputs. This is a promise about the world &mdash; and the world rarely keeps it. Feed a &ldquo;sort random arrays&rdquo; analysis a nearly-sorted file and the promise is void.</li>
+          <li><strong>Randomized analysis.</strong> The <em>input is arbitrary</em> &mdash; chosen by an adversary if you like &mdash; and the algorithm draws its own random bits. The cost is averaged over the algorithm's coins, for <em>every</em> input. This is a guarantee you control, because <em>you</em> own the coin.</li>
+        </ul>
+
+        <p>Randomized quicksort makes the worst case vanish not by assuming nice inputs but by <strong>choosing the pivot at random</strong>, so that no fixed input can reliably trigger the bad split. The expected <code class="inl">&#x398;(n&nbsp;log&nbsp;n)</code> then holds for a sorted array, a reversed array, an adversarial array &mdash; all of them. That guarantee is what we are here to learn to prove, and it requires exactly three ideas: <span class="term">expectation</span>, the <span class="term">indicator variable</span>, and the <span class="term">concentration bound</span>.</p>
+
+        <div class="stats">
+          <div class="stat lead"><div class="big">2n&#8201;ln&#8201;n</div><span class="lab">expected comparisons, randomized quicksort &mdash; we derive this in &sect;07</span></div>
+          <div class="stat"><div class="big">&#x398;(n&sup2;)</div><span class="lab">worst case &mdash; possible, but we make it improbable</span></div>
+          <div class="stat"><div class="big">e<sup>&#8722;&#x398;(n)</sup></div><span class="lab">how fast the tail of a sum of coins decays &mdash; &sect;09</span></div>
+        </div>
+
+        <p>The slogan for the whole lecture: an algorithm's worst case is what is <em>possible</em>; its expectation is what is <em>typical</em>; and a concentration bound is the proof that the possible stays <em>improbable</em>. Cost analysis is no longer a single number &mdash; it is a distribution, and we are learning to bound its shape.</p>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>Model</strong> an algorithm's cost as a random variable over a probability space, and read off its expectation from first principles.</li>
+          <li><strong>Wield linearity of expectation</strong> &mdash; decompose a complicated count into a sum of <code class="inl">0/1</code> indicators and total it, <em>without ever proving independence</em>.</li>
+          <li><strong>Derive</strong> the <code class="inl">&#8776; 2n&nbsp;ln&nbsp;n</code> expected comparison count of randomized quicksort, end to end.</li>
+          <li><strong>Compute variance</strong> and explain why the mean alone never tells you whether an algorithm is reliable.</li>
+          <li><strong>Apply</strong> Markov, Chebyshev, and Chernoff&ndash;Hoeffding to bound the probability of a bad run &mdash; and know which hypotheses each one demands.</li>
+          <li><strong>Distinguish</strong> average-case from randomized analysis, and name the failure that follows from mixing them up.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>This lecture assumes two things, both light:</p>
+        <div class="chips">
+          <span class="chip">discrete math &mdash; counting &amp; summations</span>
+          <span class="chip">harmonic &amp; geometric sums</span>
+          <span class="chip">asymptotic notation (Big-O / &#x398; / &#x3A9;)</span>
+        </div>
+        <p style="margin-top:1em">If <code class="inl">&#x398;</code>, <code class="inl">O</code>, and <code class="inl">&#x3A9;</code> are not yet reflexes, revisit <a class="inline" href="dsa-00-cost-of-a-computation.html">Lecture 00 &mdash; The Cost of a Computation</a>; the harmonic number <code class="inl">H&#8345; = 1 + &#189; + &#8531; + &#8943; + 1/n &#8776; ln n</code> will appear in &sect;07 and is the one summation worth memorizing. No prior probability is assumed &mdash; we build it.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> the probability space</div>
+      <h2>The computational skeleton of chance</h2>
+      <div class="col">
+        <p>Strip the mystique away and probability is just <em>weighted counting</em>. Three objects, and no more, are needed.</p>
+
+        <p>A <span class="term">sample space</span> <code class="inl">&#x3A9;</code> is the set of all possible outcomes of an experiment &mdash; every sequence of coin flips the algorithm might draw. An <span class="term">event</span> <code class="inl">A &#8838; &#x3A9;</code> is any subset of outcomes; &ldquo;the first two pivots are both the minimum&rdquo; is an event. A <span class="term">probability measure</span> <code class="inl">P</code> assigns each event a weight in <code class="inl">[0,1]</code>, with <code class="inl">P(&#x3A9;) = 1</code> and weights of disjoint events adding. For a fair coin flipped <code class="inl">n</code> times, <code class="inl">&#x3A9;</code> has <code class="inl">2&#8319;</code> equally-likely outcomes, and <code class="inl">P(A) = |A| / 2&#8319;</code> &mdash; counting, divided by the total.</p>
+
+        <p>The object we actually compute with is the <span class="term">random variable</span>. A random variable <code class="inl">X</code> is <em>not</em> a number and <em>not</em> random in itself &mdash; it is a deterministic function <code class="inl">X : &#x3A9; &#8594; &#8477;</code> that reads an outcome and reports a number. &ldquo;The number of comparisons quicksort performs&rdquo; is such a function: fix the coin sequence <code class="inl">&#969;</code> and the comparison count <code class="inl">X(&#969;)</code> is fully determined. The randomness lives in <em>which</em> <code class="inl">&#969;</code> we drew; <code class="inl">X</code> merely translates it into cost.</p>
+
+        <div class="note info">
+          <span class="tag">the abstraction that matters</span>
+          A random variable is a lens that turns an outcome into a cost. Once an algorithm's running time is named as a random variable <code class="inl">T</code>, every question we care about &mdash; &ldquo;typical cost?&rdquo;, &ldquo;risk of a slow run?&rdquo; &mdash; becomes a question about the <em>distribution of one function</em>, and the rest of this lecture is a kit for answering those.
+        </div>
+
+        <p>We will lean almost entirely on <strong>discrete</strong> random variables &mdash; counts, which take values in <code class="inl">{0, 1, 2, &#8943;}</code> &mdash; because the cost of an algorithm is a count: of comparisons, of probes, of recursive calls. Continuous probability we will not need.</p>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> expectation</div>
+      <h2>The center of mass of a cost</h2>
+      <div class="col">
+        <p>The <span class="term">expectation</span> (or <em>expected value</em>, or <em>mean</em>) of a discrete random variable is its probability-weighted average &mdash; the single number a long run of trials converges to. Two equivalent forms, and you must be fluent in both:</p>
+
+        <div class="eq">
+          <span class="lbl">expectation &mdash; two equivalent definitions</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>E</mi><mo>[</mo><mi>X</mi><mo>]</mo>
+              <mo>=</mo>
+              <munder><mo>&#8721;</mo><mrow><mi>x</mi></mrow></munder>
+              <mi>x</mi><mo>&#8226;</mo><mi>P</mi><mo>(</mo><mi>X</mi><mo>=</mo><mi>x</mi><mo>)</mo>
+              <mspace width="2.2em"/>
+              <mo>=</mo>
+              <mspace width="0.3em"/>
+              <munder><mo>&#8721;</mo><mrow><mi>&#969;</mi><mo>&#8712;</mo><mi>&#x3A9;</mi></mrow></munder>
+              <mi>X</mi><mo>(</mo><mi>&#969;</mi><mo>)</mo><mo>&#8226;</mo><mi>P</mi><mo>(</mo><mi>&#969;</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>The left form sums over <em>values</em>, weighting each by how likely it is. The right form sums over <em>outcomes</em>, weighting each by its probability &mdash; and this second form, dull as it looks, is the secret engine of the whole lecture. It says expectation is a sum over <code class="inl">&#x3A9;</code>, and sums can be reordered freely. Hold that thought one section.</p>
+
+        <p>A die: <code class="inl">E[X] = &#8537;(1+2+3+4+5+6) = 3.5</code>. Note the expectation need not be a value the variable can take &mdash; you never roll a 3.5. Expectation is the <em>balance point</em> of the distribution, not a typical outcome. A fair coin paying <code class="inl">&#36;1</code> for heads and <code class="inl">&#36;0</code> for tails has <code class="inl">E = &#36;0.50</code>, a payout that can never actually occur.</p>
+
+        <p>One more form earns its keep for counts. For a non-negative integer variable, expectation is the sum of <em>upper-tail probabilities</em>:</p>
+        <div class="eq">
+          <span class="lbl">tail-sum identity (for X in {0,1,2,&#8943;})</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>E</mi><mo>[</mo><mi>X</mi><mo>]</mo><mo>=</mo>
+              <munderover><mo>&#8721;</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>&#8734;</mi></mrow></munderover>
+              <mi>P</mi><mo>(</mo><mi>X</mi><mo>&#8805;</mo><mi>k</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>It converts a question about a count into a question about a chain of events &mdash; convenient when &ldquo;how big does <code class="inl">X</code> get?&rdquo; is easier to answer than &ldquo;what is each value's probability?&rdquo;. We will not lean on it here, but it is the kind of representational change &mdash; rewrite the same quantity in a form that exposes structure &mdash; that this whole course is built upon.</p>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> linearity &mdash; the loom</div>
+      <h2>The most useful theorem you will ever underuse</h2>
+      <div class="col">
+        <p>Here is the result that does nine-tenths of the work in algorithm analysis, stated in full force:</p>
+
+        <div class="eq red">
+          <span class="lbl">linearity of expectation &mdash; holds for ANY X, Y</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>E</mi><mo>[</mo><mi>a</mi><mi>X</mi><mo>+</mo><mi>b</mi><mi>Y</mi><mo>]</mo>
+              <mo>=</mo>
+              <mi>a</mi><mo>&#8201;</mo><mi>E</mi><mo>[</mo><mi>X</mi><mo>]</mo>
+              <mo>+</mo>
+              <mi>b</mi><mo>&#8201;</mo><mi>E</mi><mo>[</mo><mi>Y</mi><mo>]</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>Read the small print, because it is the whole point: <strong>there is no independence hypothesis.</strong> <code class="inl">X</code> and <code class="inl">Y</code> may be wildly, intricately dependent &mdash; the expectation of their sum is still the sum of their expectations. Why should so strong a claim be free? Because expectation is a sum over outcomes, and addition commutes:</p>
+
+        <div class="eq">
+          <span class="lbl">the one-line proof</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>E</mi><mo>[</mo><mi>X</mi><mo>+</mo><mi>Y</mi><mo>]</mo>
+              <mo>=</mo>
+              <munder><mo>&#8721;</mo><mrow><mi>&#969;</mi></mrow></munder>
+              <mrow><mo>(</mo><mi>X</mi><mo>(</mo><mi>&#969;</mi><mo>)</mo><mo>+</mo><mi>Y</mi><mo>(</mo><mi>&#969;</mi><mo>)</mo><mo>)</mo></mrow>
+              <mi>P</mi><mo>(</mo><mi>&#969;</mi><mo>)</mo>
+              <mo>=</mo>
+              <munder><mo>&#8721;</mo><mrow><mi>&#969;</mi></mrow></munder><mi>X</mi><mo>(</mo><mi>&#969;</mi><mo>)</mo><mi>P</mi><mo>(</mo><mi>&#969;</mi><mo>)</mo>
+              <mo>+</mo>
+              <munder><mo>&#8721;</mo><mrow><mi>&#969;</mi></mrow></munder><mi>Y</mi><mo>(</mo><mi>&#969;</mi><mo>)</mo><mi>P</mi><mo>(</mo><mi>&#969;</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>We split one sum into two. Dependence between <code class="inl">X</code> and <code class="inl">Y</code> is a statement about the <em>joint</em> distribution &mdash; about which outcomes co-occur &mdash; and this calculation never touches the joint distribution. It looks at one outcome <code class="inl">&#969;</code> at a time. That indifference to tangling is precisely why linearity is the right tool for messy, correlated quantities, and why I think of it as a <strong>loom</strong>: it weaves many dependent threads into one exact total without ever needing to know how they are knotted together.</p>
+
+        <div class="pull">An algorithm's worst case is what is <span>possible</span>; its expectation is what is <span>typical</span>; a concentration bound is the proof the possible stays <span>improbable</span>.</div>
+
+        <p>Contrast the product. <code class="inl">E[XY] = E[X]&#8201;E[Y]</code> is <em>false</em> in general; it holds <strong>only when <code class="inl">X</code> and <code class="inl">Y</code> are independent</strong>. So the discipline is exact: <em>sums</em> of expectations are always free; <em>products</em> demand independence. Keep that boundary bright &mdash; half the errors in &sect;11 are someone crossing it without noticing.</p>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> indicator variables</div>
+      <h2>Turning every yes/no question into a 0/1 lever</h2>
+      <div class="col">
+        <p>Linearity is only worth a loom if you have threads to weave. The <span class="term">indicator variable</span> manufactures them. For any event <code class="inl">A</code>, define a random variable that is <code class="inl">1</code> when <code class="inl">A</code> happens and <code class="inl">0</code> when it does not:</p>
+
+        <div class="eq">
+          <span class="lbl">the indicator, and its single beautiful property</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <msub><mi>&#120793;</mi><mi>A</mi></msub><mo>(</mo><mi>&#969;</mi><mo>)</mo>
+              <mo>=</mo>
+              <mrow><mo>{</mo>
+                <mtable columnalign="left">
+                  <mtr><mtd><mn>1</mn></mtd><mtd><mtext>if&#8201;</mtext><mi>&#969;</mi><mo>&#8712;</mo><mi>A</mi></mtd></mtr>
+                  <mtr><mtd><mn>0</mn></mtd><mtd><mtext>otherwise</mtext></mtd></mtr>
+                </mtable>
+              </mrow>
+              <mspace width="2em"/>
+              <mi>E</mi><mo>[</mo><msub><mi>&#120793;</mi><mi>A</mi></msub><mo>]</mo>
+              <mo>=</mo>
+              <mn>1</mn><mo>&#8226;</mo><mi>P</mi><mo>(</mo><mi>A</mi><mo>)</mo>
+              <mo>+</mo>
+              <mn>0</mn><mo>&#8226;</mo><mi>P</mi><mo>(</mo><mover><mi>A</mi><mo>&#175;</mo></mover><mo>)</mo>
+              <mo>=</mo>
+              <mi>P</mi><mo>(</mo><mi>A</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>The expectation of an indicator <em>is the probability of its event</em>. This little equality is the hinge on which everything turns, because it lets us trade a hard quantity &mdash; an expected count &mdash; for a sum of easy ones &mdash; individual probabilities. The recipe, which I will call the <strong>indicator method</strong>, has three steps and never varies:</p>
+
+        <ol style="font-size:1.04rem; line-height:1.6">
+          <li><strong>Decompose.</strong> Write the count you want as a sum of indicators, one per &ldquo;thing that might happen&rdquo;: <code class="inl">X = &#120793;&#8321; + &#120793;&#8322; + &#8943; + &#120793;&#8345;</code>.</li>
+          <li><strong>Linearize.</strong> Apply linearity &mdash; no independence needed &mdash; so <code class="inl">E[X] = E[&#120793;&#8321;] + &#8943; + E[&#120793;&#8345;]</code>.</li>
+          <li><strong>Probabilize.</strong> Replace each <code class="inl">E[&#120793;&#7522;]</code> with <code class="inl">P(A&#7522;)</code> and sum the probabilities: <code class="inl">E[X] = &#8721;&#7522; P(A&#7522;)</code>.</li>
+        </ol>
+
+        <p>A warm-up to feel the magic. Flip <code class="inl">n</code> fair coins; how many heads, in expectation? Let <code class="inl">&#120793;&#7522; = 1</code> if flip <code class="inl">i</code> is heads. Then <code class="inl">X = &#8721;&#120793;&#7522;</code> and <code class="inl">E[X] = &#8721; P(\text{flip } i \text{ is heads}) = n &#8226; &#189; = n/2</code>. Trivial here &mdash; the flips happen to be independent &mdash; but watch what we did <em>not</em> use: independence. The same three lines work when the events are gnarled together.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 900 250" role="img" aria-labelledby="f0t f0d">
+            <title id="f0t">A count rewritten as a row of indicator bits whose expectations add</title>
+            <desc id="f0d">Eight cells each holding a zero or one indicator for whether a coin came up heads. The count X is their sum, here four. Linearity says the expected count equals the sum of the eight individual head-probabilities, each one half, giving n over two regardless of any dependence among the flips.</desc>
+            <text x="24" y="40" class="dg-cap">X = &#120793;&#8321; + &#120793;&#8322; + &#120793;&#8323; + &#8943; + &#120793;&#8328;&#8195;&mdash;&#8195;a count is a sum of 0/1 levers</text>
+
+            <!-- indicator cells -->
+            <g>
+              <rect x="40"  y="70" width="70" height="70" rx="6" class="dg-fill"/>
+              <rect x="120" y="70" width="70" height="70" rx="6" class="dg-cell"/>
+              <rect x="200" y="70" width="70" height="70" rx="6" class="dg-fill"/>
+              <rect x="280" y="70" width="70" height="70" rx="6" class="dg-fill"/>
+              <rect x="360" y="70" width="70" height="70" rx="6" class="dg-cell"/>
+              <rect x="440" y="70" width="70" height="70" rx="6" class="dg-cell"/>
+              <rect x="520" y="70" width="70" height="70" rx="6" class="dg-fill"/>
+              <rect x="600" y="70" width="70" height="70" rx="6" class="dg-cell"/>
+            </g>
+            <!-- bits -->
+            <text x="75"  y="114" text-anchor="middle" class="dg-val dg-blue-f">1</text>
+            <text x="155" y="114" text-anchor="middle" class="dg-val dg-muted">0</text>
+            <text x="235" y="114" text-anchor="middle" class="dg-val dg-blue-f">1</text>
+            <text x="315" y="114" text-anchor="middle" class="dg-val dg-blue-f">1</text>
+            <text x="395" y="114" text-anchor="middle" class="dg-val dg-muted">0</text>
+            <text x="475" y="114" text-anchor="middle" class="dg-val dg-muted">0</text>
+            <text x="555" y="114" text-anchor="middle" class="dg-val dg-blue-f">1</text>
+            <text x="635" y="114" text-anchor="middle" class="dg-val dg-muted">0</text>
+            <!-- per-cell expectation -->
+            <text x="75"  y="168" text-anchor="middle" class="dg-label sm">E=&#189;</text>
+            <text x="155" y="168" text-anchor="middle" class="dg-label sm">E=&#189;</text>
+            <text x="235" y="168" text-anchor="middle" class="dg-label sm">E=&#189;</text>
+            <text x="315" y="168" text-anchor="middle" class="dg-label sm">E=&#189;</text>
+            <text x="395" y="168" text-anchor="middle" class="dg-label sm">E=&#189;</text>
+            <text x="475" y="168" text-anchor="middle" class="dg-label sm">E=&#189;</text>
+            <text x="555" y="168" text-anchor="middle" class="dg-label sm">E=&#189;</text>
+            <text x="635" y="168" text-anchor="middle" class="dg-label sm">E=&#189;</text>
+
+            <!-- sum callout -->
+            <g transform="translate(700,70)">
+              <rect x="0" y="0" width="172" height="70" rx="8" fill="var(--surface-2)" stroke="var(--bau-red)" stroke-width="2"/>
+              <text x="86" y="30" text-anchor="middle" class="dg-val dg-red-f">X = 4 here</text>
+              <text x="86" y="54" text-anchor="middle" class="dg-label sm">E[X] = &#8721; &#189; = n/2</text>
+            </g>
+            <text x="24" y="220" class="dg-label sm">Linearity totals the column of expectations &mdash; it never asks whether the levers move together.</text>
+          </svg>
+          <figcaption><b>Figure 1 &mdash; the indicator method, in one row.</b> Decompose the count into <code class="inl">0/1</code> levers, replace each lever's expectation by its event's probability, and add. The picture is trivial because the flips are independent; the <em>method</em> survives unchanged when they are not &mdash; which is the entire reason it is worth learning.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> worked example A</div>
+      <h2>Quicksort's expected comparison count, derived</h2>
+      <div class="col">
+        <p>Now the example that makes the loom sing &mdash; and which Lecture 06 will lean on directly. <span class="term">Randomized quicksort</span>: to sort an array, pick a pivot <em>uniformly at random</em>, partition the rest into those below and above it by comparing each to the pivot, then recurse on the two sides. Every comparison in the entire run is between some element and a pivot. We want <code class="inl">E[X]</code>, where <code class="inl">X</code> is the total number of comparisons, <em>for an arbitrary input</em>.</p>
+
+        <pre><code><span class="tok-kw">def</span> <span class="tok-fn">quicksort</span>(A, lo, hi):
+    <span class="tok-kw">if</span> lo &gt;= hi: <span class="tok-kw">return</span>
+    p = random.randint(lo, hi)         <span class="tok-com"># the only randomness: a uniform pivot</span>
+    A[p], A[hi] = A[hi], A[p]
+    pivot = A[hi]; i = lo
+    <span class="tok-kw">for</span> j <span class="tok-kw">in</span> range(lo, hi):              <span class="tok-com"># each pass: one comparison per element</span>
+        <span class="tok-kw">if</span> A[j] &lt; pivot:                  <span class="tok-com"># &lt;-- counted comparison</span>
+            A[i], A[j] = A[j], A[i]; i += <span class="tok-num">1</span>
+    A[i], A[hi] = A[hi], A[i]
+    <span class="tok-fn">quicksort</span>(A, lo, i-<span class="tok-num">1</span>); <span class="tok-fn">quicksort</span>(A, i+<span class="tok-num">1</span>, hi)</code></pre>
+
+        <p><strong>Step 1 &mdash; name the right indicators.</strong> The naive attempt &mdash; an indicator per recursive call &mdash; drowns in dependence between the calls. The decisive idea is to index by <em>pairs of values</em>, not by calls. Sort the input values in increasing order and call them <code class="inl">z&#8321; &lt; z&#8322; &lt; &#8943; &lt; z&#8345;</code> (the order statistics; this is an analysis device, not a step the algorithm performs). For each pair <code class="inl">i &lt; j</code> define</p>
+        <div class="eq">
+          <span class="lbl">the pairwise indicator</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <msub><mi>X</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub>
+              <mo>=</mo>
+              <mn>1</mn>
+              <mspace width="0.6em"/>
+              <mtext>iff&#8201;</mtext>
+              <msub><mi>z</mi><mi>i</mi></msub>
+              <mtext>&#8201;and&#8201;</mtext>
+              <msub><mi>z</mi><mi>j</mi></msub>
+              <mtext>&#8201;are ever compared.</mtext>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Every comparison is element-against-pivot, so any pair of values is compared <strong>at most once</strong> in the whole run &mdash; once a pivot is chosen it is never compared again. Hence the total comparison count is exactly the number of pairs that ever meet:</p>
+        <div class="eq">
+          <span class="lbl">decompose &mdash; total comparisons as a sum over pairs</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>X</mi><mo>=</mo>
+              <munderover><mo>&#8721;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi><mo>&#8722;</mo><mn>1</mn></mrow></munderover>
+              <munderover><mo>&#8721;</mo><mrow><mi>j</mi><mo>=</mo><mi>i</mi><mo>+</mo><mn>1</mn></mrow><mrow><mi>n</mi></mrow></munderover>
+              <msub><mi>X</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub>
+              <mspace width="2em"/>
+              <mi>E</mi><mo>[</mo><mi>X</mi><mo>]</mo>
+              <mo>=</mo>
+              <munder><mo>&#8721;</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder>
+              <mi>P</mi><mo>(</mo><msub><mi>z</mi><mi>i</mi></msub><mo>,</mo><msub><mi>z</mi><mi>j</mi></msub><mtext>&#8201;compared</mtext><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p><strong>Step 2 &mdash; the key probability.</strong> Fix <code class="inl">i &lt; j</code> and consider the block of values between them inclusive, <code class="inl">{z&#7522;, z&#7522;&#8330;&#8321;, &#8943;, z&#11388;}</code> &mdash; there are <code class="inl">j &#8722; i + 1</code> of them. Track the <em>first</em> of these that is chosen as a pivot (one of them must be, eventually, since pivots keep being drawn until each value has been one). Two cases, and only two:</p>
+        <ul class="obj" style="margin:1.1em 0">
+          <li>If that first-chosen pivot is an <strong>interior</strong> value <code class="inl">z&#8344;</code> with <code class="inl">i &lt; m &lt; j</code>, it splits <code class="inl">z&#7522;</code> and <code class="inl">z&#11388;</code> into different partitions. They land on opposite sides and are <strong>never compared</strong>.</li>
+          <li>If that first-chosen pivot is an <strong>endpoint</strong> &mdash; <code class="inl">z&#7522;</code> or <code class="inl">z&#11388;</code> itself &mdash; then at that moment the other endpoint is still in the same block and <em>is compared to it</em>. They <strong>are compared</strong>.</li>
+        </ul>
+        <p>So <code class="inl">z&#7522;</code> and <code class="inl">z&#11388;</code> are compared exactly when the first pivot drawn from their block of <code class="inl">j &#8722; i + 1</code> values is one of the two endpoints. Because pivots are uniform, every value in the block is equally likely to be the first one chosen, so the two favourable cases out of <code class="inl">j &#8722; i + 1</code> give</p>
+        <div class="eq red">
+          <span class="lbl">the heart of the analysis</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>P</mi><mo>(</mo><msub><mi>z</mi><mi>i</mi></msub><mo>,</mo><msub><mi>z</mi><mi>j</mi></msub><mtext>&#8201;compared</mtext><mo>)</mo>
+              <mo>=</mo>
+              <mi>E</mi><mo>[</mo><msub><mi>X</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>]</mo>
+              <mo>=</mo>
+              <mfrac><mn>2</mn><mrow><mi>j</mi><mo>&#8722;</mo><mi>i</mi><mo>+</mo><mn>1</mn></mrow></mfrac>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Read it: <em>adjacent ranks</em> (<code class="inl">j = i+1</code>) are compared with probability <code class="inl">2/2 = 1</code> &mdash; they must be, no value sits between to separate them &mdash; while <em>far-apart ranks</em> are compared rarely, probability <code class="inl">&#8776; 2/(j-i)</code>. Figure 2 draws this.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 920 430" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">Why two values are compared with probability two over the block size, and the resulting triangular table of pair-probabilities</title>
+            <desc id="f2d">Left: nine values in sorted order with a bracket over the block from z three to z seven; the two endpoints are highlighted and the label states the pair is compared exactly when the first pivot from the five-element block is an endpoint, probability two fifths. Right: an upper-triangular grid indexed by i and j, each cell shaded by two over j minus i plus one, darkest on the diagonal where adjacent ranks are always compared and fading away from it.</desc>
+
+            <!-- LEFT: the block argument -->
+            <text x="24" y="40" class="dg-cap">The block between z&#8323; and z&#8327; &mdash; five values</text>
+            <g>
+              <!-- 9 sorted cells -->
+              <rect x="24"  y="70" width="44" height="44" class="dg-cell"/>
+              <rect x="72"  y="70" width="44" height="44" class="dg-cell"/>
+              <rect x="120" y="70" width="44" height="44" class="dg-fill"/>
+              <rect x="168" y="70" width="44" height="44" class="dg-cell"/>
+              <rect x="216" y="70" width="44" height="44" class="dg-cell"/>
+              <rect x="264" y="70" width="44" height="44" class="dg-cell"/>
+              <rect x="312" y="70" width="44" height="44" class="dg-fill"/>
+              <rect x="360" y="70" width="44" height="44" class="dg-cell"/>
+              <rect x="408" y="70" width="44" height="44" class="dg-cell"/>
+              <!-- recolor the two endpoints of the block as accents -->
+              <rect x="120" y="70" width="44" height="44" fill="none" stroke="var(--bau-blue)" stroke-width="4"/>
+              <rect x="312" y="70" width="44" height="44" fill="none" stroke="var(--bau-red)" stroke-width="4"/>
+              <!-- labels -->
+              <text x="46"  y="98" text-anchor="middle" class="dg-label sm">z&#8321;</text>
+              <text x="94"  y="98" text-anchor="middle" class="dg-label sm">z&#8322;</text>
+              <text x="142" y="98" text-anchor="middle" class="dg-val dg-blue-f">z&#8323;</text>
+              <text x="190" y="98" text-anchor="middle" class="dg-label sm">z&#8324;</text>
+              <text x="238" y="98" text-anchor="middle" class="dg-label sm">z&#8325;</text>
+              <text x="286" y="98" text-anchor="middle" class="dg-label sm">z&#8326;</text>
+              <text x="334" y="98" text-anchor="middle" class="dg-val dg-red-f">z&#8327;</text>
+              <text x="382" y="98" text-anchor="middle" class="dg-label sm">z&#8328;</text>
+              <text x="430" y="98" text-anchor="middle" class="dg-label sm">z&#8329;</text>
+            </g>
+            <!-- bracket over block -->
+            <path d="M120 128 L120 140 L356 140 L356 128" class="dg-stroke dg-blue"/>
+            <text x="238" y="160" text-anchor="middle" class="dg-label">block size j&#8722;i+1 = 5</text>
+            <!-- favourable -->
+            <g transform="translate(24,184)">
+              <rect x="0" y="0" width="430" height="86" rx="8" fill="var(--surface-2)" stroke="var(--outline-variant)"/>
+              <circle cx="22" cy="28" r="7" class="dg-blue-f"/><circle cx="40" cy="28" r="7" class="dg-red-f"/>
+              <text x="60" y="33" class="dg-label">first pivot from block = an endpoint &#8594; <tspan class="dg-ink" font-weight="700">compared</tspan></text>
+              <rect x="14" y="52" width="14" height="14" class="dg-cell"/><rect x="32" y="52" width="14" height="14" class="dg-cell"/><rect x="50" y="52" width="14" height="14" class="dg-cell"/>
+              <text x="74" y="64" class="dg-label">first pivot = interior &#8594; <tspan class="dg-muted" font-weight="700">split apart, never compared</tspan></text>
+            </g>
+            <text x="24" y="298" class="dg-val dg-red-f">P = 2 favourable / 5 = 2&#8260;5</text>
+
+            <!-- RIGHT: triangular probability matrix -->
+            <text x="560" y="40" class="dg-cap">P(compared) = 2 / (j&#8722;i+1)</text>
+            <g transform="translate(540,60)" font-family="var(--font-mono)">
+              <!-- column headers j=2..7 -->
+              <text x="46"  y="14" text-anchor="middle" class="dg-label sm">j=2</text>
+              <text x="46"  y="14" text-anchor="middle" class="dg-label sm">2</text>
+              <!-- we draw a 6x6 upper triangle; cell intensity ~ 2/(gap+1) -->
+              <!-- row i=1 -->
+              <rect x="22"  y="24" width="44" height="44" fill="var(--bau-blue)" fill-opacity="1.00" stroke="#fff"/>
+              <rect x="68"  y="24" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.67" stroke="#fff"/>
+              <rect x="114" y="24" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.50" stroke="#fff"/>
+              <rect x="160" y="24" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.40" stroke="#fff"/>
+              <rect x="206" y="24" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.33" stroke="#fff"/>
+              <rect x="252" y="24" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.29" stroke="#fff"/>
+              <!-- row i=2 -->
+              <rect x="68"  y="70" width="44" height="44" fill="var(--bau-blue)" fill-opacity="1.00" stroke="#fff"/>
+              <rect x="114" y="70" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.67" stroke="#fff"/>
+              <rect x="160" y="70" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.50" stroke="#fff"/>
+              <rect x="206" y="70" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.40" stroke="#fff"/>
+              <rect x="252" y="70" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.33" stroke="#fff"/>
+              <!-- row i=3 -->
+              <rect x="114" y="116" width="44" height="44" fill="var(--bau-blue)" fill-opacity="1.00" stroke="#fff"/>
+              <rect x="160" y="116" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.67" stroke="#fff"/>
+              <rect x="206" y="116" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.50" stroke="#fff"/>
+              <rect x="252" y="116" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.40" stroke="#fff"/>
+              <!-- row i=4 -->
+              <rect x="160" y="162" width="44" height="44" fill="var(--bau-blue)" fill-opacity="1.00" stroke="#fff"/>
+              <rect x="206" y="162" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.67" stroke="#fff"/>
+              <rect x="252" y="162" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.50" stroke="#fff"/>
+              <!-- row i=5 -->
+              <rect x="206" y="208" width="44" height="44" fill="var(--bau-blue)" fill-opacity="1.00" stroke="#fff"/>
+              <rect x="252" y="208" width="44" height="44" fill="var(--bau-blue)" fill-opacity="0.67" stroke="#fff"/>
+              <!-- row i=6 -->
+              <rect x="252" y="254" width="44" height="44" fill="var(--bau-blue)" fill-opacity="1.00" stroke="#fff"/>
+              <!-- diagonal arrow note -->
+              <text x="44"  y="52" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">1</text>
+              <text x="90"  y="98" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">1</text>
+              <text x="136" y="144" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">1</text>
+            </g>
+            <text x="560" y="372" class="dg-label sm">diagonal (adjacent ranks): always compared, P=1</text>
+            <text x="560" y="392" class="dg-label sm">far from diagonal: faint &mdash; rarely compared</text>
+          </svg>
+          <figcaption><b>Figure 2 &mdash; the actual structure of the count.</b> Left: a pair meets exactly when the first pivot drawn from the block between them is one of the two endpoints &mdash; <code class="inl">2</code> good cases out of <code class="inl">j-i+1</code>. Right: the resulting upper-triangular table of pair-probabilities, brightest on the diagonal. Summing every cell gives <code class="inl">E[X]</code>.</figcaption>
+        </figure>
+
+        <p><strong>Step 3 &mdash; total the table.</strong> Substitute and sum. Group the pairs by their gap <code class="inl">g = j - i</code>; there are <code class="inl">n - g</code> pairs with gap <code class="inl">g</code>, each contributing <code class="inl">2/(g+1)</code>:</p>
+        <div class="eq">
+          <span class="lbl">summing the triangle</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>E</mi><mo>[</mo><mi>X</mi><mo>]</mo>
+              <mo>=</mo>
+              <munder><mo>&#8721;</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder>
+              <mfrac><mn>2</mn><mrow><mi>j</mi><mo>&#8722;</mo><mi>i</mi><mo>+</mo><mn>1</mn></mrow></mfrac>
+              <mo>=</mo>
+              <munderover><mo>&#8721;</mo><mrow><mi>g</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi><mo>&#8722;</mo><mn>1</mn></mrow></munderover>
+              <mo>(</mo><mi>n</mi><mo>&#8722;</mo><mi>g</mi><mo>)</mo>
+              <mfrac><mn>2</mn><mrow><mi>g</mi><mo>+</mo><mn>1</mn></mrow></mfrac>
+              <mo>&lt;</mo>
+              <mn>2</mn><mi>n</mi>
+              <munderover><mo>&#8721;</mo><mrow><mi>g</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi><mo>&#8722;</mo><mn>1</mn></mrow></munderover>
+              <mfrac><mn>1</mn><mrow><mi>g</mi><mo>+</mo><mn>1</mn></mrow></mfrac>
+              <mo>&lt;</mo>
+              <mn>2</mn><mi>n</mi><msub><mi>H</mi><mi>n</mi></msub>
+            </mrow>
+          </math></div>
+        </div>
+        <p>We dropped the <code class="inl">-g</code> (it only helps) and recognised the <span class="term">harmonic number</span> <code class="inl">H&#8345; = &#8721;&#8342;&#8321;&#8319; 1/k</code>. And the one summation from the prerequisites closes it: <code class="inl">H&#8345; = ln n + &#947; + O(1/n)</code>, with <code class="inl">&#947; &#8776; 0.577</code>. Therefore</p>
+        <div class="eq red">
+          <span class="lbl">result</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>E</mi><mo>[</mo><mi>X</mi><mo>]</mo>
+              <mo>&lt;</mo>
+              <mn>2</mn><mi>n</mi><msub><mi>H</mi><mi>n</mi></msub>
+              <mo>&#8776;</mo>
+              <mn>2</mn><mi>n</mi><mo>&#8201;</mo><mi>ln</mi><mo>&#8201;</mo><mi>n</mi>
+              <mo>&#8776;</mo>
+              <mn>1.39</mn><mo>&#8201;</mo><mi>n</mi><mo>&#8201;</mo><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi>
+              <mo>=</mo>
+              <mi>&#x398;</mi><mo>(</mo><mi>n</mi><mo>&#8201;</mo><mi>log</mi><mo>&#8201;</mo><mi>n</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <details>
+          <summary>Why uniform pivots make each block-value equally likely to be first (the one subtle step)</summary>
+          <div class="body">
+            <p>Restrict attention to the <code class="inl">j-i+1</code> values in the block. At each level of recursion the pivot is chosen uniformly from whatever sub-array currently holds these values, and crucially, <em>until</em> one of the block values is chosen as a pivot, all of them travel together &mdash; any pivot chosen from <em>outside</em> the block either sends the whole block left or the whole block right, never separating it (because the block is a contiguous interval of values, and partitioning sends everything below the pivot one way and everything above the other). So the first pivot to fall <em>inside</em> the block is selected uniformly at random from the block, by symmetry. Each of the <code class="inl">j-i+1</code> values is equally likely to be that first one; exactly <code class="inl">2</code> of them are endpoints. Hence <code class="inl">2/(j-i+1)</code>. This is the entire reason randomization works: no input can bias which block-value gets picked first.</p>
+          </div>
+        </details>
+
+        <div class="note info">
+          <span class="tag">what we just bought</span>
+          We never assumed the input was random &mdash; <code class="inl">z&#8321; &lt; &#8943; &lt; z&#8345;</code> is <em>any</em> input, sorted only in our heads for bookkeeping. The expectation is over the pivots, which we own. That is the difference between average-case (a hope about inputs) and randomized (a guarantee you carry with you). And notice we never needed the <code class="inl">X&#7522;&#11388;</code> to be independent &mdash; they are riddled with dependence &mdash; because linearity did not ask.
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> variance</div>
+      <h2>When the mean is not enough</h2>
+      <div class="col">
+        <p>Expectation gives the center; it says nothing about the spread. Two algorithms can share an expected running time and yet one is dependable while the other lurches between instant and catastrophic. To see &mdash; and bound &mdash; that risk, we need a second number: how far the variable typically strays from its mean.</p>
+
+        <div class="eq">
+          <span class="lbl">variance and standard deviation</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mtext>Var</mtext><mo>[</mo><mi>X</mi><mo>]</mo>
+              <mo>=</mo>
+              <mi>E</mi><mo>[</mo><mo>(</mo><mi>X</mi><mo>&#8722;</mo><mi>&#956;</mi><msup><mo>)</mo><mn>2</mn></msup><mo>]</mo>
+              <mo>=</mo>
+              <mi>E</mi><mo>[</mo><msup><mi>X</mi><mn>2</mn></msup><mo>]</mo>
+              <mo>&#8722;</mo>
+              <msup><mi>&#956;</mi><mn>2</mn></msup>
+              <mo>,</mo>
+              <mspace width="1.6em"/>
+              <mi>&#963;</mi><mo>=</mo><msqrt><mrow><mtext>Var</mtext><mo>[</mo><mi>X</mi><mo>]</mo></mrow></msqrt>
+              <mo>,</mo>
+              <mspace width="1em"/>
+              <mi>&#956;</mi><mo>=</mo><mi>E</mi><mo>[</mo><mi>X</mi><mo>]</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>Variance is the expected <em>squared</em> deviation from the mean; we square so that overshoots and undershoots cannot cancel, and so that large deviations are penalised disproportionately. The <span class="term">standard deviation</span> <code class="inl">&#963;</code> rescales it back to the variable's own units &mdash; it is the natural yardstick for &ldquo;a typical distance from the mean.&rdquo; The right-hand identity <code class="inl">E[X&sup2;] - &#956;&sup2;</code> is the one you compute with.</p>
+
+        <p>Unlike expectation, variance is <strong>not</strong> linear &mdash; squaring is not. But it has its own near-magic property under independence:</p>
+        <div class="eq red">
+          <span class="lbl">variance of a sum of INDEPENDENT variables</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mtext>Var</mtext><mo>[</mo><msub><mi>X</mi><mn>1</mn></msub><mo>+</mo><mo>&#8943;</mo><mo>+</mo><msub><mi>X</mi><mi>n</mi></msub><mo>]</mo>
+              <mo>=</mo>
+              <munderover><mo>&#8721;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover>
+              <mtext>Var</mtext><mo>[</mo><msub><mi>X</mi><mi>i</mi></msub><mo>]</mo>
+              <mspace width="2em"/>
+              <mtext>(pairwise independence suffices)</mtext>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Here the independence hypothesis you escaped in &sect;05 returns and must be honoured. For an indicator, <code class="inl">Var[&#120793;&#7505;] = p(1-p)</code>. So for <code class="inl">X</code> = heads in <code class="inl">n</code> fair flips, <code class="inl">Var[X] = n &#8226; &#188; = n/4</code> &mdash; the variance grows like <code class="inl">n</code>, the standard deviation like <code class="inl">&#8730;n</code>. That sublinear spread &mdash; the deviation <code class="inl">&#8730;n</code> being vanishingly small next to the mean <code class="inl">n/2</code> &mdash; is the first whisper of <em>concentration</em>: big sums of independent pieces huddle tightly around their mean.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 900 320" role="img" aria-labelledby="f3t f3d">
+            <title id="f3t">Two distributions with the same mean but different variance</title>
+            <desc id="f3d">Two histograms share an identical mean marked by a dashed vertical line. The upper distribution is narrow with small standard deviation and is a reliable algorithm; the lower is broad with large standard deviation and is a volatile one. Expectation cannot tell them apart; variance is exactly what distinguishes them.</desc>
+            <!-- shared mean line -->
+            <line x1="430" y1="30" x2="430" y2="300" class="dg-dash"/>
+            <text x="430" y="22" text-anchor="middle" class="dg-label sm">shared mean &#956;</text>
+
+            <!-- top: low variance -->
+            <text x="40" y="56" class="dg-cap">low variance &mdash; reliable</text>
+            <g>
+              <rect x="360" y="70" width="28" height="40" class="dg-blue-f"/>
+              <rect x="388" y="62" width="28" height="48" class="dg-blue-f"/>
+              <rect x="416" y="58" width="28" height="52" class="dg-blue-f"/>
+              <rect x="444" y="62" width="28" height="48" class="dg-blue-f"/>
+              <rect x="472" y="70" width="28" height="40" class="dg-blue-f"/>
+            </g>
+            <line x1="360" y1="110" x2="500" y2="110" class="dg-stroke"/>
+            <path d="M416 128 L416 138 L444 138 L444 128" class="dg-stroke dg-red"/>
+            <text x="430" y="156" text-anchor="middle" class="dg-label sm">&#963; small</text>
+
+            <!-- bottom: high variance -->
+            <text x="40" y="208" class="dg-cap">high variance &mdash; volatile</text>
+            <g>
+              <rect x="200" y="250" width="36" height="24" class="dg-red-f"/>
+              <rect x="240" y="244" width="36" height="30" class="dg-red-f"/>
+              <rect x="280" y="238" width="36" height="36" class="dg-red-f"/>
+              <rect x="320" y="232" width="36" height="42" class="dg-red-f"/>
+              <rect x="360" y="226" width="36" height="48" class="dg-red-f"/>
+              <rect x="400" y="224" width="36" height="50" class="dg-red-f"/>
+              <rect x="440" y="226" width="36" height="48" class="dg-red-f"/>
+              <rect x="480" y="232" width="36" height="42" class="dg-red-f"/>
+              <rect x="520" y="238" width="36" height="36" class="dg-red-f"/>
+              <rect x="560" y="244" width="36" height="30" class="dg-red-f"/>
+              <rect x="600" y="250" width="36" height="24" class="dg-red-f"/>
+            </g>
+            <line x1="200" y1="274" x2="636" y2="274" class="dg-stroke"/>
+            <path d="M320 292 L320 302 L520 302 L520 292" class="dg-stroke dg-blue"/>
+            <text x="418" y="318" text-anchor="middle" class="dg-label sm">&#963; large &mdash; long tail of slow runs</text>
+
+            <text x="660" y="120" class="dg-label">E[X] identical</text>
+            <text x="660" y="144" class="dg-label dg-red-f">Var[X] is the difference</text>
+          </svg>
+          <figcaption><b>Figure 3 &mdash; why a second moment.</b> Same expectation, opposite reliability. The mean locates the balance point; only the variance &mdash; and through it Chebyshev, next &mdash; can certify that an algorithm rarely strays far from it.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> the three bounds</div>
+      <h2>Markov, Chebyshev, Chernoff&ndash;Hoeffding</h2>
+      <div class="col">
+        <p>An expectation is a promise about the average of infinitely many runs; it is silent about the <em>one</em> run you are about to make. A <span class="term">concentration bound</span> (or <em>tail bound</em>) fills that silence: it caps the probability that <code class="inl">X</code> lands far from its mean. The three canonical bounds form a ladder &mdash; each demands more of you and pays back a sharper cap.</p>
+
+        <h3>Markov &mdash; the crudest, asks almost nothing</h3>
+        <p>If <code class="inl">X &#8805; 0</code> and you know only <code class="inl">E[X]</code>:</p>
+        <div class="eq">
+          <span class="lbl">Markov's inequality (X &#8805; 0, a &gt; 0)</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>P</mi><mo>(</mo><mi>X</mi><mo>&#8805;</mo><mi>a</mi><mo>)</mo>
+              <mo>&#8804;</mo>
+              <mfrac><mrow><mi>E</mi><mo>[</mo><mi>X</mi><mo>]</mo></mrow><mi>a</mi></mfrac>
+            </mrow>
+          </math></div>
+        </div>
+        <p>One line proves it: since <code class="inl">X &#8805; 0</code>, the variable <code class="inl">a&#8226;&#120793;[X &#8805; a] &#8804; X</code> pointwise (when the indicator is 1 the left side is <code class="inl">a &#8804; X</code>; when 0 it is <code class="inl">0 &#8804; X</code>). Take expectations: <code class="inl">a&#8226;P(X &#8805; a) &#8804; E[X]</code>. The only inputs are non-negativity and the mean &mdash; which is also its weakness: it knows nothing of spread, so it decays only as <code class="inl">1/a</code>.</p>
+
+        <h3>Chebyshev &mdash; pay a variance, get a square</h3>
+        <p>Feed Markov the variance and the bound sharpens. Apply Markov to the non-negative variable <code class="inl">(X - &#956;)&sup2;</code> at level <code class="inl">k&sup2;</code>:</p>
+        <div class="eq">
+          <span class="lbl">Chebyshev's inequality</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>P</mi><mo>(</mo><mo>|</mo><mi>X</mi><mo>&#8722;</mo><mi>&#956;</mi><mo>|</mo><mo>&#8805;</mo><mi>k</mi><mo>)</mo>
+              <mo>=</mo>
+              <mi>P</mi><mo>(</mo><mo>(</mo><mi>X</mi><mo>&#8722;</mo><mi>&#956;</mi><msup><mo>)</mo><mn>2</mn></msup><mo>&#8805;</mo><msup><mi>k</mi><mn>2</mn></msup><mo>)</mo>
+              <mo>&#8804;</mo>
+              <mfrac><mrow><mi>E</mi><mo>[</mo><mo>(</mo><mi>X</mi><mo>&#8722;</mo><mi>&#956;</mi><msup><mo>)</mo><mn>2</mn></msup><mo>]</mo></mrow><msup><mi>k</mi><mn>2</mn></msup></mfrac>
+              <mo>=</mo>
+              <mfrac><mrow><mtext>Var</mtext><mo>[</mo><mi>X</mi><mo>]</mo></mrow><msup><mi>k</mi><mn>2</mn></msup></mfrac>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Now the cap is two-sided and decays as <code class="inl">1/k&sup2;</code>. Measured in standard deviations &mdash; set <code class="inl">k = t&#963;</code> &mdash; it reads <code class="inl">P(|X - &#956;| &#8805; t&#963;) &#8804; 1/t&sup2;</code>: being <code class="inl">t</code> deviations out has probability at most <code class="inl">1/t&sup2;</code>, <em>for any distribution whatsoever</em>. Remarkable for its generality; still only polynomial decay.</p>
+
+        <h3>Chernoff&ndash;Hoeffding &mdash; demand independence, get an exponential</h3>
+        <p>When <code class="inl">X = X&#8321; + &#8943; + X&#8345;</code> is a sum of <strong>independent</strong> bounded variables, the tail does not merely shrink &mdash; it <em>collapses exponentially</em>. For independent indicators with mean <code class="inl">&#956; = E[X]</code>:</p>
+        <div class="eq red">
+          <span class="lbl">Chernoff bound (sum of independent 0/1 variables)</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>P</mi><mo>(</mo><mi>X</mi><mo>&#8805;</mo><mo>(</mo><mn>1</mn><mo>+</mo><mi>&#948;</mi><mo>)</mo><mi>&#956;</mi><mo>)</mo>
+              <mo>&#8804;</mo>
+              <msup><mi>e</mi><mrow><mo>&#8722;</mo><msup><mi>&#948;</mi><mn>2</mn></msup><mi>&#956;</mi><mo>/</mo><mn>3</mn></mrow></msup>
+              <mspace width="1.4em"/><mo>(</mo><mn>0</mn><mo>&lt;</mo><mi>&#948;</mi><mo>&#8804;</mo><mn>1</mn><mo>)</mo>
+              <mo>,</mo>
+              <mspace width="1.6em"/>
+              <mi>P</mi><mo>(</mo><mi>X</mi><mo>&#8804;</mo><mo>(</mo><mn>1</mn><mo>&#8722;</mo><mi>&#948;</mi><mo>)</mo><mi>&#956;</mi><mo>)</mo>
+              <mo>&#8804;</mo>
+              <msup><mi>e</mi><mrow><mo>&#8722;</mo><msup><mi>&#948;</mi><mn>2</mn></msup><mi>&#956;</mi><mo>/</mo><mn>2</mn></mrow></msup>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Its cousin <span class="term">Hoeffding's inequality</span> handles independent variables bounded in any <code class="inl">[a&#7522;, b&#7522;]</code> (not just <code class="inl">0/1</code>): <code class="inl">P(|S - E[S]| &#8805; t) &#8804; 2&#8201;exp(&#8722;2t&sup2; / &#8721;(b&#7522;-a&#7522;)&sup2;)</code>. The mechanism behind both is the <em>moment generating function</em>: apply Markov not to <code class="inl">X</code> but to <code class="inl">e&#7511;&#7493;</code>, exploit independence to factor the expectation into a product, then optimise over <code class="inl">t</code>. Independence is what licenses the factoring &mdash; remove it and the exponential is gone.</p>
+
+        <details>
+          <summary>The MGF trick in four lines &mdash; where the exponential comes from</summary>
+          <div class="body">
+            <p>For any <code class="inl">t &gt; 0</code>, the event <code class="inl">{X &#8805; a}</code> equals <code class="inl">{e&#7511;&#7493; &#8805; e&#7511;&#7488;}</code>, so Markov on the non-negative <code class="inl">e&#7511;&#7493;</code> gives <code class="inl">P(X &#8805; a) &#8804; E[e&#7511;&#7493;] / e&#7511;&#7488;</code>. Independence factors the numerator: <code class="inl">E[e&#7511;&#7493;] = &#8719;&#7522; E[e&#7511;&#7493;&#7522;]</code>. Each factor is bounded for a <code class="inl">0/1</code> variable, and minimising the product over the free parameter <code class="inl">t</code> yields the exponential cap. The single inequality <code class="inl">P(X&#8805;a) &#8804; min&#7511; E[e&#7511;&#7493;]/e&#7511;&#7488;</code> is the whole of the Chernoff method; everything else is algebra to make it pretty.</p>
+          </div>
+        </details>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>The ladder &mdash; what each bound demands and what it returns</caption>
+            <thead>
+              <tr><th scope="col">Bound</th><th scope="col">Hypotheses</th><th scope="col">Caps</th><th scope="col">Tail decay</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Markov</th><td><code class="inl">X &#8805; 0</code>; know <code class="inl">E[X]</code></td><td><code class="inl">P(X&#8805;a) &#8804; E[X]/a</code></td><td class="bad"><code class="inl">1/a</code> &mdash; weak</td></tr>
+              <tr><th scope="row">Chebyshev</th><td>know <code class="inl">Var[X]</code></td><td><code class="inl">P(|X&#8722;&#956;|&#8805;k) &#8804; Var/k&sup2;</code></td><td class="mid"><code class="inl">1/k&sup2;</code> &mdash; polynomial</td></tr>
+              <tr><th scope="row">Chernoff / Hoeffding</th><td><em>independent</em> bounded sum</td><td><code class="inl">P(X&#8805;(1+&#948;)&#956;) &#8804; e<sup>&#8722;&#948;&sup2;&#956;/3</sup></code></td><td class="good"><code class="inl">e<sup>&#8722;&#x398;(&#948;&sup2;&#956;)</sup></code> &mdash; exponential</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="4">More hypotheses bought, sharper tail sold. Always reach for the highest rung your assumptions can honestly afford.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 900 400" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">One tail capped three ways, showing Markov above Chebyshev above Chernoff</title>
+            <desc id="f4d">Axes plot the bound on the probability of deviating at least t from the mean, against the deviation t. Markov is a high nearly flat curve decaying like one over t. Chebyshev is a lower hyperbola decaying like one over t squared. Chernoff is a steep exponential cliff that plunges far below both. The true tail probability hugs the bottom, beneath all three caps, which nest in that order.</desc>
+
+            <!-- axes -->
+            <line x1="90" y1="40" x2="90" y2="350" class="dg-stroke"/>
+            <line x1="90" y1="350" x2="850" y2="350" class="dg-stroke"/>
+            <text x="70" y="48" text-anchor="end" class="dg-label sm">1</text>
+            <text x="60" y="200" text-anchor="middle" class="dg-label" transform="rotate(-90 60 200)">bound on P(deviation &#8805; t)</text>
+            <text x="470" y="386" text-anchor="middle" class="dg-label">deviation t from the mean &#8594;</text>
+
+            <!-- Markov: ~ 1/t, high -->
+            <path d="M110 70 C 220 120, 360 175, 850 245" class="dg-stroke dg-red" stroke-width="3"/>
+            <text x="690" y="232" class="dg-val dg-red-f">Markov &#8764; 1/a</text>
+
+            <!-- Chebyshev: ~ 1/t^2, lower -->
+            <path d="M110 96 C 200 200, 320 290, 850 326" class="dg-stroke dg-blue" stroke-width="3"/>
+            <text x="600" y="318" class="dg-val dg-blue-f">Chebyshev &#8764; 1/k&sup2;</text>
+
+            <!-- Chernoff: exponential cliff -->
+            <path d="M110 120 C 150 150, 175 330, 240 344 C 380 350, 600 350, 850 350" class="dg-stroke" stroke-width="3.5" style="stroke:var(--bau-ink)"/>
+            <text x="250" y="316" class="dg-val" style="fill:var(--bau-ink)">Chernoff &#8764; e<tspan dy="-6" font-size="11">&#8722;&#x398;(t&sup2;)</tspan></text>
+
+            <!-- true tail, faint, at the floor -->
+            <path d="M110 150 C 150 250, 190 345, 300 349 C 500 351, 700 351, 850 351" class="dg-dash"/>
+            <text x="470" y="343" class="dg-label sm">true tail (hugs the floor)</text>
+
+            <!-- ordering bracket -->
+            <text x="120" y="372" class="dg-label sm">tighter assumptions &#8594; the cap drops from red, to blue, to the exponential cliff</text>
+          </svg>
+          <figcaption><b>Figure 4 &mdash; the money diagram.</b> The same tail probability, bounded three ways. Markov (red) sits highest on the mean alone; Chebyshev (blue) drops to <code class="inl">1/k&sup2;</code> with the variance; Chernoff (ink) plunges exponentially once the pieces are independent. The true tail lies beneath all three &mdash; each bound is a ceiling, and we climb the ladder for a lower one.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> worked example B</div>
+      <h2>One tail, capped three ways</h2>
+      <div class="col">
+        <p>Numbers make the ladder vivid. Flip <code class="inl">n</code> fair coins; let <code class="inl">X</code> be the number of heads, so <code class="inl">&#956; = n/2</code> and (independence) <code class="inl">Var[X] = n/4</code>. We ask the same question of all three bounds: <strong>how likely is <code class="inl">X &#8805; 3n/4</code></strong> &mdash; a full quarter of <code class="inl">n</code> above the mean?</p>
+
+        <p><strong>Markov.</strong> Non-negativity and the mean only: <code class="inl">P(X &#8805; 3n/4) &#8804; E[X] / (3n/4) = (n/2)/(3n/4) = 2/3</code>. A cap of <code class="inl">0.667</code> &mdash; almost worthless, and it never improves with <code class="inl">n</code>.</p>
+
+        <p><strong>Chebyshev.</strong> The deviation is <code class="inl">k = 3n/4 - n/2 = n/4</code>. Then <code class="inl">P(X &#8805; 3n/4) &#8804; P(|X-&#956;| &#8805; n/4) &#8804; Var/k&sup2; = (n/4)/(n/4)&sup2; = 4/n</code>. Now it <em>decays</em> &mdash; but only as <code class="inl">1/n</code>.</p>
+
+        <p><strong>Chernoff.</strong> Write <code class="inl">3n/4 = (1+&#948;)&#956;</code> with <code class="inl">&#956; = n/2</code>, so <code class="inl">1+&#948; = 3/2</code>, <code class="inl">&#948; = &#189;</code>. Then <code class="inl">P(X &#8805; 3n/4) &#8804; e<sup>&#8722;&#948;&sup2;&#956;/3</sup> = e<sup>&#8722;(&#188;)(n/2)/3</sup> = e<sup>&#8722;n/24</sup></code>. Exponential collapse.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>P(X &#8805; 3n/4) for n fair coins &mdash; the same event, three ceilings</caption>
+            <thead>
+              <tr><th scope="col">Bound</th><th scope="col">Formula</th><th scope="col">n = 200</th><th scope="col">n = 10,000</th><th scope="col">decay</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Markov</th><td><code class="inl">2/3</code></td><td class="bad">0.667</td><td class="bad">0.667</td><td>constant</td></tr>
+              <tr><th scope="row">Chebyshev</th><td><code class="inl">4/n</code></td><td class="mid">0.020</td><td class="mid">0.0004</td><td><code class="inl">1/n</code></td></tr>
+              <tr class="wrap-row"><th scope="row">Chernoff</th><td><code class="inl">e<sup>&#8722;n/24</sup></code></td><td class="good">2.4&times;10&#8315;&#8308;</td><td class="good">&#8776; 10&#8315;&#185;&#8312;&#185;</td><td class="good"><code class="inl">e<sup>&#8722;&#x398;(n)</sup></code></td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="5">At n = 10,000 Chebyshev still allows a 1-in-2,500 chance; Chernoff has driven it below 1 in 10&#185;&#8312;&#8304;. That gulf is why randomized algorithms are <em>trusted</em>, not merely <em>expected to work</em>.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="note">
+          <span class="tag">the moral of the table</span>
+          All three are <em>correct</em>. They differ only in how much structure you let them exploit. Markov sees a non-negative variable; Chebyshev sees its variance; Chernoff sees that it is a sum of <em>independent</em> pieces &mdash; and that last fact, paid for honestly, buys you a guarantee strong enough to bet a data centre on. This is the exact pattern Lecture 08 uses to bound hash-table chains and Lecture 22 to certify skip lists and Bloom filters.
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>Formal elegance blinds. Here is where I have seen this toolkit misfire &mdash; each a boundary I urge you to keep bright.</p>
+
+        <h3>1 &middot; Using independence where linearity needed none &mdash; and vice versa</h3>
+        <p>The signature error of the subject, in both directions. People <em>add a hypothesis they do not need</em> &mdash; agonising over whether the <code class="inl">X&#7522;&#11388;</code> in quicksort are independent (they are not, and it does not matter; linearity is unconditional). And people <em>drop a hypothesis they do need</em> &mdash; writing <code class="inl">E[XY] = E[X]E[Y]</code> or <code class="inl">Var[X+Y] = Var[X]+Var[Y]</code> for dependent variables, which is simply false. The rule: <strong>sums of expectations are always free; products of expectations and sums of variances require independence.</strong></p>
+
+        <h3>2 &middot; Pointing Markov at a signed variable</h3>
+        <p>Markov requires <code class="inl">X &#8805; 0</code>. Apply it to something that can go negative &mdash; a centred quantity, a profit-or-loss &mdash; and you get nonsense (even &ldquo;probabilities&rdquo; above 1). When you want a two-sided statement, do what Chebyshev does: feed Markov the non-negative <em>square</em> <code class="inl">(X-&#956;)&sup2;</code>, never the raw deviation.</p>
+
+        <h3>3 &middot; Expectation does not pass through a nonlinear function (Jensen)</h3>
+        <p><code class="inl">E[1/X] &#8800; 1/E[X]</code>, and <code class="inl">E[X&sup2;] &#8800; E[X]&sup2;</code> (their gap <em>is</em> the variance). For convex <code class="inl">g</code>, Jensen's inequality says <code class="inl">E[g(X)] &#8805; g(E[X])</code> &mdash; equality only when <code class="inl">X</code> is constant. So you cannot &ldquo;average the inputs and then apply the function.&rdquo; A worked symptom: the expected <em>depth</em> of a random binary search tree is <code class="inl">&#x398;(log n)</code>, but the expected <em>height</em> is also <code class="inl">&#x398;(log n)</code> only because of a tail argument &mdash; you cannot get the max from the mean.</p>
+
+        <h3>4 &middot; Confusing &ldquo;expected O(n log n)&rdquo; with &ldquo;always O(n log n)&rdquo;</h3>
+        <p>Randomized quicksort's <code class="inl">&#x398;(n log n)</code> is an <em>expectation</em>; an unlucky pivot streak can still cost <code class="inl">&#x398;(n&sup2;)</code> on any input. The expectation does not forbid the bad case &mdash; it makes it rare, and only a concentration argument (not the mean) promises &ldquo;rarely slow.&rdquo; This is the <span class="term">Las Vegas</span> bargain: always correct, running time random. Its opposite, <span class="term">Monte Carlo</span> (fixed running time, occasionally wrong), trades the other way &mdash; know which you are holding.</p>
+
+        <h3>5 &middot; Randomize the algorithm, do not assume a random input</h3>
+        <p>The whole power of &sect;07 is that the input is arbitrary. If instead you <em>assume</em> the input array is uniformly random, you have proved an average-case bound that a sorted file or an adversary instantly violates. Put the randomness in the pivot, where you control it &mdash; not in a hope about the world.</p>
+
+        <h3>6 &middot; Chernoff on dependent variables; the mean of a maximum</h3>
+        <p>Chernoff's exponential <em>requires independence</em> to factor the MGF; apply it to correlated indicators and the bound is unjustified (use Chebyshev, which only needs the variance, or a martingale bound). And <code class="inl">E[max&#7522; X&#7522;] &#8800; max&#7522; E[X&#7522;]</code>: the expected <em>longest</em> hash chain is not the expected length of one chain. The maximum of many variables is governed by a <strong>union bound over tail events</strong> &mdash; <code class="inl">P(some bin &#8805; t) &#8804; &#8721; P(bin&#7522; &#8805; t)</code> &mdash; fed by Chernoff, which is exactly Practice Problem 3.</p>
+
+        <div class="note warn">
+          <span class="tag">the meta-mistake</span>
+          Quoting a bound without checking its hypotheses. Before you write Markov, Chebyshev, or Chernoff, say aloud what it requires &mdash; non-negative? variance known? independent sum? &mdash; and confirm you have it. A bound applied outside its hypotheses is not a weak result; it is a wrong one.
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Kth largest, in expected linear time</h3>
+          <p class="meta">randomized quickselect &middot; linearity &middot; expected &#x398;(n)</p>
+          <p>Implement <code class="inl">findKthLargest(nums, k)</code> returning the <code class="inl">k</code>-th largest element of an unsorted array (<code class="inl">1 &#8804; k &#8804; n &#8804; 10&#8309;</code>, values in <code class="inl">[&#8722;10&#8308;, 10&#8308;]</code>) using <strong>randomized quickselect</strong>: partition around a uniformly random pivot and recurse into only the side containing rank <code class="inl">k</code>. Then <em>prove</em> the expected running time is <code class="inl">&#x398;(n)</code>, not <code class="inl">&#x398;(n log n)</code> &mdash; set up the expected-comparison count <code class="inl">E[T(n)]</code> and show a random pivot discards a constant fraction of the array in expectation, so the work forms a geometric series summing to <code class="inl">&#x398;(n)</code>. State which deterministic pivot rule degrades to <code class="inl">&#x398;(n&sup2;)</code> and name an input that triggers it. Target <code class="inl">O(1)</code> auxiliary space (in-place partition).</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Uniform random sample from a stream</h3>
+          <p class="meta">reservoir sampling &middot; indicators &middot; induction &middot; O(1) space</p>
+          <p>Given the head of a singly-linked list whose length <code class="inl">n</code> is unknown and which you may traverse only <strong>once</strong>, implement <code class="inl">getRandom()</code> returning the value of a node chosen <em>uniformly at random</em>, using <code class="inl">O(1)</code> extra memory. Use reservoir sampling: keep the current candidate, and at step <code class="inl">i</code> replace it with the <code class="inl">i</code>-th element with probability <code class="inl">1/i</code>. <em>Prove</em>, by indicators and induction on <code class="inl">i</code>, that when the stream ends every element has been selected with probability exactly <code class="inl">1/n</code>. Then generalise to a reservoir of size <code class="inl">k</code> (keep <code class="inl">k</code> samples without replacement) and prove each element survives with probability <code class="inl">k/n</code>.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>The longest hash chain</h3>
+          <p class="meta">balls into bins &middot; Chernoff + union bound &middot; max load</p>
+          <p>Hash <code class="inl">n</code> keys independently and uniformly into <code class="inl">n</code> buckets (the idealized model behind Lecture 08's chaining). Let <code class="inl">L</code> be the maximum bucket load. (a) Using indicators, show the expected load of a fixed bucket is exactly <code class="inl">1</code>. (b) Prove that with probability at least <code class="inl">1 &#8722; 1/n</code>, <em>every</em> bucket has load <code class="inl">O(log n / log log n)</code> &mdash; bound <code class="inl">P(\text{bucket } i &#8805; t)</code> with a Chernoff bound, then take a union bound over all <code class="inl">n</code> buckets, and solve for the threshold <code class="inl">t</code> that makes the total at most <code class="inl">1/n</code>. (c) Conclude the worst-case chain length for hashing-with-chaining is <code class="inl">&#x398;(log n / log log n)</code> w.h.p., not <code class="inl">O(1)</code> &mdash; and explain why part (a) alone could never have told you this.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Boost a noisy estimator: Chebyshev, then median-of-means</h3>
+          <p class="meta">Chebyshev &middot; Chernoff boosting &middot; streaming sketches</p>
+          <p>You hold an unbiased estimator <code class="inl">Y</code> for an unknown <code class="inl">&#956;</code>, with <code class="inl">E[Y] = &#956;</code> and <code class="inl">Var[Y] = &#963;&sup2;</code>; one evaluation costs one sample. (a) Average <code class="inl">m</code> independent copies into <code class="inl">&#562;</code>; using Chebyshev, find the smallest <code class="inl">m</code> (in terms of <code class="inl">&#963;&sup2;</code>, <code class="inl">&#956;</code>, <code class="inl">&#949;</code>) so that <code class="inl">P(|&#562; &#8722; &#956;| &#8805; &#949;&#956;) &#8804; 1/3</code>. (b) Take the <em>median</em> of <code class="inl">t</code> such independent averages; let <code class="inl">G</code> count how many of them are &ldquo;good&rdquo; (within <code class="inl">&#949;&#956;</code>). Using a Chernoff bound on <code class="inl">G</code>, show the median is good with probability <code class="inl">&#8805; 1 &#8722; &#948;</code> once <code class="inl">t = O(log(1/&#948;))</code>. (c) State the total sample count <code class="inl">mt</code> as a function of <code class="inl">&#963;&sup2;, &#956;, &#949;, &#948;</code> &mdash; the &ldquo;median-of-means&rdquo; guarantee behind the streaming sketches of Lecture 23.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section id="s13" class="reveal">
+      <div class="eyebrow"><span class="n">13</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>Decompose any count into <code class="inl">0/1</code> indicators, sum their probabilities by linearity &mdash; no independence required &mdash; to get the expectation; then climb the ladder Markov &#8594; Chebyshev &#8594; Chernoff to prove the bad case is improbable, paying one extra hypothesis (non-negativity, then variance, then independence) for each sharper rung.</strong> Expectation tells you the typical cost; a concentration bound is what lets you <em>trust</em> it on the single run you actually make.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 06</span>
+            <div class="ttl">Sorting and the &#x3A9;(n log n) Comparison Barrier</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We derived randomized quicksort's <code class="inl">&#8776; 2n&nbsp;ln&nbsp;n</code> expected comparisons here; Lecture 06 turns that into a full analysis, then proves the matching lower bound &mdash; that <em>every</em> comparison sort needs <code class="inl">&#x3A9;(n log n)</code>, by a decision-tree counting argument &mdash; and shows how counting and radix sort slip beneath it by leaving the comparison model entirely. The toolkit you built today is the lens every later randomized structure is read through: hashing (08), skip lists and Bloom filters (22), streaming (23).</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-04-fast-fourier-transform.html">← Previous study</a><a href="dsa-06-sorting-and-the-comparison-barrier.html">Next study →</a></nav>
+</body>
+</html>

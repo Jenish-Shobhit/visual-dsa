@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare breadth-first search and Dijkstra on the same weighted graph, step by step.">
+  <title>Graph routes — Visual DSA</title>
+  <link rel="stylesheet" href="../css/atlas.css">
+  <style>
+    .graph-hero{border-bottom:1px solid var(--line);padding:clamp(2rem,6vw,5rem) 0}
+    .graph-hero .eyebrow{margin:0 0 1rem}
+    .graph-hero h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(3.2rem,8vw,7.4rem);line-height:.95;letter-spacing:-.07em;max-width:950px;margin:0}
+    .graph-hero .lede{font-size:clamp(1.15rem,2.3vw,1.75rem);max-width:690px;line-height:1.4;margin:1.4rem 0 0}
+    .graph-intro{max-width:760px;margin:3rem auto;font-size:1.13rem;line-height:1.7}
+    .graph-intro p{margin:0 0 1.2rem}
+    .graph-example{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;margin:1.5rem 0}
+    .graph-example div{padding:1.2rem;border:1px solid var(--line);background:var(--white);border-radius:12px}
+    .graph-example strong{display:block;font-size:1.15rem}
+    .graph-example small{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800}
+    .graph-lab{border:1px solid var(--ink);background:var(--white);border-radius:16px;padding:clamp(1rem,2.6vw,2rem);margin:3rem 0 5rem}
+    .graph-lab-head{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:1rem;padding-bottom:1.2rem;border-bottom:1px solid var(--line)}
+    .graph-lab-head h2{grid-column:1/span 7;margin:0;font-family:Georgia,"Times New Roman",serif;font-size:clamp(2rem,4vw,3.3rem);line-height:1;letter-spacing:-.05em}
+    .graph-lab-head p{grid-column:9/span 4;margin:0;line-height:1.5}
+    .graph-pickers{display:flex;gap:1rem 1.4rem;align-items:end;flex-wrap:wrap;margin:1.35rem 0}
+    .graph-pickers label{display:flex;flex-direction:column;gap:.35rem;font-size:.8rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+    .graph-pickers select{font:inherit;min-width:5.5rem;min-height:44px;background:#fff;color:var(--ink);border:1px solid var(--ink);border-radius:6px;padding:.5rem .7rem}
+    .graph-methods{display:flex;gap:.5rem;flex-wrap:wrap;margin:0 0 1.5rem}
+    .graph-methods button{font:inherit;min-height:44px;border:1px solid var(--ink);border-radius:7px;background:transparent;color:var(--ink);padding:.6rem 1rem;cursor:pointer}
+    .graph-methods button[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:#fff;font-weight:800}
+    .graph-methods button:hover:not([aria-pressed="true"]){background:var(--ink);color:#fff}
+    .graph-methods button:focus-visible,.graph-pickers select:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+    .graph-compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;margin:1.3rem 0}
+    .graph-result{border:1px solid var(--line);border-radius:10px;padding:.8rem 1rem;background:var(--paper)}
+    .graph-result small{display:block;font-size:.72rem;font-weight:850;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .graph-result strong{display:block;font-size:1.1rem;line-height:1.3;margin:.3rem 0}
+    .graph-result span{font-size:.85rem}
+    .graph-figure{display:block;border-top:1px solid var(--ink);padding-top:1.2rem;margin:0}
+    .graph-figure .figure-title{display:block;margin:0 0 .7rem}
+    .graph-figure .figure-body{width:100%}
+    .graph-figure .figure-panel{padding:clamp(.3rem,2vw,1rem);overflow:hidden}
+    .graph-figure svg{display:block;width:100%;height:auto;max-height:430px;margin:auto}
+    .graph-figure .figure-caption{min-height:3.5rem;margin:1.1rem 0 .6rem}
+    .graph-figure .figure-controls{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
+    .graph-figure .figure-controls button{min-height:44px}
+    .graph-figure .figure-scrub{flex:1;min-width:8rem;max-width:none}
+    .graph-legend{display:flex;flex-wrap:wrap;gap:.4rem 1rem;font-size:.78rem;margin:.7rem 0}
+    .graph-legend span::before{content:"";display:inline-block;width:.72rem;height:.72rem;border-radius:50%;background:var(--ink);vertical-align:middle;margin-right:.35rem}
+    .graph-legend .queued::before{background:var(--blue)}
+    .graph-legend .current::before{background:var(--orange)}
+    .graph-legend .done::before{background:var(--green)}
+    .graph-state{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:.7rem 1rem;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--line)}
+    .graph-state p{margin:0;overflow-wrap:anywhere;font-size:.9rem}
+    .graph-state .frontier{grid-column:1/span 6}
+    .graph-state .distances{grid-column:7/span 6}
+    .graph-state .counts{grid-column:1/-1;color:var(--muted);font-size:.8rem}
+    .graph-outro{max-width:760px;margin:3rem auto 5rem;font-size:1.1rem;line-height:1.7}
+    .graph-outro h2{font-family:Georgia,"Times New Roman",serif;font-size:clamp(2rem,3.5vw,3.2rem);line-height:1.1}
+    .graph-outro p{margin:0 0 1.2rem}
+    .graph-practice{margin-bottom:5rem}
+    .graph-practice ol{padding-left:1.5rem;max-width:760px;margin:0 auto;font-size:1.1rem;line-height:1.6}
+    .graph-practice li{margin-bottom:1rem}
+    @media(max-width:700px){.graph-lab-head h2,.graph-lab-head p{grid-column:1/-1}.graph-example,.graph-compare{grid-template-columns:1fr}.graph-state .frontier,.graph-state .distances{grid-column:1/-1}.graph-figure .figure-count{width:100%;margin-left:0}}
+    @media(prefers-reduced-motion:reduce){.graph-lab *{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+<header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Deep study / Graph routes</span></div></header>
+<main class="site">
+  <section class="graph-hero"><p class="eyebrow">Interactive study · Graphs</p><h1>What does<br>“shortest” mean?</h1><p class="lede">One graph. Two correct algorithms. Two different answers, because they measure different things.</p></section>
+  <div class="graph-intro"><p>Suppose you want to travel from A to F. A direct road reaches F in one edge, but its weight is 14. A → B → C → F takes three edges whose weights add to 6.</p><div class="graph-example"><div><small>Fewest edges</small><strong>A → F</strong><span>1 edge · total weight 14</span></div><div><small>Least total weight</small><strong>A → B → C → F</strong><span>3 edges · total weight 6</span></div></div><p><strong>Breadth-first search</strong> (BFS) explores one edge farther at a time. It finds the path with the fewest edges. <strong>Dijkstra's algorithm</strong> expands the cheapest known total weight next. It finds the least-weight path when edge weights are non-negative. Change the endpoints, then step through both on the same graph.</p></div>
+
+  <section class="graph-lab" id="graph-lab" aria-label="Graph path comparison lab">
+    <div class="graph-lab-head"><h2>Explore one graph<br>two ways.</h2><p>The line labels are edge weights. The orange edge from A to F is direct but costly.</p></div>
+    <div class="graph-pickers"><label for="graph-start">Start <select id="graph-start"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option></select></label><label for="graph-target">Target <select id="graph-target"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option selected>F</option></select></label></div>
+    <div class="graph-methods" role="group" aria-label="Choose a pathfinding method"><button id="method-bfs" type="button" aria-pressed="true">BFS · fewest edges</button><button id="method-dijkstra" type="button" aria-pressed="false">Dijkstra · least weight</button></div>
+    <div class="graph-compare" aria-label="Finished routes for both methods"><div class="graph-result"><small>BFS / Fewest edges</small><strong id="bfs-route">A → F</strong><span id="bfs-cost">1 edge · weight 14</span></div><div class="graph-result"><small>Dijkstra / Least weight</small><strong id="dijkstra-route">A → B → C → F</strong><span id="dijkstra-cost">3 edges · weight 6</span></div></div>
+    <section class="graph-figure" id="graph-figure" tabindex="0" aria-label="Step through a path search"><h3 class="figure-title">Trace / Predict the next move</h3><div class="figure-body"><div class="figure-panel"><svg id="graph-svg" viewBox="0 0 430 300" role="img" aria-label="Six-node weighted graph"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>← Prev</button><button type="button" data-next>Next →</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Use the controls or focus this figure and press ← or →. Drag the timeline to revisit any step.</p></div></section>
+    <div class="graph-legend"><span class="queued">Discovered, still waiting</span><span class="current">Current node or edge</span><span class="done">Processed or final route</span></div>
+    <div class="graph-state"><p class="frontier"><strong id="frontier-label">Queue</strong>: <span id="graph-frontier">A</span></p><p class="distances"><strong id="distance-label">Edges from A</strong>: <span id="graph-distances"></span></p><p class="counts"><span id="graph-visits">0</span> nodes expanded · <span id="graph-inspections">0</span> edges inspected</p></div>
+  </section>
+
+  <div class="graph-outro"><h2>Why the answers differ.</h2><p>BFS uses a queue. A newly discovered node enters at the back, so all one-edge routes are considered before two-edge routes. The first route it finds to a node has the fewest edges. It treats a weight-14 road and a weight-2 road as one edge each.</p><p>Dijkstra replaces that queue rule with a priority rule: choose the unsettled node with the lowest known total weight. When the chosen node becomes final, non-negative edge weights ensure a later detour cannot make it cheaper. The orange direct edge initially offers F at 14; the route through B and C improves that estimate to 6.</p><p>The model uses an undirected graph with positive weights. Negative edges break Dijkstra's finalization argument. If every edge has equal weight, the two methods agree on the cost ordering and BFS is enough.</p></div>
+  <section class="graph-practice"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Predict before stepping</h2></div><ol><li>Starting at A, what is in the BFS queue immediately after A is processed? Which route to F is already recorded?</li><li>In Dijkstra's trace from A, F first receives cost 14. Which later edge improves it, and what is its new cost?</li><li>Change the target to E. Trace both methods. Do they choose the same route? Compare edge count and total weight.</li></ol></section>
+</main>
+<footer class="chapter-footer"><div class="site grid"><a class="prev" href="../chapters/13-graphs.html"><small>Back to the lesson</small>← Graphs</a><a class="next" href="../index.html"><small>Keep exploring</small>All lessons →</a></div></footer>
+<script src="../js/figure.js"></script>
+<script src="../js/graph-model.js"></script>
+<script>
+(function () {
+  'use strict';
+  var svg = document.getElementById('graph-svg');
+  var startSelect = document.getElementById('graph-start');
+  var targetSelect = document.getElementById('graph-target');
+  var positions = { A:[42,145], B:[135,50], C:[280,50], D:[135,240], E:[280,240], F:[388,145] };
+  var weightLabels = { 'A-B':[77,88], 'B-C':[207,35], 'C-F':[350,88], 'A-D':[77,211], 'D-E':[207,263], 'E-F':[350,211], 'A-F':[215,132] };
+  var method = 'bfs';
+  var runs = {};
+  var stepper;
+
+  function routeEdges(route) {
+    var selected = [];
+    for (var i = 1; i < route.length; i++) {
+      selected.push([route[i - 1], route[i]].sort().join('-'));
+    }
+    return selected;
+  }
+  function draw(frame, index) {
+    var route = routeEdges(frame.route);
+    var lines = GraphExplorerModel.edges.map(function (edge) {
+      var a = positions[edge.a], b = positions[edge.b], label = weightLabels[edge.id];
+      var onRoute = route.indexOf(edge.id) !== -1;
+      var current = frame.edge === edge.id;
+      var color = onRoute ? '#27836d' : current ? '#e86a33' : edge.id === 'A-F' ? '#d88763' : '#a7b9ae';
+      var width = onRoute || current ? 4 : 2;
+      return '<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="'+color+'" stroke-width="'+width+'" '+(edge.id === 'A-F' && !onRoute && !current ? 'stroke-dasharray="6 5"' : '')+'/>'+
+        '<text x="'+label[0]+'" y="'+label[1]+'" text-anchor="middle" font-size="14" font-weight="800" fill="#172a2a" stroke="#fffefa" stroke-width="6" paint-order="stroke">'+edge.weight+'</text>';
+    }).join('');
+    var circles = GraphExplorerModel.nodes.map(function (node) {
+      var p = positions[node];
+      var onRoute = frame.route.indexOf(node) !== -1;
+      var current = frame.current === node;
+      var done = frame.processed.indexOf(node) !== -1;
+      var queued = frame.discovered.indexOf(node) !== -1;
+      var fill = current ? '#e86a33' : onRoute || done ? '#27836d' : queued ? '#2563a6' : '#fffefa';
+      var label = current || onRoute || done || queued ? '#fff' : '#172a2a';
+      return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="22" fill="'+fill+'" stroke="#172a2a" stroke-width="2"/>'+
+        '<text x="'+p[0]+'" y="'+(p[1]+6)+'" text-anchor="middle" font-size="18" font-weight="800" fill="'+label+'">'+node+'</text>';
+    }).join('');
+    svg.innerHTML = lines + circles;
+    svg.setAttribute('aria-label', (method === 'bfs' ? 'BFS' : 'Dijkstra') + ', step ' + (index + 1) + '. ' + frame.caption);
+  }
+  function showState(frame) {
+    var start = startSelect.value;
+    document.getElementById('frontier-label').textContent = method === 'bfs' ? 'Queue, front first' : 'Candidates, cheapest first';
+    document.getElementById('distance-label').textContent = method === 'bfs' ? 'Edges from ' + start : 'Known weight from ' + start;
+    var frontier = frame.frontier.slice();
+    if (method === 'dijkstra') frontier.sort(function (a, b) {
+      return frame.distance[a] - frame.distance[b] || a.localeCompare(b);
+    });
+    document.getElementById('graph-frontier').textContent = frontier.map(function (node) {
+      return method === 'bfs' ? node : node + ' (' + frame.distance[node] + ')';
+    }).join(' · ') || 'empty';
+    document.getElementById('graph-distances').textContent = GraphExplorerModel.nodes.map(function (node) {
+      return node + ' ' + (frame.distance[node] === null ? '∞' : frame.distance[node]);
+    }).join(' · ');
+    document.getElementById('graph-visits').textContent = frame.visits;
+    document.getElementById('graph-inspections').textContent = frame.inspections;
+  }
+  function updateResult(kind) {
+    var result = runs[kind].result;
+    document.getElementById(kind + '-route').textContent = result.path.join(' → ');
+    document.getElementById(kind + '-cost').textContent = result.hops + (result.hops === 1 ? ' edge' : ' edges') + ' · weight ' + result.cost;
+  }
+  function rebuild() {
+    runs.bfs = GraphExplorerModel.trace('bfs', startSelect.value, targetSelect.value);
+    runs.dijkstra = GraphExplorerModel.trace('dijkstra', startSelect.value, targetSelect.value);
+    updateResult('bfs');
+    updateResult('dijkstra');
+    if (stepper) stepper.setFrames(runs[method].frames);
+  }
+  function choose(nextMethod) {
+    method = nextMethod;
+    document.getElementById('method-bfs').setAttribute('aria-pressed', String(method === 'bfs'));
+    document.getElementById('method-dijkstra').setAttribute('aria-pressed', String(method === 'dijkstra'));
+    stepper.setFrames(runs[method].frames);
+  }
+  startSelect.addEventListener('change', rebuild);
+  targetSelect.addEventListener('change', rebuild);
+  document.getElementById('method-bfs').addEventListener('click', function () { choose('bfs'); });
+  document.getElementById('method-dijkstra').addEventListener('click', function () { choose('dijkstra'); });
+  rebuild();
+  stepper = FigureStepper({ root:'#graph-figure', frames:runs[method].frames, draw:draw, onChange:showState });
+}());
+</script>
+</body>
+</html>

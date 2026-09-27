@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Frontier: Fine-Grained Complexity, Sublinear Algorithms, Predictions &amp; P vs NP</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:18ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.96}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.7rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.3rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant); vertical-align:top}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue-f{fill:var(--bau-blue)} .dg-red-f{fill:var(--bau-red)} .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-label{font-family:var(--font-mono); font-size:13px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:11px; fill:var(--on-surface-variant)}
+  .dg-label.w{fill:#fff}
+  .dg-cap{font-family:var(--font-display); font-size:14px; font-weight:600; fill:var(--on-surface)}
+  /* lines / strokes */
+  .dg-stroke{stroke:var(--on-surface); fill:none}
+  .dg-accent{stroke:var(--bau-blue); fill:none}
+  .dg-axis{stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-tick{stroke:var(--bau-ink); stroke-width:2}
+  .dg-grid{stroke:var(--outline); stroke-width:1}
+  .dg-edge{stroke:var(--bau-ink); stroke-width:2.5; fill:none}
+  .dg-edge-thin{stroke:var(--bau-ink); stroke-width:1.6; fill:none}
+  .dg-dash{stroke:var(--bau-red); stroke-width:2.5; fill:none; stroke-dasharray:7 6}
+  .dg-ghost{stroke:var(--on-surface-variant); stroke-width:2; stroke-dasharray:5 5; fill:none}
+  .dg-brace{stroke:var(--bau-ink); stroke-width:1.5; fill:none}
+  .dg-node{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-curve-b{stroke:var(--bau-blue); stroke-width:3.5; fill:none}
+  .dg-curve-r{stroke:var(--bau-red); stroke-width:3.5; fill:none}
+  .dg-curve-i{stroke:var(--bau-ink); stroke-width:2.5; fill:none}
+  .dg-arc{stroke:var(--bau-red); stroke-width:2.5; fill:none}
+  .dg-region-b{fill:color-mix(in oklab,var(--bau-blue) 16%,var(--surface))}
+  .dg-region-y{fill:color-mix(in oklab,var(--bau-yellow) 34%,var(--surface))}
+  .dg-region-r{fill:color-mix(in oklab,var(--bau-red) 16%,var(--surface))}
+  .dg-bit0{fill:var(--surface); stroke:var(--bau-ink); stroke-width:1.4}
+  .dg-bit1{fill:var(--bau-ink); stroke:var(--bau-ink); stroke-width:1.4}
+  .dg-vec-a{stroke:var(--bau-blue); stroke-width:2.5; fill:none}
+  .dg-vec-b{stroke:var(--bau-red); stroke-width:2.5; fill:none}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">23 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>23</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="232" height="168" viewBox="0 0 232 168" aria-hidden="true">
+    <!-- mapped territory: a strict grid on the left, dissolving into open frontier on the right -->
+    <g class="dg-grid">
+      <line x1="8"  y1="14" x2="8"  y2="154"/>
+      <line x1="40" y1="14" x2="40" y2="154"/>
+      <line x1="72" y1="14" x2="72" y2="154"/>
+      <line x1="104" y1="20" x2="104" y2="148" opacity=".7"/>
+      <line x1="8" y1="14"  x2="120" y2="14"/>
+      <line x1="8" y1="46"  x2="124" y2="46"/>
+      <line x1="8" y1="78"  x2="128" y2="78"/>
+      <line x1="8" y1="110" x2="124" y2="110"/>
+      <line x1="8" y1="142" x2="120" y2="142"/>
+    </g>
+    <!-- the open seam -->
+    <path d="M132 8 C 150 50, 118 110, 140 162" class="dg-dash"/>
+    <!-- frontier: the three primaries, scattered, unmapped -->
+    <circle cx="176" cy="44" r="16" class="dg-blue-f"/>
+    <path d="M168 150 L208 150 L188 112 Z" class="dg-red-f"/>
+    <rect x="184" y="74" width="30" height="30" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2" transform="rotate(12 199 89)"/>
+    <circle cx="216" cy="132" r="5" class="dg-red-f"/>
+    <circle cx="150" cy="96" r="3.5" class="dg-blue-f"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 23</span> the live boundary of the computable</div>
+    <h1>The Frontier</h1>
+    <p class="lede col">Twenty-two lectures built a workshop of methods that <em>work</em>. This one walks you to the edge of the map &mdash; to the places where the honest answer is still <em>&ldquo;nobody knows.&rdquo;</em> Here a single yes/no question, <code class="inl">P&nbsp;=?&nbsp;NP</code>, has stood open for fifty years with a million-dollar bounty and no proof in sight. Here problems you can already solve sit pinned at <code class="inl">n<sup>2</sup></code> or <code class="inl">n<sup>3</sup></code>, and we can finally <em>explain why</em>. Here data arrives faster than you can store it, predictions made by machines get folded into worst-case guarantees, and a different machine &mdash; the quantum one &mdash; redraws the boundary of what &ldquo;efficient&rdquo; even means.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>One number that should unsettle you.</strong> <span class="term">Edit distance</span> &mdash; how many insertions, deletions, and substitutions turn one string into another &mdash; is the engine inside <code class="inl">diff</code>, spell-checkers, and DNA alignment. The textbook dynamic program is <code class="inl">&Theta;(n<sup>2</sup>)</code>, and it has been the textbook answer since <strong>1965</strong>. Sixty years of the sharpest people in computing, and not one has shaved it to <code class="inl">n<sup>1.99</sup></code> on general inputs.</p>
+        <p style="margin-bottom:0">For decades that looked like a gap in <em>our</em> ingenuity. It is not. In 2015 it was proven that an <code class="inl">O(n<sup>1.99</sup>)</code> edit-distance algorithm would <em>collapse</em> one of the load-bearing conjectures of the whole field &mdash; the same conjecture that underwrites a continent of other stuck problems. The wall is not our weakness. It is <em>structure</em>, and this lecture is the geology of it. I always look for the skeleton beneath a difficulty; here the skeleton is a map of conjectures, and the gaps in the map are the open frontier itself.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>The edge of the map</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>P vs NP: the one open seam</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>Why P vs NP is hard to settle</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Fine-grained complexity</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>Worked: SETH &rarr; OV &rarr; edit distance</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>Sublinear &amp; streaming</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Algorithms with predictions</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Quantum: a different model</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Where it breaks</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Practice</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Recap &amp; what&rsquo;s next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> survey the edge before you cross it</div>
+      <h2>The edge of the map</h2>
+      <div class="col">
+        <p>Every previous lecture handed you a tool and a guarantee: sort in <code class="inl">n&nbsp;log&nbsp;n</code>, query a balanced tree in <code class="inl">log&nbsp;n</code>, route flow to optimality. The guarantees were theorems. Today we visit the questions that are <em>not</em> theorems &mdash; the open conjectures and the new models &mdash; because a mature engineer must know not only what the field has proven, but exactly where the proofs stop. The boundary is not a failure to be embarrassed about. In my experience the boundary is where the real structure of a subject finally shows itself.</p>
+        <p>I will hold the whole lecture together with one question, asked five ways: <strong>what can be mechanized efficiently, and how do we know the limit is real?</strong></p>
+        <ul class="obj">
+          <li><strong>P vs NP</strong> &mdash; the coarsest possible line: is <em>checking</em> an answer fundamentally easier than <em>finding</em> one? Open since 1971. We will see <em>why</em> it resists proof, which is more instructive than the question itself.</li>
+          <li><strong>Fine-grained complexity</strong> &mdash; the line drawn to four decimal places <em>inside</em> the tractable: why edit distance is stuck at <code class="inl">n<sup>2</sup></code> and all-pairs shortest paths at <code class="inl">n<sup>3</sup></code>, made rigorous by reductions from a handful of conjectures.</li>
+          <li><strong>Sublinear &amp; streaming</strong> &mdash; the regime where you cannot even afford to <em>read</em> the input, and must answer from a sample or a single pass.</li>
+          <li><strong>Algorithms with predictions</strong> &mdash; how to fold a fallible machine-learned oracle into an algorithm and still keep a worst-case guarantee.</li>
+          <li><strong>Quantum speedups</strong> &mdash; what happens to the boundary when you change the machine itself: Grover&rsquo;s quadratic, Shor&rsquo;s exponential, and the surprising smallness of the first.</li>
+        </ul>
+        <p>These look like five subjects. They are one subject seen from five angles, and the angle is always the same: a <em>reduction</em> &mdash; a structure-preserving map that transports hardness from a thing we believe is hard to the thing in front of us. Keep your eye on the arrows.</p>
+
+        <div class="stats" aria-label="Five headline facts of the frontier">
+          <div class="stat lead"><span class="big">$1M</span><span class="lab">Clay Millennium bounty on P vs NP &mdash; unclaimed since 2000</span></div>
+          <div class="stat"><span class="big">n<sup>2&minus;o(1)</sup></span><span class="lab">edit-distance lower bound &mdash; conditional on SETH</span></div>
+          <div class="stat"><span class="big">O(&radic;N)</span><span class="lab">Grover search &mdash; quadratic, and provably no better</span></div>
+          <div class="stat"><span class="big">poly(n)</span><span class="lab">Shor factoring &mdash; exponential win over the best classical method</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>State</strong> P, NP, and NP-completeness precisely, explain the verifier definition of NP, and articulate <em>why</em> P vs NP is open by naming the three barrier results &mdash; relativization, natural proofs, algebrization.</li>
+          <li><strong>Define</strong> a <span class="term">fine-grained reduction</span> and use it to explain conditional <code class="inl">n<sup>2</sup></code> and <code class="inl">n<sup>3</sup></code> lower bounds from SETH, the 3SUM conjecture, and the APSP conjecture.</li>
+          <li><strong>Reproduce</strong> the reduction from CNF-SAT to <span class="term">Orthogonal Vectors</span>, and from there to edit distance &mdash; the chain that explains the sixty-year wall.</li>
+          <li><strong>Design</strong> a one-pass streaming estimator: derive the KMV / min-hash distinct-count sketch and bound its memory and error; state why some exact questions provably need linear memory.</li>
+          <li><strong>Build</strong> a learning-augmented algorithm (ski rental with a prediction) and prove its two guarantees &mdash; <span class="term">consistency</span> and <span class="term">robustness</span> &mdash; with a tunable knob between them.</li>
+          <li><strong>Explain</strong> Grover&rsquo;s <code class="inl">&radic;N</code> search and Shor&rsquo;s polynomial factoring, place <code class="inl">BQP</code> on the class map, and refute the myth that quantum computers solve NP-complete problems instantly.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>This is a capstone; it leans on the whole arc. Four ideas in particular do the heavy lifting &mdash; the first two set the stakes, the last two are the machinery we re-purpose at every turn.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-20-p-np-reductions-and-np-completeness.html">NP-completeness &amp; reductions</a>
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotic analysis</a>
+          <a class="chip" href="dsa-05-probability-for-algorithms.html">randomized algorithms</a>
+          <a class="chip" href="dsa-20-p-np-reductions-and-np-completeness.html">reductions as structure-preserving maps</a>
+        </div>
+        <p style="margin-top:1em">If you can read a reduction <code class="inl">A&nbsp;&le;<sub>p</sub>&nbsp;B</code> as &ldquo;<em>B is at least as hard as A</em>,&rdquo; recall that big-O hides constants and an <em>exponent</em> can itself be the battleground, and use a Chernoff bound to turn &ldquo;probably&rdquo; into a guarantee, you are ready to stand at the edge.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> finding versus checking</div>
+      <h2>P vs NP: the one open seam</h2>
+      <div class="col">
+        <p>Strip the romance away and the question is almost embarrassingly simple. <span class="term">P</span> is the class of decision problems a deterministic machine can <em>solve</em> in time polynomial in the input size <code class="inl">n</code>. <span class="term">NP</span> is the class of decision problems whose <em>yes</em>-answers come with a short <em>certificate</em> that a deterministic machine can <em>check</em> in polynomial time.</p>
+        <p>That is the whole pivot: <strong>NP is the class where solutions are easy to verify.</strong> A filled-in Sudoku grid is trivial to check and notoriously hard to find. A satisfying assignment to a Boolean formula is a one-line check. A Hamiltonian cycle, once handed to you, is a quick walk around the graph. In each case <em>verifying</em> the certificate is cheap; the open question is whether <em>producing</em> it must be expensive.</p>
+
+        <div class="eq" role="group" aria-label="Definition of NP by verifier">
+          <span class="lbl">NP, the verifier definition</span>
+          <p style="margin:0; font-size:15.5px">A language <code class="inl">L &isin; NP</code> iff there is a polynomial-time verifier <code class="inl">V(x, c)</code> and a polynomial <code class="inl">q</code> such that:
+          <br>&nbsp;&nbsp;&middot;&nbsp; if <code class="inl">x &isin; L</code>, some certificate <code class="inl">c</code> with <code class="inl">|c| &le; q(|x|)</code> makes <code class="inl">V(x,c)=1</code>;
+          <br>&nbsp;&nbsp;&middot;&nbsp; if <code class="inl">x &notin; L</code>, <em>every</em> <code class="inl">c</code> gives <code class="inl">V(x,c)=0</code>.</p>
+        </div>
+
+        <p><code class="inl">P &sube; NP</code> is immediate: if you can solve in polynomial time, ignore the certificate and just re-solve. The dollar question is the reverse containment. <strong>Is <code class="inl">P = NP</code>?</strong> &mdash; is every easily-checked problem also easily-solved?</p>
+
+        <h3>NP-completeness, recalled</h3>
+        <p>Lecture&nbsp;20 gave us the lever. A problem is <span class="term">NP-hard</span> if <em>every</em> problem in NP reduces to it in polynomial time, and <span class="term">NP-complete</span> if it is both NP-hard and in NP. The Cook&ndash;Levin theorem anointed the first such problem, <code class="inl">SAT</code>; Karp&rsquo;s reductions populated the class with thousands more &mdash; <code class="inl">3-SAT</code>, <code class="inl">CLIQUE</code>, <code class="inl">VERTEX&nbsp;COVER</code>, <code class="inl">HAMILTONIAN&nbsp;CYCLE</code>, <code class="inl">SUBSET&nbsp;SUM</code>. The structural punchline: they stand or fall <em>together</em>. A polynomial algorithm for any single NP-complete problem would, by following the reductions backward, give one for <em>all</em> of NP &mdash; and prove <code class="inl">P = NP</code>. This is what makes the question a single seam and not ten thousand separate ones.</p>
+
+        <figure>
+          <svg viewBox="0 0 720 360" role="img" aria-labelledby="map-t map-d">
+            <title id="map-t">The map of the efficiently mechanizable</title>
+            <desc id="map-d">A square labelled PSPACE contains two overlapping ovals, NP and coNP. Their overlap holds a small blue disk P, ringed by a dashed red seam marked P =? NP. A red crescent at the far rim of NP marks the NP-complete problems. A yellow rounded region BQP contains P and reaches slightly outside NP toward a dot marked factoring, but does not reach the NP-complete crescent.</desc>
+            <!-- PSPACE outer square -->
+            <rect x="20" y="20" width="680" height="320" rx="10" fill="none" class="dg-edge"/>
+            <text x="34" y="44" class="dg-cap">PSPACE</text>
+            <!-- NP oval -->
+            <ellipse cx="300" cy="190" rx="250" ry="120" class="dg-region-b" stroke="var(--bau-ink)" stroke-width="2.5"/>
+            <text x="120" y="96" class="dg-cap">NP</text>
+            <!-- coNP oval -->
+            <ellipse cx="470" cy="190" rx="220" ry="120" fill="none" class="dg-edge" stroke-dasharray="2 0"/>
+            <text x="612" y="96" class="dg-cap" text-anchor="end">coNP</text>
+            <!-- BQP yellow region, straddling P and reaching a structured island -->
+            <path d="M250 150 C 200 120, 250 250, 320 250 C 470 252, 520 196, 470 160 C 430 132, 360 134, 320 142 Z" class="dg-region-y" stroke="var(--bau-ink)" stroke-width="2"/>
+            <text x="430" y="240" class="dg-cap">BQP</text>
+            <!-- P disk inside the NP/coNP overlap, with the open seam -->
+            <circle cx="320" cy="190" r="46" class="dg-blue-f"/>
+            <circle cx="320" cy="190" r="58" class="dg-dash"/>
+            <text x="320" y="196" class="dg-label w" text-anchor="middle" style="font-weight:700">P</text>
+            <text x="320" y="120" class="dg-label" text-anchor="middle" style="fill:var(--bau-red); font-weight:700">P =? NP</text>
+            <!-- factoring island: in BQP and in NP&cap;coNP, not known in P -->
+            <circle cx="452" cy="190" r="6" class="dg-red-f"/>
+            <text x="462" y="194" class="dg-label sm">factoring (in BQP, not known in P)</text>
+            <!-- NP-complete crescent at the far rim of NP -->
+            <path d="M120 130 A 250 120 0 0 0 120 250 A 210 150 0 0 1 120 130 Z" class="dg-region-r" stroke="var(--bau-red)" stroke-width="2.5"/>
+            <text x="92" y="194" class="dg-label" text-anchor="middle" style="fill:var(--bau-red); font-weight:700">NP-<tspan x="92" dy="14">complete</tspan></text>
+          </svg>
+          <figcaption><b>Figure 1 &mdash; the boundary, as a map.</b> If <code class="inl">P=NP</code>, the blue disk swells to fill the NP oval and the red crescent dissolves. Quantum&rsquo;s <code class="inl">BQP</code> (yellow) contains <code class="inl">P</code> and reaches the structured island of factoring &mdash; but, as far as anyone knows, <em>not</em> the NP-complete crescent. The whole lecture lives in these gaps.</figcaption>
+        </figure>
+
+        <div class="note info">
+          <span class="tag">The stakes, stated plainly</span>
+          <p style="margin:0">If <code class="inl">P = NP</code> with small constants, public-key cryptography dies, most optimization becomes trivial, and finding a proof of a theorem becomes about as easy as checking one. If <code class="inl">P &ne; NP</code> &mdash; the consensus, held by the large majority of theorists polled &mdash; hardness is real, permanent, and (happily) <em>exploitable</em>: every modern cipher is a bet that some problem in NP is not in P.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> why fifty years and no proof</div>
+      <h2>Why P vs NP is hard to <em>settle</em></h2>
+      <div class="col">
+        <p>Here is the part most courses skip, and it is the most honest part. We have not failed to separate P from NP for lack of trying. We have proved, three times over, that our <em>standard tools cannot do the job</em>. The frontier is not a thin line we have not yet reached; it is a wall guarded by meta-theorems. A formalist&rsquo;s instinct is exactly right here: when you cannot solve a problem, formalize the methods themselves and ask which of them <em>could possibly</em> work.</p>
+
+        <h3>Barrier 1 &mdash; Relativization (Baker&ndash;Gill&ndash;Solovay, 1975)</h3>
+        <p>The one tool that separates classes cleanly is <em>diagonalization</em> &mdash; the trick behind the time-hierarchy theorem. But diagonalization <em>relativizes</em>: it keeps working if both machines are given the same oracle (a free subroutine for some language). Baker, Gill, and Solovay built two oracles: one, <code class="inl">A</code>, for which <code class="inl">P<sup>A</sup> = NP<sup>A</sup></code>, and another, <code class="inl">B</code>, for which <code class="inl">P<sup>B</sup> &ne; NP<sup>B</sup></code>. Any proof that relativizes would have to give the <em>same</em> verdict in both worlds &mdash; impossible. So diagonalization alone can never resolve P vs NP.</p>
+
+        <h3>Barrier 2 &mdash; Natural Proofs (Razborov&ndash;Rudich, 1994)</h3>
+        <p>The next great hope was <em>circuit lower bounds</em>: show some NP problem needs super-polynomial circuits. Most attempts share a shape Razborov and Rudich called a <span class="term">natural property</span> &mdash; a test for &ldquo;hardness&rdquo; that is <em>large</em> (most functions pass) and <em>constructive</em> (efficiently checkable). They proved a stunning self-defeating fact: if strong pseudorandom generators exist &mdash; the very assumption underneath all modern cryptography &mdash; then <em>no</em> natural property can prove the lower bounds we need. Our sharpest circuit tools are blocked by the security we believe in.</p>
+
+        <h3>Barrier 3 &mdash; Algebrization (Aaronson&ndash;Wigderson, 2008)</h3>
+        <p>A few celebrated results <em>do</em> evade relativization &mdash; <code class="inl">IP = PSPACE</code> among them &mdash; by &ldquo;arithmetizing&rdquo; Boolean formulas into polynomials. Aaronson and Wigderson generalized relativization to <span class="term">algebrization</span> (oracles extended to low-degree polynomials) and showed that these algebraic techniques, too, cannot settle P vs NP. Each barrier eats the previous escape route.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>The three barriers &mdash; what each rules out</caption>
+            <thead>
+              <tr><th scope="col">Barrier</th><th scope="col">Technique it neutralizes</th><th scope="col">The lever</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Relativization</th><td>Diagonalization / simulation</td><td class="mid">Oracles <code class="inl">A,B</code> giving opposite verdicts</td></tr>
+              <tr><th scope="row">Natural proofs</th><td>Combinatorial circuit lower bounds</td><td class="mid">If PRGs exist, &ldquo;natural&rdquo; tests can&rsquo;t certify hardness</td></tr>
+              <tr><th scope="row">Algebrization</th><td>Arithmetization (the IP=PSPACE trick)</td><td class="mid">Polynomial-extended oracles still give opposite verdicts</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="3">A correct separation must be <em>non-relativizing, non-natural, and non-algebrizing</em> at once &mdash; and we have no such technique.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <p>So when a headline announces a P-vs-NP proof, the first question a trained mind asks is not &ldquo;is the algebra right?&rdquo; but &ldquo;<em>which barrier does it claim to cross, and how?</em>&rdquo; Nearly every amateur attempt dies because it silently relativizes. That meta-question &mdash; auditing the <em>method</em>, not the manipulation &mdash; is the most transferable thing in this lecture.</p>
+
+        <div class="pull">&ldquo;We have not merely failed to separate P from NP. We have <span>proved that our usual proofs cannot.</span>&rdquo;</div>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> the line drawn to four decimals</div>
+      <h2>Fine-grained complexity: hardness <em>inside</em> P</h2>
+      <div class="col">
+        <p>NP-completeness is a blunt instrument. It sorts the world into &ldquo;polynomial&rdquo; and &ldquo;probably exponential&rdquo; and then goes home. But inside the polynomial world there is a whole unexplained geography. Three problems have resisted improvement for decades despite being, formally, <em>easy</em>:</p>
+        <ul class="obj">
+          <li><span class="term">3SUM</span> &mdash; given <code class="inl">n</code> integers, are there three summing to zero? A two-pointer scan gives <code class="inl">O(n<sup>2</sup>)</code>. No <code class="inl">O(n<sup>1.99</sup>)</code> is known.</li>
+          <li><span class="term">APSP</span> &mdash; all-pairs shortest paths on a weighted graph. Floyd&ndash;Warshall gives <code class="inl">&Theta;(n<sup>3</sup>)</code>. The best known shaves only a sub-polynomial sliver; no <code class="inl">O(n<sup>2.99</sup>)</code> is known.</li>
+          <li><span class="term">Edit distance / LCS</span> &mdash; the <code class="inl">&Theta;(n<sup>2</sup>)</code> dynamic program of the hook.</li>
+        </ul>
+        <p>Fine-grained complexity <em>explains</em> these walls the way NP-completeness explains intractability: by reduction from a conjecture. The trick is to stop hiding inside big-O and treat the <strong>exponent itself as the object of study</strong>.</p>
+
+        <div class="eq" role="group" aria-label="Definition of a fine-grained reduction">
+          <span class="lbl">fine-grained reduction (the idea)</span>
+          <p style="margin:0; font-size:15.5px">Problem <code class="inl">A</code> (believed to need time <code class="inl">a(n)</code>) <em>fine-grained reduces</em> to <code class="inl">B</code> (believed to need <code class="inl">b(n)</code>) if any truly faster algorithm for <code class="inl">B</code> &mdash; time <code class="inl">b(n)<sup>1&minus;&epsilon;</sup></code> for some <code class="inl">&epsilon;&gt;0</code> &mdash; would yield a truly faster algorithm for <code class="inl">A</code>. Then a lower bound on <code class="inl">A</code> <em>transfers</em> to <code class="inl">B</code>: breaking <code class="inl">B</code>&rsquo;s exponent breaks <code class="inl">A</code>&rsquo;s.</p>
+        </div>
+
+        <p>This is precisely the NP-completeness pattern &mdash; reductions ferrying hardness &mdash; but recalibrated from &ldquo;poly vs exp&rdquo; to <em>exact exponents</em>. The conjectures that play the role of &ldquo;<code class="inl">P&ne;NP</code>&rdquo; are three:</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>The three pillars of fine-grained hardness</caption>
+            <thead>
+              <tr><th scope="col">Conjecture</th><th scope="col">Statement</th><th scope="col">Barrier it explains</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">SETH</th><td>For every <code class="inl">&epsilon;&gt;0</code> there is a width <code class="inl">k</code> with no <code class="inl">O(2<sup>(1&minus;&epsilon;)n</sup>)</code> algorithm for <code class="inl">k</code>-SAT.</td><td class="bad">edit distance, LCS, Fr&eacute;chet, dynamic time warping at <code class="inl">n<sup>2</sup></code></td></tr>
+              <tr><th scope="row">3SUM</th><td>No <code class="inl">O(n<sup>2&minus;&epsilon;</sup>)</code> algorithm decides whether three of <code class="inl">n</code> numbers sum to zero.</td><td class="bad">collinearity, polygon containment &amp; much of computational geometry at <code class="inl">n<sup>2</sup></code></td></tr>
+              <tr><th scope="row">APSP</th><td>No <code class="inl">O(n<sup>3&minus;&epsilon;</sup>)</code> algorithm for all-pairs shortest paths.</td><td class="bad">negative triangle, min-plus product, replacement paths at <code class="inl">n<sup>3</sup></code></td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="3">SETH strengthens ETH (which only says 3-SAT needs <code class="inl">2<sup>&Omega;(n)</sup></code>). None is proven; each could fall &mdash; and that is the point of the next failure mode.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 760 380" role="img" aria-labelledby="hub-t hub-d">
+            <title id="hub-t">The fine-grained hardness map</title>
+            <desc id="hub-d">Three hubs — SETH/Orthogonal Vectors in blue, 3SUM in red, APSP in yellow — each with arrows pointing to the problems whose lower bounds they imply. SETH points to edit distance, LCS, and Frechet distance. 3SUM points to collinearity, GeomBase, and polygon containment. APSP connects by double arrows to negative triangle, min-plus product, and replacement paths.</desc>
+            <defs>
+              <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--bau-ink)"/>
+              </marker>
+            </defs>
+            <!-- SETH hub -->
+            <circle cx="130" cy="80" r="44" class="dg-blue-f"/>
+            <text x="130" y="76" class="dg-label w" text-anchor="middle" style="font-weight:700">SETH</text>
+            <text x="130" y="92" class="dg-label w" text-anchor="middle" style="font-size:10px">&rarr; OV (n&sup2;)</text>
+            <g class="dg-edge-thin" marker-end="url(#ar)">
+              <path d="M168 102 L300 150"/>
+              <path d="M170 92 L300 196"/>
+              <path d="M165 116 L300 240"/>
+            </g>
+            <g class="dg-label" text-anchor="start">
+              <text x="306" y="152">edit distance</text>
+              <text x="306" y="200">longest common subsequence</text>
+              <text x="306" y="244">Fr&eacute;chet distance, DTW</text>
+            </g>
+            <!-- 3SUM hub -->
+            <circle cx="130" cy="200" r="44" class="dg-red-f"/>
+            <text x="130" y="196" class="dg-label w" text-anchor="middle" style="font-weight:700">3SUM</text>
+            <text x="130" y="212" class="dg-label w" text-anchor="middle" style="font-size:10px">(n&sup2;)</text>
+            <g class="dg-edge-thin" marker-end="url(#ar)">
+              <path d="M168 214 L300 286"/>
+              <path d="M165 224 L300 320"/>
+            </g>
+            <g class="dg-label" text-anchor="start">
+              <text x="306" y="290">3 collinear points, GeomBase</text>
+              <text x="306" y="324">polygon containment</text>
+            </g>
+            <!-- APSP hub -->
+            <circle cx="130" cy="320" r="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+            <text x="130" y="316" class="dg-label" text-anchor="middle" style="font-weight:700">APSP</text>
+            <text x="130" y="332" class="dg-label" text-anchor="middle" style="font-size:10px">(n&sup3;)</text>
+            <g class="dg-edge-thin" marker-start="url(#ar)" marker-end="url(#ar)">
+              <path d="M174 330 C 260 360, 360 360, 470 352"/>
+            </g>
+            <text x="300" y="372" class="dg-label sm" text-anchor="start">&equiv; negative triangle &equiv; min-plus product &equiv; replacement paths</text>
+            <text x="640" y="40" class="dg-cap" text-anchor="end">arrows = fine-grained reductions</text>
+          </svg>
+          <figcaption><b>Figure 2 &mdash; three islands of hardness.</b> A single arrow means &ldquo;a faster algorithm here breaks the conjecture there.&rdquo; APSP&rsquo;s double arrows mark a <em>sub-cubic equivalence class</em>: all those problems are <code class="inl">n<sup>3</sup></code> together, or none are. This is the periodic table the next section will read from.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> the worked chain, end to end</div>
+      <h2>Worked example: SETH &rarr; Orthogonal Vectors &rarr; edit distance</h2>
+      <div class="col">
+        <p>Let me carry one reduction all the way through, because the mechanics are more convincing than any table. The bridge problem is <span class="term">Orthogonal Vectors (OV)</span>: given two sets <code class="inl">A, B</code> of <code class="inl">n</code> binary vectors each, of dimension <code class="inl">d</code>, decide whether some <code class="inl">a &isin; A</code> and <code class="inl">b &isin; B</code> are orthogonal &mdash; that is, share no coordinate where both are&nbsp;1, so <code class="inl">&#10216;a,b&#10217; = 0</code>. The brute force is two nested loops:</p>
+
+        <pre><code><span class="tok-kw">def</span> <span class="tok-fn">has_orthogonal_pair</span>(A, B):        <span class="tok-com"># A, B: lists of 0/1 vectors, dim d</span>
+    <span class="tok-kw">for</span> a <span class="tok-kw">in</span> A:
+        <span class="tok-kw">for</span> b <span class="tok-kw">in</span> B:
+            <span class="tok-kw">if</span> <span class="tok-fn">all</span>(ai * bi == <span class="tok-num">0</span> <span class="tok-kw">for</span> ai, bi <span class="tok-kw">in</span> <span class="tok-fn">zip</span>(a, b)):
+                <span class="tok-kw">return</span> <span class="tok-kw">True</span>      <span class="tok-com"># found a coordinate-disjoint pair</span>
+    <span class="tok-kw">return</span> <span class="tok-kw">False</span>                     <span class="tok-com"># O(n^2 * d)</span></code></pre>
+
+        <p>That is <code class="inl">O(n<sup>2</sup>d)</code>. The <span class="term">OV conjecture</span> says you cannot do better than <code class="inl">n<sup>2&minus;o(1)</sup></code> when <code class="inl">d = &omega;(log&nbsp;n)</code>, for any clever method. Why believe it? Because <strong>SETH implies it</strong>, by a meet-in-the-middle construction that is a small marvel.</p>
+
+        <h3>Step 1 &mdash; split the variables</h3>
+        <p>Take a CNF-SAT formula <code class="inl">&phi;</code> on <code class="inl">N</code> variables and <code class="inl">m</code> clauses. Split the variables into two halves of <code class="inl">N/2</code>. Enumerate all <code class="inl">2<sup>N/2</sup></code> partial assignments to the left half &mdash; these become set <code class="inl">A</code>; all <code class="inl">2<sup>N/2</sup></code> partial assignments to the right half become set <code class="inl">B</code>. So <code class="inl">n = 2<sup>N/2</sup></code> vectors per side.</p>
+
+        <h3>Step 2 &mdash; vectorize by clause</h3>
+        <p>Give each vector dimension <code class="inl">d = m</code>, one coordinate per clause. For a left partial assignment <code class="inl">&alpha;</code>, set coordinate <code class="inl">j</code> to <strong>0 if <code class="inl">&alpha;</code> already satisfies clause <code class="inl">j</code></strong> (some literal in <code class="inl">C<sub>j</sub></code> is made true by <code class="inl">&alpha;</code>), and <strong>1 otherwise</strong>. Do the same for each right assignment <code class="inl">&beta;</code>. Now read off the magic: coordinate <code class="inl">j</code> of <code class="inl">a</code> and <code class="inl">b</code> are <em>both</em>&nbsp;1 exactly when <em>neither</em> half satisfies <code class="inl">C<sub>j</sub></code> &mdash; i.e. clause <code class="inl">j</code> is unsatisfied by the combined assignment.</p>
+
+        <div class="eq" role="group" aria-label="The orthogonality identity">
+          <span class="lbl">the identity that does all the work</span>
+          <p style="margin:0; font-size:15.5px"><code class="inl">&#10216;a,b&#10217; = 0</code> &nbsp;&hArr;&nbsp; for every clause <code class="inl">j</code>, not both halves fail it &nbsp;&hArr;&nbsp; every clause is satisfied &nbsp;&hArr;&nbsp; the combined assignment <code class="inl">(&alpha;,&beta;)</code> satisfies <code class="inl">&phi;</code>.</p>
+        </div>
+        <p>So <strong><code class="inl">&phi;</code> is satisfiable iff <code class="inl">A,B</code> contain an orthogonal pair.</strong> We have turned satisfiability into vector orthogonality.</p>
+
+        <figure>
+          <svg viewBox="0 0 740 340" role="img" aria-labelledby="ov-t ov-d">
+            <title id="ov-t">SETH to Orthogonal Vectors: split and vectorize</title>
+            <desc id="ov-d">Four variables split into a left pair and a right pair. The four partial assignments of the left half form set A as four 3-bit row vectors indexed by clauses C1 C2 C3; the four of the right half form set B. One row from A and one from B are highlighted; their bitwise AND is zero in every column, marking an orthogonal pair, which corresponds to a satisfying assignment.</desc>
+            <!-- title row -->
+            <text x="30" y="34" class="dg-cap">&phi; = (x&#8321;&#8744;x&#8323;) &and; (&not;x&#8321;&#8744;x&#8322;) &and; (&not;x&#8322;&#8744;&not;x&#8324;)</text>
+            <text x="30" y="56" class="dg-label sm">split: left {x&#8321;,x&#8322;} &rarr; set A &nbsp;&middot;&nbsp; right {x&#8323;,x&#8324;} &rarr; set B &nbsp;&middot;&nbsp; coordinate j = 1 iff that half fails C&#8321;&#8323;</text>
+            <!-- column headers -->
+            <g class="dg-label sm" text-anchor="middle">
+              <text x="150" y="86">C&#8321;</text><text x="184" y="86">C&#8322;</text><text x="218" y="86">C&#8323;</text>
+              <text x="560" y="86">C&#8321;</text><text x="594" y="86">C&#8322;</text><text x="628" y="86">C&#8323;</text>
+            </g>
+            <text x="40" y="86" class="dg-cap" style="fill:var(--bau-blue)">A (left)</text>
+            <text x="450" y="86" class="dg-cap" style="fill:var(--bau-red)">B (right)</text>
+            <!-- set A: 4 rows of 3 bits. label by assignment of x1 x2 -->
+            <g font-family="var(--font-mono)">
+              <!-- row helper: filled square = 1 (fails), open = 0 (satisfies) -->
+              <!-- A row x1x2 = 00 -> C1 fails(no x1) =1, C2 satisfied(¬x1)=0, C3 satisfied(¬x2)=0 -> 1 0 0 -->
+              <text x="92" y="108" class="dg-label sm">00</text>
+              <rect x="136" y="98" width="20" height="20" class="dg-bit1"/><rect x="170" y="98" width="20" height="20" class="dg-bit0"/><rect x="204" y="98" width="20" height="20" class="dg-bit0"/>
+              <!-- A row 01: x1=0,x2=1 -> C1 fails=1, C2 sat(¬x1)=0, C3 fails(x2 true, ¬x2 false; no ¬x4 here)=1 -> 1 0 1 -->
+              <text x="92" y="138" class="dg-label sm">01</text>
+              <rect x="136" y="128" width="20" height="20" class="dg-bit1"/><rect x="170" y="128" width="20" height="20" class="dg-bit0"/><rect x="204" y="128" width="20" height="20" class="dg-bit1"/>
+              <!-- A row 10: x1=1,x2=0 -> C1 sat(x1)=0, C2 fails=1, C3 sat(¬x2)=0 -> 0 1 0 -->
+              <text x="92" y="168" class="dg-label sm">10</text>
+              <rect x="136" y="158" width="20" height="20" class="dg-bit0"/><rect x="170" y="158" width="20" height="20" class="dg-bit1"/><rect x="204" y="158" width="20" height="20" class="dg-bit0"/>
+              <!-- A row 11: x1=1,x2=1 -> C1 sat=0, C2 sat(x2)=0, C3 fails(x2)=1 -> 0 0 1  (highlighted: the satisfying left half) -->
+              <text x="92" y="198" class="dg-label sm" style="fill:var(--bau-blue); font-weight:700">11</text>
+              <rect x="136" y="188" width="20" height="20" class="dg-bit0"/><rect x="170" y="188" width="20" height="20" class="dg-bit0"/><rect x="204" y="188" width="20" height="20" class="dg-bit1"/>
+              <rect x="131" y="183" width="98" height="30" class="dg-vec-a"/>
+            </g>
+            <!-- set B: 4 rows -->
+            <g font-family="var(--font-mono)">
+              <!-- right vars x3 x4. C1 has x3; C3 has ¬x4. C2 has none of x3,x4 -> column C2 always 1 (right half can't satisfy C2) -->
+              <!-- B 00: x3=0,x4=0 -> C1 fails(x3 false)=1, C2 fails=1, C3 sat(¬x4)=0 -> 1 1 0 -->
+              <text x="500" y="108" class="dg-label sm">00</text>
+              <rect x="546" y="98" width="20" height="20" class="dg-bit1"/><rect x="580" y="98" width="20" height="20" class="dg-bit1"/><rect x="614" y="98" width="20" height="20" class="dg-bit0"/>
+              <!-- B 01: x3=0,x4=1 -> C1 fails=1, C2 fails=1, C3 fails(¬x4 false)=1 -> 1 1 1 -->
+              <text x="500" y="138" class="dg-label sm">01</text>
+              <rect x="546" y="128" width="20" height="20" class="dg-bit1"/><rect x="580" y="128" width="20" height="20" class="dg-bit1"/><rect x="614" y="128" width="20" height="20" class="dg-bit1"/>
+              <!-- B 10: x3=1,x4=0 -> C1 sat(x3)=0, C2 fails=1, C3 sat(¬x4)=0 -> 0 1 0  (highlighted) -->
+              <text x="500" y="168" class="dg-label sm" style="fill:var(--bau-red); font-weight:700">10</text>
+              <rect x="546" y="158" width="20" height="20" class="dg-bit0"/><rect x="580" y="158" width="20" height="20" class="dg-bit1"/><rect x="614" y="158" width="20" height="20" class="dg-bit0"/>
+              <rect x="541" y="153" width="98" height="30" class="dg-vec-b"/>
+              <!-- B 11: x3=1,x4=1 -> C1 sat=0, C2 fails=1, C3 fails(¬x4 false)=1 -> 0 1 1 -->
+              <text x="500" y="198" class="dg-label sm">11</text>
+              <rect x="546" y="188" width="20" height="20" class="dg-bit0"/><rect x="580" y="188" width="20" height="20" class="dg-bit1"/><rect x="614" y="188" width="20" height="20" class="dg-bit1"/>
+            </g>
+            <!-- the AND -->
+            <g transform="translate(0,248)">
+              <text x="30" y="6" class="dg-cap">the orthogonal pair &rArr; a satisfying assignment</text>
+              <text x="30" y="34" class="dg-label" style="fill:var(--bau-blue); font-weight:700">a = 0 0 1</text>
+              <text x="116" y="34" class="dg-label sm">(left x&#8321;x&#8322;=11)</text>
+              <text x="250" y="34" class="dg-label" style="fill:var(--bau-red); font-weight:700">b = 0 1 0</text>
+              <text x="336" y="34" class="dg-label sm">(right x&#8323;x&#8324;=10)</text>
+              <text x="470" y="34" class="dg-label" style="font-weight:700">a AND b = 0 0 0</text>
+              <text x="30" y="60" class="dg-label sm">every clause is covered by at least one half &rArr; x&#8321;=1, x&#8322;=1, x&#8323;=1, x&#8324;=0 satisfies &phi;.</text>
+              <text x="30" y="80" class="dg-label sm">(column C&#8322; is 1 in every B row, so a&#8322; must be 0 &mdash; the left &ldquo;10&rdquo; row can never pair.)</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 3 &mdash; the reduction, drawn.</b> Each half&rsquo;s partial assignment becomes a clause-indexed bit vector (filled&nbsp;=&nbsp;1&nbsp;=&nbsp;&ldquo;this half fails the clause&rdquo;). An orthogonal pair &mdash; here <code class="inl">a=001</code> with <code class="inl">b=010</code> &mdash; has bitwise-AND zero, meaning <em>every clause is covered by at least one half</em>: a satisfying assignment. Brute-force OV over the rows is exactly meet-in-the-middle SAT.</figcaption>
+        </figure>
+
+        <h3>Step 3 &mdash; cash in the exponent</h3>
+        <p>Now suppose someone hands us an OV algorithm running in <code class="inl">O(n<sup>2&minus;&epsilon;</sup>)</code>. Substitute <code class="inl">n = 2<sup>N/2</sup></code>:</p>
+        <div class="eq" role="group" aria-label="Exponent arithmetic refuting SETH">
+          <span class="lbl">the punchline arithmetic</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mrow>
+              <msup><mi>n</mi><mrow><mn>2</mn><mo>&minus;</mo><mi>&epsilon;</mi></mrow></msup>
+              <mo>=</mo>
+              <msup><mrow><mo>(</mo><msup><mn>2</mn><mrow><mi>N</mi><mo>/</mo><mn>2</mn></mrow></msup><mo>)</mo></mrow><mrow><mn>2</mn><mo>&minus;</mo><mi>&epsilon;</mi></mrow></msup>
+              <mo>=</mo>
+              <msup><mn>2</mn><mrow><mi>N</mi><mo>(</mo><mn>1</mn><mo>&minus;</mo><mi>&epsilon;</mi><mo>/</mo><mn>2</mn><mo>)</mo></mrow></msup>
+            </mrow>
+          </math></div>
+          <p style="margin:.4em 0 0; font-size:15px">&mdash; a CNF-SAT algorithm running in <code class="inl">2<sup>(1&minus;&epsilon;/2)N</sup></code>, beating brute force by a constant factor in the exponent. That refutes SETH.</p>
+        </div>
+        <p>Contrapositive: <strong>if SETH holds, OV needs <code class="inl">n<sup>2&minus;o(1)</sup></code>.</strong> And the final link &mdash; the one that closes the hook &mdash; is a 2015 reduction (Backurs&ndash;Indyk) embedding OV instances into pairs of strings so that their <em>edit distance</em> encodes the orthogonality answer. Therefore an <code class="inl">O(n<sup>1.99</sup>)</code> edit-distance algorithm would break SETH. The sixty-year wall is not a failure of imagination. It is a load-bearing column: knock it out and a whole conjectural building falls.</p>
+
+        <details>
+          <summary>Unfold: why <code class="inl">d = &Theta;(log n)</code> is the knife&rsquo;s edge</summary>
+          <div class="body">
+            <p style="margin:.6em 0 0">OV is only hard in a specific dimension regime. If <code class="inl">d</code> is a constant, you can bucket vectors by their <code class="inl">2<sup>d</sup></code> possible patterns and answer in <code class="inl">O(n + 2<sup>d</sup>&middot;... )</code> &mdash; near-linear. The conjecture needs <code class="inl">d = &omega;(log n)</code> so that <code class="inl">2<sup>d</sup></code> outruns <code class="inl">n</code> and the pattern-bucketing trick dies. In the SETH reduction, <code class="inl">d = m</code> (the clause count) plays exactly that role. Reading the regime wrong &mdash; quoting OV-hardness at constant <code class="inl">d</code> &mdash; is a classic error; see &sect;10.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> when you cannot even read the input</div>
+      <h2>Sublinear &amp; streaming algorithms</h2>
+      <div class="col">
+        <p>Until now &ldquo;efficient&rdquo; meant polynomial in <code class="inl">n</code>, and reading the whole input was free. Flip that. A network switch sees billions of packets a second; a telescope emits terabytes a night; a web crawler meets a stream of URLs with no end and no rewind. Here <code class="inl">O(n)</code> &mdash; merely <em>looking</em> at every item &mdash; is already too expensive, or impossible because the data never lands on disk. We need answers in <em>sublinear</em> time or in one pass with tiny memory. The price is exactness: you cannot read everything, so you must accept an approximate, probabilistic answer. The formal question becomes <em>which</em> approximations are achievable.</p>
+
+        <h3>The streaming model</h3>
+        <p>A <span class="term">streaming algorithm</span> sees items <code class="inl">x<sub>1</sub>, x<sub>2</sub>, &hellip;, x<sub>m</sub></code> one at a time, in order, and keeps only <code class="inl">O(polylog&nbsp;m)</code> working memory &mdash; far less than the stream itself. Two warm-ups show the spirit:</p>
+        <ul class="obj">
+          <li><strong>Majority (Boyer&ndash;Moore).</strong> Keep one candidate and one counter. Same item, increment; different, decrement; counter hits zero, adopt the new item. After one pass the candidate is the majority element <em>if one exists</em> &mdash; in <code class="inl">O(1)</code> memory. (A second pass is needed to confirm; see Practice&nbsp;3.)</li>
+          <li><strong>Morris counter.</strong> Count up to <code class="inl">N</code> using <code class="inl">O(log log N)</code> bits, by storing the count&rsquo;s logarithm and incrementing probabilistically. You cannot store <code class="inl">N</code> exactly that cheaply &mdash; so you store an estimate.</li>
+        </ul>
+
+        <h3>Worked example: how many <em>distinct</em> items? (KMV min-hash)</h3>
+        <p>Counting distinct elements <code class="inl">F<sub>0</sub></code> &mdash; unique visitors, distinct IP addresses &mdash; is the streaming classic. Exactly, it needs a set, i.e. <code class="inl">&Omega;(F<sub>0</sub>)</code> memory. But a beautiful idea gets within a few percent in <em>logarithmic</em> memory. Hash every item into the real interval <code class="inl">[0,1]</code> with a function <code class="inl">h</code>. Duplicates collide onto the <em>same</em> point, so only the <code class="inl">D</code> <em>distinct</em> items matter, and they scatter like <code class="inl">D</code> uniform random points. The trick: <strong>watch the smallest hashes.</strong></p>
+
+        <div class="eq" role="group" aria-label="The KMV order-statistic estimator">
+          <span class="lbl">the order-statistic estimator</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mrow>
+              <mi>E</mi><mo>[</mo><mi>k</mi><mtext>-th smallest of </mtext><mi>D</mi><mtext> uniforms</mtext><mo>]</mo>
+              <mo>=</mo>
+              <mfrac><mi>k</mi><mrow><mi>D</mi><mo>+</mo><mn>1</mn></mrow></mfrac>
+              <mspace width="1.4em"/><mo>&rArr;</mo><mspace width="0.6em"/>
+              <mover><mi>D</mi><mo>^</mo></mover>
+              <mo>=</mo>
+              <mfrac><mi>k</mi><msub><mi>v</mi><mrow><mo>(</mo><mi>k</mi><mo>)</mo></mrow></msub></mfrac>
+            </mrow>
+          </math></div>
+          <p style="margin:.4em 0 0; font-size:15px">where <code class="inl">v<sub>(k)</sub></code> is the <code class="inl">k</code>-th smallest hash seen. Keep only those <code class="inl">k</code> smallest values &mdash; <code class="inl">O(k&middot;log m)</code> bits &mdash; and invert. (The unbiased form is <code class="inl">(k&minus;1)/v<sub>(k)</sub></code>.)</p>
+        </div>
+
+        <p>The intuition is irresistible: if <code class="inl">D</code> points fall uniformly in <code class="inl">[0,1]</code>, they sit about <code class="inl">1/(D+1)</code> apart, so the <code class="inl">k</code>-th smallest lands near <code class="inl">k/(D+1)</code>. Observe where it actually landed and solve for <code class="inl">D</code>. The relative error shrinks like <code class="inl">1/&radic;k</code>, so <code class="inl">k = O(1/&epsilon;<sup>2</sup>)</code> buys a <code class="inl">(1&plusmn;&epsilon;)</code> estimate &mdash; <em>independent of the stream length</em>.</p>
+
+        <figure>
+          <svg viewBox="0 0 740 250" role="img" aria-labelledby="kmv-t kmv-d">
+            <title id="kmv-t">KMV distinct-count estimator on the unit interval</title>
+            <desc id="kmv-d">A number line from 0 to 1. Several distinct items are hashed to points along it. The three smallest hashes are marked in blue; the third smallest sits near 0.27. A brace shows the estimate D-hat equals k over v-sub-k, with k equal to 3, giving about 11 distinct items.</desc>
+            <!-- axis -->
+            <line x1="40" y1="120" x2="700" y2="120" class="dg-axis"/>
+            <line x1="40" y1="112" x2="40" y2="128" class="dg-tick"/>
+            <line x1="700" y1="112" x2="700" y2="128" class="dg-tick"/>
+            <text x="40" y="150" class="dg-label sm" text-anchor="middle">0</text>
+            <text x="700" y="150" class="dg-label sm" text-anchor="middle">1</text>
+            <text x="370" y="44" class="dg-cap" text-anchor="middle">distinct items hash to uniform points in [0,1] &mdash; duplicates land on top of each other</text>
+            <!-- hashed points (distinct items) -->
+            <g>
+              <!-- the three smallest, blue -->
+              <circle cx="92"  cy="120" r="6" class="dg-blue-f"/>
+              <circle cx="150" cy="120" r="6" class="dg-blue-f"/>
+              <circle cx="218" cy="120" r="7" class="dg-blue-f"/>
+              <!-- the rest, ink -->
+              <circle cx="300" cy="120" r="5" class="dg-ink"/>
+              <circle cx="352" cy="120" r="5" class="dg-ink"/>
+              <circle cx="430" cy="120" r="5" class="dg-ink"/>
+              <circle cx="486" cy="120" r="5" class="dg-ink"/>
+              <circle cx="548" cy="120" r="5" class="dg-ink"/>
+              <circle cx="604" cy="120" r="5" class="dg-ink"/>
+              <circle cx="648" cy="120" r="5" class="dg-ink"/>
+              <circle cx="686" cy="120" r="5" class="dg-ink"/>
+            </g>
+            <!-- mark v(k) -->
+            <line x1="218" y1="120" x2="218" y2="86" class="dg-edge-thin"/>
+            <text x="218" y="78" class="dg-label sm" text-anchor="middle" style="fill:var(--bau-blue); font-weight:700">v&#8323; &asymp; 0.27</text>
+            <!-- brace over the k smallest -->
+            <path d="M86 176 q 0 10 10 10 h 56 q 10 0 10 10 q 0 -10 10 -10 h 36 q 10 0 10 -10" class="dg-brace"/>
+            <text x="155" y="212" class="dg-label sm" text-anchor="middle">k = 3 smallest kept</text>
+            <!-- estimate -->
+            <text x="470" y="196" class="dg-label" style="font-weight:700">D&#770; = k / v&#8323; = 3 / 0.27 &asymp; 11 distinct</text>
+            <text x="470" y="218" class="dg-label sm">memory: just the k smallest hashes &mdash; O(k log m) bits</text>
+          </svg>
+          <figcaption><b>Figure 4 &mdash; estimate the crowd from the front row.</b> You never count the items; you watch where the <em>smallest few</em> hashes land and invert the spacing. Bigger <code class="inl">k</code> &rArr; steadier estimate (error <code class="inl">&sim;1/&radic;k</code>). This is the skeleton inside HyperLogLog, which dilutes it to a handful of bytes.</figcaption>
+        </figure>
+
+        <h3>Property testing &amp; the lower-bound mirror</h3>
+        <p>Sublinear <em>time</em> has its own discipline, <span class="term">property testing</span>: distinguish &ldquo;has property <code class="inl">P</code>&rdquo; from &ldquo;far from any object with <code class="inl">P</code>&rdquo; by inspecting a tiny random sample &mdash; testing sortedness, bipartiteness, or linearity (the BLR test, the seed of the PCP theorem). And the limits are proven with the same currency as the whole lecture: <em>reductions</em>. Streaming lower bounds &mdash; e.g. that <em>exact</em> distinct-counting needs <code class="inl">&Omega;(m)</code> memory &mdash; come by reducing communication problems like <code class="inl">INDEX</code> and <code class="inl">DISJOINTNESS</code> to the streaming task. The arrow that explains the wall is the same shape as in &sect;05.</p>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> a fallible oracle, used safely</div>
+      <h2>Algorithms with predictions</h2>
+      <div class="col">
+        <p>Worst-case analysis is a pessimist&rsquo;s contract: it judges you on the single nastiest input an adversary can invent, even though your real inputs have structure &mdash; structure a machine-learned model can often <em>predict</em>. The young field of <span class="term">learning-augmented algorithms</span> asks: can we accept a prediction, profit when it is good, and lose nothing when it is bad? The discipline is two guarantees, held simultaneously:</p>
+        <ul class="obj">
+          <li><strong>Consistency</strong> &mdash; when the prediction is perfect, performance approaches the optimum.</li>
+          <li><strong>Robustness</strong> &mdash; when the prediction is arbitrarily wrong, performance is still no worse than the best <em>prediction-free</em> guarantee.</li>
+        </ul>
+        <p>Between them sits <strong>smoothness</strong>: performance should degrade gracefully as the prediction error <code class="inl">&eta;</code> grows, not fall off a cliff. The art is a knob that trades consistency against robustness so you can choose how much to trust the oracle.</p>
+
+        <h3>Worked example: ski rental with a prediction</h3>
+        <p>The cleanest model in the field. You will ski for an unknown number of days <code class="inl">x</code>. Each day you either rent for <code class="inl">$1</code> or buy once for <code class="inl">$B</code> and ski free forever after. If you knew <code class="inl">x</code>, the optimum is trivial: <code class="inl">OPT = min(x, B)</code>. You don&rsquo;t. The classic deterministic strategy &mdash; rent until you have spent <code class="inl">$B</code>, then buy &mdash; never pays more than <code class="inl">2&middot;OPT</code>; the competitive ratio is&nbsp;2.</p>
+        <p>Now a model predicts <code class="inl">&ycirc;</code> days. Introduce a trust knob <code class="inl">&lambda; &isin; (0,1]</code> and play:</p>
+        <pre><code><span class="tok-kw">def</span> <span class="tok-fn">ski_rental_pred</span>(B, y_hat, x, lam):
+    <span class="tok-kw">if</span> y_hat &gt;= B:                  <span class="tok-com"># predicted "long" -> lean to buying early</span>
+        buy_day = <span class="tok-fn">ceil</span>(lam * B)
+    <span class="tok-kw">else</span>:                          <span class="tok-com"># predicted "short" -> lean to renting long</span>
+        buy_day = <span class="tok-fn">ceil</span>(B / lam)
+    <span class="tok-kw">return</span> x <span class="tok-kw">if</span> x &lt; buy_day <span class="tok-kw">else</span> (buy_day - <span class="tok-num">1</span>) + B</code></pre>
+
+        <p>The theorem (Purohit&ndash;Svitkina&ndash;Kumar, 2018): this strategy is <strong><code class="inl">(1+&lambda;)</code>-consistent</strong> and <strong><code class="inl">(1+1/&lambda;)</code>-robust</strong>. Watch the knob work:</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>The consistency&ndash;robustness trade-off, by knob setting</caption>
+            <thead>
+              <tr><th scope="col">&lambda;</th><th scope="col">Consistency (perfect prediction)</th><th scope="col">Robustness (adversarial prediction)</th><th scope="col">Reading</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">&rarr; 0</th><td class="good">&rarr; 1 (optimal)</td><td class="bad">&rarr; &infin;</td><td class="mid">total trust &mdash; brilliant if right, ruinous if wrong</td></tr>
+              <tr><th scope="row">1/2</th><td class="good">1.5</td><td class="mid">3</td><td class="mid">a sane middle</td></tr>
+              <tr><th scope="row">1</th><td class="mid">2</td><td class="good">2</td><td class="mid">ignores the prediction &mdash; the classic guarantee</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="4">As <code class="inl">&lambda;&rarr;1</code> you recover the prediction-free factor of 2; as <code class="inl">&lambda;&rarr;0</code> you bet the house on the oracle. You choose the exposure.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 720 330" role="img" aria-labelledby="sk-t sk-d">
+            <title id="sk-t">The consistency-robustness trade-off curve</title>
+            <desc id="sk-d">Two curves over the knob lambda from 0 to 1. Consistency, one plus lambda, rises from 1 to 2. Robustness, one plus one over lambda, falls from infinity toward 2. They meet near lambda equal to 1. A vertical marker at lambda one-half shows consistency 1.5 and robustness 3.</desc>
+            <!-- axes -->
+            <line x1="70" y1="280" x2="690" y2="280" class="dg-axis"/>
+            <line x1="70" y1="280" x2="70" y2="30" class="dg-axis"/>
+            <text x="380" y="314" class="dg-label" text-anchor="middle">trust knob &lambda;  (0 &rarr; 1)</text>
+            <text x="24" y="160" class="dg-label" text-anchor="middle" transform="rotate(-90 24 160)">competitive ratio</text>
+            <!-- y gridlines at ratio 1,2,3,4 -->
+            <g class="dg-grid">
+              <line x1="70" y1="250" x2="690" y2="250"/>
+              <line x1="70" y1="190" x2="690" y2="190"/>
+              <line x1="70" y1="130" x2="690" y2="130"/>
+              <line x1="70" y1="70"  x2="690" y2="70"/>
+            </g>
+            <g class="dg-label sm" text-anchor="end">
+              <text x="62" y="254">1</text><text x="62" y="194">2</text><text x="62" y="134">3</text><text x="62" y="74">4</text>
+            </g>
+            <!-- x ticks 0, .5, 1 (x from 70 to 690) -->
+            <g class="dg-label sm" text-anchor="middle">
+              <text x="70" y="298">0</text><text x="380" y="298">0.5</text><text x="690" y="298">1</text>
+            </g>
+            <!-- consistency 1+lambda : at lam=0 ->1 (y250), lam=1 ->2 (y190) -->
+            <line x1="70" y1="250" x2="690" y2="190" class="dg-curve-b"/>
+            <text x="540" y="214" class="dg-label" style="fill:var(--bau-blue); font-weight:700">consistency 1+&lambda;</text>
+            <!-- robustness 1+1/lambda : sampled points y = 280-60*(1+1/lam) ... map ratio r to y=310-60r -->
+            <!-- ratio: lam .2->6(off top), .3->4.33, .4->3.5, .5->3, .6->2.67, .7->2.43, .8->2.25, .9->2.11, 1->2 -->
+            <path d="M194 70 C 240 100, 300 130, 380 130 C 470 130, 560 175, 690 190" class="dg-curve-r"/>
+            <text x="250" y="64" class="dg-label" style="fill:var(--bau-red); font-weight:700">robustness 1+1/&lambda;</text>
+            <!-- marker at lam=.5 -->
+            <line x1="380" y1="280" x2="380" y2="130" class="dg-ghost"/>
+            <circle cx="380" cy="220" r="5" class="dg-blue-f"/>
+            <circle cx="380" cy="130" r="5" class="dg-red-f"/>
+            <text x="392" y="224" class="dg-label sm">1.5</text>
+            <text x="392" y="126" class="dg-label sm">3</text>
+          </svg>
+          <figcaption><b>Figure 5 &mdash; you cannot have both, so you dial.</b> Pushing <code class="inl">&lambda;</code> left buys consistency (trust) at the cost of robustness (safety); pushing right does the reverse. No setting beats the prediction-free 2 on <em>both</em> axes &mdash; the trade-off is the theorem, not a bug.</figcaption>
+        </figure>
+
+        <p>The same shape &mdash; predict, but cap your downside &mdash; now governs <span class="term">learned index structures</span> (a model guesses a key&rsquo;s position, a B-tree fallback bounds the miss), caching with predicted reuse distances, and scheduling with predicted job lengths. The discipline is always: name the prediction precisely, prove consistency, and <em>then</em> prove the robustness floor before you ship.</p>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> change the machine, redraw the boundary</div>
+      <h2>Quantum: a different model of the mechanizable</h2>
+      <div class="col">
+        <p>Every guarantee so far was measured against one machine &mdash; the classical word-RAM, a faithful stand-in for the Turing model. Quantum computing changes the machine. The unit of state is a <span class="term">qubit</span>, whose amplitudes can interfere, cancelling wrong answers and reinforcing right ones; measurement collapses the state to a classical outcome with probability equal to amplitude squared. The honest engineering question is not &ldquo;is it magic?&rdquo; but <em>which speedups are real, and how big?</em></p>
+
+        <h3>Grover&rsquo;s search &mdash; quadratic, and no more</h3>
+        <p>Searching an unstructured space of <code class="inl">N</code> candidates for the one that satisfies a checker takes <code class="inl">&Theta;(N)</code> classical queries. <span class="term">Grover&rsquo;s algorithm</span> does it in <code class="inl">O(&radic;N)</code>. The mechanism is <em>amplitude amplification</em>, and it is pure geometry. Work in the 2-D plane spanned by &ldquo;the marked answer&rdquo; and &ldquo;everything else.&rdquo; Start in the uniform superposition, which sits at a tiny angle <code class="inl">&theta;</code> off the &ldquo;everything-else&rdquo; axis, where <code class="inl">sin&nbsp;&theta; = 1/&radic;N</code>. Each Grover iteration is two reflections whose net effect is a <em>rotation by <code class="inl">2&theta;</code></em> toward the marked axis.</p>
+
+        <div class="eq" role="group" aria-label="Grover amplitude and iteration count">
+          <span class="lbl">amplitude after t iterations, and the budget</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mrow>
+              <mtext>amplitude(marked)</mtext><mo>=</mo><mi>sin</mi><mo>(</mo><mo>(</mo><mn>2</mn><mi>t</mi><mo>+</mo><mn>1</mn><mo>)</mo><mi>&theta;</mi><mo>)</mo>
+              <mspace width="1.4em"/><mo>&rArr;</mo><mspace width="0.6em"/>
+              <mi>t</mi><mo>&asymp;</mo><mfrac><mi>&pi;</mi><mn>4</mn></mfrac><msqrt><mi>N</mi></msqrt>
+            </mrow>
+          </math></div>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 720 360" role="img" aria-labelledby="gr-t gr-d">
+            <title id="gr-t">Grover amplitude amplification as rotation</title>
+            <desc id="gr-d">A quarter circle in the plane spanned by the bad axis horizontally and the good axis vertically. The state vector starts at a small angle theta off the bad axis and is shown rotating in steps of two-theta toward the good vertical axis, reaching it after about pi over four root N iterations.</desc>
+            <!-- axes -->
+            <line x1="80" y1="320" x2="640" y2="320" class="dg-axis"/>
+            <line x1="80" y1="320" x2="80" y2="40" class="dg-axis"/>
+            <text x="640" y="344" class="dg-label" text-anchor="end">|bad&#10217;  (the N&minus;1 wrong answers)</text>
+            <text x="96" y="52" class="dg-label">|good&#10217;</text>
+            <!-- quarter arc radius 250 center (80,320) -->
+            <path d="M330 320 A 250 250 0 0 0 80 70" class="dg-ghost"/>
+            <!-- initial state vector at small angle theta ~ 12deg -->
+            <line x1="80" y1="320" x2="80" y2="320" />
+            <!-- vectors: angles 12, 36, 60, 84 deg (theta, 3theta, 5theta, 7theta) radius 250 -->
+            <!-- end = (80 + 250 cos a, 320 - 250 sin a) -->
+            <!-- 12deg: (324.6, 268) -->
+            <line x1="80" y1="320" x2="325" y2="268" class="dg-curve-b"/>
+            <text x="332" y="266" class="dg-label sm" style="fill:var(--bau-blue)">start: angle &theta;, sin&theta;=1/&radic;N</text>
+            <!-- 36deg: (282.3, 173.1) -->
+            <line x1="80" y1="320" x2="282" y2="173" class="dg-curve-i"/>
+            <!-- 60deg: (205, 103.5) -->
+            <line x1="80" y1="320" x2="205" y2="104" class="dg-curve-i"/>
+            <!-- 84deg: (106.1, 71.4) -->
+            <line x1="80" y1="320" x2="106" y2="71" class="dg-curve-r"/>
+            <text x="118" y="80" class="dg-label sm" style="fill:var(--bau-red)">after &asymp;(&pi;/4)&radic;N steps: near |good&#10217;</text>
+            <!-- rotation arc annotation between first two -->
+            <path d="M150 296 A 70 70 0 0 0 138 258" class="dg-arc" marker-end="url(#ar2)"/>
+            <defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--bau-red)"/></marker></defs>
+            <text x="176" y="252" class="dg-label sm" style="fill:var(--bau-red); font-weight:700">+2&theta; per iteration</text>
+          </svg>
+          <figcaption><b>Figure 6 &mdash; search as a slow turn.</b> Each query rotates the state a fixed <code class="inl">2&theta;</code> toward the answer. Because <code class="inl">&theta;&sim;1/&radic;N</code>, you need <code class="inl">&sim;&radic;N</code> turns &mdash; not <code class="inl">N</code>. Crucially, <em>overshooting</em> rotates you back past the answer, so more iterations is not better.</figcaption>
+        </figure>
+
+        <p>And here is the sobering boundary: the <span class="term">BBBV theorem</span> proves <em>any</em> quantum algorithm needs <code class="inl">&Omega;(&radic;N)</code> queries for unstructured search. Grover is optimal &mdash; the speedup is <em>exactly</em> quadratic, never more. Applied to an NP-complete problem by brute-forcing its <code class="inl">2<sup>n</sup></code> certificates, Grover gives <code class="inl">2<sup>n/2</sup></code> &mdash; still exponential. <strong>Quantum does not collapse NP.</strong></p>
+
+        <h3>Shor&rsquo;s factoring &mdash; exponential, but only on structure</h3>
+        <p>Where quantum genuinely stuns is <em>structured</em> problems. <span class="term">Shor&rsquo;s algorithm</span> factors an <code class="inl">n</code>-bit integer in <code class="inl">poly(n)</code> time, against the best known classical method&rsquo;s sub-exponential <code class="inl">exp(&Otilde;(n<sup>1/3</sup>))</code>. It reduces factoring to finding the <em>period</em> of <code class="inl">a<sup>r</sup> mod N</code>, and the quantum Fourier transform reads that period off interfering amplitudes in one stroke. This is why RSA and elliptic-curve cryptography are on the clock &mdash; and why &ldquo;post-quantum&rdquo; cryptography exists. But note the fine print: the exponential win rides on <em>hidden periodicity</em>, an abelian structure. Factoring sits in <code class="inl">NP &cap; coNP</code> and is not believed NP-complete. Quantum&rsquo;s exponential speedups are sharp scalpels for structured problems, not a hammer for all of NP.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>Two quantum algorithms &mdash; and the size of the win</caption>
+            <thead>
+              <tr><th scope="col">Algorithm</th><th scope="col">Problem</th><th scope="col">Classical best</th><th scope="col">Quantum</th><th scope="col">Speedup</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Grover</th><td>Unstructured search of <code class="inl">N</code></td><td>&Theta;(N)</td><td class="good">&Theta;(&radic;N)</td><td class="mid">quadratic (proven tight)</td></tr>
+              <tr><th scope="row">Shor</th><td>Factoring / discrete log</td><td>exp(&Otilde;(n<sup>1/3</sup>))</td><td class="good">&Otilde;(n<sup>2</sup>)</td><td class="good">exponential (structured)</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="5">Containments: <code class="inl">P &sube; BPP &sube; BQP &sube; PSPACE</code>. <code class="inl">BQP</code> vs <code class="inl">NP</code> is believed <em>incomparable</em> &mdash; neither contains the other, as far as anyone can prove.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>So the quantum model does not grow the circle of the efficiently mechanizable into a bigger circle around the old one. It draws a circle of a <em>different shape</em> &mdash; reaching the structured island of factoring that classical methods cannot, while still stopping short of the NP-complete crescent. Changing the machine redraws the map; it does not erase the frontier. That, to a formalist, is the deepest lesson of the day: &ldquo;efficient&rdquo; is always relative to a declared model, and naming the model is half the theorem.</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>At the frontier the errors are not bugs in code &mdash; they are bugs in <em>belief</em>. Each one below is a place where a confident, plausible sentence is quietly false. The formal lens flags every one as a dropped quantifier or an unstated model.</p>
+
+        <h3>&ldquo;Quantum computers solve NP-complete problems instantly&rdquo;</h3>
+        <p>The single most common myth. Grover gives only a <em>quadratic</em> speedup, proven optimal by BBBV, so brute-forcing an NP-complete problem goes from <code class="inl">2<sup>n</sup></code> to <code class="inl">2<sup>n/2</sup></code> &mdash; still exponential. Shor&rsquo;s exponential magic needs the hidden-periodicity structure of factoring; general SAT has no such structure to exploit. <code class="inl">BQP</code> is not believed to contain <code class="inl">NP</code>.</p>
+
+        <h3>&ldquo;<code class="inl">P &ne; NP</code> means hard instances are unsolvable&rdquo;</h3>
+        <p>It is an <em>asymptotic, worst-case</em> statement: no single algorithm beats polynomial on <em>every</em> input family as <code class="inl">n&rarr;&infin;</code>. Real SAT solvers dispatch industrial instances with millions of variables daily. Hardness lives in carefully built worst cases, not in your particular input. Conversely, &ldquo;polynomial&rdquo; is not a synonym for &ldquo;fast&rdquo;: <code class="inl">n<sup>100</sup></code> is in P and useless, while <code class="inl">1.0001<sup>n</sup></code> beats it until <code class="inl">n</code> is astronomical.</p>
+
+        <h3>Treating a conditional lower bound as a proven one</h3>
+        <p>&ldquo;Edit distance needs <code class="inl">n<sup>2</sup></code>&rdquo; is shorthand for &ldquo;<em>unless SETH fails</em>.&rdquo; SETH is a <em>conjecture</em> &mdash; unproven, and already <em>dented</em> in special cases. If SETH falls, the whole edit-distance wall falls with it. Always carry the antecedent: a fine-grained lower bound is an implication, not a theorem about the problem in isolation. Quoting it as unconditional is the field&rsquo;s most common overstatement.</p>
+
+        <h3>Reading the OV / SETH regime wrong</h3>
+        <p>Orthogonal Vectors is hard only when <code class="inl">d = &omega;(log n)</code>. At constant or tiny <code class="inl">d</code> it is near-linear by pattern-bucketing (&sect;06). Likewise, do not confuse <span class="term">ETH</span> (3-SAT needs <code class="inl">2<sup>&Omega;(n)</sup></code>) with the far stronger <span class="term">SETH</span> (the base of the exponent cannot drop below 2). They imply different things; a bound that needs SETH cannot be claimed from ETH.</p>
+
+        <h3>Forgetting that sketches are randomized approximations</h3>
+        <p>A KMV or HyperLogLog count is an <em>estimate</em> with a failure probability, not a fact. Use it where the customer asked for &ldquo;the exact number of unique users for billing&rdquo; and you have shipped a bug. Boost confidence by the <em>median trick</em> &mdash; run independent copies and take the median &mdash; and state the <code class="inl">(&epsilon;,&delta;)</code> guarantee. And every sampling bound here assumes a well-behaved (often hash-randomized) stream; an <em>adversarial</em> stream that reacts to your sketch can break it.</p>
+
+        <h3>Shipping a consistent algorithm with no robustness floor</h3>
+        <p>A learning-augmented algorithm that trusts its predictor completely (<code class="inl">&lambda;&rarr;0</code>) is dazzling on clean data and catastrophic under distribution shift &mdash; exactly when the model is most wrong. Never deploy the consistency half without proving the robustness half. And keep the accounting honest: the <em>competitive ratio</em> (vs the offline optimum) and the <em>prediction error</em> <code class="inl">&eta;</code> are different quantities; conflating them hides where the cost is coming from.</p>
+
+        <h3>Auditing a P-vs-NP &ldquo;proof&rdquo; on the algebra instead of the method</h3>
+        <p>When you meet a claimed resolution, the productive question is &ldquo;which barrier &mdash; relativization, natural proofs, algebrization &mdash; does it claim to evade, and how?&rdquo; A technique that relativizes <em>cannot</em> separate the classes no matter how intricate the manipulation. Check the method against the meta-theorems first; you will save yourself a week of chasing symbols.</p>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Orthogonal Vectors &mdash; and the SETH lens</h3>
+          <p class="meta">fine-grained &middot; the bridge problem &middot; implement + reason</p>
+          <p>Implement <code class="inl">has_orthogonal_pair(A, B) -&gt; bool</code>, where <code class="inl">A</code> and <code class="inl">B</code> are lists of <code class="inl">n</code> binary vectors each, all of dimension <code class="inl">d</code>; return whether some <code class="inl">a&isin;A, b&isin;B</code> satisfy <code class="inl">&#10216;a,b&#10217;=0</code> (no coordinate where both are&nbsp;1). Constraints: <code class="inl">1&le;n&le;5000</code>, <code class="inl">1&le;d&le;30</code>. Example: <code class="inl">A=[[1,0,1],[1,1,0]]</code>, <code class="inl">B=[[0,1,0],[1,0,1]] &rarr; True</code> (<code class="inl">a=[1,0,1]</code> with <code class="inl">b=[0,1,0]</code>). Give the <code class="inl">O(n<sup>2</sup>d)</code> baseline. Then, in writing: (a) state the exact running time that, if achieved for all <code class="inl">d=&Theta;(log n)</code>, would refute SETH, and sketch the CNF-SAT&nbsp;&rarr;&nbsp;OV split reduction in your own words; (b) give a method that is fast when <code class="inl">d</code> is small (hint: there are only <code class="inl">2<sup>d</sup></code> possible vectors &mdash; count patterns), and explain why it does <em>not</em> contradict the conjecture.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>3SUM and a 3SUM-hard cousin</h3>
+          <p class="meta">fine-grained &middot; the n&sup2; barrier &middot; two equivalent problems</p>
+          <p>Implement <code class="inl">three_sum_zero(nums) -&gt; bool</code>: decide whether three (distinct-index) elements sum to&nbsp;0, in <code class="inl">O(n<sup>2</sup>)</code> time and <code class="inl">O(1)</code> extra space beyond a sort. Constraints: <code class="inl">3&le;n&le;3000</code>, values fit in 64 bits. Example: <code class="inl">[-4,1,3,5,-1] &rarr; True</code> (<code class="inl">-4+1+3</code>). Then solve the <em>3-term arithmetic progression</em> variant <code class="inl">has_3ap(A) -&gt; bool</code>: are there indices <code class="inl">i&lt;j&lt;k</code> with <code class="inl">A[i]+A[k]=2&middot;A[j]</code>, also in <code class="inl">O(n<sup>2</sup>)</code>. In writing, exhibit the reduction <em>both</em> ways between these problems (so that a truly sub-quadratic algorithm for one would give one for the other), and state what that says about the prospects of an <code class="inl">O(n<sup>1.9</sup>)</code> solution to either.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>One pass, tiny memory: majority + distinct-count</h3>
+          <p class="meta">streaming &middot; Boyer&ndash;Moore + KMV &middot; LeetCode 169 flavour</p>
+          <p>(a) Implement <code class="inl">majority(stream) -&gt; int | None</code> in a single pass and <code class="inl">O(1)</code> extra memory using the Boyer&ndash;Moore vote; because a majority may not exist, specify the <em>second pass</em> that verifies the candidate, and state the invariant that makes one pass correct when a strict majority is present. (b) Implement <code class="inl">estimate_distinct(stream, k, h) -&gt; float</code> using the KMV sketch: keep the <code class="inl">k</code> smallest <em>distinct</em> hash values from <code class="inl">h:&nbsp;item&rarr;[0,1)</code> and return <code class="inl">k / v<sub>(k)</sub></code>. State the memory in bits and the expected relative error as a function of <code class="inl">k</code>, and explain why <em>exact</em> distinct-counting cannot match that memory. Example stream: <code class="inl">[7,7,3,7,9,7] &rarr;</code> majority <code class="inl">7</code> (4 of 6); three distinct values.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Ski rental with a prediction</h3>
+          <p class="meta">algorithms-with-predictions &middot; consistency vs robustness &middot; prove + tune</p>
+          <p>Implement <code class="inl">ski_rental_pred(B, y_hat, x, lam) -&gt; int</code> returning the realized cost of the <code class="inl">&lambda;</code>-parameterized strategy (buy on day <code class="inl">&lceil;&lambda;B&rceil;</code> if <code class="inl">&ycirc;&ge;B</code>, else on day <code class="inl">&lceil;B/&lambda;&rceil;</code>) when the true number of ski days is <code class="inl">x</code>. Constraints: <code class="inl">B&ge;2</code>, <code class="inl">x&ge;1</code>, <code class="inl">&lambda;&isin;(0,1]</code>. Example: <code class="inl">B=100, &ycirc;=300, x=51, &lambda;=0.5 &rarr; 149</code> (rent 49, then buy). Then prove the <code class="inl">(1+&lambda;)</code>-consistency and <code class="inl">(1+1/&lambda;)</code>-robustness bounds, choose <code class="inl">&lambda;</code> so robustness is at most&nbsp;3 and report the resulting consistency, and trace <code class="inl">B=100</code> against one near-perfect and one wildly-wrong prediction to show the two bounds binding.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">5</div>
+        <div>
+          <h3>Grover&rsquo;s budget &mdash; and why not NP</h3>
+          <p class="meta">quantum &middot; query counting &middot; analysis</p>
+          <p>An unstructured search space has <code class="inl">N</code> candidates and an oracle that recognizes the one marked answer. (a) State the number of oracle queries Grover uses to find it with constant success probability, and explain via the BBBV lower bound why no quantum algorithm can use <code class="inl">o(&radic;N)</code> queries. (b) A symmetric cipher has a 128-bit key; compute the effective number of Grover iterations to recover it by brute force, and state the &ldquo;quantum-safe&rdquo; key length that restores 128-bit security. (c) In one paragraph, explain why this quadratic speedup does <em>not</em> let a quantum computer solve 3-SAT &ldquo;instantly,&rdquo; contrasting it with Shor&rsquo;s <em>exponential</em> speedup on factoring &mdash; and name the structural property factoring has that 3-SAT lacks.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> recap &amp; what&rsquo;s next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>Every frontier in this lecture is a <em>reduction</em> &mdash; a structure-preserving arrow carrying hardness or speed from one place to another &mdash; and every honest claim names the model and the conjecture it rests on.</strong> P vs NP is the open seam between checking and finding, kept open by three barriers that forbid our usual proofs. Fine-grained complexity transfers SETH, 3SUM, and APSP onto the stuck <code class="inl">n<sup>2</sup></code> and <code class="inl">n<sup>3</sup></code> problems, explaining the walls. Sublinear and streaming algorithms trade exactness for a single pass and logarithmic memory, with lower bounds proved &mdash; again &mdash; by reduction. Algorithms-with-predictions fold a fallible oracle in while proving a robustness floor. And quantum changes the machine: quadratic for unstructured search (provably no more), exponential only for structured problems. The boundary of the mechanizable is not a wall of our ignorance; it is a map whose gaps we can now name precisely.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">end of the arc &middot; lecture 23 of 23</span>
+            <div class="ttl">You have reached the edge of the syllabus &mdash; now the edge of the field</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8734;</span>
+        </div>
+        <p style="margin-top:1em">This was the last station on the line. From <a class="inline" href="dsa-00-cost-of-a-computation.html">the cost of a computation</a> to the conjectures that bound it, the through-line never changed: find the formal skeleton, name the resource, and prove against a model. What lies past this page is not another lecture &mdash; it is the open literature, where SETH might fall next year, a fine-grained reduction might explain your own stuck <code class="inl">n<sup>2</sup></code>, and the quantum map is still being drawn. Go read a paper from the frontier and audit its method. And come back to consolidate &mdash; the whole arc rewards a second pass.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-22-randomness-as-a-design-tool.html">← Previous study</a><a href="index.html">All studies →</a></nav>
+</body>
+</html>

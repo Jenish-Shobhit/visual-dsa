@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Randomness as a Design Tool: Skip Lists, Treaps, Bloom Filters &amp; Karger's Cut</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:18ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.7rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.3rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant); vertical-align:top}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.08em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue-f{fill:var(--bau-blue)} .dg-red-f{fill:var(--bau-red)} .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-label{font-family:var(--font-mono); font-size:13px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:11px; fill:var(--on-surface-variant)}
+  .dg-cap{font-family:var(--font-display); font-size:14px; font-weight:600; fill:var(--on-surface)}
+  /* generic strokes */
+  .dg-edge{stroke:var(--bau-ink); stroke-width:2.5; fill:none}
+  .dg-edge-thin{stroke:var(--bau-ink); stroke-width:2; fill:none}
+  .dg-ghost{stroke:var(--on-surface-variant); stroke-width:2; stroke-dasharray:5 5; fill:none}
+  .dg-path{stroke:var(--bau-red); stroke-width:3.5; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .dg-axis{stroke:var(--bau-ink); stroke-width:2.5}
+  /* skip-list nodes */
+  .sl-node{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2}
+  .sl-node.on{fill:color-mix(in oklab,var(--bau-red) 14%,var(--surface)); stroke:var(--bau-red); stroke-width:2.5}
+  .sl-key{font-family:var(--font-mono); font-size:13px; font-weight:700; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
+  /* treap / graph nodes */
+  .dg-node{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node.root{fill:color-mix(in oklab,var(--bau-blue) 16%,var(--surface)); stroke:var(--bau-blue)}
+  .dg-node.merge{fill:color-mix(in oklab,var(--bau-yellow) 30%,var(--surface)); stroke:var(--bau-ink)}
+  .dg-nt{font-family:var(--font-mono); font-size:15px; font-weight:700; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
+  .dg-prio{font-family:var(--font-mono); font-size:11px; fill:var(--bau-red); text-anchor:middle; font-weight:700}
+  /* bloom bits */
+  .bit{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2}
+  .bit.set{fill:var(--bau-blue)}
+  .bit-i{font-family:var(--font-mono); font-size:11px; fill:var(--on-surface-variant); text-anchor:middle}
+  .bit-v{font-family:var(--font-mono); font-size:14px; font-weight:700; text-anchor:middle; dominant-baseline:central}
+  .arc-cat{stroke:var(--bau-blue); stroke-width:2; fill:none}
+  .arc-dog{stroke:var(--bau-red); stroke-width:2; fill:none}
+  .arc-q{stroke:var(--bau-ink); stroke-width:2; fill:none; stroke-dasharray:4 3}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">22 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>22</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="220" height="170" viewBox="0 0 220 170" aria-hidden="true">
+    <!-- a coin mid-flip over a branching structure: randomness deciding shape -->
+    <path d="M14 150 L110 150" stroke="var(--bau-ink)" stroke-width="3"/>
+    <!-- a self-balancing tree, drawn by chance -->
+    <circle cx="62" cy="60" r="13" class="dg-blue-f"/>
+    <circle cx="34" cy="108" r="10" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <path d="M78 96 L102 124 L54 124 Z" class="dg-red-f"/>
+    <line x1="62" y1="73" x2="34" y2="98"  stroke="var(--bau-ink)" stroke-width="2"/>
+    <line x1="62" y1="73" x2="78" y2="100" stroke="var(--bau-ink)" stroke-width="2"/>
+    <!-- the coin -->
+    <circle cx="168" cy="52" r="30" fill="none" stroke="var(--bau-ink)" stroke-width="3"/>
+    <path d="M168 22 a30 30 0 0 1 0 60 Z" class="dg-blue-f" opacity="0.9"/>
+    <text x="151" y="58" font-family="var(--font-display)" font-size="22" font-weight="700" fill="var(--bau-ink)">H</text>
+    <text x="173" y="58" font-family="var(--font-display)" font-size="22" font-weight="700" fill="#fff">T</text>
+    <path d="M150 100 q18 22 36 0" fill="none" stroke="var(--bau-red)" stroke-width="2.5" stroke-dasharray="3 4"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 22</span> randomness as a first-class design tool</div>
+    <h1>Flip Your Own Coins</h1>
+    <p class="lede col">A balanced search tree is a marvel of bookkeeping &mdash; colours, rotations, invariants restored after every insert, hundreds of lines that exist only to defeat an adversary who hands you keys in the worst possible order. This lecture asks a quieter, stranger question: what if you simply <em>refused</em> to let the adversary choose the order? Not by sorting, not by checking &mdash; by injecting your own randomness, so deep into the structure that the worst case has nowhere left to hide.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A coin in place of a thousand lines.</strong> A <span class="term">treap</span> is a binary search tree that does no balancing at all. You hand each key a random number and insist the tree obey the heap property on those numbers. That single rule &mdash; no rotations chosen by you, no cases, no colours &mdash; forces the tree's expected height to <code class="inl">O(log&nbsp;n)</code> on <em>every</em> input. A <span class="term">skip list</span> reaches the same guarantee with nothing but a stack of linked lists and a coin per node.</p>
+        <p style="margin-bottom:0">The adversary still picks the keys. But the keys no longer pick the shape &mdash; <em>your coins do</em>, and the adversary cannot see them. That relocation of uncertainty, from the input you cannot control to the coins they cannot read, is the entire subject. By the end you will have built four structures on it and proved, each time, that &ldquo;probably&rdquo; is a guarantee you can bank.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>The adversary &amp; the coin</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>Las Vegas vs Monte Carlo</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>Skip lists</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Treaps</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>Bloom filters</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>Karger&rsquo;s min-cut</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>The concentration toolkit</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Where it breaks</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Practice</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> move the uncertainty you cannot remove</div>
+      <h2>The adversary, and the coin</h2>
+      <div class="col">
+        <p>I want to begin where I always do &mdash; by writing the guarantee down precisely, because the shape of the quantifier is the whole story. A deterministic data structure promises something of the form:</p>
+
+        <div class="eq">
+          <span class="lbl">the deterministic contract</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mtext>for&#xA0;all&#xA0;inputs&#xA0;</mtext><mi>I</mi><mo>:</mo><mspace width="0.5em"/>
+            <mi>cost</mi><mo stretchy="false">(</mo><mi>I</mi><mo stretchy="false">)</mo>
+            <mo>&#x2264;</mo><mi>f</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo>
+          </math></div>
+        </div>
+
+        <p>The universal quantifier <code class="inl">&forall;I</code> is generous &mdash; and it is exactly the handle an adversary grips. A balanced BST spends its complexity buying that <code class="inl">&forall;</code>: it must restore an invariant after every operation precisely because the next key could be the one that unbalances it. The cost of a worst-case guarantee is the machinery that anticipates the worst case.</p>
+
+        <p>Randomization performs a substitution that looks like sleight of hand and is in fact a change in the <em>logical structure</em> of the claim. We introduce a private source of bits &mdash; coin flips the algorithm makes and the input never sees &mdash; and the contract becomes:</p>
+
+        <div class="eq">
+          <span class="lbl">the randomized contract</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mtext>for&#xA0;all&#xA0;inputs&#xA0;</mtext><mi>I</mi><mo>:</mo><mspace width="0.5em"/>
+            <msub><mi>&#x1D53C;</mi><mi>r</mi></msub><mo stretchy="false">[</mo>
+            <mi>cost</mi><mo stretchy="false">(</mo><mi>I</mi><mo>,</mo><mi>r</mi><mo stretchy="false">)</mo>
+            <mo stretchy="false">]</mo><mo>&#x2264;</mo><mi>f</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo>
+          </math></div>
+        </div>
+
+        <p>The adversary still chooses <code class="inl">I</code> &mdash; the worst input it likes &mdash; but the expectation is taken over <code class="inl">r</code>, <em>our</em> randomness, which is sealed off from its choice. There is no input that is &ldquo;bad for the coins,&rdquo; because the coins are flipped after the input is fixed and independently of it. The worst case has not been beaten by cleverness; it has been <strong>made unreachable</strong> by quantifier order. This is the formal heart of the whole lecture, and it is worth a slogan.</p>
+
+        <div class="pull col">&ldquo;A deterministic structure fears the worst input. A randomized one has <span>no</span> worst input &mdash; only, occasionally, an unlucky run.&rdquo;</div>
+
+        <p>Notice what this costs and what it buys. It buys radical simplicity: a treap has no balance cases because it delegates balance to chance; a skip list has no rotations because the same coin that builds it keeps it shallow. It costs certainty: the guarantee is now <em>in expectation</em>, or <em>with high probability</em>, and we owe a proof &mdash; a <span class="term">concentration bound</span> &mdash; that the unlucky runs are rare enough to ignore. The four structures ahead are four answers to one design question: <em>where do I inject the randomness, and which inequality pays the debt?</em></p>
+
+        <div class="stats" aria-label="Four headline numbers from this lecture">
+          <div class="stat lead"><span class="big">O(log&nbsp;n)</span><span class="lab">expected skip-list / treap search &mdash; with no balancing logic at all</span></div>
+          <div class="stat"><span class="big">&asymp;10</span><span class="lab">bits per item for a 1% Bloom false-positive &mdash; whatever the keys are</span></div>
+          <div class="stat"><span class="big">0</span><span class="lab">false negatives: the Bloom filter&rsquo;s error is strictly one-sided</span></div>
+          <div class="stat"><span class="big">2&frasl;n&sup2;</span><span class="lab">that one run of Karger finds a global min cut &mdash; then amplify</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>State</strong> the <span class="term">Las Vegas</span> / <span class="term">Monte Carlo</span> distinction precisely &mdash; which of {correctness, running time} is fixed and which is the random variable &mdash; and convert between them.</li>
+          <li><strong>Build</strong> a skip list from a plain sorted list, and prove via the backward-walk recurrence that its expected search cost is <code class="inl">O(log&nbsp;n)</code>, with a union-bound argument that its height is <code class="inl">O(log&nbsp;n)</code> with high probability.</li>
+          <li><strong>Define</strong> a treap, prove the priorities determine a <em>unique</em> tree, and recognise that its shape <em>is</em> the recursion tree of randomized quicksort &mdash; inheriting <code class="inl">O(log&nbsp;n)</code> expected depth from an analysis you already own.</li>
+          <li><strong>Derive</strong> the Bloom-filter false-positive rate <code class="inl">(1-e^{-kn/m})^k</code>, find the optimal number of hashes <code class="inl">k=(m/n)\ln2</code>, and explain why the error is strictly one-sided.</li>
+          <li><strong>Run</strong> Karger&rsquo;s contraction algorithm, prove a fixed min cut survives with probability <code class="inl">&ge;2/(n(n-1))</code>, and amplify a <code class="inl">2/n&sup2;</code> success into high probability &mdash; and read off the corollary that a graph has at most <code class="inl">\binom{n}{2}</code> distinct min cuts.</li>
+          <li><strong>Choose</strong> the right concentration inequality &mdash; Markov, Chebyshev, Chernoff, union bound &mdash; to turn each &ldquo;probably&rdquo; into a deployable guarantee.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>Two engines from earlier in the course are re-purposed here, and one toolkit is the currency the whole lecture spends. If you can take an expectation by linearity, bound a tail with a union bound, and recall how randomized quicksort&rsquo;s recursion is analysed, you are ready.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-05-probability-for-algorithms.html">probability: expectation &amp; concentration</a>
+          <a class="chip" href="dsa-08-hashing-and-expected-constant-access.html">hashing</a>
+          <a class="chip" href="dsa-07-balanced-search-trees.html">balanced search trees</a>
+          <a class="chip" href="dsa-09-partial-order-is-enough-heaps-and-priority-queues.html">heaps</a>
+        </div>
+        <p style="margin-top:1em">In particular, hold <a class="inline" href="dsa-05-probability-for-algorithms.html">Lecture&nbsp;5</a> close: the harmonic-sum analysis of randomized quicksort reappears, almost verbatim, as the depth analysis of a treap. We are about to collect on an old proof.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> two contracts, and how to trade between them</div>
+      <h2>Las Vegas vs Monte Carlo</h2>
+      <div class="col">
+        <p>Every randomized algorithm fixes one of two things and lets the other wobble. The discipline is to know, always, <em>which</em>.</p>
+        <ul class="obj">
+          <li><strong>Las Vegas.</strong> The output is <em>always correct</em>; the running time is the random variable. You bound it in expectation (or with high probability) &mdash; &ldquo;never wrong, sometimes slow.&rdquo; Randomized quicksort, skip lists, and treaps are Las Vegas: whatever the coins say, a search returns the right answer; only its <em>length</em> varies.</li>
+          <li><strong>Monte Carlo.</strong> The running time is <em>fixed</em>; the output is correct only with some probability <code class="inl">&ge;p</code> &mdash; &ldquo;always fast, sometimes wrong.&rdquo; Bloom filters and Karger&rsquo;s algorithm are Monte Carlo. Their error is <span class="term">one-sided</span>, which is the kind worth having: a Bloom filter never misses a member it stored, and Karger never reports a cut smaller than one that truly exists.</li>
+        </ul>
+
+        <figure>
+          <svg viewBox="0 0 760 286" role="img" aria-labelledby="lvmc-t lvmc-d">
+            <title id="lvmc-t">Las Vegas versus Monte Carlo</title>
+            <desc id="lvmc-d">Two cards. The Las Vegas card fixes correctness as always true and shows three runs of different, variable lengths for the running time. The Monte Carlo card fixes the running time as three equal-length runs and shows correctness as a probability of at least p, with one run shaded as an error.</desc>
+            <!-- LAS VEGAS card -->
+            <rect x="20" y="20" width="340" height="246" rx="14" fill="var(--surface)" stroke="var(--bau-blue)" stroke-width="2.5"/>
+            <rect x="20" y="20" width="340" height="36" rx="14" fill="var(--bau-blue)"/>
+            <rect x="20" y="40" width="340" height="16" fill="var(--bau-blue)"/>
+            <text x="40" y="44" font-family="var(--font-display)" font-size="17" font-weight="700" fill="#fff">LAS VEGAS</text>
+            <text x="335" y="44" text-anchor="end" font-family="var(--font-mono)" font-size="11" fill="#dbe6ff">never wrong &middot; sometimes slow</text>
+            <!-- correctness row: fixed -->
+            <text x="40" y="86" class="dg-label sm">correctness</text>
+            <circle cx="300" cy="82" r="13" class="dg-blue-f"/>
+            <path d="M293 82 l5 6 l10 -13" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="40" y="104" class="dg-cap" fill="var(--bau-ink)">always correct</text>
+            <line x1="40" y1="118" x2="340" y2="118" class="dg-edge-thin" opacity="0.5"/>
+            <!-- runtime row: variable -->
+            <text x="40" y="146" class="dg-label sm">running time (3 runs)</text>
+            <rect x="40" y="158" width="150" height="16" rx="8" fill="var(--bau-yellow)" stroke="var(--bau-ink)" stroke-width="1.5"/>
+            <rect x="40" y="184" width="270" height="16" rx="8" fill="var(--bau-yellow)" stroke="var(--bau-ink)" stroke-width="1.5"/>
+            <rect x="40" y="210" width="96"  height="16" rx="8" fill="var(--bau-yellow)" stroke="var(--bau-ink)" stroke-width="1.5"/>
+            <text x="40" y="248" class="dg-label sm">time is the random variable; bound &#x1D53C;[T]</text>
+
+            <!-- MONTE CARLO card -->
+            <rect x="400" y="20" width="340" height="246" rx="14" fill="var(--surface)" stroke="var(--bau-red)" stroke-width="2.5"/>
+            <rect x="400" y="20" width="340" height="36" rx="14" fill="var(--bau-red)"/>
+            <rect x="400" y="40" width="340" height="16" fill="var(--bau-red)"/>
+            <text x="420" y="44" font-family="var(--font-display)" font-size="17" font-weight="700" fill="#fff">MONTE CARLO</text>
+            <text x="715" y="44" text-anchor="end" font-family="var(--font-mono)" font-size="11" fill="#ffe0d8">always fast &middot; sometimes wrong</text>
+            <!-- runtime row: fixed -->
+            <text x="420" y="86" class="dg-label sm">running time (3 runs)</text>
+            <rect x="420" y="96" width="200" height="14" rx="7" fill="var(--bau-blue)"/>
+            <rect x="420" y="116" width="200" height="14" rx="7" fill="var(--bau-blue)"/>
+            <rect x="420" y="136" width="200" height="14" rx="7" fill="var(--bau-blue)"/>
+            <text x="632" y="126" class="dg-label sm">fixed</text>
+            <line x1="420" y1="160" x2="720" y2="160" class="dg-edge-thin" opacity="0.5"/>
+            <!-- correctness row: probability -->
+            <text x="420" y="186" class="dg-label sm">correctness (per run)</text>
+            <circle cx="455" cy="214" r="13" class="dg-blue-f"/><path d="M448 214 l5 6 l10 -13" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="495" cy="214" r="13" class="dg-blue-f"/><path d="M488 214 l5 6 l10 -13" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="535" cy="214" r="13" fill="none" stroke="var(--bau-red)" stroke-width="2.6"/><path d="M529 208 l12 12 M541 208 l-12 12" stroke="var(--bau-red)" stroke-width="2.6" stroke-linecap="round"/>
+            <text x="560" y="218" class="dg-label sm">correct w.p. &#x2265; p</text>
+            <text x="420" y="250" class="dg-label sm">amplify: t runs &#x2192; error &#x2264; (1&#x2212;p)<tspan font-size="9" dy="-4">t</tspan></text>
+          </svg>
+          <figcaption><b>The two contracts.</b> Las Vegas fixes the answer and lets time vary; Monte Carlo fixes time and lets the answer be a probability. Both are honest &mdash; provided you never confuse which one you are holding.</figcaption>
+        </figure>
+
+        <h3>Trading one for the other</h3>
+        <p>The two contracts are convertible, and the conversions are pure formal moves &mdash; no new idea, just Markov&rsquo;s inequality in one direction and a verifier in the other.</p>
+
+        <div class="eq">
+          <span class="lbl">Las Vegas &#x2192; Monte Carlo, by Markov</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>&#x1D53C;</mi><mo stretchy="false">[</mo><mi>T</mi><mo stretchy="false">]</mo><mo>=</mo><mi>&#x3BC;</mi>
+            <mspace width="1em"/><mo>&#x27F9;</mo><mspace width="1em"/>
+            <mi>Pr</mi><mo stretchy="false">[</mo><mi>T</mi><mo>&gt;</mo><mn>2</mn><mi>&#x3BC;</mi><mo stretchy="false">]</mo>
+            <mo>&#x2264;</mo><mfrac><mn>1</mn><mn>2</mn></mfrac>
+          </math></div>
+        </div>
+        <p>Run the Las Vegas algorithm for a hard budget of <code class="inl">2&micro;</code> steps; if it has not finished, halt and output &ldquo;don&rsquo;t know.&rdquo; The time is now fixed and the failure probability is at most <code class="inl">&frac12;</code> &mdash; a Monte Carlo algorithm. Conversely, a Monte Carlo algorithm whose answer you can <em>check</em> in polynomial time becomes Las Vegas by re-running until the check passes; the expected number of trials is <code class="inl">1/p</code>.</p>
+
+        <h3>Amplification &mdash; the lever that makes &ldquo;probably&rdquo; into &ldquo;certainly enough&rdquo;</h3>
+        <p>This is the single most important manoeuvre in Monte Carlo design, and it is one line. If one trial succeeds independently with probability <code class="inl">&ge;p</code>, then <code class="inl">t</code> independent trials all fail with probability</p>
+        <div class="eq">
+          <span class="lbl">amplification</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>Pr</mi><mo stretchy="false">[</mo><mtext>all&#xA0;</mtext><mi>t</mi><mtext>&#xA0;fail</mtext><mo stretchy="false">]</mo>
+            <mo>&#x2264;</mo><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>&#x2212;</mo><mi>p</mi><mo stretchy="false">)</mo></mrow><mi>t</mi></msup>
+            <mo>&#x2264;</mo><msup><mi>e</mi><mrow><mo>&#x2212;</mo><mi>p</mi><mi>t</mi></mrow></msup>
+            <mspace width="1.2em"/><mo>&#x27F9;</mo><mspace width="0.8em"/>
+            <mtext>take&#xA0;</mtext><mi>t</mi><mo>=</mo>
+            <mfrac><mn>1</mn><mi>p</mi></mfrac><mi>ln</mi><mfrac><mn>1</mn><mi>&#x3B4;</mi></mfrac>
+            <mspace width="0.6em"/><mtext>&#x21D2;&#xA0;failure&#xA0;</mtext><mo>&#x2264;</mo><mi>&#x3B4;</mi>
+          </math></div>
+        </div>
+        <p>Using <code class="inl">1-p&le;e^{-p}</code>: the failure probability decays <em>exponentially</em> in the number of trials, so a wildly unreliable single run &mdash; even one that succeeds only <code class="inl">2/n&sup2;</code> of the time, as Karger&rsquo;s will &mdash; becomes a near-certainty for a polynomial number of repetitions. Keep this formula in view; we cash it twice before the lecture is out.</p>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> a sorted dictionary built from coins</div>
+      <h2>Skip lists: shortcuts you never have to maintain</h2>
+      <div class="col">
+        <p>Let me build this one from the ground up, because the construction is the proof. Start with the humblest sorted structure: a singly linked list in increasing order. Search is honest and slow &mdash; you walk one node at a time, <code class="inl">O(n)</code> &mdash; because a linked list offers no way to <em>skip</em>.</p>
+        <p>So give it one. Lay a second list <em>over</em> the first containing, say, every other element, each express node carrying a <code class="inl">down</code> pointer to its twin below. To search, ride the express lane rightward until the next express key would overshoot your target, then drop down and finish on the local lane. With every-other promotion you halve the walk. Stack <code class="inl">log&#x2082;n</code> such lanes &mdash; each skipping twice as far as the one below &mdash; and search becomes <code class="inl">O(log&nbsp;n)</code>. That is the dream structure on the left of your imagination: a perfect binary scaffold of shortcuts.</p>
+        <p>And it is a nightmare to maintain. Insert one element near the front and &ldquo;every other element&rdquo; is violated all the way up; you are back to rebalancing, the very bookkeeping we set out to escape. Here is the move &mdash; the whole idea &mdash; and it is pure Bauhaus: <strong>stop enforcing the levels and let a coin assign them.</strong></p>
+
+        <div class="band flush" style="margin:1.4em 0">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin:0"><strong>The skip-list rule.</strong> When a key is inserted, flip a fair coin repeatedly. Its tower rises one extra level for each head before the first tail. So a node reaches level <code class="inl">i</code> or higher with probability <code class="inl">2^{-i}</code>, <em>independently</em> of every other node. No coordination, no global invariant &mdash; each node privately decides how tall it is, and the structure that emerges is, in expectation, the balanced scaffold we wanted.</p>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 760 312" role="img" aria-labelledby="sl-t sl-d">
+            <title id="sl-t">A skip list and a highlighted search for key 71</title>
+            <desc id="sl-d">Four levels of linked lists over the sorted keys 12, 17, 25, 31, 38, 44, 50, 71, 89. Taller towers act as express lanes. A red path shows the search for 71: starting at the head on level three, dropping and stepping right through 31 and 50 before landing on 71 at the bottom level.</desc>
+            <!-- level labels -->
+            <text x="14" y="64"  class="dg-label sm">L3</text>
+            <text x="14" y="114" class="dg-label sm">L2</text>
+            <text x="14" y="164" class="dg-label sm">L1</text>
+            <text x="14" y="214" class="dg-label sm">L0</text>
+            <!-- horizontal lane guides (faint) -->
+            <line x1="60" y1="60"  x2="724" y2="60"  class="dg-edge-thin" opacity="0.12"/>
+            <line x1="60" y1="110" x2="724" y2="110" class="dg-edge-thin" opacity="0.12"/>
+            <line x1="60" y1="160" x2="724" y2="160" class="dg-edge-thin" opacity="0.12"/>
+            <line x1="60" y1="210" x2="724" y2="210" class="dg-edge-thin" opacity="0.12"/>
+
+            <!-- columns x: head=60, keys step 66, NIL=720 -->
+            <!-- level-0 right pointers (full chain) -->
+            <g class="dg-edge-thin">
+              <line x1="78" y1="210" x2="110" y2="210"/><line x1="146" y1="210" x2="176" y2="210"/>
+              <line x1="212" y1="210" x2="242" y2="210"/><line x1="278" y1="210" x2="308" y2="210"/>
+              <line x1="344" y1="210" x2="374" y2="210"/><line x1="410" y1="210" x2="440" y2="210"/>
+              <line x1="476" y1="210" x2="506" y2="210"/>
+              <line x1="608" y1="210" x2="640" y2="210"/><line x1="674" y1="210" x2="706" y2="210"/>
+            </g>
+            <!-- level-1 right pointers: head,17,31,50,71,NIL -->
+            <g class="dg-edge-thin">
+              <line x1="78" y1="160" x2="176" y2="160"/>
+              <line x1="212" y1="160" x2="308" y2="160"/>
+              <line x1="476" y1="160" x2="572" y2="160"/>
+            </g>
+            <!-- level-2 right pointers: head,31,71,NIL -->
+            <g class="dg-edge-thin">
+              <line x1="78" y1="110" x2="308" y2="110"/>
+            </g>
+            <!-- level-3 right pointers: head,71,NIL -->
+            <!-- (drawn as path below, in red, since it's on the search route) -->
+
+            <!-- vertical down-links inside towers (faint) -->
+            <g class="dg-edge-thin" opacity="0.45">
+              <line x1="60" y1="78" x2="60" y2="192"/>           <!-- head tower -->
+              <line x1="192" y1="178" x2="192" y2="192"/>         <!-- 17 -->
+              <line x1="324" y1="78" x2="324" y2="192"/>          <!-- 31 -->
+              <line x1="522" y1="178" x2="522" y2="192"/>         <!-- 50 -->
+              <line x1="588" y1="78" x2="588" y2="192"/>          <!-- 71 -->
+            </g>
+
+            <!-- ===== SEARCH PATH for 71 (red) ===== -->
+            <!-- start head L3 -> right to 71 L3? No: at L3 next is 71 (=target) so we DROP first. -->
+            <!-- head L3 down to head L2 -->
+            <path class="dg-path" d="M60 78 L60 92"/>
+            <!-- head L2 right to 31 L2 -->
+            <path class="dg-path" d="M78 110 L308 110"/>
+            <!-- 31 L2 down to 31 L1 -->
+            <path class="dg-path" d="M324 128 L324 142"/>
+            <!-- 31 L1 right to 50 L1 -->
+            <path class="dg-path" d="M344 160 L506 160"/>
+            <!-- 50 L1 down to 50 L0 -->
+            <path class="dg-path" d="M522 178 L522 192"/>
+            <!-- 50 L0 right to 71 L0 -->
+            <path class="dg-path" d="M542 210 L572 210"/>
+            <!-- head L3 right guide to show L3 lane exists (faint, not on path) -->
+            <line x1="78" y1="60" x2="572" y2="60" class="dg-edge-thin" opacity="0.18"/>
+            <!-- arrowheads on path drops/steps -->
+            <g fill="var(--bau-red)">
+              <path d="M308 110 l-12 -5 v10 z"/>     <!-- arrive 31 L2 from left -->
+              <path d="M506 160 l-12 -5 v10 z"/>     <!-- arrive 50 L1 -->
+              <path d="M572 210 l-12 -5 v10 z"/>     <!-- arrive 71 L0 -->
+            </g>
+
+            <!-- ===== NODES ===== -->
+            <!-- head sentinel: tower L0..L3 -->
+            <g>
+              <rect x="42" y="48"  width="36" height="24" rx="4" class="sl-node"/>
+              <rect x="42" y="98"  width="36" height="24" rx="4" class="sl-node"/>
+              <rect x="42" y="148" width="36" height="24" rx="4" class="sl-node on"/>
+              <rect x="42" y="198" width="36" height="24" rx="4" class="sl-node on"/>
+              <text x="60" y="186" class="sl-key" fill="var(--bau-red)">&#8722;&#8734;</text>
+            </g>
+            <!-- helper macro by hand: each key node -->
+            <!-- 12 (L0) -->
+            <rect x="110" y="198" width="36" height="24" rx="4" class="sl-node"/><text x="128" y="210" class="sl-key">12</text>
+            <!-- 17 (L0,L1) -->
+            <rect x="176" y="148" width="36" height="24" rx="4" class="sl-node"/><rect x="176" y="198" width="36" height="24" rx="4" class="sl-node"/><text x="194" y="210" class="sl-key">17</text>
+            <!-- 25 (L0) -->
+            <rect x="242" y="198" width="36" height="24" rx="4" class="sl-node"/><text x="260" y="210" class="sl-key">25</text>
+            <!-- 31 (L0,L1,L2) — on path -->
+            <rect x="308" y="98"  width="36" height="24" rx="4" class="sl-node on"/>
+            <rect x="308" y="148" width="36" height="24" rx="4" class="sl-node on"/>
+            <rect x="308" y="198" width="36" height="24" rx="4" class="sl-node"/>
+            <text x="326" y="110" class="sl-key" fill="var(--bau-red)">31</text>
+            <!-- 38 (L0) -->
+            <rect x="374" y="198" width="36" height="24" rx="4" class="sl-node"/><text x="392" y="210" class="sl-key">38</text>
+            <!-- 44 (L0) -->
+            <rect x="440" y="198" width="36" height="24" rx="4" class="sl-node"/><text x="458" y="210" class="sl-key">44</text>
+            <!-- 50 (L0,L1) — on path -->
+            <rect x="506" y="148" width="36" height="24" rx="4" class="sl-node on"/>
+            <rect x="506" y="198" width="36" height="24" rx="4" class="sl-node"/>
+            <text x="524" y="160" class="sl-key" fill="var(--bau-red)">50</text>
+            <!-- 71 (L0..L3) — target -->
+            <rect x="572" y="48"  width="36" height="24" rx="4" class="sl-node"/>
+            <rect x="572" y="98"  width="36" height="24" rx="4" class="sl-node"/>
+            <rect x="572" y="148" width="36" height="24" rx="4" class="sl-node"/>
+            <rect x="572" y="198" width="36" height="24" rx="4" class="sl-node on"/>
+            <text x="590" y="210" class="sl-key" fill="var(--bau-red)">71</text>
+            <!-- 89 (L0) -->
+            <rect x="640" y="198" width="36" height="24" rx="4" class="sl-node"/><text x="658" y="210" class="sl-key">89</text>
+            <!-- NIL -->
+            <rect x="706" y="198" width="34" height="24" rx="4" class="sl-node" opacity="0.6"/><text x="723" y="210" class="sl-key sm" font-size="10">NIL</text>
+
+            <!-- found marker -->
+            <text x="590" y="244" text-anchor="middle" class="dg-label sm" fill="var(--bau-red)">found 71</text>
+            <!-- step legend -->
+            <text x="60" y="288" class="dg-label sm">path: drop, step right to 31, drop, step right to 50, drop, step right &#8594; <tspan fill="var(--bau-red)" font-weight="700">71</tspan> &mdash; 6 moves, not 8 hops</text>
+          </svg>
+          <figcaption><b>Searching a skip list for 71.</b> Tall towers are express lanes assigned by coin flips, not by design. The search rides high, dropping a level each time the next key would overshoot. Taller nodes are visited high; the target is confirmed only on level&nbsp;0.</figcaption>
+        </figure>
+
+        <h3>Worked search, move by move</h3>
+        <p>Read the red path against the rule &ldquo;<em>at each level, step right while the next key is</em> <code class="inl">&lt; target</code>; <em>otherwise drop</em>.&rdquo; Searching for <code class="inl">71</code>:</p>
+        <ol style="font-size:15.5px; color:var(--on-surface); padding-left:1.4em">
+          <li><strong>L3, at head.</strong> Next key on L3 is <code class="inl">71</code>; it is <em>not</em> <code class="inl">&lt; 71</code>, so do not step &mdash; <strong>drop</strong> to L2.</li>
+          <li><strong>L2, at head.</strong> Next is <code class="inl">31 &lt; 71</code> &rarr; <strong>step right</strong> to 31. Next on L2 is <code class="inl">71</code>, not <code class="inl">&lt;71</code> &rarr; <strong>drop</strong> to L1.</li>
+          <li><strong>L1, at 31.</strong> Next is <code class="inl">50 &lt; 71</code> &rarr; <strong>step right</strong> to 50. Next is <code class="inl">71</code>, not <code class="inl">&lt;71</code> &rarr; <strong>drop</strong> to L0.</li>
+          <li><strong>L0, at 50.</strong> Next is <code class="inl">71</code>. Stop dropping &mdash; we are at the bottom &mdash; and check: <code class="inl">next.key == 71</code>. <strong>Found.</strong></li>
+        </ol>
+        <p>Six pointer moves where the flat list would have made eight hops &mdash; and the gap widens to <code class="inl">n</code>-versus-<code class="inl">log&nbsp;n</code> as the structure grows. The implementation is almost suspiciously short:</p>
+
+<pre><code><span class="tok-kw">def</span> <span class="tok-fn">search</span>(self, target):
+    node = self.head
+    <span class="tok-kw">for</span> level <span class="tok-kw">in</span> <span class="tok-fn">range</span>(self.top, <span class="tok-num">-1</span>, <span class="tok-num">-1</span>):   <span class="tok-com"># top lane down to level 0</span>
+        <span class="tok-kw">while</span> node.next[level] <span class="tok-kw">and</span> node.next[level].key &lt; target:
+            node = node.next[level]              <span class="tok-com"># ride this express lane</span>
+    node = node.next[<span class="tok-num">0</span>]                          <span class="tok-com"># the first node &#8805; target on L0</span>
+    <span class="tok-kw">return</span> node <span class="tok-kw">is</span> <span class="tok-kw">not</span> <span class="tok-kw">None</span> <span class="tok-kw">and</span> node.key == target
+
+<span class="tok-kw">def</span> <span class="tok-fn">random_level</span>(self):
+    lvl = <span class="tok-num">0</span>
+    <span class="tok-kw">while</span> lvl &lt; self.max_level <span class="tok-kw">and</span> random.random() &lt; <span class="tok-num">0.5</span>:
+        lvl += <span class="tok-num">1</span>                              <span class="tok-com"># geometric: P(height &gt; i) = 2**-(i+1)</span>
+    <span class="tok-kw">return</span> lvl</code></pre>
+
+        <p>Insertion runs the same search but <em>remembers the drop points</em> &mdash; the predecessor at each level &mdash; then splices the new tower in at those points up to its random height. Deletion unlinks at each level. Both inherit the search&rsquo;s cost. So everything reduces to one question.</p>
+
+        <h3>Why the expected search is <code class="inl">O(log&nbsp;n)</code> &mdash; the backward walk</h3>
+        <p>Here is the argument I find genuinely beautiful, due to Pugh, because it analyses the path <em>in reverse</em> and the recurrence falls out in two lines. Imagine retracing the search from its endpoint back toward the head, climbing up and stepping left. At any node on the reverse path, ask: did the forward search arrive here by <em>dropping</em> (so this node is taller, and we now climb) or by <em>stepping right</em> (so we now move left)? By the coin rule those are each probability <code class="inl">&frac12;</code>, independent of the past. Let <code class="inl">C(k)</code> be the expected number of reverse steps needed to climb <code class="inl">k</code> levels:</p>
+
+        <div class="eq">
+          <span class="lbl">the backward-walk recurrence</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>C</mi><mo stretchy="false">(</mo><mi>k</mi><mo stretchy="false">)</mo>
+            <mo>=</mo><mn>1</mn>
+            <mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mi>C</mi><mo stretchy="false">(</mo><mi>k</mi><mo>&#x2212;</mo><mn>1</mn><mo stretchy="false">)</mo>
+            <mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mi>C</mi><mo stretchy="false">(</mo><mi>k</mi><mo stretchy="false">)</mo>
+            <mspace width="1.2em"/><mo>&#x27F9;</mo><mspace width="0.8em"/>
+            <mi>C</mi><mo stretchy="false">(</mo><mi>k</mi><mo stretchy="false">)</mo><mo>=</mo><mn>2</mn><mo>+</mo><mi>C</mi><mo stretchy="false">(</mo><mi>k</mi><mo>&#x2212;</mo><mn>1</mn><mo stretchy="false">)</mo>
+            <mo>=</mo><mn>2</mn><mi>k</mi>
+          </math></div>
+        </div>
+
+        <p>Each level costs an expected two steps. The number of levels is itself <code class="inl">O(log&nbsp;n)</code> &mdash; which I will pin down now &mdash; so the expected search length is <code class="inl">2&middot;O(log&nbsp;n)=O(log&nbsp;n)</code>. For the height, a union bound over the <code class="inl">n</code> nodes is all it takes:</p>
+
+        <div class="eq">
+          <span class="lbl">height is O(log n) with high probability</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>Pr</mi><mo stretchy="false">[</mo><mtext>some&#xA0;node&#xA0;reaches&#xA0;level&#xA0;</mtext><mi>c</mi><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo stretchy="false">]</mo>
+            <mo>&#x2264;</mo><mi>n</mi><mo>&#x22C5;</mo><msup><mn>2</mn><mrow><mo>&#x2212;</mo><mi>c</mi><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi></mrow></msup>
+            <mo>=</mo><mi>n</mi><mo>&#x22C5;</mo><msup><mi>n</mi><mrow><mo>&#x2212;</mo><mi>c</mi></mrow></msup>
+            <mo>=</mo><msup><mi>n</mi><mrow><mn>1</mn><mo>&#x2212;</mo><mi>c</mi></mrow></msup>
+          </math></div>
+        </div>
+
+        <p>Choose <code class="inl">c=2</code> and the probability of <em>any</em> tower exceeding <code class="inl">2log&#x2082;n</code> is at most <code class="inl">1/n</code> &mdash; vanishing. The structure is shallow not because we forced it but because tall towers are exponentially rare and there are only <code class="inl">n</code> chances to draw one. Space is <code class="inl">O(n)</code> in expectation: the towers contain <code class="inl">n&middot;&sum;_i 2^{-i}&le;2n</code> nodes. A balanced BST&rsquo;s guarantees, then, for a coin and a stack of lists.</p>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> a tree that balances itself by accident</div>
+      <h2>Treaps: a BST in the keys, a heap in the coins</h2>
+      <div class="col">
+        <p>The skip list abandoned the tree. The treap keeps it &mdash; and removes the balancing logic anyway, by a trick of superb economy. Give every key <code class="inl">x</code> a second number, a <span class="term">priority</span> <code class="inl">p(x)</code> drawn uniformly at random (a real in <code class="inl">[0,1]</code>, or a random 64-bit integer). Then demand the structure satisfy <em>two</em> orders at once:</p>
+        <ul class="obj">
+          <li>a <strong>binary search tree on the keys</strong> &mdash; in-order traversal yields the keys sorted (left&nbsp;&lt;&nbsp;node&nbsp;&lt;&nbsp;right);</li>
+          <li>a <strong>max-heap on the priorities</strong> &mdash; every node&rsquo;s priority exceeds its children&rsquo;s.</li>
+        </ul>
+        <p>The name is the portmanteau: <strong>tre</strong>e + h<strong>eap</strong> = treap. And the first thing to prove is that these two demands do not fight &mdash; they pin down exactly one tree.</p>
+
+        <div class="band flush" style="margin:1.4em 0">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin:0"><strong>Uniqueness theorem.</strong> For a set of items with distinct keys and distinct priorities, there is <em>exactly one</em> treap. <em>Proof, by the structure itself:</em> the item of highest priority must be the root (heap property). Its key partitions the remaining items into those smaller (which must form the left subtree, by the BST property) and those larger (the right subtree). Recurse on each part. At every step the choice is forced &mdash; so the tree is determined entirely by the priorities. There is nothing left to decide, and therefore nothing to <em>balance</em>.</p>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 720 320" role="img" aria-labelledby="tr-t tr-d">
+            <title id="tr-t">A treap on seven keys with random priorities</title>
+            <desc id="tr-d">A binary tree whose nodes show a key and, beneath it, a random priority. Reading the nodes left to right gives the keys in sorted order, satisfying the search-tree property; every parent's priority exceeds its children's, satisfying the max-heap property. Key 44 with priority 0.92 is the root.</desc>
+            <!-- edges -->
+            <g class="dg-edge">
+              <line x1="360" y1="64"  x2="210" y2="138"/>
+              <line x1="360" y1="64"  x2="520" y2="138"/>
+              <line x1="210" y1="162" x2="120" y2="232"/>
+              <line x1="210" y1="162" x2="290" y2="232"/>
+              <line x1="520" y1="162" x2="440" y2="232"/>
+              <line x1="520" y1="162" x2="600" y2="232"/>
+            </g>
+            <!-- root 44 / .92 -->
+            <circle cx="360" cy="52" r="27" class="dg-node root"/>
+            <text x="360" y="48" class="dg-nt">44</text><text x="360" y="68" class="dg-prio">.92</text>
+            <!-- 17 / .81 -->
+            <circle cx="210" cy="150" r="25" class="dg-node"/>
+            <text x="210" y="146" class="dg-nt">17</text><text x="210" y="165" class="dg-prio">.81</text>
+            <!-- 71 / .78 -->
+            <circle cx="520" cy="150" r="25" class="dg-node"/>
+            <text x="520" y="146" class="dg-nt">71</text><text x="520" y="165" class="dg-prio">.78</text>
+            <!-- 12 / .33 -->
+            <circle cx="120" cy="244" r="24" class="dg-node"/>
+            <text x="120" y="240" class="dg-nt">12</text><text x="120" y="259" class="dg-prio">.33</text>
+            <!-- 31 / .55 -->
+            <circle cx="290" cy="244" r="24" class="dg-node"/>
+            <text x="290" y="240" class="dg-nt">31</text><text x="290" y="259" class="dg-prio">.55</text>
+            <!-- 50 / .40 -->
+            <circle cx="440" cy="244" r="24" class="dg-node"/>
+            <text x="440" y="240" class="dg-nt">50</text><text x="440" y="259" class="dg-prio">.40</text>
+            <!-- 89 / .61 -->
+            <circle cx="600" cy="244" r="24" class="dg-node"/>
+            <text x="600" y="240" class="dg-nt">89</text><text x="600" y="259" class="dg-prio">.61</text>
+
+            <!-- annotations -->
+            <text x="360" y="106" text-anchor="middle" class="dg-label sm">highest priority &#8594; root</text>
+            <line x1="70" y1="296" x2="650" y2="296" class="dg-axis"/>
+            <path d="M650 296 l-12 -6 v12 z" fill="var(--bau-ink)"/>
+            <text x="70" y="288" class="dg-label sm">12</text><text x="178" y="288" class="dg-label sm">17</text>
+            <text x="282" y="288" class="dg-label sm">31</text><text x="352" y="288" class="dg-label sm">44</text>
+            <text x="432" y="288" class="dg-label sm">50</text><text x="512" y="288" class="dg-label sm">71</text>
+            <text x="592" y="288" class="dg-label sm">89</text>
+            <text x="500" y="314" class="dg-label sm">in-order on keys: sorted &#8594;</text>
+            <!-- priority axis -->
+            <text x="668" y="56"  class="dg-prio">.92</text>
+            <text x="668" y="250" class="dg-prio">low</text>
+            <text x="690" y="150" class="dg-label sm" transform="rotate(90 690 150)">priority &#8593; heap</text>
+          </svg>
+          <figcaption><b>One set, one treap.</b> Keys obey the search-tree order left-to-right; priorities obey the heap order top-to-bottom. Because <code class="inl">.92</code> is the largest priority, <code class="inl">44</code> is forced to be the root &mdash; and from there every position is determined. No rotation was ever <em>chosen</em>; the coins chose the whole shape.</figcaption>
+        </figure>
+
+        <h3>The gem: a treap is randomized quicksort, frozen</h3>
+        <p>Now the observation that makes the analysis free. Build the treap by the recursive rule above: highest-priority item becomes the root, splitting the rest into smaller/larger, recurse. But the highest-priority item among a set of iid-random priorities is a <em>uniformly random element</em> of that set. So the root is a uniformly random key; it partitions the rest; each side recurses with a fresh uniformly random pivot. <strong>That is exactly randomized quicksort &mdash; and the treap&rsquo;s shape is precisely quicksort&rsquo;s recursion tree.</strong> Equivalently: inserting the keys in <em>decreasing priority order</em> into an ordinary BST is the same as inserting a uniformly random permutation, whose expected depth we already computed in Lecture&nbsp;5.</p>
+        <p>So I do not need a new proof; I collect an old one. Let the keys have ranks <code class="inl">1,&hellip;,n</code>. Define the indicator that key&nbsp;<code class="inl">i</code> is an ancestor of key&nbsp;<code class="inl">j</code>. Among the keys whose ranks lie between <code class="inl">i</code> and <code class="inl">j</code> (inclusive &mdash; that is <code class="inl">|i-j|+1</code> of them), <code class="inl">i</code> is an ancestor of <code class="inl">j</code> exactly when <code class="inl">i</code> has the highest priority of the bunch &mdash; each equally likely:</p>
+
+        <div class="eq">
+          <span class="lbl">expected depth, straight from the quicksort analysis</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>Pr</mi><mo stretchy="false">[</mo><mi>i</mi><mtext>&#xA0;anc.&#xA0;</mtext><mi>j</mi><mo stretchy="false">]</mo>
+            <mo>=</mo><mfrac><mn>1</mn><mrow><mo>|</mo><mi>i</mi><mo>&#x2212;</mo><mi>j</mi><mo>|</mo><mo>+</mo><mn>1</mn></mrow></mfrac>
+            <mspace width="1.2em"/><mo>&#x27F9;</mo><mspace width="0.6em"/>
+            <mi>&#x1D53C;</mi><mo stretchy="false">[</mo><mtext>depth</mtext><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo>
+            <mo>=</mo><munder><mo>&#x2211;</mo><mrow><mi>j</mi><mo>&#x2260;</mo><mi>i</mi></mrow></munder>
+            <mfrac><mn>1</mn><mrow><mo>|</mo><mi>i</mi><mo>&#x2212;</mo><mi>j</mi><mo>|</mo><mo>+</mo><mn>1</mn></mrow></mfrac>
+            <mo>=</mo><msub><mi>H</mi><mi>i</mi></msub><mo>+</mo><msub><mi>H</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn><mo>&#x2212;</mo><mi>i</mi></mrow></msub><mo>&#x2212;</mo><mn>2</mn>
+            <mo>&lt;</mo><mn>2</mn><mi>ln</mi><mi>n</mi>
+          </math></div>
+        </div>
+
+        <p>Every key sits at expected depth below <code class="inl">2\ln n</code>, so every operation is <code class="inl">O(log&nbsp;n)</code> expected &mdash; on any input, because the input never touched the priorities. The unlucky deep tree is possible, just exponentially improbable.</p>
+
+        <h3>Operations: rotate to restore the heap, or split &amp; merge</h3>
+        <p>There are two equivalent implementations, and both are short. <strong>Rotation style:</strong> to insert, do an ordinary BST insert by key at a leaf, then rotate the new node upward as long as its priority exceeds its parent&rsquo;s &mdash; a heap sift-up performed with BST-preserving rotations. To delete, rotate the doomed node <em>down</em> (toward its higher-priority child) until it is a leaf, then snip. The expected number of rotations per operation is <code class="inl">O(1)</code>.</p>
+        <p><strong>Split/merge style</strong> is even cleaner and is the one I prefer to teach, because two primitives generate everything:</p>
+<pre><code><span class="tok-com"># split T into (L, R): keys &lt; key go left, keys &#8805; key go right</span>
+<span class="tok-kw">def</span> <span class="tok-fn">split</span>(t, key):
+    <span class="tok-kw">if</span> t <span class="tok-kw">is</span> <span class="tok-kw">None</span>: <span class="tok-kw">return</span> (<span class="tok-kw">None</span>, <span class="tok-kw">None</span>)
+    <span class="tok-kw">if</span> t.key &lt; key:
+        l, r = <span class="tok-fn">split</span>(t.right, key); t.right = l; <span class="tok-kw">return</span> (t, r)
+    <span class="tok-kw">else</span>:
+        l, r = <span class="tok-fn">split</span>(t.left, key);  t.left  = r; <span class="tok-kw">return</span> (l, t)
+
+<span class="tok-com"># merge L and R, assuming every key in L &lt; every key in R</span>
+<span class="tok-kw">def</span> <span class="tok-fn">merge</span>(a, b):
+    <span class="tok-kw">if</span> a <span class="tok-kw">is</span> <span class="tok-kw">None</span> <span class="tok-kw">or</span> b <span class="tok-kw">is</span> <span class="tok-kw">None</span>: <span class="tok-kw">return</span> a <span class="tok-kw">or</span> b
+    <span class="tok-kw">if</span> a.prio &gt; b.prio:                 <span class="tok-com"># higher priority stays on top (heap)</span>
+        a.right = <span class="tok-fn">merge</span>(a.right, b); <span class="tok-kw">return</span> a
+    <span class="tok-kw">else</span>:
+        b.left  = <span class="tok-fn">merge</span>(a, b.left);  <span class="tok-kw">return</span> b</code></pre>
+        <p>Insert <code class="inl">x</code>: <code class="inl">split</code> by <code class="inl">x</code>, then <code class="inl">merge(L, node(x), R)</code>. Delete <code class="inl">x</code>: split it out and <code class="inl">merge</code> the remainders. Each touches a single root-to-leaf path, so each is <code class="inl">O(log&nbsp;n)</code> expected. Add a <code class="inl">size</code> field to every node and the same tree answers order-statistic queries &mdash; the &ldquo;<code class="inl">k</code>-th smallest&rdquo; &mdash; in <code class="inl">O(log&nbsp;n)</code>; that is exactly Practice&nbsp;2.</p>
+        <div class="note info"><span class="tag">aside &mdash; the same coin, applied to position</span>If you key a treap on <em>array index</em> instead of value (an &ldquo;implicit treap,&rdquo; with subtree sizes standing in for positions), <code class="inl">split</code> and <code class="inl">merge</code> give you an array with <code class="inl">O(log&nbsp;n)</code> insert, delete, and even reverse at arbitrary positions &mdash; a rope. One randomized idea, two data structures.</div>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> set membership in a handful of bits</div>
+      <h2>Bloom filters: trading a little truth for a lot of space</h2>
+      <div class="col">
+        <p>The first two structures were Las Vegas &mdash; always right. Now we cross into Monte Carlo and meet a structure that is <em>deliberately, controllably wrong</em>, and is one of the great bargains in computing. A <span class="term">Bloom filter</span> answers &ldquo;is <code class="inl">x</code> in the set?&rdquo; using a number of bits that depends only on how many items you store and how much error you tolerate &mdash; <em>never on how large the items are</em>. You can test membership against a billion 200-character URLs in about a gigabit, with no URL stored anywhere.</p>
+        <p>The mechanism is austere. Keep a bit array <code class="inl">B</code> of <code class="inl">m</code> bits, all zero, and <code class="inl">k</code> independent hash functions <code class="inl">h_1,&hellip;,h_k</code>, each sending a key into <code class="inl">\{0,&hellip;,m-1\}</code>.</p>
+        <ul class="obj">
+          <li><strong>Insert <code class="inl">x</code>:</strong> set <code class="inl">B[h_i(x)]=1</code> for every <code class="inl">i</code>. (Bits only ever turn on.)</li>
+          <li><strong>Query <code class="inl">x</code>:</strong> return &ldquo;present&rdquo; iff <em>all</em> <code class="inl">k</code> bits <code class="inl">B[h_i(x)]</code> are 1. If even one is 0, return &ldquo;absent.&rdquo;</li>
+        </ul>
+        <p>Stare at the query and the error structure reveals itself, and it is the good kind &mdash; <strong>one-sided</strong>:</p>
+        <div class="note"><span class="tag">the one-sided guarantee</span><strong>No false negatives, ever.</strong> If <code class="inl">x</code> was inserted, its <code class="inl">k</code> bits were set to 1 and bits never reset &mdash; so the query finds them all 1 and answers &ldquo;present.&rdquo; <strong>False positives are possible:</strong> a never-inserted <code class="inl">y</code> can have all <code class="inl">k</code> of its bits switched on by <em>other</em> elements&rsquo; insertions, and the filter is fooled. &ldquo;Absent&rdquo; is the truth; &ldquo;present&rdquo; means &ldquo;probably.&rdquo;</div>
+
+        <figure>
+          <svg viewBox="0 0 760 300" role="img" aria-labelledby="bl-t bl-d">
+            <title id="bl-t">A Bloom filter showing a false positive and a certain absence</title>
+            <desc id="bl-d">A twelve-bit array. Inserting cat sets bits 1, 4 and 9; inserting dog sets bits 4, 7 and 11. Querying fox hashes to bits 1, 7 and 11, all of which are set, so the filter wrongly reports present, a false positive. Querying owl hashes to bit 8 among others, which is zero, so the filter correctly reports absent.</desc>
+            <!-- bit cells: m=12, x start 60 step 52 -->
+            <!-- set bits: 1,4,7,9,11 -->
+            <g>
+              <rect x="60"  y="120" width="40" height="40" rx="5" class="bit"/>
+              <rect x="112" y="120" width="40" height="40" rx="5" class="bit set"/>
+              <rect x="164" y="120" width="40" height="40" rx="5" class="bit"/>
+              <rect x="216" y="120" width="40" height="40" rx="5" class="bit"/>
+              <rect x="268" y="120" width="40" height="40" rx="5" class="bit set"/>
+              <rect x="320" y="120" width="40" height="40" rx="5" class="bit"/>
+              <rect x="372" y="120" width="40" height="40" rx="5" class="bit"/>
+              <rect x="424" y="120" width="40" height="40" rx="5" class="bit set"/>
+              <rect x="476" y="120" width="40" height="40" rx="5" class="bit"/>
+              <rect x="528" y="120" width="40" height="40" rx="5" class="bit set"/>
+              <rect x="580" y="120" width="40" height="40" rx="5" class="bit"/>
+              <rect x="632" y="120" width="40" height="40" rx="5" class="bit set"/>
+            </g>
+            <!-- values -->
+            <g class="bit-v">
+              <text x="80"  y="140" fill="var(--on-surface)">0</text>
+              <text x="132" y="140" fill="#fff">1</text>
+              <text x="184" y="140" fill="var(--on-surface)">0</text>
+              <text x="236" y="140" fill="var(--on-surface)">0</text>
+              <text x="288" y="140" fill="#fff">1</text>
+              <text x="340" y="140" fill="var(--on-surface)">0</text>
+              <text x="392" y="140" fill="var(--on-surface)">0</text>
+              <text x="444" y="140" fill="#fff">1</text>
+              <text x="496" y="140" fill="var(--on-surface)">0</text>
+              <text x="548" y="140" fill="#fff">1</text>
+              <text x="600" y="140" fill="var(--on-surface)">0</text>
+              <text x="652" y="140" fill="#fff">1</text>
+            </g>
+            <!-- indices -->
+            <g class="bit-i">
+              <text x="80" y="178">0</text><text x="132" y="178">1</text><text x="184" y="178">2</text>
+              <text x="236" y="178">3</text><text x="288" y="178">4</text><text x="340" y="178">5</text>
+              <text x="392" y="178">6</text><text x="444" y="178">7</text><text x="496" y="178">8</text>
+              <text x="548" y="178">9</text><text x="600" y="178">10</text><text x="652" y="178">11</text>
+            </g>
+
+            <!-- inserts (above): cat -> 1,4,9 (blue) ; dog -> 4,7,11 (red) -->
+            <text x="60" y="40" class="dg-cap" fill="var(--bau-blue)">insert &#8220;cat&#8221; &#8594; {1, 4, 9}</text>
+            <path class="arc-cat" d="M132 116 C132 80 132 70 132 60"/>
+            <path class="arc-cat" d="M288 116 C260 80 200 60 138 54"/>
+            <path class="arc-cat" d="M548 116 C420 70 220 50 138 50"/>
+            <text x="430" y="40" class="dg-cap" fill="var(--bau-red)">insert &#8220;dog&#8221; &#8594; {4, 7, 11}</text>
+            <path class="arc-dog" d="M288 116 C320 84 380 70 452 60"/>
+            <path class="arc-dog" d="M444 116 C448 86 450 74 452 64"/>
+            <path class="arc-dog" d="M652 116 C600 84 520 66 460 58"/>
+
+            <!-- queries (below) -->
+            <!-- fox -> 1,7,11 all set => FALSE POSITIVE -->
+            <path class="arc-q" stroke="var(--bau-red)" d="M132 164 C132 200 132 210 150 218"/>
+            <path class="arc-q" stroke="var(--bau-red)" d="M444 164 C400 206 260 214 162 222"/>
+            <path class="arc-q" stroke="var(--bau-red)" d="M652 164 C500 210 280 220 168 226"/>
+            <text x="60" y="246" class="dg-cap" fill="var(--bau-red)">query &#8220;fox&#8221; &#8594; {1, 7, 11}: all 1</text>
+            <text x="60" y="266" class="dg-label sm" fill="var(--bau-red)">&#8594; reports PRESENT &mdash; but fox was never inserted: a false positive</text>
+            <!-- owl -> 4,8,9 ; bit 8 = 0 => certain absent -->
+            <path class="arc-q" d="M496 164 C496 196 496 206 540 214"/>
+            <circle cx="496" cy="140" r="20" fill="none" stroke="var(--bau-ink)" stroke-width="2.5"/>
+            <text x="470" y="246" class="dg-cap" fill="var(--bau-ink)" text-anchor="start">query &#8220;owl&#8221; hits bit 8 = 0</text>
+            <text x="470" y="266" class="dg-label sm" text-anchor="start">&#8594; reports ABSENT &mdash; and this is always the truth</text>
+          </svg>
+          <figcaption><b>One array, two verdicts.</b> &ldquo;fox&rdquo; was never inserted, yet its three bits were all switched on by cat and dog &mdash; a false positive. &ldquo;owl&rdquo; lands on bit&nbsp;8, still zero, so its absence is certain. A single 0 is a proof of absence; all-ones is only evidence of presence.</figcaption>
+        </figure>
+
+        <h3>The false-positive rate, derived</h3>
+        <p>Insert <code class="inl">n</code> elements into <code class="inl">m</code> bits with <code class="inl">k</code> hashes &mdash; that is <code class="inl">kn</code> independent bit-settings. The probability a <em>specific</em> bit is still 0 is the chance all <code class="inl">kn</code> throws missed it:</p>
+        <div class="eq">
+          <span class="lbl">probability a bit is still 0, then the false-positive rate</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>Pr</mi><mo stretchy="false">[</mo><mi>B</mi><mo stretchy="false">[</mo><mi>i</mi><mo stretchy="false">]</mo><mo>=</mo><mn>0</mn><mo stretchy="false">]</mo>
+            <mo>=</mo><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>&#x2212;</mo><mfrac><mn>1</mn><mi>m</mi></mfrac><mo stretchy="false">)</mo></mrow><mrow><mi>k</mi><mi>n</mi></mrow></msup>
+            <mo>&#x2248;</mo><msup><mi>e</mi><mrow><mo>&#x2212;</mo><mi>k</mi><mi>n</mi><mo>/</mo><mi>m</mi></mrow></msup>
+            <mspace width="1.6em"/>
+            <mi>f</mi><mo>&#x2248;</mo><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>&#x2212;</mo><msup><mi>e</mi><mrow><mo>&#x2212;</mo><mi>k</mi><mi>n</mi><mo>/</mo><mi>m</mi></mrow></msup><mo stretchy="false">)</mo></mrow><mi>k</mi></msup>
+          </math></div>
+        </div>
+        <p>A false positive needs all <code class="inl">k</code> bits of a non-member to be 1, hence <code class="inl">f&approx;(1-e^{-kn/m})^k</code>. Now the design question: <em>how many hashes</em> minimise <code class="inl">f</code>? Too few and each test is weak; too many and you saturate the array with ones. Differentiate <code class="inl">\ln f</code> and the optimum is clean &mdash; it is the <code class="inl">k</code> that makes each bit equally likely 0 or 1:</p>
+        <div class="eq">
+          <span class="lbl">optimal number of hashes, and the resulting cost</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <msup><mi>k</mi><mo>&#x2217;</mo></msup><mo>=</mo><mfrac><mi>m</mi><mi>n</mi></mfrac><mi>ln</mi><mn>2</mn>
+            <mspace width="1.4em"/><mo>&#x27F9;</mo><mspace width="0.8em"/>
+            <mi>f</mi><mo>=</mo><msup><mrow><mo stretchy="false">(</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false">)</mo></mrow><msup><mi>k</mi><mo>&#x2217;</mo></msup></msup>
+            <mspace width="1.4em"/><mo>&#x21D4;</mo><mspace width="0.8em"/>
+            <mfrac><mi>m</mi><mi>n</mi></mfrac><mo>=</mo><mfrac><mrow><mi>ln</mi><mo stretchy="false">(</mo><mn>1</mn><mo>/</mo><mi>&#x3B5;</mi><mo stretchy="false">)</mo></mrow><mrow><msup><mrow><mo stretchy="false">(</mo><mi>ln</mi><mn>2</mn><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></mrow></mfrac>
+            <mo>&#x2248;</mo><mn>1.44</mn><msub><mi>log</mi><mn>2</mn></msub><mfrac><mn>1</mn><mi>&#x3B5;</mi></mfrac>
+          </math></div>
+        </div>
+        <p>Read the last equality as the headline: to hold the false-positive rate at <code class="inl">&epsilon;</code> you need about <code class="inl">1.44\log_2(1/&epsilon;)</code> bits per element. A <strong>1% rate costs ~9.6 bits per item; 0.1% costs ~14.4</strong> &mdash; and these numbers are independent of the universe. That is the bargain: near-constant space per item, in exchange for a false-positive rate you set in advance.</p>
+        <p>The cost of the bargain is what the filter <em>cannot</em> do. You cannot delete (clearing a bit might erase another element&rsquo;s evidence and create a false negative &mdash; a counting Bloom filter, with small integers instead of bits, buys deletion back). You cannot enumerate the set, or recover a key. You get one verb, &ldquo;probably-contains,&rdquo; for almost no space &mdash; which is exactly why a Bloom filter guards your database: it answers the floods of &ldquo;absent&rdquo; queries in RAM, and only a &ldquo;probably&rdquo; ever pays for a disk seek.</p>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> a global minimum cut from pure contraction</div>
+      <h2>Karger&rsquo;s algorithm: the right answer, two-in-n-squared of the time</h2>
+      <div class="col">
+        <p>The last structure was a clever bit array; this last <em>algorithm</em> is the boldest use of randomness in the lecture, because its single run is almost always <em>wrong</em> &mdash; and that is fine. The problem: given a connected undirected multigraph, find a <span class="term">global minimum cut</span>, a partition of the vertices into two non-empty sides crossed by as few edges as possible. (This is the global cousin of the <code class="inl">s</code>&ndash;<code class="inl">t</code> min cut from <a class="inline" href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html">Lecture&nbsp;17</a> &mdash; here no terminals are fixed.) Karger&rsquo;s method is almost insultingly simple:</p>
+        <div class="band flush" style="margin:1.4em 0">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin:0"><strong>Contraction.</strong> While more than two vertices remain: pick a <em>uniformly random edge</em> and <span class="term">contract</span> it &mdash; merge its two endpoints into one supernode, keep every parallel edge, discard the self-loops that result. When two supernodes remain, the original vertices inside each form the two sides; output the edges still running between them.</p>
+        </div>
+        <p>Contracting an edge says &ldquo;these two vertices will land on the same side&rdquo; &mdash; an irreversible bet. The cut you output is always a <em>real</em> cut, so the algorithm never under-reports; it can only fail by returning a cut that is too large. The wonder is how often the bet comes good.</p>
+
+        <figure>
+          <svg viewBox="0 0 760 326" role="img" aria-labelledby="kg-t kg-d">
+            <title id="kg-t">One contraction step of Karger's algorithm</title>
+            <desc id="kg-d">On the left, a five-vertex graph with a minimum cut of size two separating the set a, b, c from the set d, e. On the right, the random edge a-b has been contracted into a supernode ab; the two a-c and b-c edges become parallel edges to c, and the minimum cut of size two survives because no crossing edge was contracted.</desc>
+            <!-- divider -->
+            <line x1="380" y1="30" x2="380" y2="296" class="dg-edge-thin" opacity="0.3" stroke-dasharray="4 5"/>
+            <text x="40"  y="28" class="dg-cap">before &mdash; 5 vertices, min cut = 2</text>
+            <text x="404" y="28" class="dg-cap">after contracting a&ndash;b (random, non-cut)</text>
+
+            <!-- ===== BEFORE ===== -->
+            <!-- cut line separating {a,b,c} | {d,e} -->
+            <path d="M250 56 C268 130 262 210 250 286" class="dg-ghost" stroke="var(--bau-red)" stroke-width="2.5"/>
+            <text x="214" y="306" class="dg-label sm" fill="var(--bau-red)">cut (2 edges)</text>
+            <!-- edges: a-b, a-c, b-c, c-d (crosses), b-e (crosses), d-e -->
+            <g class="dg-edge">
+              <line x1="96"  y1="96"  x2="96"  y2="206"/>      <!-- a-b -->
+              <line x1="96"  y1="96"  x2="190" y2="150"/>      <!-- a-c -->
+              <line x1="96"  y1="206" x2="190" y2="150"/>      <!-- b-c -->
+              <line x1="320" y1="200" x2="320" y2="96"/>       <!-- d-e -->
+            </g>
+            <!-- crossing edges in red -->
+            <g class="dg-edge" stroke="var(--bau-red)">
+              <line x1="190" y1="150" x2="320" y2="96"/>       <!-- c-d crosses the cut -->
+              <line x1="96"  y1="206" x2="320" y2="200"/>      <!-- b-e crosses -->
+            </g>
+            <!-- vertices -->
+            <circle cx="96"  cy="96"  r="20" class="dg-node"/><text x="96"  y="96"  class="dg-nt">a</text>
+            <circle cx="96"  cy="206" r="20" class="dg-node"/><text x="96"  y="206" class="dg-nt">b</text>
+            <circle cx="190" cy="150" r="20" class="dg-node"/><text x="190" y="150" class="dg-nt">c</text>
+            <circle cx="320" cy="96"  r="20" class="dg-node"/><text x="320" y="96"  class="dg-nt">d</text>
+            <circle cx="320" cy="200" r="20" class="dg-node"/><text x="320" y="200" class="dg-nt">e</text>
+            <!-- highlight the edge about to be contracted -->
+            <line x1="96" y1="116" x2="96" y2="186" stroke="var(--bau-yellow)" stroke-width="8" opacity="0.7"/>
+            <text x="36" y="152" class="dg-label sm" fill="var(--bau-ink)">pick</text>
+
+            <!-- ===== AFTER ===== -->
+            <!-- cut line still size 2 -->
+            <path d="M600 60 C616 130 612 210 600 286" class="dg-ghost" stroke="var(--bau-red)" stroke-width="2.5"/>
+            <text x="560" y="306" class="dg-label sm" fill="var(--bau-red)">cut still 2 &mdash; survived</text>
+            <!-- edges after: ab-c (double), ab-e (cross), c-d (cross), d-e -->
+            <g class="dg-edge">
+              <path d="M486 150 C520 128 540 132 560 142"/>    <!-- ab-c edge 1 -->
+              <path d="M486 168 C520 190 540 186 560 160"/>    <!-- ab-c edge 2 (parallel) -->
+              <line x1="672" y1="200" x2="672" y2="96"/>       <!-- d-e -->
+            </g>
+            <g class="dg-edge" stroke="var(--bau-red)">
+              <line x1="560" y1="150" x2="672" y2="96"/>       <!-- c-d cross -->
+              <line x1="486" y1="170" x2="672" y2="200"/>      <!-- ab-e cross -->
+            </g>
+            <!-- supernode ab -->
+            <rect x="446" y="130" width="46" height="46" rx="12" class="dg-node merge"/>
+            <text x="469" y="153" class="dg-nt">ab</text>
+            <circle cx="560" cy="150" r="20" class="dg-node"/><text x="560" y="150" class="dg-nt">c</text>
+            <circle cx="672" cy="96"  r="20" class="dg-node"/><text x="672" y="96"  class="dg-nt">d</text>
+            <circle cx="672" cy="200" r="20" class="dg-node"/><text x="672" y="200" class="dg-nt">e</text>
+            <text x="500" y="116" class="dg-label sm">parallel edges kept</text>
+          </svg>
+          <figcaption><b>One bet, survived.</b> The minimum cut (red, size&nbsp;2) separates <code class="inl">{a,b,c}</code> from <code class="inl">{d,e}</code>. We contracted <code class="inl">a&ndash;b</code> &mdash; not a cut edge &mdash; so the cut lives on. Had we instead drawn one of the two red edges, the cut would have been destroyed. The whole analysis is just: <em>how likely is that?</em></figcaption>
+        </figure>
+
+        <h3>Why a fixed min cut survives</h3>
+        <p>Fix one particular minimum cut <code class="inl">C</code> with <code class="inl">c</code> edges. The only way to ruin it is to contract one of its <code class="inl">c</code> edges. Two facts chain into the bound. First, every vertex has degree <code class="inl">&ge;c</code> &mdash; otherwise that lone vertex versus the rest would be a cut smaller than <code class="inl">c</code> &mdash; so a graph on <code class="inl">j</code> vertices has at least <code class="inl">jc/2</code> edges. Hence the chance the first contraction hits <code class="inl">C</code> is at most <code class="inl">c/(jc/2)=2/j</code>. Survival at each step, multiplied down from <code class="inl">j=n</code> to <code class="inl">j=3</code>, telescopes:</p>
+        <div class="eq">
+          <span class="lbl">survival probability of one run</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>Pr</mi><mo stretchy="false">[</mo><mi>C</mi><mtext>&#xA0;survives</mtext><mo stretchy="false">]</mo>
+            <mo>&#x2265;</mo>
+            <munderover><mo>&#x220F;</mo><mrow><mi>j</mi><mo>=</mo><mn>3</mn></mrow><mi>n</mi></munderover>
+            <mo stretchy="false">(</mo><mn>1</mn><mo>&#x2212;</mo><mfrac><mn>2</mn><mi>j</mi></mfrac><mo stretchy="false">)</mo>
+            <mo>=</mo>
+            <munderover><mo>&#x220F;</mo><mrow><mi>j</mi><mo>=</mo><mn>3</mn></mrow><mi>n</mi></munderover>
+            <mfrac><mrow><mi>j</mi><mo>&#x2212;</mo><mn>2</mn></mrow><mi>j</mi></mfrac>
+            <mo>=</mo>
+            <mfrac><mn>2</mn><mrow><mi>n</mi><mo stretchy="false">(</mo><mi>n</mi><mo>&#x2212;</mo><mn>1</mn><mo stretchy="false">)</mo></mrow></mfrac>
+            <mo>=</mo>
+            <mfrac><mn>1</mn><mrow><mo stretchy="false">(</mo><mtable><mtr><mtd><mi>n</mi></mtd></mtr><mtr><mtd><mn>2</mn></mtd></mtr></mtable><mo stretchy="false">)</mo></mrow></mfrac>
+          </math></div>
+        </div>
+        <p>The telescoping is the whole trick: numerator and denominator march in lockstep and nearly everything cancels, leaving <code class="inl">2/(n(n-1))</code>. So one run finds <em>this</em> min cut with probability about <code class="inl">2/n&sup2;</code> &mdash; tiny, but crucially <em>polynomially</em> tiny, which is precisely the regime where amplification wins.</p>
+
+        <h3>Amplify, and a free combinatorial theorem</h3>
+        <p>Run the contraction <code class="inl">T</code> independent times and keep the smallest cut seen. By the amplification line from &sect;03, the probability <em>every</em> run misses the min cut is at most <code class="inl">(1-2/n&sup2;)^T&le;e^{-2T/n&sup2;}</code>. Take <code class="inl">T=\tfrac{n&sup2;}{2}\ln n</code> and the failure probability drops below <code class="inl">1/n</code>: a global min cut, with high probability, in <code class="inl">O(n&sup2;\log n)</code> runs. (Naively each run is <code class="inl">O(n&sup2;)</code> or <code class="inl">O(m\,&alpha;(n))</code> with union&ndash;find; <span class="term">Karger&ndash;Stein</span> shares the safe early contractions and recurses only where the risk concentrates, reaching <code class="inl">O(n&sup2;\log&sup3;n)</code> overall &mdash; a teaser, not a detour.)</p>
+        <div class="note info"><span class="tag">the corollary I love</span>The survival bound proves something the algorithm was never asked: for <em>any</em> fixed min cut, <code class="inl">Pr[\text{survives}]&ge;1/\binom{n}{2}</code>. Distinct min cuts survive as disjoint events, and probabilities sum to at most 1, so a graph has <strong>at most <code class="inl">\binom{n}{2}=n(n-1)/2</code> distinct minimum cuts</strong>. A randomized procedure, by the mere fact that it works, certifies a hard structural fact about all graphs. That is the deepest reason to take randomness seriously as a tool: it does not only compute &mdash; it <em>proves</em>.</div>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> the inequalities that pay the debt</div>
+      <h2>The concentration toolkit</h2>
+      <div class="col">
+        <p>Every &ldquo;probably&rdquo; in this lecture is an IOU, and these four inequalities are the currency. The discipline is to reach for the <em>cheapest</em> one that closes the gap &mdash; more assumptions buy a tighter tail, so spend only what the claim needs.</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>The four bounds, and where each one paid out today</caption>
+            <thead>
+              <tr><th scope="col">Inequality</th><th scope="col">Statement (informal)</th><th scope="col">Needs</th><th scope="col">Where it earned its keep</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Markov</th><td><span class="mono">Pr[X &#8805; a] &#8804; &#x1D53C;[X]/a</span></td><td class="mid">X &#8805; 0 only</td><td>Las&nbsp;Vegas&nbsp;&#8594;&nbsp;Monte&nbsp;Carlo: halt at <span class="mono">2&micro;</span>, fail w.p. &#8804; &frac12;</td></tr>
+              <tr><th scope="row">Chebyshev</th><td><span class="mono">Pr[|X&#8722;&micro;| &#8805; t] &#8804; Var(X)/t&sup2;</span></td><td class="mid">a variance bound</td><td>two-sided tails when only the variance is known</td></tr>
+              <tr><th scope="row" class="good">Chernoff</th><td><span class="mono">Pr[X &#8805; (1+&delta;)&micro;] &#8804; e<sup>&#8722;&delta;&sup2;&micro;/3</sup></span></td><td class="mid">independent, bounded terms</td><td>the workhorse for &ldquo;with high probability&rdquo; concentration</td></tr>
+              <tr><th scope="row" class="bad">Union bound</th><td><span class="mono">Pr[&#8746; A<sub>i</sub>] &#8804; &#8721; Pr[A<sub>i</sub>]</span></td><td class="mid">nothing at all</td><td>skip-list height: <span class="mono">n&middot;2<sup>&#8722;c log n</sup></span>; &ldquo;no run misses&rdquo;</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="4">Linearity of expectation &mdash; assumption-free, no independence required &mdash; underlies the treap depth sum and the Bloom bit-count. It is the quietest and most-used tool of all.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <p>The recurring shape of every proof here is one sentence: <strong>design with coins &rarr; name the bad event &rarr; bound it with the weakest inequality that suffices &rarr; amplify if the bound is loose.</strong> Skip-list height is a union bound over a geometric tail; treap depth is linearity over ancestor indicators; the Bloom rate is linearity over bits; Karger is a telescoping product finished by <code class="inl">1-x&le;e^{-x}</code>. Four structures, one method.</p>
+        <div class="pull col">Randomness is not a gamble you take. It is a <span>quantifier you rearrange</span> &mdash; and a concentration bound is the receipt.</div>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>Randomized structures fail in a particular, treacherous way: they return a plausible answer, and the wrong <em>belief</em> about that answer is the bug. Each trap below is something the formal lens catches early &mdash; an independence assumed but not delivered, a quantifier read in the wrong order, an error budget spent twice.</p>
+
+        <h3>Trusting a &ldquo;random&rdquo; source the adversary controls</h3>
+        <p>The entire guarantee rests on the coins being independent of the input. Seed your generator with something predictable &mdash; or let an attacker learn your hash function &mdash; and the protection evaporates: a chosen sequence can drive a skip list or a hash table to its <code class="inl">&Theta;(n)</code> worst case (this is a real denial-of-service vector). Randomization defends against an adversary who picks the input, <em>not</em> one who also picks your randomness. Use an unpredictable seed; for hashing under adversarial load, use keyed/universal hashing.</p>
+
+        <h3>Reading the guarantee as worst-case, not expected</h3>
+        <p>&ldquo;<code class="inl">O(log&nbsp;n)</code> skip list&rdquo; means <em>expected</em>, or <em>with high probability</em> &mdash; never a hard per-operation bound. A single search <em>can</em> be <code class="inl">&Theta;(n)</code>; it is merely astronomically unlikely. If your system has a hard real-time deadline that a rare slow operation would violate, a Las Vegas structure may be the wrong contract &mdash; reach for a deterministically balanced tree, or budget for the tail. Quoting an expectation where a worst case is required is the most common and most dangerous misreading.</p>
+
+        <h3>Believing a Bloom filter&rsquo;s &ldquo;present,&rdquo; or deleting from one</h3>
+        <p>The error is one-sided by design, so &ldquo;present&rdquo; is only ever &ldquo;probably&rdquo; &mdash; code that treats it as certain (skipping a confirming lookup before a destructive action) will eventually act on a phantom. And never clear a bit to &ldquo;delete&rdquo;: bits are shared across elements, so unsetting one can erase another&rsquo;s evidence and manufacture a <em>false negative</em>, which violates the structure&rsquo;s one promise. Want deletion? Use a counting Bloom filter. Want to stay under <code class="inl">&epsilon;</code>? Re-derive <code class="inl">m</code> when <code class="inl">n</code> grows &mdash; the rate climbs as the array fills.</p>
+
+        <h3>Karger: too few runs, or scoring with a verifier</h3>
+        <p>One run succeeds with probability <code class="inl">&asymp;2/n&sup2;</code>, so a constant number of runs <em>fails</em> with overwhelming probability &mdash; you need <code class="inl">&Theta;(n&sup2;\log n)</code> repetitions for a high-probability answer, and skimping silently returns a too-large cut that <em>looks</em> like an answer. Report the minimum over all runs, never a single run&rsquo;s output. And remember the error is one-sided: the cut returned is always real, so it can only be too big &mdash; which is exactly why taking the min is sound.</p>
+
+        <h3>Letting hashes correlate, or assuming idealized independence</h3>
+        <p>The Bloom analysis assumes <code class="inl">k</code> independent, uniform hashes; the skip-list and treap analyses assume genuinely independent coins. Build the <code class="inl">k</code> hashes from a single weak one, or derive priorities from the keys themselves, and the independence the proof relied on is gone &mdash; the real false-positive rate or tree depth can be far worse than the formula promises. (The double-hashing scheme <code class="inl">h_i=h_1+i\,h_2</code> is the standard, provably-safe way to fake <code class="inl">k</code> hashes from two.)</p>
+
+        <h3>Double-counting the error budget</h3>
+        <p>When a structure&rsquo;s correctness depends on several independent lucky events, the failure probabilities <em>add</em> (union bound) &mdash; you must size each so the <em>sum</em> sits under your target <code class="inl">&delta;</code>, not each individually. Forgetting this is how a &ldquo;<code class="inl">99\%</code> reliable&rdquo; pipeline of twenty stages turns out to be <code class="inl">0.99^{20}&asymp;82\%</code> reliable. Budget the <code class="inl">\delta</code> across the union, then amplify each stage to fit.</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Design a Skip List</h3>
+          <p class="meta">Las Vegas &middot; randomness in node heights &middot; LeetCode 1206</p>
+          <p>Implement <code class="inl">SkipList</code> from scratch &mdash; no built-in ordered containers &mdash; supporting <code class="inl">search(target)&#8594;bool</code>, <code class="inl">add(num)</code> (duplicates allowed), and <code class="inl">erase(num)&#8594;bool</code> (remove one occurrence; return whether it existed). Constraints: <code class="inl">0&le;num&le;2&middot;10<sup>4</sup></code>, up to <code class="inl">5&middot;10<sup>4</sup></code> calls. Example: <code class="inl">add(1); add(2); add(3); search(0)&#8594;false; add(4); search(1)&#8594;true; erase(0)&#8594;false; erase(1)&#8594;true; search(1)&#8594;false</code>. In your write-up: give the coin rule for a node&rsquo;s height and state <code class="inl">Pr[\text{height}\ge i]</code>; prove the expected number of nodes visited by a search is <code class="inl">O(\log n)</code> using the backward-walk recurrence; and explain why this is a Las&nbsp;Vegas structure &mdash; what is always correct, and what is only correct in expectation.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Randomized BST with order statistics (treap)</h3>
+          <p class="meta">Las Vegas &middot; randomness in priorities &middot; design (LeetCode-1206-style contract)</p>
+          <p>Implement an ordered multiset on integer keys backed by a <strong>treap</strong> &mdash; no rotations chosen by you, only the heap property on random priorities &mdash; supporting <code class="inl">insert(key)</code>, <code class="inl">erase(key)&#8594;bool</code>, <code class="inl">kth_smallest(k)&#8594;key</code> (1-indexed), and <code class="inl">rank(key)&#8594;int</code> (number of stored keys <code class="inl">&lt; key</code>). All four must run in <code class="inl">O(\log n)</code> expected time; up to <code class="inl">10<sup>5</sup></code> operations. Example: <code class="inl">insert(50); insert(17); insert(71); insert(31); kth_smallest(2)&#8594;31; rank(50)&#8594;2; erase(17)&#8594;true; kth_smallest(2)&#8594;50</code>. In your write-up: maintain a <code class="inl">size</code> field and show how it answers <code class="inl">kth_smallest</code> and <code class="inl">rank</code>; prove the expected depth is <code class="inl">O(\log n)</code> by the ancestor-indicator argument; and state explicitly why the random priorities make the tree behave like a random permutation regardless of the insertion order the caller chose.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Design an approximate set (Bloom filter)</h3>
+          <p class="meta">Monte Carlo &middot; one-sided error &middot; design + analysis</p>
+          <p>Implement <code class="inl">ApproxSet(n, &epsilon;)</code> with <code class="inl">add(key)</code> and <code class="inl">contains(key)&#8594;bool</code> over a stream of up to <code class="inl">n</code> string keys, guaranteeing <strong>no false negatives</strong> and a false-positive rate at most <code class="inl">&epsilon;</code> while using <code class="inl">O(n\log(1/&epsilon;))</code> bits &mdash; far below storing the keys. Example contract: with <code class="inl">n=10<sup>6</sup>, &epsilon;=0.01</code>, after adding a key, <code class="inl">contains</code> on it must return <code class="inl">true</code>; on a never-added key it returns <code class="inl">true</code> with probability <code class="inl">&le;0.01</code>. In your write-up: derive the bit-array size <code class="inl">m</code> and hash count <code class="inl">k</code> from <code class="inl">n</code> and <code class="inl">&epsilon;</code> (give the closed forms and the numeric bits-per-item for <code class="inl">&epsilon;=0.01</code>); prove the no-false-negative property in one line; show how to synthesise <code class="inl">k</code> hashes from two via <code class="inl">h_i=h_1+i\,h_2 \bmod m</code>; and explain why deletion would break the guarantee.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Global minimum cut (Karger)</h3>
+          <p class="meta">Monte Carlo &middot; randomness in edge choice + amplification &middot; design</p>
+          <p>Given a connected undirected multigraph as <code class="inl">n</code> vertices and an edge list, return the size of a <strong>global minimum cut</strong> with success probability at least <code class="inl">1-1/n</code>. Implement contraction (a random-edge merge via union&ndash;find) plus amplification. Example: the 4-cycle <code class="inl">n=4, edges=[[0,1],[1,2],[2,3],[3,0]]&#8594;2</code>; two triangles joined by a single bridge edge <code class="inl">&#8594;1</code>. In your write-up: prove a fixed min cut survives one run with probability <code class="inl">&ge;2/(n(n-1))</code> via the telescoping product; choose the number of repetitions <code class="inl">T</code> that drives the overall failure below <code class="inl">1/n</code>, and state the total running time; explain why reporting the <em>minimum</em> over runs is correct (which side is the error on?); and derive the corollary bounding the number of distinct minimum cuts by <code class="inl">\binom{n}{2}</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>Randomization moves the uncertainty you cannot remove from the input the adversary controls to the coins it cannot see &mdash; turning &ldquo;for all inputs&rdquo; into &ldquo;in expectation over my randomness.&rdquo;</strong> Decide the contract first: <em>Las Vegas</em> (always correct, time is random &mdash; skip lists, treaps) or <em>Monte Carlo</em> (always fast, answer is a probability &mdash; Bloom filters, Karger). Inject the coins where balance or independence is needed &mdash; node heights, priorities, hash bits, edge choices &mdash; and then pay the probabilistic debt with the weakest concentration bound that suffices: a union bound for skip-list height, linearity for treap depth and Bloom bits, a telescoping product plus amplification for Karger. &ldquo;Probably&rdquo; is not a weakness; with the right inequality it is a guarantee you can deploy.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 23</span>
+            <div class="ttl">Strings, Suffixes &amp; the Structures That Index Them</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We met one more use of a random hash here in passing &mdash; the rolling fingerprint that powers Rabin&ndash;Karp and the longest-duplicate-substring search. The next stretch of the course leans on it to index text at scale, where the same bargain returns: a hash collision is a Monte&nbsp;Carlo error you verify away, recovering a Las&nbsp;Vegas certainty. The coin, it turns out, is never far from the algorithm.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-21-living-with-hardness-approximation-and-parameterized-algorithms.html">← Previous study</a><a href="dsa-23-the-frontier-fine-grained-sublinear-predictions-p-vs-np.html">Next study →</a></nav>
+</body>
+</html>

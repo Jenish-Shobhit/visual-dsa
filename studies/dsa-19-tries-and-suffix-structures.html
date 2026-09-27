@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSA · Lesson 19 — Algorithms on Text II: Tries and Suffix Structures</title>
+<meta name="description" content="Tries for prefix sets, then suffix trees and suffix arrays with LCP — turning a string into a searchable index.">
+<script>document.documentElement.className = document.documentElement.className.replace('no-js','js');</script>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+/* ============================================================= *
+ *  SUBSTRATE — Material 3, LIGHT ONLY                            *
+ *  SKIN — Bauhaus (Atlas No. 049): primaries red/yellow/blue +   *
+ *  black, pure shapes (circle/triangle/square), strict grid,     *
+ *  geometric sans, rational composition. Rendered LIGHT.         *
+ * ============================================================= */
+:root{
+  color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+  --h: 256;                            /* Bauhaus structural primary = blue */
+  /* M3 tonal roles (blue-anchored) */
+  --primary:              oklch(46% 0.17 var(--h));
+  --on-primary:           oklch(99% 0.01 var(--h));
+  --primary-container:    oklch(93% 0.05 var(--h));
+  --on-primary-container: oklch(29% 0.11 var(--h));
+  --secondary:            oklch(48% 0.06 var(--h));
+  --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+  /* surfaces + elevation tints (light, faintly warm paper) */
+  --surface:              oklch(98.6% 0.005 90);
+  --surface-1:            oklch(97.6% 0.008 90);
+  --surface-2:            oklch(96.2% 0.012 90);
+  --surface-3:            oklch(94.6% 0.016 90);
+  --surface-variant:      oklch(92.5% 0.012 90);
+  --on-surface:           oklch(21%  0.02 var(--h));
+  --on-surface-variant:   oklch(41%  0.02 var(--h));
+  --outline:              oklch(60%  0.02 var(--h));
+  --outline-variant:      oklch(86%  0.01 var(--h));
+  /* Bauhaus primaries — used as accents on light only */
+  --bau-red:    oklch(56% 0.205 27);
+  --bau-red-d:  oklch(47% 0.18 27);
+  --bau-yellow: oklch(86% 0.165 92);
+  --bau-blue:   oklch(46% 0.17 256);
+  --bau-blue-d: oklch(38% 0.14 256);
+  --bau-black:  oklch(20% 0.02 256);
+  --ink:        oklch(20% 0.02 256);
+  /* M3 shape scale (Bauhaus leans crisp — small radii dominate) */
+  --r-xs:3px; --r-sm:6px; --r-md:10px; --r-lg:14px; --r-xl:22px;
+  --sp:8px;
+  /* type */
+  --display: "Futura", "Century Gothic", "Avenir Next", "Trebuchet MS", system-ui, sans-serif;
+  --body: -apple-system, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Menlo", "Cascadia Code", monospace;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+body{
+  margin:0; background:var(--surface); color:var(--on-surface);
+  font-family:var(--body); font-size:18px; line-height:1.65;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+
+/* strict-grid background gesture: a single faint primary wash + a hairline module grid behind the hero only */
+.hero-wash{position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden}
+.hero-wash::before{
+  content:""; position:absolute; left:-10%; top:-40%; width:60%; height:160%;
+  background: radial-gradient(closest-side, oklch(86% 0.165 92 / .35), transparent 70%);
+}
+.hero-wash::after{
+  content:""; position:absolute; right:-12%; top:-30%; width:55%; height:150%;
+  background: radial-gradient(closest-side, oklch(46% 0.17 256 / .14), transparent 70%);
+}
+
+/* ---- scroll progress hairline (cap-scroll-driven-animation, SAFE) ---- */
+.progress{position:fixed; left:0; top:0; height:4px; width:100%; transform-origin:0 50%; z-index:60;
+  background:linear-gradient(90deg,var(--bau-red) 0 33%,var(--bau-yellow) 33% 66%,var(--bau-blue) 66% 100%);
+  transform:scaleX(0); animation:grow linear; animation-timeline:scroll(root);}
+@keyframes grow{from{transform:scaleX(0)} to{transform:scaleX(1)}}
+
+/* ---- masthead ---- */
+.mast{position:sticky; top:0; z-index:50; backdrop-filter:saturate(1.4) blur(10px);
+  background:oklch(98.6% 0.005 90 / .82); border-bottom:1.5px solid var(--ink);}
+.mast .row{max-width:1180px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:16px}
+.sigil{flex:0 0 auto}
+.mast .crumb{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--on-surface-variant); display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.mast .crumb b{color:var(--ink); font-weight:700}
+.mast .crumb .dot{width:6px;height:6px;background:var(--bau-red);display:inline-block}
+.mast .crumb .sq{width:7px;height:7px;background:var(--bau-blue);display:inline-block}
+
+/* ---- layout shell ---- */
+.shell{max-width:1180px; margin:0 auto; padding:0 24px;
+  display:grid; grid-template-columns:128px minmax(0,1fr); gap:40px}
+.rail{position:sticky; top:64px; align-self:start; height:max-content; padding-top:40px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; display:block}
+.rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px}
+.rail a{color:var(--on-surface-variant); text-decoration:none; display:flex; gap:9px; align-items:baseline;
+  padding:3px 0; border-left:2px solid transparent; padding-left:8px; transition:color .2s, border-color .2s}
+.rail a:hover, .rail a:focus-visible{color:var(--ink); border-left-color:var(--bau-red)}
+.rail .n{color:var(--bau-blue); font-weight:700}
+.content{padding-top:40px; min-width:0}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr; gap:0}
+  .rail{display:none}
+  .content{padding-top:24px}
+}
+
+/* ---- typographic scale ---- */
+.measure{max-width:68ch}
+h1{font-family:var(--display); font-weight:800; letter-spacing:-.02em; line-height:1.02;
+  font-size:clamp(38px,6.2vw,68px); margin:.2em 0 .3em; color:var(--ink)}
+h2{font-family:var(--display); font-weight:800; letter-spacing:-.01em; line-height:1.08;
+  font-size:clamp(26px,3.6vw,38px); margin:0 0 .35em; color:var(--ink)}
+h3{font-family:var(--display); font-weight:700; font-size:clamp(19px,2.2vw,24px); margin:1.6em 0 .3em; color:var(--ink)}
+h4{font-family:var(--mono); text-transform:uppercase; letter-spacing:.12em; font-size:13px;
+  color:var(--bau-blue-d); margin:1.4em 0 .4em}
+p{margin:0 0 1em}
+a{color:var(--bau-blue-d); text-underline-offset:3px; text-decoration-thickness:1.5px}
+a:hover{color:var(--bau-red-d)}
+strong{font-weight:700; color:var(--ink)}
+em{font-style:italic}
+.lead{font-size:clamp(19px,2.3vw,23px); line-height:1.5; color:var(--on-surface)}
+
+/* section scaffold with Bauhaus shape-glyph markers */
+section{padding:44px 0; border-top:1.5px solid var(--outline-variant); position:relative}
+section:first-of-type{border-top:none}
+.kicker{font-family:var(--mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--bau-red-d); display:flex; align-items:center; gap:10px; margin-bottom:6px}
+.kicker .g{width:14px;height:14px;flex:0 0 auto}
+.g.circle{border-radius:50%; background:var(--bau-red)}
+.g.square{background:var(--bau-blue)}
+.g.tri{width:0;height:0;background:none;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid var(--bau-yellow)}
+
+/* hero */
+.hero{position:relative; padding:64px 0 40px}
+.hero > *{position:relative; z-index:1}
+.tag{display:inline-flex; gap:8px; align-items:center; font-family:var(--mono); font-size:12px;
+  text-transform:uppercase; letter-spacing:.14em; color:var(--ink);
+  border:1.5px solid var(--ink); padding:5px 11px; border-radius:2px; background:var(--surface)}
+
+/* cards / bands */
+.band{background:var(--surface-1); border:1.5px solid var(--outline-variant);
+  border-radius:var(--r-md); padding:24px 26px; margin:22px 0; position:relative}
+.band.accent{border-left:6px solid var(--bau-red)}
+.band.blue{border-left:6px solid var(--bau-blue)}
+.band.yellow{background:linear-gradient(0deg,var(--surface-1),var(--surface-1)); border-left:6px solid var(--bau-yellow)}
+.band h3:first-child, .band h4:first-child{margin-top:0}
+.note{font-size:15.5px; color:var(--on-surface-variant); line-height:1.55}
+
+/* objectives / prereqs grids */
+.obj{display:grid; grid-template-columns:repeat(auto-fit,minmax(248px,1fr)); gap:14px; margin:18px 0}
+.obj li{list-style:none; background:var(--surface-1); border:1.5px solid var(--outline-variant);
+  border-radius:var(--r-sm); padding:14px 16px; display:flex; gap:12px; align-items:flex-start}
+.obj .b{flex:0 0 auto; width:22px;height:22px; border-radius:3px; background:var(--bau-blue); color:#fff;
+  font-family:var(--mono); font-size:12px; display:grid; place-items:center; font-weight:700; margin-top:2px}
+.obj.prq .b{background:var(--bau-red)}
+.obj p{margin:0; font-size:16px}
+
+/* pull quote */
+.pull{margin:40px 0; padding:8px 0 8px 26px; border-left:8px solid var(--bau-yellow)}
+.pull q{font-family:var(--display); font-weight:800; quotes:none; letter-spacing:-.01em; line-height:1.12;
+  font-size:clamp(24px,3.6vw,38px); color:var(--ink); display:block}
+.pull q::before, .pull q::after{content:none}
+.pull cite{display:block; margin-top:12px; font-style:normal; font-family:var(--mono); font-size:12px;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--on-surface-variant)}
+
+/* figures */
+figure{margin:26px 0; background:var(--surface); border:1.5px solid var(--ink); border-radius:var(--r-md);
+  padding:18px 18px 12px; overflow:hidden}
+figure svg{display:block; width:100%; height:auto}
+figcaption{font-size:14.5px; color:var(--on-surface-variant); margin-top:10px; line-height:1.5; padding:0 4px}
+figcaption b{color:var(--ink)}
+.fig-grid{display:grid; gap:18px}
+
+/* diagram ink classes */
+.dg-stroke{stroke:var(--ink); fill:none; stroke-width:1.6}
+.dg-thin{stroke:var(--outline); fill:none; stroke-width:1.2}
+.dg-accent{stroke:var(--bau-red); fill:none; stroke-width:2}
+.dg-blue{stroke:var(--bau-blue); fill:none; stroke-width:2}
+.t-mono{font-family:var(--mono)}
+.t-disp{font-family:var(--display); font-weight:700}
+.t-ink{fill:var(--ink)}
+.t-mut{fill:var(--on-surface-variant)}
+.t-red{fill:var(--bau-red-d)}
+.t-blue{fill:var(--bau-blue-d)}
+.fill-paper{fill:var(--surface)}
+.fill-red{fill:var(--bau-red)}
+.fill-yellow{fill:var(--bau-yellow)}
+.fill-blue{fill:var(--bau-blue)}
+.fill-s1{fill:var(--surface-1)}
+.fill-s2{fill:var(--surface-2)}
+
+/* code (cap-code-typeset) */
+.code{background:oklch(97% 0.008 256); border:1.5px solid var(--ink); border-radius:var(--r-sm);
+  margin:18px 0; overflow:auto}
+.code .hd{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--on-surface-variant); padding:8px 14px; border-bottom:1.5px solid var(--outline-variant);
+  display:flex; gap:8px; align-items:center; background:var(--surface-1)}
+.code .hd .d{width:8px;height:8px;border-radius:50%;background:var(--bau-red)}
+pre{margin:0; padding:14px 16px; font-family:var(--mono); font-size:13.5px; line-height:1.62; tab-size:2;
+  color:oklch(26% 0.03 256); white-space:pre; overflow-x:auto}
+.kw{color:var(--bau-blue-d); font-weight:600}
+.fn{color:oklch(40% 0.13 300)}
+.co{color:oklch(52% 0.03 140); font-style:italic}
+.st{color:oklch(46% 0.13 27)}
+.nu{color:oklch(45% 0.12 40)}
+.bn{color:var(--bau-red-d); font-weight:600}
+
+/* tables (cap-tabular-data-done-right) */
+.tw{overflow-x:auto; margin:20px 0; border:1.5px solid var(--ink); border-radius:var(--r-sm)}
+table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:540px}
+caption{caption-side:top; text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--on-surface-variant); padding:10px 14px 0}
+thead th{position:sticky; top:0; background:var(--ink); color:#fff; font-family:var(--mono); font-weight:600;
+  text-align:left; padding:9px 12px; font-size:12px; letter-spacing:.04em; z-index:1}
+tbody th{text-align:left; font-weight:700; color:var(--ink)}
+td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant); vertical-align:top}
+tbody tr:nth-child(odd){background:var(--surface-1)}
+td.num, th.num{font-family:var(--mono); font-variant-numeric:tabular-nums; text-align:center}
+.win{background:oklch(86% 0.165 92 / .35); font-weight:700}
+td code, p code, li code{font-family:var(--mono); font-size:.92em; background:var(--surface-2);
+  padding:1px 5px; border-radius:3px; border:1px solid var(--outline-variant)}
+
+/* math */
+math{font-size:1.12em}
+.mathwrap{background:var(--surface-1); border:1.5px solid var(--outline-variant); border-left:6px solid var(--bau-blue);
+  border-radius:var(--r-sm); padding:14px 18px; margin:18px 0; overflow-x:auto}
+
+/* details */
+details{border:1.5px solid var(--outline-variant); border-radius:var(--r-sm); padding:0; margin:16px 0; background:var(--surface-1)}
+summary{cursor:pointer; padding:12px 16px; font-family:var(--mono); font-size:12.5px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--bau-blue-d); list-style:none; display:flex; gap:10px; align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+"; font-weight:700; color:var(--bau-red); font-size:16px}
+details[open] summary::before{content:"–"}
+details .bd{padding:2px 16px 14px}
+
+/* practice */
+.prob{counter-increment:p; background:var(--surface-1); border:1.5px solid var(--ink);
+  border-radius:var(--r-md); padding:22px 24px; margin:18px 0; position:relative}
+.prob::before{content:counter(p,decimal-leading-zero); position:absolute; top:-14px; left:18px;
+  font-family:var(--display); font-weight:800; font-size:22px; color:#fff; background:var(--bau-red);
+  width:38px;height:38px; display:grid; place-items:center; border-radius:50%}
+.prob h3{margin:6px 0 .2em; padding-left:30px}
+.prob .meta{font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--on-surface-variant); display:flex; gap:14px; flex-wrap:wrap; margin:8px 0 12px; padding-left:30px}
+.prob .meta b{color:var(--ink)}
+.sig{font-family:var(--mono); font-size:13px; background:oklch(97% 0.008 256); border:1px solid var(--outline-variant);
+  border-radius:4px; padding:10px 12px; margin:10px 0; white-space:pre-wrap; color:oklch(28% 0.03 256)}
+.ex{font-size:15px; border-left:3px solid var(--bau-blue); padding:2px 0 2px 14px; margin:10px 0; color:var(--on-surface-variant)}
+.ex b{color:var(--ink)}
+
+.gate{background:var(--ink); color:oklch(95% 0.01 90); border-radius:var(--r-md); padding:18px 22px; margin:24px 0;
+  font-size:15.5px; line-height:1.55}
+.gate code{background:oklch(30% 0.03 256); color:var(--bau-yellow); padding:2px 7px; border-radius:4px;
+  font-family:var(--mono); font-size:.92em; border:none}
+.gate b{color:#fff}
+
+/* next card */
+.next{display:flex; gap:18px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+  background:var(--surface-1); border:1.5px solid var(--ink); border-radius:var(--r-md); padding:22px 24px; margin:22px 0}
+.next .lbl{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red-d)}
+.next a{font-family:var(--display); font-weight:800; font-size:clamp(18px,2.4vw,24px); text-decoration:none; color:var(--ink)}
+.next a:hover{color:var(--bau-blue-d)}
+.next .arrow{font-size:30px; color:var(--bau-red)}
+
+/* colophon */
+.colophon{border-top:1.5px solid var(--ink); margin-top:36px; padding:26px 0 70px;
+  font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--on-surface-variant); line-height:1.8}
+.colophon b{color:var(--ink)}
+
+/* reveal motion (progressive, reduced-motion safe) */
+.js .reveal{opacity:0; transform:translateY(16px); transition:opacity .6s ease, transform .6s ease}
+.js .reveal.in{opacity:1; transform:none}
+@media (prefers-reduced-motion: reduce){
+  .js .reveal{opacity:1 !important; transform:none !important; transition:none !important}
+  .progress{animation:none; transform:scaleX(1)}
+}
+:focus-visible{outline:2.5px solid var(--bau-blue); outline-offset:2px; border-radius:2px}
+::selection{background:var(--bau-yellow); color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">19 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="mast">
+  <div class="row">
+    <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil">
+      <rect x="1" y="1" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="11" cy="11" r="7.5" fill="var(--bau-red)"/>
+      <rect x="18" y="18" width="13" height="13" fill="var(--bau-blue)"/>
+      <path d="M18 14 L25 3 L32 14 Z" fill="var(--bau-yellow)"/>
+    </svg>
+    <div class="crumb">
+      <span><b>DSA</b></span><span class="dot"></span>
+      <span>Visual DSA</span><span class="sq"></span>
+      <span><b>Lesson 19</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail" aria-label="Lesson sections">
+    <ol>
+      <li><a href="#shift"><span class="n">01</span> The shift</a></li>
+      <li><a href="#aim"><span class="n">02</span> Objectives</a></li>
+      <li><a href="#pre"><span class="n">03</span> Prerequisites</a></li>
+      <li><a href="#idea"><span class="n">04</span> The one idea</a></li>
+      <li><a href="#trie"><span class="n">05</span> Tries</a></li>
+      <li><a href="#stree"><span class="n">06</span> Suffix trees</a></li>
+      <li><a href="#sarray"><span class="n">07</span> Suffix arrays</a></li>
+      <li><a href="#lcp"><span class="n">08</span> LCP &amp; the glue</a></li>
+      <li><a href="#cmp"><span class="n">09</span> Side by side</a></li>
+      <li><a href="#break"><span class="n">10</span> Where it breaks</a></li>
+      <li><a href="#practice"><span class="n">11</span> Practice</a></li>
+      <li><a href="#recap"><span class="n">12</span> Recap &amp; next</a></li>
+    </ol>
+  </nav>
+
+  <main class="content">
+
+    <!-- ============ HERO / HOOK ============ -->
+    <section class="hero" id="shift" style="border-top:none">
+      <div class="hero-wash" aria-hidden="true"></div>
+      <span class="tag"><svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="var(--bau-red)"/></svg> Algorithms on Text · Part II</span>
+      <h1>Tries and Suffix Structures</h1>
+      <p class="lead measure">Last lecture we searched a text <em>once</em>. KMP scans an <code>n</code>-character string for a pattern in <code>O(n+m)</code> and throws the work away. But real systems ask the <em>same text</em> a thousand questions: every read aligned against a genome, every query typed into a search box, every grep over a fixed corpus. Re-scanning is a confession that we never <em>understood</em> the text — we only walked it.</p>
+      <div class="band accent measure reveal">
+        <h4 style="margin-top:0">The number that forces the idea</h4>
+        <p style="margin-bottom:0">The human reference genome is ≈ <strong>3.1 × 10<sup>9</sup></strong> characters. Align one 30-base read by re-scanning and you pay 3 billion comparisons. A sequencing run produces <strong>hundreds of millions</strong> of reads. Re-scanning is ≈ 10<sup>18</sup> operations — <em>years</em> of compute. Build an index over the genome <em>once</em>, and each read costs ≈ 30 steps. Same data, same question, eighteen orders of magnitude apart. The difference is entirely the data structure.</p>
+      </div>
+      <p class="measure">This lecture is about <strong>preprocessing the text instead of the pattern</strong> — turning a string into a structure that answers <em>any</em> substring query fast. We build three indices, each a refinement of the last: the <strong>trie</strong> (an index over a set of strings), the <strong>suffix tree</strong> (a trie over <em>all suffixes</em>, compressed), and the <strong>suffix array</strong> (the same information, sorted into a flat array) together with its <strong>LCP</strong> companion.</p>
+    </section>
+
+    <!-- ============ OBJECTIVES ============ -->
+    <section id="aim">
+      <div class="kicker"><span class="g circle"></span> Section 02</div>
+      <h2>What you'll be able to do</h2>
+      <ul class="obj reveal">
+        <li><span class="b">A</span><p>Build a <strong>trie</strong> and run <code>insert</code> / <code>search</code> / <code>startsWith</code> in time proportional to the <em>key</em>, not the dataset.</p></li>
+        <li><span class="b">B</span><p>Explain why <strong>every substring is the prefix of a suffix</strong>, and turn substring search into prefix search.</p></li>
+        <li><span class="b">C</span><p>Compress a suffix <em>trie</em> into a <strong>suffix tree</strong> and read off occurrences, repeats, and common substrings.</p></li>
+        <li><span class="b">D</span><p>Construct a <strong>suffix array by sorting</strong> with prefix-doubling in <code>O(n&nbsp;log&nbsp;n)</code>, and search it with binary search.</p></li>
+        <li><span class="b">E</span><p>Compute the <strong>LCP array</strong> (Kasai) and use it to count distinct substrings and find the longest repeat.</p></li>
+        <li><span class="b">F</span><p>Name the <strong>failure modes</strong>: the missing sentinel, the <code>O(n²)</code> trie, the accidental <code>O(n² log n)</code> sort.</p></li>
+      </ul>
+    </section>
+
+    <!-- ============ PREREQUISITES ============ -->
+    <section id="pre">
+      <div class="kicker"><span class="g square"></span> Section 03</div>
+      <h2>What I assume you carry in</h2>
+      <p class="measure">Each of these is a structure we will <em>reuse</em>, not merely reference. If one feels shaky, follow the link first.</p>
+      <ul class="obj prq reveal">
+        <li><span class="b">1</span><p><strong>Trees</strong> — rooted trees, children, paths, depth. <a href="dsa-07-balanced-search-trees.html">Lesson 07 ↗</a></p></li>
+        <li><span class="b">2</span><p><strong>Sorting</strong> — comparison sorts and radix/counting sort; the <code>n log n</code> barrier. <a href="dsa-06-sorting-and-the-comparison-barrier.html">Lesson 06 ↗</a></p></li>
+        <li><span class="b">3</span><p><strong>Hashing</strong> — maps for child pointers and for set membership. <a href="dsa-08-hashing-and-expected-constant-access.html">Lesson 08 ↗</a></p></li>
+        <li><span class="b">4</span><p><strong>Linear-time string matching</strong> — KMP / Z; what "scan once" buys and what it doesn't. <a href="dsa-18-linear-time-exact-matching.html">Lesson 18 ↗</a></p></li>
+      </ul>
+    </section>
+
+    <!-- ============ THE ONE IDEA ============ -->
+    <section id="idea">
+      <div class="kicker"><span class="g tri"></span> Section 04 · First principles</div>
+      <h2>Extract the computational skeleton</h2>
+      <p class="measure">Strip the domain away — genomes, search boxes, log files — and the formal object is the same. We are given a fixed text <code>T</code> of length <code>n</code> over an alphabet <code>Σ</code>. We will face a stream of queries, each a pattern <code>P</code> of length <code>m</code>, and for each we must answer <em>"does <code>P</code> occur in <code>T</code>, where, and how often?"</em> The decision we control is <strong>where to spend the work</strong>: at query time (KMP — cheap to set up, <code>O(n)</code> per query) or at build time (an index — expensive once, then <code>O(m)</code> per query). When queries are many and <code>T</code> is fixed, the index wins decisively.</p>
+
+      <p class="measure">To build an index we need one structural observation, and the entire lecture turns on it. A <em>substring</em> is any contiguous slice <code>T[i..j]</code>. A <em>suffix</em> is a slice that runs to the end, <code>T[i..n−1]</code>. Now look at the substring <code>T[i..j]</code>: it begins at position <code>i</code> — and so does the suffix <code>T[i..n−1]</code>. The substring is exactly the first <code>(j−i+1)</code> characters of that suffix. That is to say:</p>
+
+      <div class="pull reveal">
+        <q>Every substring of a text is the prefix of one of its suffixes.</q>
+        <cite>— the lemma that turns "search a text" into "organise its suffixes"</cite>
+      </div>
+
+      <p class="measure">The consequence is mechanical and total. <em>"Is <code>P</code> a substring of <code>T</code>?"</em> is precisely <em>"Is <code>P</code> a prefix of some suffix of <code>T</code>?"</em>. So if we hold the set of all <code>n</code> suffixes in a structure that answers <strong>prefix</strong> queries quickly, we have answered every <strong>substring</strong> query for free. The work splits cleanly: a part that can be <em>fully mechanised</em> — collect the suffixes, organise them, search the organisation — and a part that needs <em>judgement</em> — which organisation, given memory, alphabet size, and how many queries you will ask. We build the mechanical part precisely; we name the judgement explicitly.</p>
+
+      <p class="measure">So we first need a structure for prefix queries over a <em>set</em> of strings. That structure is the <strong>trie</strong>. Then we feed it the one special set — the suffixes of <code>T</code> — and refine it twice for size.</p>
+    </section>
+
+    <!-- ============ TRIES ============ -->
+    <section id="trie">
+      <div class="kicker"><span class="g circle"></span> Section 05 · The prefix tree</div>
+      <h2>The trie: an index keyed by spelling</h2>
+      <p class="measure">A <strong>trie</strong> (from re<em>trie</em>val; say it "try" to disambiguate from "tree") is a rooted tree in which <em>edges</em> carry characters and <em>paths</em> spell strings. The root is the empty string. From any node, at most one child edge leaves per alphabet symbol, so the child for character <code>c</code> is unique. The string a node represents is the concatenation of edge labels from the root down to it. A node flagged <em>terminal</em> means "the string spelled to here is a member of the set."</p>
+
+      <p class="measure">The structural payoff is that <strong>shared prefixes are shared paths</strong>. The words <code>car</code>, <code>card</code>, <code>care</code> do not store the letters <code>c‑a‑r</code> three times; they walk the same three edges and then diverge. Lookups never branch on the dataset size — to find a key of length <code>L</code> you follow exactly <code>L</code> edges and check a flag. The cost of a query depends on the <em>query</em>, never on how many keys you stored.</p>
+
+      <h3>Worked example — build the trie of {cat, car, card, care, dog}</h3>
+      <p class="measure">Insert in order. Each insertion walks from the root, creating an edge only when the needed child is missing, and flags the final node terminal. Trace it: <code>cat</code> lays the path c→a→t; <code>car</code> reuses c→a, adds r; <code>card</code> reuses c→a→r, adds d; <code>care</code> reuses c→a→r, adds e; <code>dog</code> starts a fresh branch d→o→g. The node for <code>car</code> is terminal <em>and</em> has children — both facts coexist.</p>
+
+      <figure class="reveal">
+        <svg viewBox="0 0 760 392" role="img" aria-labelledby="t1title t1desc">
+          <title id="t1title">Trie of the words cat, car, card, care, dog</title>
+          <desc id="t1desc">A rooted tree. The root marked empty branches on c and d. The c branch goes c, a, then splits into t (cat) and r (car); r further splits into d (card) and e (care). The d branch goes d, o, g (dog). Terminal nodes carry a red square marking set membership.</desc>
+          <!-- edges -->
+          <g class="dg-stroke">
+            <line x1="380" y1="52" x2="250" y2="116"/>
+            <line x1="380" y1="52" x2="600" y2="116"/>
+            <line x1="250" y1="116" x2="250" y2="188"/>
+            <line x1="600" y1="116" x2="600" y2="188"/>
+            <line x1="250" y1="188" x2="150" y2="264"/>
+            <line x1="250" y1="188" x2="330" y2="264"/>
+            <line x1="600" y1="188" x2="600" y2="264"/>
+            <line x1="330" y1="264" x2="262" y2="340"/>
+            <line x1="330" y1="264" x2="398" y2="340"/>
+          </g>
+          <!-- edge character labels (Bauhaus chips) -->
+          <g class="t-mono" font-size="14" font-weight="700">
+            <g><rect x="300" y="74" width="20" height="20" class="fill-red"/><text x="310" y="89" fill="#fff" text-anchor="middle">c</text></g>
+            <g><rect x="480" y="74" width="20" height="20" class="fill-blue"/><text x="490" y="89" fill="#fff" text-anchor="middle">d</text></g>
+            <g><rect x="240" y="142" width="20" height="20" class="fill-blue"/><text x="250" y="157" fill="#fff" text-anchor="middle">a</text></g>
+            <g><rect x="590" y="142" width="20" height="20" class="fill-red"/><text x="600" y="157" fill="#fff" text-anchor="middle">o</text></g>
+            <g><rect x="186" y="218" width="20" height="20" class="fill-blue"/><text x="196" y="233" fill="#fff" text-anchor="middle">t</text></g>
+            <g><rect x="296" y="218" width="20" height="20" class="fill-red"/><text x="306" y="233" fill="#fff" text-anchor="middle">r</text></g>
+            <g><rect x="590" y="218" width="20" height="20" class="fill-blue"/><text x="600" y="233" fill="#fff" text-anchor="middle">g</text></g>
+            <g><rect x="282" y="294" width="20" height="20" class="fill-blue"/><text x="292" y="309" fill="#fff" text-anchor="middle">d</text></g>
+            <g><rect x="370" y="294" width="20" height="20" class="fill-red"/><text x="380" y="309" fill="#fff" text-anchor="middle">e</text></g>
+          </g>
+          <!-- nodes -->
+          <g>
+            <circle cx="380" cy="52" r="17" class="fill-paper dg-stroke"/><text x="380" y="57" text-anchor="middle" class="t-mut t-mono" font-size="14">∅</text>
+            <circle cx="250" cy="116" r="15" class="fill-s2 dg-stroke"/>
+            <circle cx="600" cy="116" r="15" class="fill-s2 dg-stroke"/>
+            <circle cx="250" cy="188" r="15" class="fill-s2 dg-stroke"/>
+            <circle cx="600" cy="188" r="15" class="fill-s2 dg-stroke"/>
+            <!-- terminal nodes: ring + red inner square -->
+            <circle cx="150" cy="264" r="16" class="fill-paper dg-accent"/><rect x="144" y="258" width="12" height="12" class="fill-red"/>
+            <circle cx="330" cy="264" r="16" class="fill-paper dg-accent"/><rect x="324" y="258" width="12" height="12" class="fill-red"/>
+            <circle cx="600" cy="264" r="16" class="fill-paper dg-accent"/><rect x="594" y="258" width="12" height="12" class="fill-red"/>
+            <circle cx="262" cy="340" r="16" class="fill-paper dg-accent"/><rect x="256" y="334" width="12" height="12" class="fill-red"/>
+            <circle cx="398" cy="340" r="16" class="fill-paper dg-accent"/><rect x="392" y="334" width="12" height="12" class="fill-red"/>
+          </g>
+          <!-- word labels -->
+          <g class="t-disp t-ink" font-size="15">
+            <text x="150" y="292" text-anchor="middle">cat</text>
+            <text x="330" y="247" text-anchor="middle">car</text>
+            <text x="600" y="292" text-anchor="middle">dog</text>
+            <text x="262" y="368" text-anchor="middle">card</text>
+            <text x="398" y="368" text-anchor="middle">care</text>
+          </g>
+          <!-- legend -->
+          <g transform="translate(620,330)">
+            <circle cx="8" cy="8" r="9" class="fill-paper dg-accent"/><rect x="3" y="3" width="10" height="10" class="fill-red"/>
+            <text x="24" y="12" class="t-mut t-mono" font-size="12">= terminal (in set)</text>
+          </g>
+        </svg>
+        <figcaption><b>Figure 1 — A trie.</b> Five keys, but <code>c‑a‑r</code> is stored once and shared by three of them. A query for <code>care</code> follows four edges; a query for <code>cab</code> dies at the missing <code>b</code>-edge after three. Cost tracks the query length, not the five-word dataset.</figcaption>
+      </figure>
+
+      <h3>The mechanism, in code</h3>
+      <p class="measure">A node is just a map from character to child plus a terminal flag. Every operation is one walk.</p>
+      <div class="code" aria-label="Trie implementation in Python">
+        <div class="hd"><span class="d"></span> trie.py — insert / search / startsWith</div>
+<pre><span class="kw">class</span> <span class="fn">TrieNode</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        self.kids = {}          <span class="co"># char -&gt; TrieNode</span>
+        self.end  = <span class="kw">False</span>     <span class="co"># is a key spelled exactly here?</span>
+
+<span class="kw">class</span> <span class="fn">Trie</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        self.root = TrieNode()
+
+    <span class="kw">def</span> <span class="fn">insert</span>(self, word):
+        node = self.root
+        <span class="kw">for</span> ch <span class="kw">in</span> word:               <span class="co"># O(L) — one edge per char</span>
+            <span class="kw">if</span> ch <span class="kw">not in</span> node.kids:
+                node.kids[ch] = TrieNode()
+            node = node.kids[ch]
+        node.end = <span class="kw">True</span>
+
+    <span class="kw">def</span> <span class="fn">_walk</span>(self, s):              <span class="co"># follow s, return node or None</span>
+        node = self.root
+        <span class="kw">for</span> ch <span class="kw">in</span> s:
+            node = node.kids.get(ch)
+            <span class="kw">if</span> node <span class="kw">is</span> <span class="kw">None</span>: <span class="kw">return</span> <span class="kw">None</span>
+        <span class="kw">return</span> node
+
+    <span class="kw">def</span> <span class="fn">search</span>(self, word):           <span class="co"># exact membership</span>
+        node = self._walk(word)
+        <span class="kw">return</span> node <span class="kw">is not</span> <span class="kw">None</span> <span class="kw">and</span> node.end
+
+    <span class="kw">def</span> <span class="fn">startsWith</span>(self, prefix):     <span class="co"># any key with this prefix?</span>
+        <span class="kw">return</span> self._walk(prefix) <span class="kw">is not</span> <span class="kw">None</span></pre>
+      </div>
+
+      <div class="band blue measure reveal">
+        <h4 style="margin-top:0">The one design judgement: how to store <code>kids</code></h4>
+        <p style="margin-bottom:0">A hash map (above) costs <code>O(1)</code> expected per step and only as much memory as there are real children — ideal for sparse, large alphabets (Unicode). A fixed <strong>array of <code>σ</code> pointers</strong> per node is faster and cache-friendlier but spends <code>σ</code> slots <em>per node</em> whether used or not — for <code>σ=256</code> bytes that is mostly empty space. A <strong>ternary search tree</strong> sits between them. This is the part that does not mechanise away: the structure is fixed, the representation is an engineering call about <code>σ</code>, density, and the cache.</p>
+      </div>
+
+      <p class="measure">Tries already earn their keep — autocomplete (descend to the prefix node, enumerate the subtree), spell-checkers, and IP routing tables (longest-prefix match) are all tries. But our goal is substring search on one text, and §04 told us how: feed the trie the <em>suffixes</em>.</p>
+    </section>
+
+    <!-- ============ SUFFIX TREES ============ -->
+    <section id="stree">
+      <div class="kicker"><span class="g square"></span> Section 06 · Compressing the suffix trie</div>
+      <h2>From a trie of suffixes to a suffix tree</h2>
+      <p class="measure">Take the lemma at its word. Insert <em>all</em> suffixes of <code>T</code> into a trie. Now a prefix query on this <strong>suffix trie</strong> answers any substring query: to test <code>P</code>, walk it from the root; if the walk survives, <code>P</code> is a prefix of some suffix, i.e. a substring. Searching costs <code>O(m)</code> — exactly the index we wanted.</p>
+
+      <p class="measure">One hygiene step first. Append a unique <strong>sentinel</strong> <code>$</code> — a symbol not in <code>Σ</code>, defined to be lexicographically <em>smaller</em> than every real character. Without it, a suffix can be a <em>prefix</em> of another (<code>na</code> sits inside <code>nana</code>) and would end in the middle of a path rather than at its own node. With <code>$</code>, no suffix is a prefix of another, so the suffixes stand in <strong>bijection with the leaves</strong> — exactly one leaf per starting position.</p>
+
+      <p class="measure">The suffix trie is correct but <em>fat</em>. The suffixes of an <code>n</code>-character string have total length <code>n + (n−1) + ⋯ + 1 = n(n+1)/2 = Θ(n²)</code>, so the trie has <code>Θ(n²)</code> nodes. For a 1 MB file that is 10<sup>12</sup> nodes — unusable. The fix is pure structural economy:</p>
+
+      <div class="band accent measure reveal">
+        <h4 style="margin-top:0">Path compression — the suffix tree</h4>
+        <p style="margin-bottom:0">Any chain of nodes with a single child carries no branching information. <strong>Collapse every non-branching chain into one edge</strong>, and label that edge not by copied characters but by an <em>interval</em> <code>(start, len)</code> into <code>T</code>. Now branching happens only where suffixes genuinely diverge. A tree with <code>n</code> leaves and only branching internal nodes has at most <code>n−1</code> internal nodes — so the whole structure is <strong><code>O(n)</code> nodes and <code>O(n)</code> space</strong>, regardless of how long the individual suffixes are. That is the <em>suffix tree</em>.</p>
+      </div>
+
+      <h3>Worked example — the suffix tree of <code>banana$</code></h3>
+      <p class="measure">The seven suffixes are <code>banana$</code>(0), <code>anana$</code>(1), <code>nana$</code>(2), <code>ana$</code>(3), <code>na$</code>(4), <code>a$</code>(5), <code>$</code>(6). Group by first character, then recurse on where they split. Suffixes starting <code>a</code> share just <code>a</code>, then split into those continuing <code>na…</code> and the bare <code>$</code>; the <code>na…</code> pair splits again at the next <code>na$</code> vs <code>$</code>. The result has 7 leaves (one per suffix) and 3 internal branch nodes — drawn below.</p>
+
+      <figure class="reveal">
+        <svg viewBox="0 0 860 452" role="img" aria-labelledby="t2title t2desc">
+          <title id="t2title">Suffix tree of the string banana with sentinel dollar sign</title>
+          <desc id="t2desc">A rooted tree with four edges from the root labelled dollar, a, banana-dollar, and na. The a edge and the na edge lead to internal nodes that branch further. Leaves are squares carrying the suffix start index 0 through 6. The internal node reached by a then na, spelling ana, is highlighted as the deepest branch and equals the longest repeated substring ana.</desc>
+          <!-- edges -->
+          <g class="dg-stroke">
+            <line x1="430" y1="46" x2="120" y2="150"/>
+            <line x1="430" y1="46" x2="320" y2="150"/>
+            <line x1="430" y1="46" x2="590" y2="150"/>
+            <line x1="430" y1="46" x2="770" y2="150"/>
+            <line x1="320" y1="150" x2="250" y2="282"/>
+            <line x1="320" y1="150" x2="392" y2="282"/>
+            <line x1="250" y1="282" x2="186" y2="400"/>
+            <line x1="250" y1="282" x2="314" y2="400"/>
+            <line x1="770" y1="150" x2="712" y2="296"/>
+            <line x1="770" y1="150" x2="826" y2="296"/>
+          </g>
+          <!-- highlight the ana node path a -> na -->
+          <g class="dg-accent" stroke-dasharray="5 4">
+            <line x1="430" y1="46" x2="320" y2="150"/>
+            <line x1="320" y1="150" x2="250" y2="282"/>
+          </g>
+          <!-- edge labels with paper backing for legibility -->
+          <g class="t-mono" font-size="14.5" font-weight="700">
+            <g><rect x="244" y="86" width="20" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="254" y="101" class="t-ink" text-anchor="middle">$</text></g>
+            <g><rect x="365" y="86" width="20" height="20" class="fill-red"/><text x="375" y="101" fill="#fff" text-anchor="middle">a</text></g>
+            <g><rect x="470" y="86" width="78" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="509" y="101" class="t-ink" text-anchor="middle">banana$</text></g>
+            <g><rect x="592" y="86" width="26" height="20" class="fill-blue"/><text x="605" y="101" fill="#fff" text-anchor="middle">na</text></g>
+            <g><rect x="262" y="208" width="26" height="20" class="fill-blue"/><text x="275" y="223" fill="#fff" text-anchor="middle">na</text></g>
+            <g><rect x="356" y="208" width="20" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="366" y="223" class="t-ink" text-anchor="middle">$</text></g>
+            <g><rect x="196" y="332" width="36" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="214" y="347" class="t-ink" text-anchor="middle">na$</text></g>
+            <g><rect x="294" y="332" width="20" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="304" y="347" class="t-ink" text-anchor="middle">$</text></g>
+            <g><rect x="716" y="216" width="36" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="734" y="231" class="t-ink" text-anchor="middle">na$</text></g>
+            <g><rect x="800" y="216" width="20" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="810" y="231" class="t-ink" text-anchor="middle">$</text></g>
+          </g>
+          <!-- nodes: root + internals -->
+          <circle cx="430" cy="46" r="15" class="fill-paper dg-stroke"/><text x="430" y="51" text-anchor="middle" class="t-mut t-mono" font-size="13">root</text>
+          <circle cx="320" cy="150" r="12" class="fill-paper dg-stroke"/>
+          <circle cx="770" cy="150" r="12" class="fill-paper dg-stroke"/>
+          <circle cx="250" cy="282" r="13" class="fill-paper dg-accent"/>
+          <!-- internal labels -->
+          <text x="298" y="146" class="t-red t-mono" font-size="12">"a"</text>
+          <text x="748" y="146" class="t-blue t-mono" font-size="12">"na"</text>
+          <text x="206" y="280" class="t-red t-mono" font-size="12" font-weight="700">"ana" ← deepest</text>
+          <!-- leaves: squares with suffix index -->
+          <g class="t-mono" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">
+            <g><rect x="106" y="138" width="28" height="28" class="fill-blue"/><text x="120" y="157">6</text></g>
+            <g><rect x="378" y="270" width="28" height="28" class="fill-blue"/><text x="392" y="289">5</text></g>
+            <g><rect x="576" y="138" width="28" height="28" class="fill-blue"/><text x="590" y="157">0</text></g>
+            <g><rect x="172" y="388" width="28" height="28" class="fill-blue"/><text x="186" y="407">1</text></g>
+            <g><rect x="300" y="388" width="28" height="28" class="fill-blue"/><text x="314" y="407">3</text></g>
+            <g><rect x="698" y="284" width="28" height="28" class="fill-blue"/><text x="712" y="303">2</text></g>
+            <g><rect x="812" y="284" width="28" height="28" class="fill-blue"/><text x="826" y="303">4</text></g>
+          </g>
+          <text x="430" y="440" text-anchor="middle" class="t-mut t-mono" font-size="12">leaf squares hold the suffix start index · 7 leaves, 3 internal branch nodes = O(n)</text>
+        </svg>
+        <figcaption><b>Figure 2 — Suffix tree of <code>banana$</code>.</b> Each leaf is a suffix; each edge is an interval of the text. To test a pattern, spell it from the root: <code>na</code> survives to the right-hand branch, so <code>na</code> occurs — twice, because two leaves (2 and 4) hang below. The <strong>deepest internal node</strong> spells <code>ana</code> — the <em>longest repeated substring</em>, and indeed <code>ana</code> sits at positions 1 and 3 of <code>banana</code>.</figcaption>
+      </figure>
+
+      <div class="band measure">
+        <h4 style="margin-top:0">What the shape gives you, read directly off the tree</h4>
+        <p><strong>Occurs?</strong> spell <code>P</code> from the root — <code>O(m)</code>. &nbsp;<strong>How many times?</strong> count the leaves under where <code>P</code> ends (precompute subtree leaf-counts once). &nbsp;<strong>Longest repeated substring?</strong> the deepest internal node by string-depth. &nbsp;<strong>Longest common substring of two texts?</strong> build a <em>generalised</em> suffix tree of <code>A#B$</code> and find the deepest node with leaves from both. The tree is a Swiss-army index.</p>
+      </div>
+
+      <details>
+        <summary>Dig deeper — can we build it fast?</summary>
+        <div class="bd note">
+          <p>Built naively the suffix tree costs <code>O(n²)</code>. There are celebrated <em>linear-time</em> constructions — Weiner (1973), McCreight (1976), and <strong>Ukkonen (1995)</strong>, an elegant online <code>O(n)</code> algorithm using <em>suffix links</em> and "active point" bookkeeping. They are correct and beautiful, but intricate to implement and heavy in pointers (often 20–40 bytes per character in practice). For most engineering, the next structure — the suffix <em>array</em> — delivers the same queries with a fraction of the memory and code, which is why it is what ships.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============ SUFFIX ARRAYS ============ -->
+    <section id="sarray">
+      <div class="kicker"><span class="g tri"></span> Section 07 · The index, flattened by sorting</div>
+      <h2>Suffix arrays: the same information, sorted</h2>
+      <p class="measure">Look again at Figure 2 and read the leaves left to right under a lexicographic ordering of the children. You get the suffixes in <strong>sorted order</strong>. That observation is the whole trick: we do not need the tree's pointers to search — we need the suffixes <em>sorted</em>. So store only that.</p>
+
+      <p class="measure">The <strong>suffix array</strong> <code>SA</code> of <code>T</code> is the array of <em>starting indices</em> of all suffixes, listed in lexicographic order of the suffixes they name. It is a permutation of <code>0…n−1</code> — one integer per position, <code>O(n)</code> space, four bytes a character instead of the tree's dozens. For <code>T = banana</code> the suffixes sort as:</p>
+
+      <div class="tw reveal">
+        <table>
+          <caption>Sorting the 6 suffixes of "banana" → SA = [5, 3, 1, 0, 4, 2]</caption>
+          <thead>
+            <tr><th scope="col" class="num">rank&nbsp;i</th><th scope="col" class="num">SA[i]</th><th scope="col">suffix T[SA[i]…]</th><th scope="col">why it sits here</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="num">0</td><td class="num">5</td><td><code>a</code></td><td>shortest; <code>a</code> is a prefix of the next two</td></tr>
+            <tr><td class="num">1</td><td class="num">3</td><td><code>ana</code></td><td><code>a</code> then <code>n</code>; shorter than <code>anana</code></td></tr>
+            <tr><td class="num">2</td><td class="num">1</td><td><code>anana</code></td><td>same first 3 chars, longer</td></tr>
+            <tr><td class="num">3</td><td class="num">0</td><td><code>banana</code></td><td><code>b</code> &gt; <code>a</code></td></tr>
+            <tr><td class="num">4</td><td class="num">4</td><td><code>na</code></td><td><code>n</code> &gt; <code>b</code>; prefix of <code>nana</code></td></tr>
+            <tr><td class="num">5</td><td class="num">2</td><td><code>nana</code></td><td>last</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Searching: a binary search on sorted text</h3>
+      <p class="measure">Because the suffixes are sorted, all suffixes that share a given prefix <code>P</code> form a <strong>contiguous block</strong>. So <code>P</code> occurs in <code>T</code> iff some suffix has <code>P</code> as a prefix, and we find that block by two binary searches — the lower bound and the upper bound of <code>P</code>. The number of occurrences is <code>hi − lo</code>; the positions are <code>SA[lo…hi−1]</code>.</p>
+
+      <p class="measure"><strong>Trace <code>P = "ana"</code></strong> against <code>SA = [5,3,1,0,4,2]</code>. Binary search compares <code>P</code> to the suffix at the midpoint. <code>a</code>(rank 0) <code>&lt; ana</code>; <code>ana</code>(rank 1) <em>matches</em> as a prefix; <code>anana</code>(rank 2) also has <code>ana</code> as a prefix; <code>banana</code>(rank 3) <code>&gt; ana</code>. So the block is ranks <code>[1, 3)</code> → <code>lo=1, hi=3</code>, count <code>= 2</code>, at text positions <code>SA[1]=3</code> and <code>SA[2]=1</code>. Figure 3 shows the block.</p>
+
+      <figure class="reveal">
+        <svg viewBox="0 0 760 372" role="img" aria-labelledby="t3title t3desc">
+          <title id="t3title">Suffix array and LCP array of banana with the search block for ana highlighted</title>
+          <desc id="t3desc">Six rows, one per suffix in sorted order. Each row shows rank i, the value SA of i, the suffix text, and the LCP value. Rows for ranks 1 and 2, the suffixes ana and anana, are highlighted in yellow as the contiguous block matching the query ana. The maximum LCP value 3 marks the longest repeated substring ana.</desc>
+          <!-- header -->
+          <g class="t-mono t-ink" font-size="12.5" font-weight="700">
+            <text x="40" y="40" class="t-blue">i</text>
+            <text x="92" y="40" class="t-blue">SA[i]</text>
+            <text x="170" y="40" class="t-blue">suffix (sorted)</text>
+            <text x="690" y="40" class="t-blue" text-anchor="end">LCP[i]</text>
+          </g>
+          <line x1="32" y1="50" x2="724" y2="50" class="dg-thin"/>
+          <!-- query block highlight -->
+          <rect x="32" y="92" width="692" height="76" class="fill-yellow" opacity="0.32"/>
+          <rect x="32" y="92" width="692" height="76" fill="none" class="dg-accent"/>
+          <!-- rows -->
+          <g class="t-mono" font-size="14">
+            <!-- row0 -->
+            <text x="40" y="80" class="t-ink">0</text><text x="100" y="80" class="t-ink" text-anchor="middle">5</text>
+            <text x="170" y="80" class="t-ink">a</text><text x="690" y="80" class="t-mut" text-anchor="end">–</text>
+            <!-- row1 -->
+            <text x="40" y="122" class="t-ink">1</text><text x="100" y="122" class="t-ink" text-anchor="middle">3</text>
+            <text x="170" y="122" class="t-ink"><tspan class="t-red" font-weight="700">a</tspan>na</text><text x="690" y="122" class="t-ink" text-anchor="end" font-weight="700">1</text>
+            <!-- row2 -->
+            <text x="40" y="156" class="t-ink">2</text><text x="100" y="156" class="t-ink" text-anchor="middle">1</text>
+            <text x="170" y="156" class="t-ink"><tspan class="t-red" font-weight="700">ana</tspan>na</text><text x="690" y="156" class="t-ink" text-anchor="end" font-weight="700">3</text>
+            <!-- row3 -->
+            <text x="40" y="198" class="t-ink">3</text><text x="100" y="198" class="t-ink" text-anchor="middle">0</text>
+            <text x="170" y="198" class="t-ink">banana</text><text x="690" y="198" class="t-ink" text-anchor="end">0</text>
+            <!-- row4 -->
+            <text x="40" y="232" class="t-ink">4</text><text x="100" y="232" class="t-ink" text-anchor="middle">4</text>
+            <text x="170" y="232" class="t-ink">na</text><text x="690" y="232" class="t-ink" text-anchor="end">0</text>
+            <!-- row5 -->
+            <text x="40" y="266" class="t-ink">5</text><text x="100" y="266" class="t-ink" text-anchor="middle">2</text>
+            <text x="170" y="266" class="t-ink"><tspan class="t-blue" font-weight="700">na</tspan>na</text><text x="690" y="266" class="t-ink" text-anchor="end" font-weight="700">2</text>
+          </g>
+          <!-- block bracket + label -->
+          <path d="M735 92 q8 0 8 8 v60 q0 8 -8 8" class="dg-accent"/>
+          <text x="730" y="135" class="t-red t-mono" font-size="11" transform="rotate(90 745 130)" text-anchor="middle"></text>
+          <text x="36" y="300" class="t-mono t-red" font-size="12.5" font-weight="700">block for P = "ana"  →  lo=1, hi=3,  count = 2  at positions 3 and 1</text>
+          <text x="36" y="324" class="t-mono t-mut" font-size="12">SA = [5,3,1,0,4,2]   ·   LCP = [–,1,3,0,0,2]   ·   max LCP = 3 = "ana" (longest repeat)</text>
+          <text x="36" y="348" class="t-mono t-mut" font-size="12">distinct substrings = 6·7/2 − (1+3+0+0+2) = 21 − 6 = 15</text>
+        </svg>
+        <figcaption><b>Figure 3 — Suffix array + LCP for <code>banana</code>.</b> The flat array <em>is</em> the sorted leaves of Figure 2. The yellow band is the answer to "where is <code>ana</code>?" — a contiguous block found by binary search. The <code>LCP</code> column on the right is the bridge back to the tree, explained next.</figcaption>
+      </figure>
+
+      <p class="measure">Each comparison in the binary search may scan up to <code>m</code> characters, and there are <code>⌈log₂ n⌉</code> of them, so a plain suffix-array search is <strong><code>O(m log n)</code></strong> — not the tree's <code>O(m)</code>, but with a tiny constant and superb cache behaviour. (LCP-aware refinements reach <code>O(m + log n)</code>; we will not need them today.)</p>
+
+      <h3>Building it: sort the suffixes — but cleverly</h3>
+      <p class="measure">The definition says "sort the suffixes," and the naïve reading is fatal. Hand <code>n</code> suffixes to a comparison sort and each comparison can scan <code>O(n)</code> characters, giving <strong><code>O(n² log n)</code></strong> — fine at <code>n=10³</code>, hopeless at <code>n=10⁶</code>. We need the comparisons to be <code>O(1)</code>. The trick is <strong>prefix doubling</strong> (Manber–Myers): sort suffixes by their first character, <em>reuse those ranks</em> to sort by the first two, then four, eight… doubling the sorted prefix length each round. After <code>⌈log₂ n⌉</code> rounds the suffixes are fully sorted.</p>
+
+      <p class="measure">The engine is that once every suffix has a rank for its first <code>k</code> characters, the order on the first <code>2k</code> characters of suffix <code>i</code> is decided by the <em>pair</em> <code>(rank<sub>k</sub>[i], rank<sub>k</sub>[i+k])</code> — the rank of its first half and the rank of its second half (which is just the suffix starting <code>k</code> later). Comparing two integers is <code>O(1)</code>. Sort by the pairs, re-rank, repeat.</p>
+
+      <div class="tw reveal">
+        <table>
+          <caption>Prefix-doubling trace on "banana" — three rounds (k = 1, 2, 4), missing half ranks as −1</caption>
+          <thead>
+            <tr><th scope="col">index i →</th><th scope="col" class="num">0</th><th scope="col" class="num">1</th><th scope="col" class="num">2</th><th scope="col" class="num">3</th><th scope="col" class="num">4</th><th scope="col" class="num">5</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">character</th><td class="num">b</td><td class="num">a</td><td class="num">n</td><td class="num">a</td><td class="num">n</td><td class="num">a</td></tr>
+            <tr><th scope="row">rank after k=1</th><td class="num">1</td><td class="num">0</td><td class="num">2</td><td class="num">0</td><td class="num">2</td><td class="num">0</td></tr>
+            <tr><th scope="row">pair for k=2 <span class="note">(r₁[i], r₁[i+1])</span></th><td class="num">1,0</td><td class="num">0,2</td><td class="num">2,0</td><td class="num">0,2</td><td class="num">2,0</td><td class="num">0,−1</td></tr>
+            <tr><th scope="row">rank after k=2</th><td class="num">2</td><td class="num">1</td><td class="num">3</td><td class="num">1</td><td class="num">3</td><td class="num">0</td></tr>
+            <tr><th scope="row">pair for k=4 <span class="note">(r₂[i], r₂[i+2])</span></th><td class="num">2,3</td><td class="num">1,1</td><td class="num">3,3</td><td class="num">1,0</td><td class="num">3,−1</td><td class="num">0,−1</td></tr>
+            <tr><th scope="row">rank after k=4 <span class="note">(all distinct → done)</span></th><td class="num win">3</td><td class="num win">2</td><td class="num win">5</td><td class="num win">1</td><td class="num win">4</td><td class="num win">0</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="7" style="font-family:var(--mono);font-size:12px;color:var(--on-surface-variant);padding:10px 12px">Final ranks are all distinct → suffixes fully ordered. Invert: index with rank r goes to SA[r]. <b>SA = [5, 3, 1, 0, 4, 2]</b> — matching the hand-sort above.</td></tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <p class="measure">Three rounds because <code>2³ = 8 ≥ 6</code>. Each round sorts <code>n</code> pairs: with a comparison sort that is <code>O(n log n)</code> per round and <code>O(n log² n)</code> overall; swap in a two-pass <strong>radix sort</strong> on the pair (it is two small integers) and each round is <code>O(n)</code>, giving the clean <strong><code>O(n log n)</code></strong>. Here is the doubling in code, with a comparison sort for clarity:</p>
+
+      <div class="code" aria-label="Suffix array by prefix doubling in Python">
+        <div class="hd"><span class="d"></span> suffix_array.py — prefix doubling, O(n log² n)</div>
+<pre><span class="kw">def</span> <span class="fn">suffix_array</span>(s):
+    n = <span class="fn">len</span>(s)
+    sa   = <span class="fn">list</span>(<span class="fn">range</span>(n))                 <span class="co"># the suffixes, to be ordered</span>
+    rank = [<span class="fn">ord</span>(c) <span class="kw">for</span> c <span class="kw">in</span> s]            <span class="co"># round 0: rank by 1 char</span>
+    tmp  = [<span class="nu">0</span>] * n
+    k = <span class="nu">1</span>
+    <span class="kw">while</span> k &lt; n:
+        <span class="co"># key of suffix i over its first 2k chars = (rank[i], rank[i+k] or -1)</span>
+        <span class="kw">def</span> <span class="fn">key</span>(i):
+            <span class="kw">return</span> (rank[i], rank[i + k] <span class="kw">if</span> i + k &lt; n <span class="kw">else</span> <span class="nu">-1</span>)
+        sa.<span class="fn">sort</span>(key=key)                       <span class="co"># O(n log n); radix → O(n)</span>
+        tmp[sa[<span class="nu">0</span>]] = <span class="nu">0</span>
+        <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="nu">1</span>, n):              <span class="co"># re-rank; equal keys share a rank</span>
+            tmp[sa[i]] = tmp[sa[i-<span class="nu">1</span>]] + (<span class="nu">1</span> <span class="kw">if</span> key(sa[i]) &gt; key(sa[i-<span class="nu">1</span>]) <span class="kw">else</span> <span class="nu">0</span>)
+        rank = tmp[:]
+        <span class="kw">if</span> rank[sa[-<span class="nu">1</span>]] == n - <span class="nu">1</span>:            <span class="co"># all ranks distinct → sorted</span>
+            <span class="kw">break</span>
+        k *= <span class="nu">2</span>
+    <span class="kw">return</span> sa</pre>
+      </div>
+      <p class="note measure">Production code uses radix sort and the linear-time <strong>SA-IS</strong> or <strong>DC3 / skew</strong> algorithms for true <code>O(n)</code> construction; prefix doubling is the version you can derive from scratch and debug by hand — which is why we learn it first.</p>
+    </section>
+
+    <!-- ============ LCP ============ -->
+    <section id="lcp">
+      <div class="kicker"><span class="g circle"></span> Section 08 · The companion array</div>
+      <h2>LCP: the glue that restores the tree's power</h2>
+      <p class="measure">A bare suffix array can search, but it has forgotten the <em>internal nodes</em> of the suffix tree — the shared structure that answers "what repeats?" The <strong>LCP array</strong> restores it. Define <code>LCP[i]</code> as the length of the longest common prefix of the two <em>adjacent</em> suffixes in sorted order, <code>T[SA[i−1]…]</code> and <code>T[SA[i]…]</code>, with <code>LCP[0] = 0</code>. It measures how much consecutive sorted suffixes agree before they split — which is exactly the string-depth of the branching node between them in Figure 2.</p>
+
+      <p class="measure">For <code>banana</code> (Figure 3, right column): <code>a</code>→<code>ana</code> share <code>a</code> (1); <code>ana</code>→<code>anana</code> share <code>ana</code> (3); <code>anana</code>→<code>banana</code> share nothing (0); <code>banana</code>→<code>na</code> nothing (0); <code>na</code>→<code>nana</code> share <code>na</code> (2). So <code>LCP = [–, 1, 3, 0, 0, 2]</code>. Two payoffs fall straight out:</p>
+
+      <div class="band blue measure reveal">
+        <h4 style="margin-top:0">① Longest repeated substring = max LCP</h4>
+        <p>A substring repeats iff it is a shared prefix of two different suffixes — and the <em>longest</em> such shared prefix between any two suffixes is maximised between <em>adjacent</em> ones in sorted order. So the longest repeated substring has length <code>max(LCP)</code>; here <code>max = 3</code> at <code>i=2</code>, giving <code>T[SA[2]…SA[2]+3]</code> = <code>ana</code>. Same answer as the deepest internal node of the tree — recovered from two flat arrays.</p>
+      </div>
+
+      <div class="band accent measure reveal">
+        <h4 style="margin-top:0">② Counting distinct substrings</h4>
+        <p>Each suffix <code>SA[i]</code> contributes <code>n − SA[i]</code> prefixes — i.e. all substrings that <em>start</em> at that position. Walking the suffixes in sorted order, the first <code>LCP[i]</code> of those prefixes were already contributed by the previous suffix (they are the shared part), so they are duplicates. Subtract them once:</p>
+        <div class="mathwrap" style="margin-bottom:0">
+          <div class="math-scroll"><math display="block" aria-label="number of distinct substrings equals n times n plus 1 over 2 minus the sum from i equals 1 to n minus 1 of LCP i">
+            <mi>D</mi><mo>=</mo>
+            <munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></munderover>
+            <mrow><mo>(</mo><mi>n</mi><mo>−</mo><mi>SA</mi><mo>[</mo><mi>i</mi><mo>]</mo><mo>)</mo></mrow>
+            <mo>−</mo>
+            <munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></munderover>
+            <mrow><mi>LCP</mi><mo>[</mo><mi>i</mi><mo>]</mo></mrow>
+            <mspace width="0.6em"/><mo>=</mo><mspace width="0.4em"/>
+            <mfrac><mrow><mi>n</mi><mo>(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></mfrac>
+            <mo>−</mo>
+            <munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></munderover>
+            <mrow><mi>LCP</mi><mo>[</mo><mi>i</mi><mo>]</mo></mrow>
+          </math></div>
+        </div>
+        <p style="margin:.8em 0 0">For <code>banana</code>: total prefixes <code>= 6·7/2 = 21</code>, shared <code>= 1+3+0+0+2 = 6</code>, distinct <code>= 15</code>. Enumerating by hand confirms 15 distinct substrings. The whole count, in <code>O(n)</code> after the arrays exist.</p>
+      </div>
+
+      <h3>Computing LCP in linear time — Kasai's algorithm</h3>
+      <p class="measure">Naïvely each <code>LCP[i]</code> costs <code>O(n)</code> to recompute — <code>O(n²)</code> total. Kasai's insight: process suffixes in <em>text</em> order, not array order, and reuse work. If suffix <code>i</code> shares <code>h</code> characters with its sorted neighbour, then suffix <code>i+1</code> (one character shorter at the front) shares at least <code>h−1</code> — so <code>h</code> drops by at most 1 between consecutive starting positions. The pointer never rewinds far; the total work is <code>O(n)</code>.</p>
+
+      <div class="code" aria-label="Kasai LCP algorithm in Python">
+        <div class="hd"><span class="d"></span> kasai.py — LCP array in O(n)</div>
+<pre><span class="kw">def</span> <span class="fn">kasai</span>(s, sa):
+    n = <span class="fn">len</span>(s)
+    rank = [<span class="nu">0</span>] * n
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n):
+        rank[sa[i]] = i                <span class="co"># inverse of SA: position → its rank</span>
+    lcp = [<span class="nu">0</span>] * n
+    h = <span class="nu">0</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n):                <span class="co"># i walks text order, NOT sorted order</span>
+        <span class="kw">if</span> rank[i] &gt; <span class="nu">0</span>:
+            j = sa[rank[i] - <span class="nu">1</span>]        <span class="co"># the suffix just above i in sorted order</span>
+            <span class="kw">while</span> i + h &lt; n <span class="kw">and</span> j + h &lt; n <span class="kw">and</span> s[i+h] == s[j+h]:
+                h += <span class="nu">1</span>
+            lcp[rank[i]] = h
+            <span class="kw">if</span> h &gt; <span class="nu">0</span>:
+                h -= <span class="nu">1</span>                 <span class="co"># reuse: drop at most 1 for the next start</span>
+        <span class="kw">else</span>:
+            h = <span class="nu">0</span>
+    <span class="kw">return</span> lcp                         <span class="co"># lcp[rank[i]] convention; lcp[0] = 0</span></pre>
+      </div>
+      <p class="note measure">The <code>rank</code> array — the <em>inverse</em> of <code>SA</code> — is the quiet workhorse here and a frequent source of bugs: <code>SA</code> maps rank→position, <code>rank</code> maps position→rank, and Kasai needs the second. Build it once; never conflate the two.</p>
+    </section>
+
+    <!-- ============ COMPARISON ============ -->
+    <section id="cmp">
+      <div class="kicker"><span class="g square"></span> Section 09 · The trade space</div>
+      <h2>Four indices, side by side</h2>
+      <p class="measure">All four answer "is <code>P</code> a substring of <code>T</code>?" — they differ in what they cost to <em>build</em>, what they <em>weigh</em>, and what extra questions they answer cheaply. Reading this table <em>is</em> the engineering judgement §04 set aside.</p>
+      <div class="tw reveal">
+        <table>
+          <caption>Substring-index structures · n = |text|, m = |pattern|, σ = alphabet, occ = #matches</caption>
+          <thead>
+            <tr>
+              <th scope="col">structure</th>
+              <th scope="col" class="num">build time</th>
+              <th scope="col" class="num">space</th>
+              <th scope="col" class="num">query</th>
+              <th scope="col">also gives you</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Trie of a key set</th>
+              <td class="num">O(Σ|keys|)</td>
+              <td class="num">O(Σ|keys|·σ)</td>
+              <td class="num">O(L)</td>
+              <td>prefix/autocomplete over a <em>set</em> (not one text)</td>
+            </tr>
+            <tr>
+              <th scope="row">Suffix trie</th>
+              <td class="num">O(n²)</td>
+              <td class="num bn">O(n²)</td>
+              <td class="num">O(m)</td>
+              <td>everything below — but quadratic; never build it big</td>
+            </tr>
+            <tr>
+              <th scope="row">Suffix tree</th>
+              <td class="num">O(n) <span class="note">(Ukkonen)</span></td>
+              <td class="num">O(n) <span class="note">·20–40 B/char</span></td>
+              <td class="num win">O(m)</td>
+              <td>repeats, LCS, occurrence counts — richest, heaviest</td>
+            </tr>
+            <tr>
+              <th scope="row">Suffix array + LCP</th>
+              <td class="num">O(n) <span class="note">SA-IS</span> · O(n log n) <span class="note">doubling</span></td>
+              <td class="num win">O(n) <span class="note">·~4–8 B/char</span></td>
+              <td class="num">O(m log n)</td>
+              <td>repeats &amp; distinct counts via LCP — lean, cache-friendly</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="measure">The practical verdict is nearly always the bottom row. The suffix <em>tree</em> is the clearer mental model and the better asymptotic query; the suffix <em>array</em> ships, because <code>4n</code> bytes beats <code>30n</code> bytes and a flat array of integers is what a CPU's cache wants. They are <em>the same information</em> — the array is the tree's leaves in order, and LCP is the tree's internal depths — so you can always think in trees and build in arrays.</p>
+    </section>
+
+    <!-- ============ FAILURE MODES ============ -->
+    <section id="break">
+      <div class="kicker"><span class="g tri"></span> Section 10 · Where it breaks</div>
+      <h2>The mistakes that look correct</h2>
+      <p class="measure">Formal elegance hides sharp edges. These are the ones that compile, pass the toy test, and then fail on real input.</p>
+
+      <div class="band accent measure reveal">
+        <h4 style="margin-top:0">① The missing sentinel</h4>
+        <p style="margin-bottom:0">Drop <code>$</code> and a suffix can be a <em>prefix</em> of another (<code>na</code> inside <code>nana</code>). Now a suffix ends in the middle of an edge, the suffix↔leaf bijection breaks, occurrence counts via leaf-counting go wrong, and "is <code>P</code> a suffix vs a proper substring?" becomes ambiguous. The sentinel must be <em>unique</em> and <em>lexicographically smallest</em> (so it sorts first and never ties). Forgetting it is the single most common suffix-structure bug.</p>
+      </div>
+
+      <div class="band blue measure reveal">
+        <h4 style="margin-top:0">② Building the suffix <em>trie</em> — the O(n²) trap</h4>
+        <p style="margin-bottom:0">"Just insert every suffix into a trie" is correct and unusable: <code>Θ(n²)</code> nodes (a 1 MB text → 10<sup>12</sup> nodes). The seductive-but-wrong move is to scale it up. The right move is to <em>compress</em> (suffix tree) or <em>sort</em> (suffix array). Equally, a plain trie with an <em>array</em> of <code>σ</code> children per node burns <code>σ</code> pointers per node — for UTF-32 that is millions of empty slots. Use a hash-map child table for large alphabets.</p>
+      </div>
+
+      <div class="band accent measure reveal">
+        <h4 style="margin-top:0">③ The accidental O(n² log n) suffix array</h4>
+        <p style="margin-bottom:0"><code>sorted(range(n), key=lambda i: s[i:])</code> looks like one line of correctness and is a performance landmine: every key <code>s[i:]</code> <em>materialises</em> an O(n) slice and every comparison scans O(n). That is <code>O(n² log n)</code> time <em>and</em> <code>O(n²)</code> transient memory. Fine for <code>n=10³</code>; it melts at <code>n=10⁶</code>. Use prefix doubling (O(n log n)) or SA-IS (O(n)). The definition "sort the suffixes" is not an implementation.</p>
+      </div>
+
+      <div class="band blue measure reveal">
+        <h4 style="margin-top:0">④ Claiming O(m) for a suffix-array search</h4>
+        <p style="margin-bottom:0">Plain binary search on a suffix array is <code>O(m log n)</code>, not <code>O(m)</code> — each of the <code>log n</code> probes can re-scan up to <code>m</code> characters. <code>O(m)</code> is the suffix <em>tree</em>'s bound, or the array's only with the LCP-augmented Manber–Myers search. Quoting the tree's bound for the array's search is a classic interview slip.</p>
+      </div>
+
+      <div class="band accent measure reveal">
+        <h4 style="margin-top:0">⑤ Off-by-one in the occurrence block &amp; the SA/rank mix-up</h4>
+        <p style="margin-bottom:0">The match block is the half-open range <code>[lo, hi)</code>; count is <code>hi − lo</code>; <code>lo</code> is a <em>lower bound</em> (first suffix ≥ P) and <code>hi</code> an <em>upper bound</em> (first suffix &gt; P, allowing a higher last char). And: <code>SA</code> maps rank→position while <code>rank</code> (its inverse) maps position→rank. Kasai needs <code>rank</code>; LCP is indexed by <em>rank</em>, with <code>LCP[0]</code> undefined/0. Swapping the two arrays is a silent, classic defect.</p>
+      </div>
+
+      <div class="band blue measure reveal">
+        <h4 style="margin-top:0">⑥ Character signedness &amp; multibyte text</h4>
+        <p style="margin-bottom:0">Compare characters consistently: a signed <code>char</code> makes byte <code>0x80</code> sort <em>below</em> <code>$</code>, corrupting the order; cast to unsigned and keep the sentinel below all. And "one character" in UTF-8 is several bytes — index suffixes by code units consistently, or an edge label can split a multibyte glyph and your matches drift.</p>
+      </div>
+    </section>
+
+    <!-- ============ PRACTICE ============ -->
+    <section id="practice">
+      <div class="kicker"><span class="g circle"></span> Section 11 · Practice</div>
+      <h2>Build the index yourself</h2>
+      <p class="measure">Four problems, escalating from the trie to suffix-array counting. They are stated only — wrestle each one before you read a solution. Track your reasoning; the <em>derivation</em> is the skill, not the final code.</p>
+
+      <div class="prob reveal">
+        <h3>Implement a Trie (prefix tree)</h3>
+        <div class="meta"><span><b>Difficulty</b> Medium</span><span><b>Tags</b> trie · design</span></div>
+        <p>Design a <code>Trie</code> supporting three operations over lowercase words: <code>insert(word)</code> adds a key; <code>search(word)</code> returns <code>true</code> iff the exact word was inserted; <code>startsWith(prefix)</code> returns <code>true</code> iff any inserted key has that prefix.</p>
+        <div class="sig">class Trie:
+    def insert(self, word: str) -&gt; None
+    def search(self, word: str) -&gt; bool
+    def startsWith(self, prefix: str) -&gt; bool</div>
+        <p class="ex"><b>Constraints:</b> <code>1 ≤ |word|, |prefix| ≤ 2000</code>; lowercase <code>a–z</code>; up to <code>3·10⁴</code> total calls. Each call must run in <code>O(|argument|)</code>, independent of how many keys are stored.</p>
+        <p class="ex"><b>Example:</b> <code>insert("apple")</code>; <code>search("apple")→true</code>; <code>search("app")→false</code>; <code>startsWith("app")→true</code>; then <code>insert("app")</code>; <code>search("app")→true</code>.</p>
+      </div>
+
+      <div class="prob reveal">
+        <h3>Replace Words</h3>
+        <div class="meta"><span><b>Difficulty</b> Medium</span><span><b>Tags</b> trie · longest-prefix</span></div>
+        <p>You are given a <code>dictionary</code> of root words and a <code>sentence</code> of space-separated words. If a word in the sentence has any root as a prefix, replace it with the <strong>shortest</strong> such root. If several roots are prefixes, the shortest wins; if none, leave the word unchanged. Return the rewritten sentence.</p>
+        <div class="sig">def replaceWords(dictionary: List[str], sentence: str) -&gt; str</div>
+        <p class="ex"><b>Constraints:</b> <code>1 ≤ |dictionary| ≤ 1000</code>, each root <code>≤ 100</code> chars; sentence has <code>≤ 1000</code> words; lowercase letters and single spaces.</p>
+        <p class="ex"><b>Example:</b> <code>dictionary = ["cat","bat","rat"]</code>, <code>sentence = "the cattle was rattled by the battery"</code> → <code>"the cat was rat by the bat"</code>.</p>
+      </div>
+
+      <div class="prob reveal">
+        <h3>Longest Repeated Substring</h3>
+        <div class="meta"><span><b>Difficulty</b> Hard</span><span><b>Tags</b> suffix array · LCP</span></div>
+        <p>Given a string <code>s</code>, return the longest substring that appears <strong>at least twice</strong> in <code>s</code> (the two occurrences may overlap). If no substring repeats, return the empty string. If several answers tie in length, return any one.</p>
+        <div class="sig">def longestRepeatedSubstring(s: str) -&gt; str</div>
+        <p class="ex"><b>Constraints:</b> <code>1 ≤ |s| ≤ 3·10⁴</code>, lowercase. An <code>O(n²)</code> enumeration of substrings will time out — build an index.</p>
+        <p class="ex"><b>Example:</b> <code>s = "banana" → "ana"</code> (positions 1 and 3). <code>s = "abcd" → ""</code>. <code>s = "aaaa" → "aaa"</code>.</p>
+      </div>
+
+      <div class="prob reveal">
+        <h3>Count Distinct Substrings</h3>
+        <div class="meta"><span><b>Difficulty</b> Hard</span><span><b>Tags</b> suffix array · LCP · counting</span></div>
+        <p>Given a string <code>s</code>, return the number of <strong>distinct non-empty substrings</strong> of <code>s</code>.</p>
+        <div class="sig">def countDistinctSubstrings(s: str) -&gt; int</div>
+        <p class="ex"><b>Constraints:</b> <code>1 ≤ |s| ≤ 10⁵</code>, lowercase. There are up to ≈<code>5·10⁹</code> substrings counted with multiplicity, so you cannot enumerate them into a set; derive the count from a suffix index.</p>
+        <p class="ex"><b>Example:</b> <code>s = "aaa" → 3</code> (<code>a, aa, aaa</code>). <code>s = "banana" → 15</code>. <code>s = "abc" → 6</code>.</p>
+      </div>
+
+      <div class="gate">Attempt each problem before comparing your approach with the invariants and examples above.</div>
+    </section>
+
+    <!-- ============ RECAP ============ -->
+    <section id="recap">
+      <div class="kicker"><span class="g square"></span> Section 12 · Recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="pull reveal" style="border-left-color:var(--bau-red)">
+        <q>To search a text many times, stop scanning it and start sorting its suffixes — every substring is the prefix of one of them.</q>
+      </div>
+      <p class="measure">From that single lemma the whole edifice follows. A <strong>trie</strong> indexes a set of strings for prefix queries in time tied to the query, not the data. Feed it the <em>suffixes</em> and you can answer any substring query — but the raw suffix trie is <code>Θ(n²)</code>, so you either <strong>compress</strong> it (the <code>O(n)</code> suffix <em>tree</em>) or <strong>sort</strong> it (the <code>O(n)</code>-space suffix <em>array</em>). The <strong>LCP array</strong> is the bridge between them: it stores the tree's internal depths, and from it the longest repeat and the distinct-substring count fall out in linear time. Think in trees; build in arrays.</p>
+
+      <div class="next reveal">
+        <div>
+          <div class="lbl">Next in the DSA syllabus → Lesson 20</div>
+          <a href="dsa-20-p-np-reductions-and-np-completeness.html">The Boundary of Efficiency: P, NP, Reductions, and NP-Completeness</a>
+        </div>
+        <span class="arrow" aria-hidden="true">→</span>
+      </div>
+      <p class="note measure">We have spent nineteen lectures finding faster algorithms. Next we ask the opposite question — which problems admit <em>no</em> efficient algorithm at all, and how a single reduction can tie thousands of them together. The indexing instinct you just built (preprocess once, reuse forever) is exactly the kind of leverage that reductions formalise.</p>
+    </section>
+
+    
+
+  </main>
+</div>
+
+<script>
+/* Progressive, reduced-motion-safe reveals. Content is visible without JS (no-js class)
+   and forced visible under prefers-reduced-motion via CSS. */
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    els.forEach(function(el){ el.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  els.forEach(function(el){ io.observe(el); });
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-18-linear-time-exact-matching.html">← Previous study</a><a href="dsa-20-p-np-reductions-and-np-completeness.html">Next study →</a></nav>
+</body>
+</html>

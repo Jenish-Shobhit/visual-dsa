@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Living with Hardness: Approximation &amp; Parameterized Algorithms</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.85rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.5rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant); vertical-align:top}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.1em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue-f{fill:var(--bau-blue)} .dg-red-f{fill:var(--bau-red)} .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-label{font-family:var(--font-mono); font-size:13px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:11px; fill:var(--on-surface-variant)}
+  .dg-cap{font-family:var(--font-display); font-size:14px; font-weight:600; fill:var(--on-surface)}
+  /* graph helpers */
+  .dg-edge{stroke:var(--bau-ink); stroke-width:2.5; fill:none}
+  .dg-edge-thin{stroke:var(--bau-ink); stroke-width:2; fill:none}
+  .dg-match{stroke:var(--bau-yellow); stroke-width:11; fill:none; opacity:.62; stroke-linecap:round}
+  .dg-node{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-cover{fill:var(--bau-blue); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-free{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-nt{font-family:var(--font-mono); font-size:16px; font-weight:700; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
+  .dg-nt.w{fill:#fff}
+  /* number line */
+  .dg-axis{stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-tick{stroke:var(--bau-ink); stroke-width:2}
+  .dg-ghost{stroke:var(--on-surface-variant); stroke-width:2; stroke-dasharray:5 5; fill:none}
+  .dg-brace{stroke:var(--bau-ink); stroke-width:1.5; fill:none}
+  .dg-mark-l{fill:var(--bau-blue)} .dg-mark-a{fill:var(--bau-red)}
+  /* search tree */
+  .dg-tnode{fill:var(--surface-2); stroke:var(--bau-ink); stroke-width:2}
+  .dg-tnode.ok{fill:color-mix(in oklab,var(--bau-blue) 16%,var(--surface)); stroke:var(--bau-blue); stroke-width:2.5}
+  .dg-tnode.cut{fill:color-mix(in oklab,var(--bau-red) 9%,var(--surface)); opacity:.75}
+  .dg-tedge{stroke:var(--bau-ink); stroke-width:2; fill:none}
+  .dg-tlabel{font-family:var(--font-mono); font-size:12px; fill:var(--bau-blue); font-weight:700}
+  /* tsp */
+  .dg-pt{fill:var(--bau-ink)}
+  .dg-mstedge{stroke:var(--bau-blue); stroke-width:4; fill:none}
+  .dg-tour{stroke:var(--bau-red); stroke-width:3.5; fill:none}
+  .dg-double{stroke:var(--bau-blue); stroke-width:2; fill:none; stroke-dasharray:4 4}
+  .dg-matchedge{stroke:var(--bau-red); stroke-width:3; fill:none; stroke-dasharray:7 5}
+  .dg-odd{fill:none; stroke:var(--bau-red); stroke-width:2.5}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">21 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>21</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="210" height="160" viewBox="0 0 210 160" aria-hidden="true">
+    <!-- a wall with a door cut through it -->
+    <rect x="6" y="10" width="198" height="140" rx="6" fill="none" stroke="var(--bau-ink)" stroke-width="3"/>
+    <!-- brick grid -->
+    <line x1="6" y1="45"  x2="204" y2="45"  stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <line x1="6" y1="80"  x2="204" y2="80"  stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <line x1="6" y1="115" x2="204" y2="115" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <line x1="72"  y1="10" x2="72"  y2="45" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <line x1="138" y1="45" x2="138" y2="80" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <line x1="40"  y1="115" x2="40" y2="150" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <!-- three doors, in the three primaries -->
+    <rect x="92" y="64" width="44" height="86" rx="3" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <circle cx="22" cy="28" r="11" class="dg-blue-f"/>
+    <path d="M176 100 L196 138 L156 138 Z" class="dg-red-f"/>
+    <circle cx="127" cy="110" r="3" fill="var(--bau-ink)"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 21</span> coping with the intractable</div>
+    <h1>Living with Hardness</h1>
+    <p class="lede col">The previous lecture built a wall. It proved that for a whole continent of problems &mdash; routing, scheduling, covering, packing &mdash; no polynomial-time algorithm can return the exact optimum on every input, unless <code class="inl">P=NP</code>. But the problems do not retreat just because we proved them hard. The trucks still must be routed tomorrow morning. So this lecture is about the doors cut through the wall: how to get a <em>provably</em> good answer fast by relaxing exactly one of the demands we secretly bundled into the word &ldquo;solve.&rdquo;</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A number to relocate the difficulty.</strong> <span class="term">Vertex Cover</span> is NP-complete. Yet a five-line algorithm &mdash; pair up edges, take both endpoints &mdash; returns, on <em>every</em> graph, a cover never more than <strong>twice</strong> the smallest possible, in linear time. And if you instead insist on the exact answer but happen to know the cover is small, say <code class="inl">k=20</code>, you can find it <em>exactly</em> in about <code class="inl">2<sup>20</sup>&nbsp;&asymp;&nbsp;10<sup>6</sup></code> steps per edge &mdash; instant &mdash; <em>no matter how large the graph is</em>.</p>
+        <p style="margin-bottom:0">Same NP-complete problem. The hardness did not vanish; it was <em>compartmentalised</em> &mdash; pushed into a multiplicative factor of 2 in one approach, and into a function of the single parameter <code class="inl">k</code> in the other. That relocation, made rigorous, is the entire subject. Intractability, we will see, is never a property of a problem alone. It is a property of a <em>demand placed on a domain</em>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>The wall &amp; three doors</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>What approximation means</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>Vertex Cover: a 2-approx</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Set Cover &amp; the ln n ceiling</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>TSP: when the metric saves you</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>Parameterized: confine the blow-up</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Kernelization</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>The far wall: limits</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Where it breaks</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Practice</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> locate the difficulty before you fight it</div>
+      <h2>The wall, and the three doors</h2>
+      <div class="col">
+        <p>I always begin by separating the problem from the demand we make of it. When we declared a problem &ldquo;intractable,&rdquo; we quietly fused four separate requirements into one word. We wanted (1) the <strong>exact optimum</strong>, (2) on <strong>every</strong> input, (3) in <strong>polynomial time</strong>, (4) with a <strong>worst-case guarantee</strong>. The Cook&ndash;Levin theorem and the reductions of the last lecture forbid having (1), (2), and (3) <em>together</em> &mdash; assuming <code class="inl">P&ne;NP</code>. They say nothing about any <em>three</em> of the four held while one is released.</p>
+        <p>That is the whole strategy, and it is a strategy of formalization, not of cleverness. Write the demand down precisely, and you can see which clause is load-bearing for your particular instance &mdash; and release exactly that one.</p>
+
+        <ul class="obj">
+          <li><strong>Release exactness</strong> &mdash; keep polynomial time and every input, but accept an answer provably within a factor of optimal. This is the world of <span class="term">approximation algorithms</span>, with their guaranteed ratios.</li>
+          <li><strong>Release input-uniformity</strong> &mdash; keep the exact optimum, but stop charging the cost to <code class="inl">n</code> alone. Identify a parameter <code class="inl">k</code> that captures the combinatorial core, and confine the exponential blow-up to <code class="inl">k</code>. This is <span class="term">fixed-parameter tractability</span> (FPT).</li>
+          <li><strong>Release the worst-case guarantee</strong> &mdash; allow randomness or heuristic search, trading a certainty for a high probability. That door is <a class="inline" href="#s12">Lecture&nbsp;22</a>; we name it here only to keep the map honest.</li>
+        </ul>
+
+        <p>This lecture walks through the first two doors at full depth. They look unrelated &mdash; one gives up the right answer, the other keeps it &mdash; but they share a single conviction, which is the thesis I will keep returning to: <strong>hardness is a statement about a resource demand over a domain, and you defeat it by reshaping the demand, never by wishing the problem easier.</strong></p>
+
+        <div class="stats" aria-label="The four headline guarantees of this lecture">
+          <div class="stat lead"><span class="big">2&times;</span><span class="lab">Vertex Cover, approximated in linear time</span></div>
+          <div class="stat"><span class="big">ln&nbsp;n</span><span class="lab">Set Cover greedy ratio &mdash; and provably the best possible</span></div>
+          <div class="stat"><span class="big">3/2</span><span class="lab">metric TSP via Christofides</span></div>
+          <div class="stat"><span class="big">2<sup>k</sup>&middot;n</span><span class="lab">exact Vertex Cover, FPT in the cover size k</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>Define</strong> an <code class="inl">&alpha;</code>-approximation algorithm precisely, and explain the central manoeuvre of the whole field: proving <code class="inl">ALG &le; &alpha;&middot;OPT</code> <em>without ever computing OPT</em>, by bounding against a surrogate you can compute.</li>
+          <li><strong>Derive</strong> the <code class="inl">2</code>-approximation for Vertex Cover from a maximal matching, and the <code class="inl">H<sub>n</sub>&asymp;ln&nbsp;n</code> approximation for Set Cover from the greedy charging argument.</li>
+          <li><strong>Distinguish</strong> metric TSP (a <code class="inl">2</code>-approx by MST-doubling, <code class="inl">3/2</code> by Christofides) from general TSP, and reproduce the gap reduction proving general TSP has <em>no</em> constant-factor approximation unless <code class="inl">P=NP</code>.</li>
+          <li><strong>Define</strong> fixed-parameter tractability &mdash; <code class="inl">f(k)&middot;n<sup>c</sup></code> &mdash; and build the bounded-search-tree <code class="inl">O(2<sup>k</sup>&middot;(n+m))</code> algorithm for Vertex Cover, tracing the branching by hand.</li>
+          <li><strong>Apply</strong> kernelization (Buss&rsquo;s rules) to shrink an instance to a core of size <code class="inl">O(k<sup>2</sup>)</code> independent of <code class="inl">n</code>, and state the theorem that FPT and kernelizability are the same thing.</li>
+          <li><strong>Choose</strong> the right lever for a given hard problem, and name the limits: <span class="term">APX-hardness</span> (no PTAS) and <span class="term">W[1]-hardness</span> (no FPT) &mdash; the far walls that say a relaxation has run out of room.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>Three ideas carry the lecture. The first sets the stakes (why we relax at all); the second and third are the two engines we re-purpose &mdash; greedy choice for the approximation ratios, and dynamic programming for the exact parameterized solutions.</p>
+        <div class="chips">
+          <span class="chip">NP-completeness &amp; reductions</span>
+          <a class="chip" href="dsa-12-minimum-spanning-trees-and-union-find.html">greedy algorithms</a>
+          <a class="chip" href="dsa-15-dynamic-programming-optimal-substructure-over-a-subproblem-dag.html">dynamic programming</a>
+        </div>
+        <p style="margin-top:1em">If you can read a reduction as a structure-preserving map, recall why an MST is built by repeated greedy choice, and write a memoised recurrence over subproblems, you are ready. We are about to make &ldquo;good enough&rdquo; into a theorem.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> the trick of the whole field</div>
+      <h2>What &ldquo;approximation&rdquo; actually means</h2>
+      <div class="col">
+        <p>An <span class="term">approximation algorithm</span> is a polynomial-time algorithm that comes with a <em>proof</em> of how far from optimal it can ever be. The proof is the point. Without it you have a heuristic &mdash; a procedure that is often good and sometimes catastrophic, with no way to tell which. With it you have a guarantee that holds on the worst input an adversary can hand you.</p>
+        <p>Fix the convention for a minimization problem (Vertex Cover, Set Cover, TSP all minimize). Let <code class="inl">OPT(I)</code> be the optimum cost on instance <code class="inl">I</code> and <code class="inl">ALG(I)</code> the cost our algorithm returns.</p>
+
+        <div class="eq">
+          <span class="lbl">the definition (minimization, &alpha; &ge; 1)</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mtext>ALG&#xA0;is&#xA0;an&#xA0;</mtext><mi>&#x3B1;</mi><mtext>-approximation</mtext>
+            <mspace width="0.6em"/><mo>&#x21FA;</mo><mspace width="0.6em"/>
+            <mtext>for&#xA0;all&#xA0;</mtext><mi>I</mi><mo>:</mo><mspace width="0.4em"/>
+            <mi>ALG</mi><mo stretchy="false">(</mo><mi>I</mi><mo stretchy="false">)</mo>
+            <mo>&#x2264;</mo>
+            <mi>&#x3B1;</mi><mo>&#x22C5;</mo><mi>OPT</mi><mo stretchy="false">(</mo><mi>I</mi><mo stretchy="false">)</mo>
+            <mspace width="1.4em"/><mtext>and&#xA0;ALG&#xA0;runs&#xA0;in&#xA0;poly&#xA0;time.</mtext>
+          </math></div>
+        </div>
+
+        <p>An <code class="inl">&alpha;</code> of <code class="inl">1</code> would be exact; the smaller above <code class="inl">1</code>, the better. (For a maximization problem one writes <code class="inl">ALG &ge; OPT/&alpha;</code> with the same <code class="inl">&alpha;&ge;1</code> &mdash; the answer is never worse than a <code class="inl">1/&alpha;</code> fraction of the best.) The factor <code class="inl">&alpha;</code> may be a constant (<code class="inl">2</code>, <code class="inl">3/2</code>) or may grow with the input (<code class="inl">ln&nbsp;n</code>).</p>
+
+        <p>Now the difficulty that makes this an art rather than a definition. To certify <code class="inl">ALG &le; &alpha;&middot;OPT</code> we appear to need <code class="inl">OPT</code> &mdash; but computing <code class="inl">OPT</code> <em>is the NP-hard task</em> we are fleeing. We can never put our hands on it. So how can we possibly bound our distance from a number we cannot find?</p>
+
+        <p>The resolution is the single most important idea in the design of approximation algorithms, and it is pure formal reasoning. We do not bound against <code class="inl">OPT</code>; we bound against a <span class="term">surrogate</span> <code class="inl">L</code> &mdash; a quantity we <em>can</em> compute in polynomial time, for which we can <em>prove</em> a one-sided relationship to <code class="inl">OPT</code>. For minimization we find a computable <strong>lower bound</strong> <code class="inl">L &le; OPT</code>. Then we show our algorithm is not too far above that <em>same</em> <code class="inl">L</code>. The two inequalities chain, and <code class="inl">OPT</code> &mdash; forever unknown &mdash; is trapped between them.</p>
+
+        <div class="eq">
+          <span class="lbl">the lower-bound sandwich &mdash; the skeleton of every proof below</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>ALG</mi>
+            <mo>&#x2264;</mo>
+            <mi>&#x3B1;</mi><mo>&#x22C5;</mo><mi>L</mi>
+            <mspace width="1.2em"/><mtext>and</mtext><mspace width="1.2em"/>
+            <mi>L</mi><mo>&#x2264;</mo><mi>OPT</mi>
+            <mspace width="1.6em"/><mo>&#x27F9;</mo><mspace width="0.8em"/>
+            <mi>ALG</mi><mo>&#x2264;</mo><mi>&#x3B1;</mi><mo>&#x22C5;</mo><mi>L</mi><mo>&#x2264;</mo><mi>&#x3B1;</mi><mo>&#x22C5;</mo><mi>OPT</mi>
+          </math></div>
+        </div>
+
+        <p>Read it right to left and the trick disappears into obviousness: if our answer is within a factor <code class="inl">&alpha;</code> of <em>something no larger than the optimum</em>, it is within <code class="inl">&alpha;</code> of the optimum. The craft of approximation is almost entirely the craft of <em>finding the right computable lower bound</em>. For Vertex Cover it will be the size of a matching; for Set Cover, a pigeonhole count; for metric TSP, the minimum spanning tree. Each is a structure from earlier in this course, pressed into service as a certificate.</p>
+
+        <figure>
+          <svg viewBox="0 0 720 250" role="img" aria-labelledby="f1t f1d">
+            <title id="f1t">The lower-bound sandwich</title>
+            <desc id="f1d">A cost axis. A computable lower bound L sits at the left, the unknown optimum OPT lives in a bracketed region to its right, and the algorithm's output ALG sits further right, at or below alpha times L. Because L is at most OPT, ALG is at most alpha times OPT.</desc>
+            <!-- axis -->
+            <line class="dg-axis" x1="60" y1="150" x2="690" y2="150"/>
+            <path d="M690 150 l-12 -6 v12 z" fill="var(--bau-ink)"/>
+            <text class="dg-label sm" x="636" y="176">cost &#8594;</text>
+            <!-- L -->
+            <line class="dg-tick" x1="150" y1="138" x2="150" y2="162"/>
+            <circle class="dg-mark-l" cx="150" cy="150" r="7"/>
+            <text class="dg-cap" x="150" y="120" text-anchor="middle" fill="var(--bau-blue)">L</text>
+            <text class="dg-label sm" x="150" y="100" text-anchor="middle">computable</text>
+            <!-- OPT region -->
+            <line class="dg-ghost" x1="150" y1="150" x2="470" y2="150"/>
+            <rect x="150" y="143" width="320" height="14" fill="none"/>
+            <text class="dg-cap" x="310" y="120" text-anchor="middle" fill="var(--on-surface-variant)">OPT &#8712; [L, ALG]</text>
+            <text class="dg-label sm" x="310" y="100" text-anchor="middle">unknown &mdash; never computed</text>
+            <!-- ALG -->
+            <line class="dg-tick" x1="470" y1="138" x2="470" y2="162"/>
+            <rect class="dg-mark-a" x="463" y="143" width="14" height="14" rx="2"/>
+            <text class="dg-cap" x="470" y="120" text-anchor="middle" fill="var(--bau-red)">ALG</text>
+            <text class="dg-label sm" x="470" y="100" text-anchor="middle">our output</text>
+            <!-- alpha L tie -->
+            <line class="dg-tick" x1="470" y1="150" x2="470" y2="150"/>
+            <text class="dg-label" x="470" y="56" text-anchor="middle" fill="var(--bau-red)">ALG &#8804; &#945;&middot;L</text>
+            <!-- braces -->
+            <path class="dg-brace" d="M150 196 q0 12 12 12 h140 q12 0 12 12 q0 -12 12 -12 h140 q12 0 12 -12"/>
+            <text class="dg-label sm" x="310" y="236" text-anchor="middle">the gap we can bound &mdash; without knowing where OPT sits</text>
+            <!-- the chain -->
+            <text class="dg-label" x="60" y="40" fill="var(--bau-blue)">L &#8804; OPT</text>
+            <text class="dg-label" x="180" y="40" fill="var(--on-surface-variant)">&#8757;</text>
+            <text class="dg-label" x="210" y="40" fill="var(--bau-red)">ALG &#8804; &#945;&middot;L &#8804; &#945;&middot;OPT</text>
+          </svg>
+          <figcaption><b>Figure 1 &mdash; the sandwich.</b> We never locate <code class="inl">OPT</code>. We pin a computable lower bound <code class="inl">L</code> below it and prove our output sits within <code class="inl">&alpha;</code> of that <em>same</em> <code class="inl">L</code>. The unknown optimum is trapped, and the ratio falls out. Every approximation proof in this lecture is one instance of this picture.</figcaption>
+        </figure>
+
+        <div class="note info"><span class="tag">the formal lens</span>This is reasoning about an object you cannot construct, via a bound you can. It is exactly the discipline of the engine: you do not need to enumerate the answer to certify a property of it. Hold that thought &mdash; it is what separates an approximation algorithm from a hopeful heuristic.</div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> the cleanest guarantee in the subject</div>
+      <h2>Vertex Cover: a provable 2-approximation</h2>
+      <div class="col">
+        <p>Fix the object. Given an undirected graph <code class="inl">G=(V,E)</code>, a <span class="term">vertex cover</span> is a set <code class="inl">S&sube;V</code> such that every edge has at least one endpoint in <code class="inl">S</code> &mdash; every edge is &ldquo;watched&rdquo; by a chosen vertex. The <span class="term">minimum vertex cover</span> is the smallest such <code class="inl">S</code>. Deciding whether one of size <code class="inl">&le;k</code> exists is NP-complete; finding the minimum is NP-hard. We will return a cover guaranteed to be at most twice the minimum, and we will do it in the time it takes to read the edges.</p>
+
+        <p>The algorithm is almost insultingly simple, and that simplicity is precisely where its proof lives. Recall from the <a class="inline" href="dsa-12-minimum-spanning-trees-and-union-find.html">MST lecture</a> the idea of a <span class="term">matching</span>: a set of edges no two of which share a vertex. A matching is <span class="term">maximal</span> if you cannot add another edge without a collision. Here is the whole method.</p>
+
+        <pre><code><span class="tok-kw">def</span> <span class="tok-fn">vertex_cover_2approx</span>(V, E):       <span class="tok-com"># E = list of edges (u, v)</span>
+    matched = <span class="tok-fn">set</span>()                   <span class="tok-com"># vertices already touched by the matching</span>
+    cover   = <span class="tok-fn">set</span>()
+    <span class="tok-kw">for</span> (u, v) <span class="tok-kw">in</span> E:                  <span class="tok-com"># any fixed order of edges is fine</span>
+        <span class="tok-kw">if</span> u <span class="tok-kw">not in</span> matched <span class="tok-kw">and</span> v <span class="tok-kw">not in</span> matched:
+            cover.add(u); cover.add(v)      <span class="tok-com"># take BOTH endpoints</span>
+            matched.add(u); matched.add(v)  <span class="tok-com"># edge (u,v) joins the matching M</span>
+    <span class="tok-kw">return</span> cover                    <span class="tok-com"># |cover| = 2|M| &le; 2&middot;OPT</span></code></pre>
+
+        <p>Scan the edges once. Whenever you meet an edge whose endpoints are both still untouched, grab the edge into a matching <code class="inl">M</code> and put <em>both</em> its endpoints into the cover. That is all. Two claims make it a theorem.</p>
+
+        <h3>Claim 1 &mdash; the output is a valid cover</h3>
+        <p>Suppose not: some edge <code class="inl">e=(x,y)</code> has neither endpoint in our cover. Then neither <code class="inl">x</code> nor <code class="inl">y</code> was ever matched (the cover is exactly the matched vertices). But then, when our scan reached <code class="inl">e</code>, both endpoints were free &mdash; so we would have added <code class="inl">e</code> to <code class="inl">M</code>. Contradiction. Every edge is covered. The matching being <em>maximal</em> is the same statement as the output being a cover.</p>
+
+        <h3>Claim 2 &mdash; the ratio is 2, via the right lower bound</h3>
+        <p>Here is the surrogate. The edges of <code class="inl">M</code> are pairwise vertex-disjoint by construction. To cover edge <code class="inl">e&isin;M</code>, <em>any</em> vertex cover &mdash; including the optimal one &mdash; must contain at least one of <code class="inl">e</code>&rsquo;s two endpoints. Because the <code class="inl">|M|</code> edges share no vertices, these required vertices are all <em>distinct</em>. Therefore every vertex cover has at least <code class="inl">|M|</code> vertices:</p>
+
+        <div class="eq">
+          <span class="lbl">the computable lower bound L = |M|</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>OPT</mi><mo>&#x2265;</mo><mo stretchy="false">|</mo><mi>M</mi><mo stretchy="false">|</mo>
+            <mspace width="1.6em"/><mtext>while</mtext><mspace width="1em"/>
+            <mi>ALG</mi><mo>=</mo><mo stretchy="false">|</mo><mtext>cover</mtext><mo stretchy="false">|</mo><mo>=</mo><mn>2</mn><mo stretchy="false">|</mo><mi>M</mi><mo stretchy="false">|</mo>
+            <mspace width="1.6em"/><mo>&#x27F9;</mo><mspace width="0.8em"/>
+            <mi>ALG</mi><mo>=</mo><mn>2</mn><mo stretchy="false">|</mo><mi>M</mi><mo stretchy="false">|</mo><mo>&#x2264;</mo><mn>2</mn><mo>&#x22C5;</mo><mi>OPT</mi>
+          </math></div>
+        </div>
+
+        <p>That is the sandwich of &sect;03 made concrete: <code class="inl">L=|M|</code> is computed in linear time, it provably sits below <code class="inl">OPT</code>, and our output is exactly <code class="inl">2L</code>. The factor <code class="inl">2</code> is not a hope; it is forced by disjointness. Notice we never found the minimum cover; we bounded it from below with a matching and never looked back.</p>
+
+        <h3>Worked example</h3>
+        <p>Take the seven-vertex graph below. Scan edges in the order <code class="inl">a&ndash;b, c&ndash;d, e&ndash;f, b&ndash;c, d&ndash;e, d&ndash;g, f&ndash;g</code>.</p>
+
+        <figure>
+          <svg viewBox="0 0 720 340" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">Vertex Cover by maximal matching on a seven-vertex graph</title>
+            <desc id="f2d">Vertices a,c,e on top and b,d,f on the bottom, with g at the right. Three vertical edges a-b, c-d, e-f form a maximal matching, drawn as thick yellow bands. All six of their endpoints are filled blue as the cover. Vertex g is unmatched and hollow; its edges to d and f are still covered. The optimum cover is b, d, f of size three.</desc>
+            <!-- matching highlight (under edges) -->
+            <line class="dg-match" x1="120" y1="80" x2="120" y2="250"/>
+            <line class="dg-match" x1="330" y1="80" x2="330" y2="250"/>
+            <line class="dg-match" x1="540" y1="80" x2="540" y2="250"/>
+            <!-- non-matching edges -->
+            <line class="dg-edge-thin" x1="120" y1="250" x2="330" y2="80"/><!-- b-c -->
+            <line class="dg-edge-thin" x1="330" y1="250" x2="540" y2="80"/><!-- d-e -->
+            <line class="dg-edge-thin" x1="330" y1="250" x2="650" y2="165"/><!-- d-g -->
+            <line class="dg-edge-thin" x1="540" y1="250" x2="650" y2="165"/><!-- f-g -->
+            <!-- matching edges drawn crisp on top of band -->
+            <line class="dg-edge" x1="120" y1="80" x2="120" y2="250"/>
+            <line class="dg-edge" x1="330" y1="80" x2="330" y2="250"/>
+            <line class="dg-edge" x1="540" y1="80" x2="540" y2="250"/>
+            <!-- nodes: cover (filled) vs free (hollow) -->
+            <g>
+              <circle class="dg-cover" cx="120" cy="80"  r="24"/><text class="dg-nt w" x="120" y="80">a</text>
+              <circle class="dg-cover" cx="120" cy="250" r="24"/><text class="dg-nt w" x="120" y="250">b</text>
+              <circle class="dg-cover" cx="330" cy="80"  r="24"/><text class="dg-nt w" x="330" y="80">c</text>
+              <circle class="dg-cover" cx="330" cy="250" r="24"/><text class="dg-nt w" x="330" y="250">d</text>
+              <circle class="dg-cover" cx="540" cy="80"  r="24"/><text class="dg-nt w" x="540" y="80">e</text>
+              <circle class="dg-cover" cx="540" cy="250" r="24"/><text class="dg-nt w" x="540" y="250">f</text>
+              <circle class="dg-free"  cx="650" cy="165" r="24"/><text class="dg-nt" x="650" y="165">g</text>
+            </g>
+            <!-- legend -->
+            <g transform="translate(40,300)">
+              <line class="dg-match" x1="0" y1="0" x2="34" y2="0"/>
+              <text class="dg-label sm" x="44" y="4">matching M (3 edges)</text>
+              <circle class="dg-cover" cx="270" cy="0" r="9"/>
+              <text class="dg-label sm" x="286" y="4">cover = matched endpoints (6)</text>
+              <circle class="dg-free" cx="540" cy="0" r="9"/>
+              <text class="dg-label sm" x="556" y="4">free vertex</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 2 &mdash; the 2-approximation, exactly tight.</b> The scan matches <code class="inl">a&ndash;b</code>, then <code class="inl">c&ndash;d</code>, then <code class="inl">e&ndash;f</code> (each met with both ends free); after that every remaining edge has a matched endpoint, so the matching is maximal. Output cover <code class="inl">{a,b,c,d,e,f}</code>, size <code class="inl">6=2|M|</code>. The optimum is <code class="inl">{b,d,f}</code> of size <code class="inl">3</code> &mdash; check that <code class="inl">b,d,f</code> touch every edge. Ratio <code class="inl">6/3=2</code>: this instance <em>achieves</em> the worst case, which is why the bound cannot be improved by a smarter tie-break alone.</figcaption>
+        </figure>
+
+        <div class="note"><span class="tag">complexity</span>One linear scan of the edges with constant-time membership tests: <code class="inl">O(n+m)</code> time, <code class="inl">O(n)</code> space. No sorting, no priority queue, no recursion. The cheapest non-trivial guarantee in the entire course, and it is dead tight.</div>
+
+        <p>Is <code class="inl">2</code> the best constant known? Essentially yes, and that is itself a deep fact we revisit in &sect;09: no polynomial algorithm achieves ratio <code class="inl">1.36</code> unless <code class="inl">P=NP</code>, and none beats <code class="inl">2&minus;&epsilon;</code> under a stronger conjecture (the Unique Games Conjecture). The five-line matching algorithm is, astonishingly, near the frontier.</p>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> greedy, and exactly how good it is</div>
+      <h2>Set Cover and the ln n ceiling</h2>
+      <div class="col">
+        <p>Generalise the covering idea. In <span class="term">Set Cover</span> you are given a universe <code class="inl">U</code> of <code class="inl">n</code> elements and a family of subsets <code class="inl">S<sub>1</sub>,&hellip;,S<sub>m</sub>&sube;U</code>; choose the fewest subsets whose union is all of <code class="inl">U</code>. (Vertex Cover is the special case where each element is an edge and each vertex contributes the set of edges it touches.) It is the archetype of covering, scheduling, and committee-selection problems, and it is NP-hard.</p>
+        <p>The natural algorithm is greedy, in the same spirit as the MST: at each step take the locally best move &mdash; the set that covers the most still-uncovered elements &mdash; and repeat until nothing is left.</p>
+
+        <pre><code><span class="tok-kw">def</span> <span class="tok-fn">set_cover_greedy</span>(U, sets):        <span class="tok-com"># U = universe, sets = list of subsets</span>
+    uncovered = <span class="tok-fn">set</span>(U)
+    chosen    = []
+    <span class="tok-kw">while</span> uncovered:
+        best = <span class="tok-fn">max</span>(sets, key=<span class="tok-kw">lambda</span> S: <span class="tok-fn">len</span>(S &amp; uncovered))  <span class="tok-com"># most NEW elements</span>
+        chosen.append(best)
+        uncovered -= best                  <span class="tok-com"># &ge; |uncovered|/OPT removed this step</span>
+    <span class="tok-kw">return</span> chosen                       <span class="tok-com"># |chosen| &le; H_n &middot; OPT,  H_n &asymp; ln n</span></code></pre>
+
+        <p>Unlike the MST, greed here is <em>not</em> exactly optimal &mdash; Set Cover is NP-hard, so no efficient method can be. But greed is provably close, and the proof is a beautiful charging argument that pins the ratio to the harmonic number <code class="inl">H<sub>n</sub>=1+\tfrac12+\cdots+\tfrac1n&asymp;ln&nbsp;n</code>.</p>
+
+        <h3>The charging argument</h3>
+        <p>Let <code class="inl">OPT=k</code> (the optimal number of sets &mdash; unknown, but we only reason <em>about</em> it). Distribute a unit of cost. Each time greedy picks a set that covers <code class="inl">t</code> new elements, charge a price of <code class="inl">1/t</code> to each of those <code class="inl">t</code> newly covered elements. Then the total price summed over all elements equals the number of sets greedy chose &mdash; each chosen set contributes <code class="inl">t&middot;(1/t)=1</code>:</p>
+        <div class="eq">
+          <span class="lbl">total price = number of greedy sets</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mo stretchy="false">|</mo><mtext>Greedy</mtext><mo stretchy="false">|</mo>
+            <mo>=</mo>
+            <munder><mo>&#x2211;</mo><mrow><mi>e</mi><mo>&#x2208;</mo><mi>U</mi></mrow></munder>
+            <mtext>price</mtext><mo stretchy="false">(</mo><mi>e</mi><mo stretchy="false">)</mo>
+          </math></div>
+        </div>
+
+        <p>Now bound each element&rsquo;s price using the optimum as a yardstick. Order the elements <code class="inl">e<sub>1</sub>,e<sub>2</sub>,&hellip;,e<sub>n</sub></code> in the order greedy covers them. Look at the moment just before <code class="inl">e<sub>i</sub></code> is covered: every element <code class="inl">e<sub>i</sub>,e<sub>i+1</sub>,&hellip;,e<sub>n</sub></code> is still uncovered, so at least <code class="inl">n&minus;i+1</code> elements remain. Those remaining elements <em>are</em> covered by the <code class="inl">k</code> optimal sets, so by pigeonhole one optimal set covers at least a <code class="inl">1/k</code> fraction of them &mdash; at least <code class="inl">(n&minus;i+1)/k</code>. Greedy takes the set with the <em>most</em> new coverage, so the set it picks now covers at least that many, and the price charged to <code class="inl">e<sub>i</sub></code> is therefore at most <code class="inl">k/(n&minus;i+1)</code>. Sum it:</p>
+
+        <div class="eq">
+          <span class="lbl">the harmonic bound</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mo stretchy="false">|</mo><mtext>Greedy</mtext><mo stretchy="false">|</mo>
+            <mo>=</mo>
+            <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover>
+            <mtext>price</mtext><mo stretchy="false">(</mo><msub><mi>e</mi><mi>i</mi></msub><mo stretchy="false">)</mo>
+            <mo>&#x2264;</mo>
+            <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover>
+            <mfrac><mi>k</mi><mrow><mi>n</mi><mo>&#x2212;</mo><mi>i</mi><mo>+</mo><mn>1</mn></mrow></mfrac>
+            <mo>=</mo>
+            <mi>k</mi><munderover><mo>&#x2211;</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mfrac><mn>1</mn><mi>j</mi></mfrac>
+            <mo>=</mo>
+            <mi>k</mi><mo>&#x22C5;</mo><msub><mi>H</mi><mi>n</mi></msub>
+            <mo>=</mo>
+            <msub><mi>H</mi><mi>n</mi></msub><mo>&#x22C5;</mo><mi>OPT</mi>
+          </math></div>
+        </div>
+
+        <p>So greedy Set Cover is an <code class="inl">H<sub>n</sub></code>-approximation, roughly <code class="inl">ln&nbsp;n</code>. A quick trace: universe <code class="inl">{1..12}</code> with sets <code class="inl">A=\{1..6\}, B=\{5..10\}, C=\{1,2,3,11\}, D=\{4,8,12\}, E=\{9,10,11,12\}</code>. Greedy takes <code class="inl">A</code> (6 new), then <code class="inl">B</code> (4 new: 7,8,9,10), then <code class="inl">E</code> (2 new: 11,12), then <code class="inl">D</code> covers the last one... checking, after <code class="inl">A,B,E</code> only <code class="inl">4</code> is left, and <code class="inl">D</code> covers it &mdash; four sets. The reasoning never needed the true optimum; it only compared greedy&rsquo;s coverage to whatever the optimum&rsquo;s must have been.</p>
+
+        <p>And the ceiling is real. In 2014 Dinur and Steurer proved &mdash; sharpening Feige&rsquo;s 1998 result through the PCP machinery &mdash; that no polynomial algorithm approximates Set Cover to better than <code class="inl">(1&minus;o(1))ln&nbsp;n</code> unless <code class="inl">P=NP</code>. The dumb greedy is, up to lower-order terms, <strong>the best any polynomial algorithm will ever do.</strong> That is a rare and bracing thing: a one-line algorithm sitting exactly on a proven wall.</p>
+
+        <div class="pull">We cannot compute the optimum &mdash; so we <span>trap</span> it between a bound we can compute and an answer we can build.</div>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> the same problem, two universes</div>
+      <h2>The Traveling Salesman: when the metric saves you</h2>
+      <div class="col">
+        <p>The <span class="term">Traveling Salesman Problem</span> (TSP) asks for the cheapest tour that visits every one of <code class="inl">n</code> cities exactly once and returns home. It is the folk hero of intractability. But TSP is really two problems wearing one name, and the boundary between them is the single most instructive lesson in approximability: <em>whether the costs satisfy the triangle inequality</em>.</p>
+
+        <h3>General TSP has no approximation at all</h3>
+        <p>If edge costs are arbitrary, TSP cannot be approximated to <em>any</em> constant factor &mdash; indeed any polynomial factor <code class="inl">&alpha;(n)</code> &mdash; unless <code class="inl">P=NP</code>. The proof is a <span class="term">gap reduction</span> from Hamiltonian Cycle, and it is worth seeing because it is the template for proving a problem inapproximable.</p>
+        <p>Given a graph <code class="inl">G</code> on <code class="inl">n</code> vertices (we want to know if it has a Hamiltonian cycle), build a <em>complete</em> graph on the same vertices and weight its edges: cost <code class="inl">1</code> if the edge is in <code class="inl">G</code>, and a huge cost <code class="inl">B=&alpha;&middot;n+1</code> if it is not. Now look at the optimal tour:</p>
+        <ul>
+          <li>If <code class="inl">G</code> <strong>has</strong> a Hamiltonian cycle, that cycle is a tour using only weight-<code class="inl">1</code> edges: <code class="inl">OPT=n</code>.</li>
+          <li>If <code class="inl">G</code> has <strong>none</strong>, every tour must use at least one heavy edge: <code class="inl">OPT &ge; (n&minus;1)+B &gt; &alpha;&middot;n</code>.</li>
+        </ul>
+        <p>The two cases are separated by a factor of more than <code class="inl">&alpha;</code>. An <code class="inl">&alpha;</code>-approximation, fed the &ldquo;yes&rdquo; instance, would have to return a tour of cost <code class="inl">&le;&alpha;&middot;n</code>; fed the &ldquo;no&rdquo; instance it could not, because there even the optimum exceeds <code class="inl">&alpha;&middot;n</code>. So the approximation&rsquo;s output alone would tell Hamiltonicity apart &mdash; solving an NP-complete problem in polynomial time. Hence no such approximation exists unless <code class="inl">P=NP</code>. The <em>gap</em> in the construction is the whole engine: stretch &ldquo;yes&rdquo; and &ldquo;no&rdquo; instances apart by more than <code class="inl">&alpha;</code>, and an <code class="inl">&alpha;</code>-approximation becomes an exact decider.</p>
+
+        <h3>Metric TSP: the triangle inequality changes everything</h3>
+        <p>Now add one assumption, almost always true in practice (road distances, Euclidean distances, latencies): the <span class="term">triangle inequality</span> <code class="inl">c(x,z)&le;c(x,y)+c(y,z)</code> &mdash; a direct hop is never worse than a detour. This is <span class="term">metric TSP</span>, and it admits clean constant-factor approximations built from a structure you already own: the minimum spanning tree.</p>
+
+        <p>The lower bound is immediate and is, again, the sandwich. Take any tour and delete one edge: what remains is a spanning <em>path</em>, which is in particular a spanning tree, so its cost is at least the MST&rsquo;s. Therefore <code class="inl">MST &le; OPT</code> &mdash; the minimum spanning tree is a free certificate below the optimum tour.</p>
+
+        <div class="eq">
+          <span class="lbl">the TSP lower bound</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>MST</mi><mo>&#x2264;</mo><mtext>(optimal tour minus one edge)</mtext><mo>&#x2264;</mo><mi>OPT</mi>
+          </math></div>
+        </div>
+
+        <h3>Worked example &mdash; the MST-doubling 2-approximation</h3>
+        <p>Build the MST <code class="inl">T</code>. Double every edge of <code class="inl">T</code>: now every vertex has even degree, so the multigraph has an <span class="term">Euler tour</span> &mdash; a closed walk using each (doubled) edge once &mdash; of cost exactly <code class="inl">2&middot;MST</code>. That walk visits some vertices more than once. Walk it, and whenever it would revisit a city, <em>shortcut</em> straight to the next unvisited one. By the triangle inequality each shortcut only shortens the walk. The result is a genuine tour (each city once) of cost <code class="inl">&le;2&middot;MST&le;2&middot;OPT</code>.</p>
+
+        <figure>
+          <svg viewBox="0 0 720 330" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">Metric TSP by MST-doubling</title>
+            <desc id="f4d">Left panel: six cities with a minimum spanning tree drawn in blue. Right panel: the same cities with the doubled tree traced as a dashed Euler walk and the final shortcut Hamiltonian tour drawn in red, skipping repeated visits.</desc>
+            <!-- divider -->
+            <line x1="360" y1="20" x2="360" y2="310" stroke="var(--outline-variant)" stroke-width="1.5"/>
+            <text class="dg-cap" x="40" y="34">(a) build MST  &mdash;  cost &#8804; OPT</text>
+            <text class="dg-cap" x="392" y="34">(b) double &#8594; Euler walk &#8594; shortcut</text>
+            <!-- shared point coordinates (panel a) -->
+            <!-- p0(60,90) p1(160,60) p2(300,110) p3(265,250) p4(140,275) p5(55,200) -->
+            <!-- MST edges: p0-p1, p1-p2, p1-p4, p4-p5, p4-p3 -->
+            <g>
+              <line class="dg-mstedge" x1="60" y1="90"  x2="160" y2="60"/>
+              <line class="dg-mstedge" x1="160" y1="60" x2="300" y2="110"/>
+              <line class="dg-mstedge" x1="160" y1="60" x2="140" y2="225"/>
+              <line class="dg-mstedge" x1="140" y1="225" x2="55" y2="200"/>
+              <line class="dg-mstedge" x1="140" y1="225" x2="265" y2="250"/>
+            </g>
+            <g>
+              <circle class="dg-pt" cx="60"  cy="90"  r="6"/><text class="dg-label sm" x="44" y="86">0</text>
+              <circle class="dg-pt" cx="160" cy="60"  r="6"/><text class="dg-label sm" x="160" y="46">1</text>
+              <circle class="dg-pt" cx="300" cy="110" r="6"/><text class="dg-label sm" x="310" y="108">2</text>
+              <circle class="dg-pt" cx="265" cy="250" r="6"/><text class="dg-label sm" x="276" y="252">3</text>
+              <circle class="dg-pt" cx="140" cy="225" r="6"/><text class="dg-label sm" x="128" y="246">4</text>
+              <circle class="dg-pt" cx="55"  cy="200" r="6"/><text class="dg-label sm" x="36" y="200">5</text>
+            </g>
+            <!-- panel b: shift x by +340 -->
+            <g transform="translate(340,0)">
+              <!-- doubled tree as faint dashed -->
+              <g>
+                <line class="dg-double" x1="60" y1="90"  x2="160" y2="60"/>
+                <line class="dg-double" x1="160" y1="60" x2="300" y2="110"/>
+                <line class="dg-double" x1="160" y1="60" x2="140" y2="225"/>
+                <line class="dg-double" x1="140" y1="225" x2="55" y2="200"/>
+                <line class="dg-double" x1="140" y1="225" x2="265" y2="250"/>
+              </g>
+              <!-- shortcut tour 0-1-2-3-4-5-0 in red -->
+              <path class="dg-tour" d="M60 90 L160 60 L300 110 L265 250 L140 225 L55 200 Z"/>
+              <g>
+                <circle class="dg-pt" cx="60"  cy="90"  r="6"/>
+                <circle class="dg-pt" cx="160" cy="60"  r="6"/>
+                <circle class="dg-pt" cx="300" cy="110" r="6"/>
+                <circle class="dg-pt" cx="265" cy="250" r="6"/>
+                <circle class="dg-pt" cx="140" cy="225" r="6"/>
+                <circle class="dg-pt" cx="55"  cy="200" r="6"/>
+              </g>
+            </g>
+            <!-- legend -->
+            <g transform="translate(392,300)">
+              <line class="dg-double" x1="0" y1="0" x2="30" y2="0"/><text class="dg-label sm" x="38" y="4">doubled tree (Euler walk)</text>
+              <line class="dg-tour" x1="210" y1="0" x2="240" y2="0"/><text class="dg-label sm" x="248" y="4">shortcut tour</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 3 &mdash; MST-doubling.</b> The blue tree (left) has cost at most <code class="inl">OPT</code>. Doubling it gives an Eulerian multigraph whose Euler walk costs exactly <code class="inl">2&middot;MST</code>; shortcutting repeats (right, red) can only shorten it. Final tour <code class="inl">&le;2&middot;MST&le;2&middot;OPT</code> &mdash; a 2-approximation, and the triangle inequality is what licenses every shortcut.</figcaption>
+        </figure>
+
+        <h3>Christofides&ndash;Serdyukov: 3/2 with one clever patch</h3>
+        <p>Doubling is wasteful: it makes <em>every</em> vertex even when only the <em>odd-degree</em> ones in <code class="inl">T</code> actually need fixing. The number of odd-degree vertices in any tree is even (the handshake lemma: degrees sum to twice the edge count, so odds come in pairs). Let <code class="inl">O</code> be that even-sized set. Instead of doubling, add a <strong>minimum-weight perfect matching</strong> <code class="inl">M</code> on <code class="inl">O</code> alone. Then every vertex of <code class="inl">T&cup;M</code> has even degree &mdash; Eulerian again &mdash; and we Euler-tour and shortcut as before, for cost <code class="inl">&le;MST+M</code>.</p>
+        <p>The patch is cheap. Walk the optimal tour and look only at the vertices of <code class="inl">O</code> in the order it visits them: shortcutting (triangle inequality) gives a closed tour on <code class="inl">O</code> of cost <code class="inl">&le;OPT</code>. Since <code class="inl">|O|</code> is even, that cycle splits into <em>two</em> perfect matchings on <code class="inl">O</code> (alternate edges); the cheaper one costs <code class="inl">&le;OPT/2</code>, and the minimum matching is no costlier still. So <code class="inl">M&le;OPT/2</code> and the tour costs <code class="inl">&le;MST+M&le;OPT+OPT/2=\tfrac32 OPT</code>.</p>
+
+        <figure>
+          <svg viewBox="0 0 720 250" role="img" aria-labelledby="f5t f5d">
+            <title id="f5t">Christofides: matching the odd-degree vertices of the MST</title>
+            <desc id="f5d">A minimum spanning tree in blue. Four vertices of odd degree are circled in red. A minimum-weight perfect matching on just those four, drawn as red dashed edges, makes every degree even so the graph becomes Eulerian.</desc>
+            <!-- MST -->
+            <g>
+              <line class="dg-mstedge" x1="80" y1="80"  x2="220" y2="60"/>
+              <line class="dg-mstedge" x1="220" y1="60" x2="220" y2="190"/>
+              <line class="dg-mstedge" x1="220" y1="190" x2="90" y2="200"/>
+              <line class="dg-mstedge" x1="220" y1="60" x2="370" y2="90"/>
+              <line class="dg-mstedge" x1="370" y1="90" x2="500" y2="60"/>
+              <line class="dg-mstedge" x1="370" y1="90" x2="370" y2="200"/>
+            </g>
+            <!-- min matching on odd-degree set {80,80 ; 90,200 ; 500,60 ; 370,200} -->
+            <path class="dg-matchedge" d="M80 80 Q120 150 90 200"/>
+            <path class="dg-matchedge" d="M500 60 Q470 140 370 200"/>
+            <!-- odd-degree markers -->
+            <circle class="dg-odd" cx="80"  cy="80"  r="17"/>
+            <circle class="dg-odd" cx="90"  cy="200" r="17"/>
+            <circle class="dg-odd" cx="500" cy="60"  r="17"/>
+            <circle class="dg-odd" cx="370" cy="200" r="17"/>
+            <!-- nodes -->
+            <g>
+              <circle class="dg-pt" cx="80"  cy="80"  r="6"/>
+              <circle class="dg-pt" cx="220" cy="60"  r="6"/>
+              <circle class="dg-pt" cx="220" cy="190" r="6"/>
+              <circle class="dg-pt" cx="90"  cy="200" r="6"/>
+              <circle class="dg-pt" cx="370" cy="90"  r="6"/>
+              <circle class="dg-pt" cx="500" cy="60"  r="6"/>
+              <circle class="dg-pt" cx="370" cy="200" r="6"/>
+            </g>
+            <!-- legend -->
+            <g transform="translate(540,150)">
+              <line class="dg-mstedge" x1="0" y1="0" x2="28" y2="0"/><text class="dg-label sm" x="34" y="4">MST T</text>
+              <circle class="dg-odd" cx="14" cy="28" r="10"/><text class="dg-label sm" x="34" y="32">odd degree</text>
+              <line class="dg-matchedge" x1="0" y1="56" x2="28" y2="56"/><text class="dg-label sm" x="34" y="60">matching M</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 4 &mdash; Christofides&rsquo; patch.</b> Only the odd-degree vertices of the MST (red rings) violate the Eulerian even-degree condition. A minimum perfect matching among <em>just those</em> (red dashed) repairs all of them at cost <code class="inl">&le;OPT/2</code>, giving a tour <code class="inl">&le;\tfrac32 OPT</code> instead of <code class="inl">2&middot;OPT</code>.</figcaption>
+        </figure>
+
+        <p>Christofides (1976) held the record for <em>forty-five years</em>. Only in 2020&ndash;21 did Karlin, Klein, and Oveis Gharan break <code class="inl">3/2</code> &mdash; by a famously microscopic <code class="inl">&epsilon;&asymp;10<sup>&minus;36</sup></code>, via a randomized variant. That a constant so small was front-page news tells you how hard the wall is to move.</p>
+
+        <div class="note info"><span class="tag">the formal lens</span>The general-vs-metric split is the lesson: approximability is not a property of TSP, but of TSP-<em>with-its-cost-structure</em>. Add the triangle inequality and a problem with no approximation acquires a <code class="inl">3/2</code> one. The structure you assume is the resource you spend.</div>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> the second door: keep the exact answer</div>
+      <h2>Parameterized algorithms: confine the blow-up to k</h2>
+      <div class="col">
+        <p>Approximation gave up the exact answer to keep polynomial time. The second door keeps the <em>exact</em> answer and gives up something else: the insistence that runtime be measured by <code class="inl">n</code> alone. Many hard instances are large but <em>structurally</em> small &mdash; the network has millions of nodes but the cover we seek has twenty; the formula has thousands of clauses but a handful of variables decide everything. Parameterized complexity makes that intuition formal.</p>
+        <p>Pick a second measurement <code class="inl">k</code> &mdash; a <span class="term">parameter</span> &mdash; that captures the combinatorial core: the solution size, the treewidth, the number of distinct values. A problem is <span class="term">fixed-parameter tractable</span> (FPT) if it can be solved in time</p>
+
+        <div class="eq">
+          <span class="lbl">the FPT shape &mdash; the explosion is sealed inside f(k)</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>f</mi><mo stretchy="false">(</mo><mi>k</mi><mo stretchy="false">)</mo>
+            <mo>&#x22C5;</mo>
+            <msup><mi>n</mi><mi>c</mi></msup>
+            <mspace width="1.4em"/>
+            <mtext>for&#xA0;some&#xA0;computable&#xA0;</mtext><mi>f</mi>
+            <mtext>&#xA0;and&#xA0;constant&#xA0;</mtext><mi>c</mi><mtext>&#xA0;independent&#xA0;of&#xA0;</mtext><mi>k</mi><mtext>.</mtext>
+          </math></div>
+        </div>
+
+        <p>The function <code class="inl">f</code> may be as savage as <code class="inl">2<sup>k</sup></code> or <code class="inl">k!</code> &mdash; that is allowed. What is <em>not</em> allowed is for <code class="inl">k</code> to climb into the exponent <em>of <code class="inl">n</code></em>. The contrast is everything: <code class="inl">2<sup>k</sup>&middot;n</code> is FPT and runs in a blink when <code class="inl">k=20</code> and <code class="inl">n=10<sup>6</sup></code>; <code class="inl">n<sup>k</sup></code> is <em>not</em> FPT &mdash; for the same <code class="inl">k,n</code> it is <code class="inl">(10<sup>6</sup>)<sup>20</sup>=10<sup>120</sup></code>, hopeless. The difference between &ldquo;<code class="inl">k</code> multiplies&rdquo; and &ldquo;<code class="inl">k</code> exponentiates <code class="inl">n</code>&rdquo; is the difference between tractable and not.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>FPT vs. the slower regimes &mdash; where does k sit?</caption>
+            <thead>
+              <tr><th scope="col">Regime</th><th scope="col">Runtime shape</th><th scope="col">Example</th><th scope="col">Verdict for small k, huge n</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">FPT</th><td class="mono">f(k)&middot;n<sup>c</sup></td><td>Vertex Cover, <span class="mono">2<sup>k</sup>(n+m)</span></td><td class="good">tractable &mdash; blow-up sealed in k</td></tr>
+              <tr><th scope="row">XP</th><td class="mono">n<sup>f(k)</sup></td><td>brute-force k-Clique, <span class="mono">n<sup>k+1</sup></span></td><td class="mid">only for tiny k</td></tr>
+              <tr><th scope="row">W[1]-hard</th><td class="mono">(no FPT expected)</td><td>Clique / Independent Set by k</td><td class="bad">believed intractable even for fixed k</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="4">W[1]-hardness is to parameterized complexity what NP-hardness is to classical: strong evidence that no <code class="inl">f(k)&middot;n<sup>c</sup></code> algorithm exists.</td></tr></tfoot>
+          </table>
+        </div>
+
+        <h3>Vertex Cover, parameterized by k &mdash; the bounded search tree</h3>
+        <p>Decision form: does <code class="inl">G</code> have a vertex cover of size <code class="inl">&le;k</code>? The engine is a single structural observation we already used: <em>for any edge <code class="inl">(u,v)</code>, every cover must contain <code class="inl">u</code> or <code class="inl">v</code></em>. So pick any uncovered edge and <span class="term">branch</span> on that binary choice &mdash; try <code class="inl">u</code> in the cover, else try <code class="inl">v</code> &mdash; each branch spending one unit of the budget <code class="inl">k</code>.</p>
+
+        <pre><code><span class="tok-kw">def</span> <span class="tok-fn">vc_at_most_k</span>(G, k):               <span class="tok-com"># return a cover of size &le;k, or None</span>
+    <span class="tok-kw">if</span> <span class="tok-kw">not</span> G.edges:  <span class="tok-kw">return</span> []        <span class="tok-com"># no edges left -> empty cover suffices</span>
+    <span class="tok-kw">if</span> k == <span class="tok-num">0</span>:        <span class="tok-kw">return</span> <span class="tok-kw">None</span>      <span class="tok-com"># edges remain but budget spent -> fail</span>
+    (u, v) = <span class="tok-fn">next</span>(<span class="tok-fn">iter</span>(G.edges))      <span class="tok-com"># ANY remaining edge</span>
+    take_u = <span class="tok-fn">vc_at_most_k</span>(G.remove(u), k - <span class="tok-num">1</span>)   <span class="tok-com"># branch 1: u in cover</span>
+    <span class="tok-kw">if</span> take_u <span class="tok-kw">is not</span> <span class="tok-kw">None</span>: <span class="tok-kw">return</span> [u] + take_u
+    take_v = <span class="tok-fn">vc_at_most_k</span>(G.remove(v), k - <span class="tok-num">1</span>)   <span class="tok-com"># branch 2: v in cover</span>
+    <span class="tok-kw">if</span> take_v <span class="tok-kw">is not</span> <span class="tok-kw">None</span>: <span class="tok-kw">return</span> [v] + take_v
+    <span class="tok-kw">return</span> <span class="tok-kw">None</span>                        <span class="tok-com"># neither worked -> no size-k cover</span></code></pre>
+
+        <p>The recursion is a binary tree. Each node spends one of the <code class="inl">k</code> budget units, so the tree has depth at most <code class="inl">k</code>; with two children per node that is at most <code class="inl">2<sup>k</sup></code> leaves, and each node does <code class="inl">O(n+m)</code> work removing a vertex and its incident edges. Total: <code class="inl">O(2<sup>k</sup>&middot;(n+m))</code> &mdash; textbook FPT. The exponential is real but <em>caged</em> inside <code class="inl">2<sup>k</sup></code>; the dependence on the graph size is linear.</p>
+
+        <figure>
+          <svg viewBox="0 0 720 360" role="img" aria-labelledby="f6t f6d">
+            <title id="f6t">The bounded search tree for Vertex Cover at most k</title>
+            <desc id="f6d">A binary recursion tree. The root holds the whole graph with budget k. Each node picks an edge u-v and branches into a left child that puts u in the cover with budget k minus one, and a right child that puts v in the cover. Depth is at most k, giving at most two to the k leaves. One root-to-leaf path is highlighted as a successful cover; others are pruned when the budget reaches zero with edges remaining.</desc>
+            <!-- edges of the tree -->
+            <g class="dg-tedge">
+              <line x1="360" y1="58" x2="190" y2="130"/>
+              <line x1="360" y1="58" x2="530" y2="130"/>
+              <line x1="190" y1="158" x2="110" y2="230"/>
+              <line x1="190" y1="158" x2="270" y2="230"/>
+              <line x1="530" y1="158" x2="450" y2="230"/>
+              <line x1="530" y1="158" x2="610" y2="230"/>
+            </g>
+            <!-- branch labels -->
+            <text class="dg-tlabel" x="252" y="98">u&#8712;C</text>
+            <text class="dg-tlabel" x="442" y="98">v&#8712;C</text>
+            <!-- root -->
+            <g>
+              <rect class="dg-tnode" x="288" y="30" width="144" height="30" rx="6"/>
+              <text class="dg-label" x="360" y="50" text-anchor="middle">(G, k)  pick edge u&ndash;v</text>
+            </g>
+            <!-- level 1 -->
+            <rect class="dg-tnode ok" x="120" y="130" width="140" height="30" rx="6"/>
+            <text class="dg-label" x="190" y="150" text-anchor="middle">(G&minus;u, k&minus;1)</text>
+            <rect class="dg-tnode" x="460" y="130" width="140" height="30" rx="6"/>
+            <text class="dg-label" x="530" y="150" text-anchor="middle">(G&minus;v, k&minus;1)</text>
+            <!-- level 2 -->
+            <rect class="dg-tnode ok" x="44" y="230" width="132" height="30" rx="6"/>
+            <text class="dg-label sm" x="110" y="250" text-anchor="middle">(&middot;, k&minus;2)</text>
+            <rect class="dg-tnode cut" x="206" y="230" width="132" height="30" rx="6"/>
+            <text class="dg-label sm" x="272" y="250" text-anchor="middle">(&middot;, k&minus;2)</text>
+            <rect class="dg-tnode cut" x="386" y="230" width="132" height="30" rx="6"/>
+            <text class="dg-label sm" x="452" y="250" text-anchor="middle">(&middot;, k&minus;2)</text>
+            <rect class="dg-tnode cut" x="546" y="230" width="132" height="30" rx="6"/>
+            <text class="dg-label sm" x="612" y="250" text-anchor="middle">(&middot;, k&minus;2)</text>
+            <!-- success path emphasis -->
+            <line class="dg-tedge" x1="360" y1="58" x2="190" y2="130" stroke="var(--bau-blue)" stroke-width="3.5"/>
+            <line class="dg-tedge" x1="190" y1="158" x2="110" y2="230" stroke="var(--bau-blue)" stroke-width="3.5"/>
+            <!-- ellipsis to depth k -->
+            <text class="dg-label" x="110" y="298" text-anchor="middle" fill="var(--bau-blue)">&#8942;</text>
+            <text class="dg-label sm" x="110" y="322" text-anchor="middle" fill="var(--bau-blue)">leaf: no edges left &#10003;</text>
+            <text class="dg-label" x="272" y="298" text-anchor="middle">&#8942;</text>
+            <text class="dg-label sm" x="272" y="322" text-anchor="middle">leaf: k=0, edges remain &#10007;</text>
+            <!-- bound annotation -->
+            <text class="dg-cap" x="490" y="300" fill="var(--bau-red)">depth &#8804; k</text>
+            <text class="dg-cap" x="455" y="324" fill="var(--bau-red)">&#8804; 2&#7472; leaves</text>
+          </svg>
+          <figcaption><b>Figure 5 &mdash; the bounded search tree.</b> Branching on &ldquo;<code class="inl">u</code> or <code class="inl">v</code> covers edge <code class="inl">u&ndash;v</code>&rdquo; spends one budget unit per level, so the tree is at most <code class="inl">k</code> deep and has at most <code class="inl">2<sup>k</sup></code> leaves. A leaf succeeds (blue) when the graph runs out of edges within budget; it fails (red) when the budget hits zero with edges remaining. The whole exponential cost is <code class="inl">2<sup>k</sup></code>, multiplied by only linear graph work.</figcaption>
+        </figure>
+
+        <p>A worked trace on Figure&nbsp;2&rsquo;s graph with <code class="inl">k=3</code>: pick edge <code class="inl">a&ndash;b</code>. Branch <code class="inl">a&isin;C</code> &mdash; remove <code class="inl">a</code>, budget <code class="inl">2</code>; the remaining edges still force <code class="inl">b&ndash;c,d&ndash;e,&hellip;</code>, and this branch will need four vertices, so it dead-ends. Backtrack to <code class="inl">b&isin;C</code> &mdash; remove <code class="inl">b</code> (kills <code class="inl">a&ndash;b</code> and <code class="inl">b&ndash;c</code>), budget <code class="inl">2</code>; pick <code class="inl">c&ndash;d</code>, branch <code class="inl">d&isin;C</code> (kills <code class="inl">c&ndash;d,d&ndash;e,d&ndash;g</code>), budget <code class="inl">1</code>; pick <code class="inl">e&ndash;f</code>, branch <code class="inl">f&isin;C</code> (kills <code class="inl">e&ndash;f,f&ndash;g</code>), budget <code class="inl">0</code>, <em>no edges remain</em> &mdash; success with <code class="inl">{b,d,f}</code>. The tree found the exact optimum the 2-approximation could only bound.</p>
+
+        <div class="note info"><span class="tag">refinement</span>Smarter branching shrinks the base of the exponent. Branch on a maximum-degree vertex <code class="inl">v</code>: either <code class="inl">v</code> is in the cover, or <em>all</em> its neighbours are &mdash; a lopsided split that drives the running time down toward <code class="inl">1.2738<sup>k</sup></code> in the best known analyses. The shape <code class="inl">f(k)&middot;poly(n)</code> never changes; only <code class="inl">f</code> improves.</div>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> shrink the instance before you fight it</div>
+      <h2>Kernelization: a core of size f(k)</h2>
+      <div class="col">
+        <p>The second FPT technique is, to my taste, the more beautiful, because it is pure preprocessing with a proof attached. <span class="term">Kernelization</span> is a polynomial-time procedure that transforms an instance <code class="inl">(G,k)</code> into a <em>smaller</em> instance <code class="inl">(G',k')</code> &mdash; the <span class="term">kernel</span> &mdash; whose size depends only on <code class="inl">k</code>, not on <code class="inl">n</code>, and which has a solution if and only if the original does. You boil a galaxy-sized graph down to a puddle whose size is bounded by the parameter, then solve the puddle by brute force.</p>
+        <p>For Vertex Cover, two reduction rules (Buss&rsquo;s kernel) do it. Each rule is a small theorem.</p>
+        <ul class="obj">
+          <li><strong>High-degree rule.</strong> If a vertex <code class="inl">v</code> has degree <code class="inl">&gt;k</code>, it <em>must</em> be in any cover of size <code class="inl">&le;k</code>. Why: if you left <code class="inl">v</code> out, you would need all <code class="inl">&gt;k</code> of its neighbours to cover <code class="inl">v</code>&rsquo;s edges &mdash; already over budget. So put <code class="inl">v</code> in the cover, delete it, and decrement <code class="inl">k</code>.</li>
+          <li><strong>Isolated-vertex rule.</strong> A vertex with no edges covers nothing; delete it. It cannot help and cannot hurt.</li>
+        </ul>
+        <p>Apply both until neither fires. Now every surviving vertex has degree <code class="inl">&le;k</code>. Here is the counting punchline: a cover of size <code class="inl">k</code>, each of whose vertices touches <code class="inl">&le;k</code> edges, can cover at most <code class="inl">k&middot;k=k<sup>2</sup></code> edges. So if more than <code class="inl">k<sup>2</sup></code> edges remain, <strong>answer NO immediately</strong> &mdash; no size-<code class="inl">k</code> cover can exist. Otherwise at most <code class="inl">k<sup>2</sup></code> edges remain, touching at most <code class="inl">2k<sup>2</sup></code> vertices.</p>
+
+        <div class="eq">
+          <span class="lbl">the kernel size &mdash; independent of n</span>
+          <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+            <mtext>edges</mtext><mo>&#x2264;</mo><msup><mi>k</mi><mn>2</mn></msup>
+            <mspace width="1.6em"/><mtext>vertices</mtext><mo>&#x2264;</mo><mn>2</mn><msup><mi>k</mi><mn>2</mn></msup>
+            <mspace width="1.6em"/><mo>&#x27F9;</mo><mspace width="0.6em"/>
+            <mtext>kernel&#xA0;of&#xA0;size&#xA0;</mtext><mi>O</mi><mo stretchy="false">(</mo><msup><mi>k</mi><mn>2</mn></msup><mo stretchy="false">)</mo>
+          </math></div>
+        </div>
+
+        <p>A graph with a billion vertices and a small cover collapses, in linear time, to a residual graph of at most <code class="inl">2k<sup>2</sup></code> vertices. On that kernel you can run the <code class="inl">2<sup>k</sup></code> search tree of &sect;07 &mdash; now with <code class="inl">n&le;2k<sup>2</sup></code> &mdash; or even brute force, and lift the answer back. The two techniques compose: kernelize to strip the instance down to its core, then branch on the core.</p>
+
+        <div class="band flush" style="margin:1.4em 0">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin:0 0 .3em"><strong>The kernelization theorem.</strong> A parameterized problem is fixed-parameter tractable <em>if and only if</em> it admits a kernel (a polynomial-time reduction to an instance of size bounded by some computable function of <code class="inl">k</code>).</p>
+          <p style="margin:0; color:var(--on-surface-variant); font-size:15px">One direction is easy &mdash; kernelize, then brute-force the bounded kernel, and the total is <code class="inl">f(k)+poly(n)</code>, which is FPT. The other direction is the surprise: any FPT algorithm can be turned into a kernelization. &ldquo;Tractable by a parameter&rdquo; and &ldquo;compressible to that parameter&rdquo; are the <em>same property</em>, seen from two sides.</p>
+        </div>
+        <p>Vertex Cover even admits a <code class="inl">2k</code>-<em>vertex</em> kernel via a linear-programming relaxation &mdash; smaller still &mdash; but Buss&rsquo;s quadratic kernel already shows the shape of the idea: hardness made finite by squeezing it into <code class="inl">k</code>.</p>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> every door opens onto another wall</div>
+      <h2>The far wall: how good can &ldquo;good enough&rdquo; get?</h2>
+      <div class="col">
+        <p>Honesty requires the second wall. Relaxing a demand buys room, but not infinite room &mdash; each lever has its own intractability theory that says &ldquo;this far and no farther.&rdquo;</p>
+
+        <h3>For approximation: PTAS, APX-hardness, and the no-free-lunch line</h3>
+        <p>The best possible ratio differs sharply by problem. Some admit a <span class="term">PTAS</span> (Polynomial-Time Approximation Scheme): for <em>any</em> <code class="inl">&epsilon;&gt;0</code> a <code class="inl">(1+&epsilon;)</code>-approximation in time polynomial in <code class="inl">n</code> &mdash; you dial the error as close to zero as you like. Knapsack does even better, an <span class="term">FPTAS</span>, polynomial in both <code class="inl">n</code> and <code class="inl">1/&epsilon;</code>, by dynamic programming over <em>rounded</em> profit values. But others are <span class="term">APX-hard</span>: there is a constant below which no polynomial approximation can go unless <code class="inl">P=NP</code> &mdash; <em>no</em> PTAS exists. Vertex Cover and metric TSP are in this camp; Set Cover&rsquo;s <code class="inl">ln&nbsp;n</code> is provably its floor. The PCP theorem is the machine behind these lower bounds: it manufactures exactly the kind of gap we built by hand for general TSP.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>The approximability landscape &mdash; how far each lever reaches</caption>
+            <thead>
+              <tr><th scope="col">Problem</th><th scope="col">Best poly ratio</th><th scope="col">Lower bound (hardness)</th><th scope="col">Engine</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Vertex Cover</th><td class="good">2</td><td class="mid">&ge;1.36 unless P=NP; 2&minus;&epsilon; under UGC</td><td>maximal matching</td></tr>
+              <tr><th scope="row">Set Cover</th><td class="mid">H<sub>n</sub> &asymp; ln&nbsp;n</td><td class="bad">(1&minus;o(1))&middot;ln&nbsp;n &mdash; tight</td><td>greedy + charging</td></tr>
+              <tr><th scope="row">Metric TSP</th><td class="good">3/2 (now 3/2&minus;&epsilon;)</td><td class="mid">APX-hard (&ge;123/122)</td><td>MST + matching</td></tr>
+              <tr><th scope="row">General TSP</th><td class="bad">none</td><td class="bad">no f(n)-approx unless P=NP</td><td>&mdash; (gap reduction)</td></tr>
+              <tr><th scope="row">Knapsack (max)</th><td class="good">1+&epsilon; (FPTAS)</td><td class="mid">&mdash; (only weakly NP-hard)</td><td>DP + profit rounding</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="4">&ldquo;Best ratio&rdquo; is the smallest factor a polynomial algorithm achieves; the lower bound is the factor below which polynomial approximation is itself NP-hard.</td></tr></tfoot>
+          </table>
+        </div>
+
+        <h3>For parameterization: W[1]-hardness</h3>
+        <p>Not every problem yields to a parameter. Parameterize <span class="term">Independent Set</span> or <span class="term">Clique</span> by the solution size <code class="inl">k</code> and the best known algorithm is still essentially <code class="inl">n<sup>k</sup></code> &mdash; XP, not FPT. These problems are <span class="term">W[1]-hard</span>, the parameterized analogue of NP-hardness: a reduction theory (preserving the parameter) shows that an FPT algorithm for any W[1]-hard problem would collapse the whole <code class="inl">W</code>-hierarchy, believed impossible. So &ldquo;choose a parameter&rdquo; is not a universal escape &mdash; it works precisely when the parameter genuinely <em>controls</em> the combinatorial explosion. Vertex Cover&rsquo;s <code class="inl">k</code> does; Clique&rsquo;s <code class="inl">k</code> does not, even though the two problems are reductions of each other classically. The parameter, not just the problem, decides tractability.</p>
+
+        <div class="note warn"><span class="tag">the deep symmetry</span>Each relaxation regenerates the same drama one level up. Classical complexity has P vs NP; approximation has PTAS vs APX-hard; parameterization has FPT vs W[1]-hard. The wall is never destroyed &mdash; it is <em>moved</em>, and made to enclose a smaller, more honest territory. That is what &ldquo;living with hardness&rdquo; actually means.</div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>These techniques fail quietly &mdash; they return a number, and a wrong belief about that number is worse than a crash. Every trap below is something the formal lens flags early: an inequality pointed the wrong way, an assumption silently dropped, a parameter that does no work.</p>
+
+        <h3>The seductive greedy that is <em>not</em> a 2-approximation</h3>
+        <p>The &ldquo;obvious&rdquo; Vertex Cover heuristic &mdash; repeatedly take the <em>highest-degree</em> vertex &mdash; feels smarter than blindly matching edges. It is worse. Its approximation ratio is <code class="inl">&Theta;(log&nbsp;n)</code>, not <code class="inl">2</code>: there are bipartite graphs where the high-degree rule is lured into picking about <code class="inl">OPT&middot;ln&nbsp;n</code> vertices while the humble matching algorithm still guarantees <code class="inl">2&middot;OPT</code>. The lesson is exact: a guarantee comes from a <em>proof against a lower bound</em>, not from a plausible-sounding rule. Maximum-degree greed has no matching certificate, so it has no constant ratio.</p>
+
+        <h3>Proving the ratio with OPT in hand</h3>
+        <p>The commonest analysis error is to write &ldquo;<code class="inl">ALG&le;2&middot;OPT</code> because each chosen vertex corresponds to an optimal one&rdquo; &mdash; quietly assuming knowledge of <code class="inl">OPT</code>. You cannot compute <code class="inl">OPT</code>; if your proof references it except through a <em>computable lower bound</em>, the proof is circular. Always exhibit the surrogate <code class="inl">L</code> (the matching, the MST, the pigeonhole count) and bound both sides against it. And keep the inequality oriented: for minimization it is <code class="inl">ALG&le;&alpha;&middot;OPT</code> with <code class="inl">&alpha;&ge;1</code>; flip it and you have claimed your answer beats the optimum.</p>
+
+        <h3>Applying metric guarantees to a non-metric instance</h3>
+        <p>MST-doubling and Christofides are <em>load-bearing</em> on the triangle inequality &mdash; every shortcut step invokes it. Hand them a graph with arbitrary costs (penalties, one-way surcharges, costs that violate <code class="inl">c(x,z)&le;c(x,y)+c(y,z)</code>) and the ratio evaporates; you are back in general TSP, where <em>no</em> constant factor is possible. Before you quote &ldquo;<code class="inl">3/2</code>,&rdquo; verify the metric. If asymmetric (<code class="inl">c(x,y)&ne;c(y,x)</code>), Christofides does not even apply &mdash; that is a different, harder world.</p>
+
+        <h3>Mistaking n<sup>k</sup> for FPT</h3>
+        <p>&ldquo;Try all <code class="inl">k</code>-subsets&rdquo; runs in <code class="inl">\binom{n}{k}=&Theta;(n<sup>k</sup>)</code> &mdash; this is XP, <em>not</em> FPT, and it is genuinely intractable for, say, <code class="inl">k=15, n=10<sup>4</sup></code>. FPT demands the parameter <em>out</em> of <code class="inl">n</code>&rsquo;s exponent: <code class="inl">2<sup>k</sup>&middot;n</code>, not <code class="inl">n<sup>k</sup></code>. If your &ldquo;parameterized&rdquo; algorithm has <code class="inl">k</code> in the exponent of <code class="inl">n</code>, you have not parameterized anything &mdash; and for W[1]-hard problems like Clique, <code class="inl">n<sup>k</sup></code> is essentially the best you can hope for.</p>
+
+        <h3>A reduction rule that changes the answer</h3>
+        <p>Kernelization rules must be <em>sound</em>: <code class="inl">(G,k)</code> is a YES-instance iff the reduced <code class="inl">(G',k')</code> is. It is easy to write a plausible rule that quietly alters the optimum (e.g. deleting a degree-1 vertex without taking its neighbour, or forgetting to decrement <code class="inl">k</code> when you commit a forced vertex). Each rule needs the little theorem attached, exactly as Buss&rsquo;s two rules carry theirs. An unsound kernel is not a faster algorithm; it is a wrong one.</p>
+
+        <h3>Promising a ratio the problem forbids</h3>
+        <p>Do not offer a PTAS for an APX-hard problem. If a stakeholder asks for &ldquo;within 1% of optimal, in polynomial time&rdquo; on Vertex Cover or metric TSP, the honest answer is that no such algorithm can exist unless <code class="inl">P=NP</code> &mdash; <code class="inl">2</code> and <code class="inl">3/2</code> are near the floor. Knowing <em>which</em> problems admit a PTAS (Euclidean TSP does; metric TSP does not) is part of choosing the lever responsibly.</p>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Vertex Cover, within twice optimal</h3>
+          <p class="meta">approximation &middot; the matching lower bound &middot; constructive</p>
+          <p>You are given an undirected graph as <code class="inl">n</code> (vertices <code class="inl">0&hellip;n&minus;1</code>) and an edge list <code class="inl">edges</code>, with up to <code class="inl">10<sup>5</sup></code> edges. Return <em>any</em> vertex cover whose size is at most twice the minimum possible, in <code class="inl">O(n+m)</code> time. Your answer is accepted if it is a valid cover (every edge has a chosen endpoint) and its size is <code class="inl">&le;2&middot;OPT</code>. Example: <code class="inl">n=4, edges=[[0,1],[1,2],[2,3]] &#8594;</code> e.g. <code class="inl">[1,2]</code> (size 2; here <code class="inl">OPT=2</code>). In your write-up, state the computable lower bound that certifies the factor of 2 <em>without</em> computing <code class="inl">OPT</code>, and prove your output meets it. Then exhibit a small graph on which your algorithm actually returns <code class="inl">2&middot;OPT</code>.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Smallest Sufficient Team</h3>
+          <p class="meta">set cover, made exact by a tiny parameter &middot; bitmask DP &middot; LeetCode 1125</p>
+          <p>Given a list of <code class="inl">req_skills</code> (at most <code class="inl">16</code>) and a list of <code class="inl">people</code> where <code class="inl">people[i]</code> is the set of skills person <code class="inl">i</code> has, return a smallest team (indices of people) that together covers every required skill. Any one valid smallest team is accepted. Constraints: <code class="inl">1&le;req_skills.length&le;16</code>, <code class="inl">1&le;people.length&le;60</code>. Example: <code class="inl">req_skills=["java","nodejs","reactjs"]</code>, <code class="inl">people=[["java"],["nodejs"],["nodejs","reactjs"]] &#8594; [0,2]</code>. This <em>is</em> Set Cover &mdash; the problem &sect;05 could only approximate by <code class="inl">ln&nbsp;n</code> greedy. So which parameter here lets you solve it <strong>exactly</strong>, and why does that make the natural exponential a <em>fixed-parameter</em> one rather than an <code class="inl">n<sup>k</sup></code> one? Make the state space precise and bound it.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Shortest Path Visiting All Nodes</h3>
+          <p class="meta">TSP-shaped, exact for small n &middot; Held&ndash;Karp bitmask DP &middot; LeetCode 847</p>
+          <p>Given an undirected, connected graph as an adjacency list <code class="inl">graph</code> with <code class="inl">n</code> nodes (<code class="inl">1&le;n&le;12</code>), return the length of the shortest walk that visits every node; you may revisit nodes and reuse edges, and may start and end anywhere. Example: <code class="inl">graph=[[1,2,3],[0],[0],[0]] &#8594; 4</code>. This is the visit-everything core of TSP. Identify the parameter that makes an <em>exact</em> exponential algorithm acceptable here, and design a state of the form &ldquo;(set of visited nodes, current node).&rdquo; State the number of states and the transition cost, and explain why the result is <code class="inl">2<sup>n</sup>&middot;poly(n)</code> &mdash; FPT in <code class="inl">n</code> &mdash; rather than the naive <code class="inl">n!</code>.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Vertex Cover of size at most k</h3>
+          <p class="meta">the FPT door on the same problem &middot; bounded search tree + kernel &middot; decision</p>
+          <p>Given a graph (<code class="inl">n</code> up to <code class="inl">10<sup>5</sup></code> vertices, <code class="inl">m</code> up to <code class="inl">10<sup>5</sup></code> edges) and an integer <code class="inl">k&le;30</code>, decide whether a vertex cover of size <code class="inl">&le;k</code> exists and return one if so &mdash; <em>exactly</em>, in <code class="inl">O(2<sup>k</sup>&middot;(n+m))</code> or better. Example: the 4-cycle <code class="inl">edges=[[0,1],[1,2],[2,3],[3,0]]</code> with <code class="inl">k=2 &#8594; true</code> (e.g. <code class="inl">[0,2]</code>); with <code class="inl">k=1 &#8594; false</code>. This is Problem&nbsp;1&rsquo;s graph met through the <em>second</em> door. Specify the branching rule and prove the <code class="inl">2<sup>k</sup></code> leaf bound; then add the two Buss reduction rules and argue your instance shrinks to a kernel of <code class="inl">O(k<sup>2</sup>)</code> edges first. Why is this fast for <code class="inl">k=30</code> and <code class="inl">n=10<sup>5</sup></code> even though Vertex Cover is NP-complete?</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>NP-hardness forbids exact + every-input + polynomial all at once &mdash; so release exactly one and prove a guarantee on what remains.</strong> <em>Approximation</em> releases exactness: bound your output against a computable lower bound (a matching, the MST, a pigeonhole count), and the unknown optimum is trapped &mdash; Vertex Cover at <code class="inl">2</code>, Set Cover at <code class="inl">ln&nbsp;n</code>, metric TSP at <code class="inl">3/2</code>. <em>Parameterization</em> releases input-uniformity: confine the explosion to a parameter <code class="inl">k</code> with <code class="inl">f(k)&middot;n<sup>c</sup></code> &mdash; branch in a depth-<code class="inl">k</code> tree, or kernelize to a core of size <code class="inl">f(k)</code>. And always know the far wall: APX-hardness and W[1]-hardness say how much room a lever truly has. Hardness is never destroyed; it is relocated into a factor or a parameter you can afford.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 22</span>
+            <div class="ttl">Randomness as a Design Tool: Skip Lists, Treaps, Bloom Filters, and Karger&rsquo;s Cut</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We named a third door and walked past it: releasing the worst-case <em>guarantee</em> in exchange for randomness. Lecture&nbsp;22 opens it. A coin flip, used deliberately, gives a balanced search tree with no balancing logic (treaps), a sorted dictionary with no rotations (skip lists), set membership in a few bits (Bloom filters), and a global minimum cut from nothing but random edge contractions (Karger). The concentration bounds from <a class="inline" href="dsa-05-probability-for-algorithms.html">Lecture&nbsp;5</a> are what turn &ldquo;probably&rdquo; back into a guarantee &mdash; the same move we made here, now over the algorithm&rsquo;s own coins instead of over the input.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-20-p-np-reductions-and-np-completeness.html">← Previous study</a><a href="dsa-22-randomness-as-a-design-tool.html">Next study →</a></nav>
+</body>
+</html>

@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graphs &amp; Their Traversals: BFS, DFS &amp; the Structure They Expose</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.95rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.6rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.wrap-row td, tr.wrap-row th{background:color-mix(in oklab,var(--bau-yellow) 26%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-stroke{stroke:var(--on-surface); fill:none; stroke-width:2}
+  .dg-thin{stroke:var(--outline); fill:none; stroke-width:1}
+  .dg-dash{stroke:var(--outline); fill:none; stroke-width:1.5; stroke-dasharray:5 5}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+  .dg-red{stroke:var(--bau-red)}   .dg-red-f{fill:var(--bau-red)}
+  .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-cell{fill:var(--surface);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill{fill:var(--primary-container);stroke:var(--bau-ink);stroke-width:2}
+  .dg-label{font-family:var(--font-mono); font-size:14px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
+  .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  /* graph-node + edge helpers */
+  .dg-edge{stroke:var(--bau-ink); stroke-width:2; fill:none}
+  .dg-node{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node-hot{fill:var(--bau-yellow); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node-b{fill:var(--bau-ink); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node-r{fill:var(--bau-red); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-node-bl{fill:var(--bau-blue); stroke:var(--bau-ink); stroke-width:2.5}
+  .dg-nt{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
+  .dg-nt.w{fill:#fff}
+  /* traversal-specific edge inks */
+  .dg-back{stroke:var(--bau-red); stroke-width:2.4; fill:none}
+  .dg-fwd{stroke:var(--bau-blue); stroke-width:2; fill:none; stroke-dasharray:7 5}
+  .dg-cross{stroke:var(--on-surface-variant); stroke-width:2; fill:none; stroke-dasharray:2 6}
+  .dg-bridge{stroke:var(--bau-red); stroke-width:6.5; fill:none; stroke-linecap:round}
+  .dg-band{fill:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+  .dg-scc{fill:color-mix(in oklab,var(--bau-yellow) 16%,transparent); stroke:var(--bau-ink); stroke-width:2; stroke-dasharray:7 5}
+  .dg-ap{fill:none; stroke:var(--bau-yellow); stroke-width:6}
+  .dg-llab{font-family:var(--font-mono); font-size:12.5px; fill:var(--on-surface); font-weight:600}
+  .dg-tag{font-family:var(--font-mono); font-size:11px; font-weight:700; fill:var(--bau-red); text-anchor:middle}
+  .dg-dist{font-family:var(--font-mono); font-size:12px; fill:var(--bau-blue); font-weight:700; text-anchor:middle}
+
+  /* ===== inline cell strips (HTML, for state traces) ===== */
+  .cells{display:flex; gap:5px; flex-wrap:wrap; margin:.5em 0 1em; font-family:var(--font-mono); font-size:14px; align-items:flex-end}
+  .cells .c{min-width:40px; height:40px; display:grid; place-items:center; border:1.5px solid var(--bau-ink); border-radius:var(--r-xs); background:var(--surface-1); position:relative}
+  .cells .c.fill{background:var(--primary-container); color:var(--on-primary-container); font-weight:650}
+  .cells .c .k{position:absolute; top:-18px; left:0; right:0; text-align:center; font-size:11px; color:var(--on-surface-variant)}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">11 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>11</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="200" height="150" viewBox="0 0 200 150" aria-hidden="true">
+    <line x1="48" y1="48" x2="120" y2="35" stroke="var(--bau-ink)" stroke-width="3"/>
+    <line x1="48" y1="48" x2="95" y2="120" stroke="var(--bau-ink)" stroke-width="3"/>
+    <line x1="120" y1="35" x2="170" y2="100" stroke="var(--bau-ink)" stroke-width="3"/>
+    <line x1="95" y1="120" x2="170" y2="100" stroke="var(--bau-ink)" stroke-width="3"/>
+    <circle cx="48" cy="48" r="20" class="dg-blue-f"/>
+    <path d="M101 6 L150 28 L110 56 Z" class="dg-red-f"/>
+    <rect x="156" y="86" width="30" height="30" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <circle cx="95" cy="120" r="16" fill="var(--surface)" stroke="var(--bau-ink)" stroke-width="3"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 11</span> the most general structure in the course</div>
+    <h1>Graphs &amp; Their Traversals</h1>
+    <p class="lede col">A <em>graph</em> is just dots and the connections between them &mdash; and almost nothing in computing is <em>not</em> one. Roads, web pages, prerequisites, friendships, the call graph of your program, the dependency tree of your build: all graphs. This lecture builds the two ways to <strong>walk</strong> a graph &mdash; breadth-first and depth-first &mdash; and then shows the quiet miracle: each walk leaves behind a <em>tree</em> whose shape <strong>exposes structure you never explicitly searched for</strong> &mdash; shortest distances, a legal ordering, hidden cycles, tightly-bound clusters, and the single points whose failure would split the whole apart.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A number to set the stakes.</strong> Take a graph with a <strong>million</strong> vertices and <strong>ten million</strong> edges &mdash; a small social network, a medium codebase. Stored as an <em>adjacency list</em> it occupies about ten million links, and a single full traversal touches each once: roughly <strong>11 million</strong> steps, a few milliseconds. Store the <em>same</em> graph as an adjacency <em>matrix</em> and you need a million-by-a-million grid &mdash; <strong>10<sup>12</sup></strong> cells, a terabyte &mdash; of which <strong>99.999%</strong> are zero.</p>
+        <p style="margin-bottom:0">Same graph. A <strong>100,000&times;</strong> gap in space, opened by nothing but the <em>representation</em>. And once the representation is right, the astonishing part is that breadth-first and depth-first search each run in <code class="inl">O(V+E)</code> &mdash; time <em>linear</em> in the graph &mdash; yet between them they answer distance, ordering, cyclicity, connectivity, and cut-points. Two linear walks; the entire skeleton of the structure, laid bare.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>Why graphs are everywhere</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>The formal object</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>Two representations</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>The universal walk</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>BFS &amp; distance</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>DFS &amp; the clock</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Topological order &amp; cycles</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Strongly connected components</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Bridges &amp; articulation points</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>The ledger</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Where it breaks</span></a></li>
+      <li><a href="#s13"><span class="num">13</span><span>Practice</span></a></li>
+      <li><a href="#s14"><span class="num">14</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> the relation, made first-class</div>
+      <h2>Why graphs are the structure under everything</h2>
+      <div class="col">
+        <p>Every structure so far in this course has been about a single kind of relationship. An array imposes <em>position</em>; a tree imposes <em>hierarchy</em>; a heap imposes <em>partial order</em>. A <span class="term">graph</span> drops the special case and keeps only the essence: a set of things, and an arbitrary set of <em>pairings</em> among them. That is the most general relational structure there is &mdash; which is exactly why so many problems turn out to <em>be</em> graph problems once you strip the domain away.</p>
+        <p>I find it clarifying to do that stripping deliberately. A road map: intersections are vertices, roads are edges. A compiler's symbol resolution: definitions are vertices, &ldquo;uses&rdquo; are edges. A spreadsheet: cells are vertices, formula references are edges &mdash; and the dreaded <em>circular reference</em> error is a directed cycle the engine detected with the very algorithm in &sect;08. A build system with fifty thousand targets wired by &ldquo;A must compile before B&rdquo; is a directed graph, and two questions decide whether it can build at all: <em>is there a legal order</em>, and <em>if not, where is the cycle?</em></p>
+        <p>The same walk, pointed at a network of machines, answers a different question entirely: <em>which single node, if it failed, would split the network into disconnected pieces?</em> That node is an <span class="term">articulation point</span>, and finding every one of them costs no more than a single depth-first walk. This is the through-line of the lecture: <strong>you will learn only two traversals, and each, almost as a side effect, exposes a different hidden property of the structure.</strong></p>
+        <div class="note info"><span class="tag">the formal lens</span>A graph is a relation made into an object you can compute over. The art is the reduction: phrase your messy problem as &ldquo;vertices, edges, and a question about reachability or order,&rdquo; and a linear-time answer is usually already waiting in this lecture.</div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>Choose</strong> between an adjacency <em>matrix</em> and an adjacency <em>list</em> from the graph's density, and state the space and per-operation cost of each.</li>
+          <li><strong>Run</strong> breadth-first search by hand, and prove that the order of first discovery gives the exact <em>unweighted shortest-path distance</em> from the source.</li>
+          <li><strong>Run</strong> depth-first search, assign <span class="term">discovery</span> / <span class="term">finish</span> times, classify every edge as tree / back / forward / cross, and use the <em>back edge</em> as a cycle detector.</li>
+          <li><strong>Produce</strong> a topological order of a DAG two ways &mdash; DFS finish-time and Kahn's in-degree peeling &mdash; and detect when no order exists because a cycle does.</li>
+          <li><strong>Compute</strong> the strongly connected components of a directed graph with Kosaraju's two passes <em>and</em> Tarjan's single low-link pass, and explain the condensation DAG they reveal.</li>
+          <li><strong>Find</strong> all bridges and articulation points of an undirected graph from one DFS using the <code class="inl">disc</code> / <code class="inl">low</code> recurrence, with the bridge test <code class="inl">low[c] &gt; disc[u]</code>.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>Four ideas, each a short phrase. The traversals are nothing but a visited-set plus one of two containers you already know.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-01-linear-layouts-and-access-disciplines.html">queues (FIFO) &rarr; BFS</a>
+          <a class="chip" href="dsa-01-linear-layouts-and-access-disciplines.html">stacks (LIFO) &rarr; DFS</a>
+          <span class="chip">recursion (the implicit stack)</span>
+          <a class="chip" href="dsa-01-linear-layouts-and-access-disciplines.html">linked structures (adjacency lists)</a>
+        </div>
+        <p style="margin-top:1em">If you can enqueue and dequeue, push and pop, and trust a recursive call to remember where it left off, you already hold the machinery. A graph traversal is the moment those three primitives stop being toys and start exposing the shape of real data.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> fix the vocabulary before the algorithm</div>
+      <h2>The formal object: vertices, edges, and the questions they raise</h2>
+      <div class="col">
+        <p>A <span class="term">graph</span> is a pair <code class="inl">G = (V, E)</code>: a finite set <code class="inl">V</code> of <span class="term">vertices</span> (nodes) and a set <code class="inl">E</code> of <span class="term">edges</span>, each edge a pair of vertices. We write <code class="inl">n = |V|</code> and <code class="inl">m = |E|</code>; nearly every cost in this lecture is stated in those two numbers. The first fork is direction:</p>
+        <ul>
+          <li>In an <span class="term">undirected</span> graph an edge <code class="inl">{u,v}</code> is symmetric &mdash; a two-way street, a mutual friendship.</li>
+          <li>In a <span class="term">directed</span> graph (a <em>digraph</em>) an edge <code class="inl">(u&rarr;v)</code> is one-way &mdash; a hyperlink, a prerequisite, a function call.</li>
+        </ul>
+        <p>This lecture treats <em>unweighted</em> graphs: an edge either exists or it does not, all equally &ldquo;one step.&rdquo; Weights &mdash; distances, costs &mdash; arrive in Lecture&nbsp;13, and they change the right algorithm completely; mistaking one setting for the other is the headline failure mode of &sect;12.</p>
+        <p>A few more terms, defined once and used throughout. The <span class="term">degree</span> of a vertex is its number of incident edges; in a digraph it splits into <span class="term">in-degree</span> and <span class="term">out-degree</span>. A <span class="term">path</span> is a sequence of vertices joined by edges; a <span class="term">cycle</span> is a path that returns to its start. An undirected graph is <span class="term">connected</span> if a path joins every pair; its maximal connected pieces are its <span class="term">components</span>. A directed graph is <span class="term">strongly connected</span> if you can travel from any vertex to any other <em>following the arrows</em> &mdash; the subtlety that makes &sect;09 its own topic.</p>
+        <p>One identity will pay for the linear-time bound later, so meet it now. Summing every vertex's degree counts each undirected edge from <em>both</em> of its ends, so:</p>
+        <div class="eq">
+          <span class="lbl">the handshaking lemma — why &ldquo;sum of degrees&rdquo; is just 2m</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <munder><mo>&#8721;</mo><mrow><mi>v</mi><mo>&#8712;</mo><mi>V</mi></mrow></munder>
+              <mi>deg</mi><mo>(</mo><mi>v</mi><mo>)</mo>
+              <mo>=</mo><mn>2</mn><mi>m</mi><mo>,</mo>
+              <mtext>&#160;so iterating every adjacency list end-to-end is&#160;</mtext>
+              <mi>&#920;</mi><mo>(</mo><mi>n</mi><mo>+</mo><mi>m</mi><mo>)</mo><mtext>.</mtext>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Finally, density. A simple graph on <code class="inl">n</code> vertices has at most <code class="inl">&#8776; n&#178;/2</code> edges. When <code class="inl">m</code> is close to that ceiling the graph is <span class="term">dense</span>; when <code class="inl">m</code> is closer to <code class="inl">n</code> &mdash; the common case for real-world graphs &mdash; it is <span class="term">sparse</span>. That single distinction decides the representation, which is where we go next.</p>
+        <div class="pull">An array remembers <span>position</span>, a tree remembers <span>hierarchy</span>. A graph remembers only the <span>relation</span> &mdash; and so it can model anything that relates.</div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> the representation decides the cost</div>
+      <h2>Two ways to store a graph</h2>
+      <div class="col">
+        <p>The abstract object &ldquo;<code class="inl">V</code> and <code class="inl">E</code>&rdquo; must become bytes before we can walk it, and there are two canonical layouts. They answer the two primitive questions &mdash; <em>&ldquo;is there an edge <code class="inl">u&rarr;v</code>?&rdquo;</em> and <em>&ldquo;list the neighbours of <code class="inl">u</code>&rdquo;</em> &mdash; at opposite costs.</p>
+        <p>The <span class="term">adjacency matrix</span> is an <code class="inl">n&#215;n</code> grid <code class="inl">A</code> with <code class="inl">A[u][v]=1</code> exactly when the edge exists. Edge existence is a single <code class="inl">O(1)</code> array read &mdash; its one great strength &mdash; but the grid costs <code class="inl">&#920;(n&#178;)</code> space whether the graph is full or nearly empty, and listing one vertex's neighbours means scanning a whole row of <code class="inl">n</code> cells, most of them zero.</p>
+        <p>The <span class="term">adjacency list</span> keeps, for each vertex <code class="inl">u</code>, a list of just its actual neighbours. Total space is <code class="inl">&#920;(n+m)</code> &mdash; you pay only for edges that exist &mdash; and enumerating <code class="inl">u</code>'s neighbours costs <code class="inl">&#920;(deg u)</code>, optimal. The price is that testing one specific edge <code class="inl">u&rarr;v</code> means scanning <code class="inl">u</code>'s list, <code class="inl">O(deg u)</code>. For the overwhelming majority of real graphs &mdash; which are sparse &mdash; the list wins decisively, and it is the representation every traversal below assumes.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 960 360" role="img" aria-labelledby="f1t f1d">
+            <title id="f1t">One directed graph stored two ways: as an adjacency matrix and as an adjacency list</title>
+            <desc id="f1d">A four-vertex directed graph with edges 0 to 1, 0 to 2, 1 to 3, 2 to 3, and 3 to 0 is shown three ways. On the left is the node-and-arrow drawing. In the middle is a four-by-four adjacency matrix whose ones sit exactly at those five edges and whose other eleven cells are zero. On the right is the adjacency list: vertex 0 points to a chain of 1 and 2, vertex 1 to 3, vertex 2 to 3, and vertex 3 to 0.</desc>
+            <defs>
+              <marker id="ar-f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--bau-ink)"/></marker>
+            </defs>
+
+            <!-- left: the graph -->
+            <text x="30" y="28" class="dg-cap">the graph</text>
+            <g class="dg-edge" marker-end="url(#ar-f1)">
+              <line x1="106" y1="90" x2="228" y2="90"/>            <!-- 0->1 -->
+              <line x1="90"  y1="106" x2="90" y2="218"/>           <!-- 0->2 -->
+              <line x1="250" y1="106" x2="250" y2="218"/>          <!-- 1->3 -->
+              <line x1="106" y1="240" x2="228" y2="240"/>          <!-- 2->3 -->
+              <line x1="238" y1="229" x2="106" y2="105"/>          <!-- 3->0 -->
+            </g>
+            <circle cx="90"  cy="90"  r="16" class="dg-node-bl"/><text x="90"  y="90"  class="dg-nt w">0</text>
+            <circle cx="250" cy="90"  r="16" class="dg-node"/><text x="250" y="90"  class="dg-nt">1</text>
+            <circle cx="90"  cy="240" r="16" class="dg-node"/><text x="90"  y="240" class="dg-nt">2</text>
+            <circle cx="250" cy="240" r="16" class="dg-node"/><text x="250" y="240" class="dg-nt">3</text>
+
+            <!-- middle: the matrix -->
+            <text x="380" y="28" class="dg-cap">adjacency matrix &mdash; &#920;(n&#178;)</text>
+            <g transform="translate(420,52)">
+              <!-- column headers -->
+              <text x="46" y="-4" class="dg-label sm" text-anchor="middle">0</text>
+              <text x="82" y="-4" class="dg-label sm" text-anchor="middle">1</text>
+              <text x="118" y="-4" class="dg-label sm" text-anchor="middle">2</text>
+              <text x="154" y="-4" class="dg-label sm" text-anchor="middle">3</text>
+              <text x="8" y="24" class="dg-label sm" text-anchor="middle">0</text>
+              <text x="8" y="60" class="dg-label sm" text-anchor="middle">1</text>
+              <text x="8" y="96" class="dg-label sm" text-anchor="middle">2</text>
+              <text x="8" y="132" class="dg-label sm" text-anchor="middle">3</text>
+              <!-- 4x4 grid, rows = from, cols = to -->
+              <!-- row 0: 0 1 1 0 -->
+              <rect x="28" y="6"  width="36" height="36" class="dg-cell"/><text x="46" y="24" class="dg-nt">0</text>
+              <rect x="64" y="6"  width="36" height="36" class="dg-fill"/><text x="82" y="24" class="dg-nt">1</text>
+              <rect x="100" y="6" width="36" height="36" class="dg-fill"/><text x="118" y="24" class="dg-nt">1</text>
+              <rect x="136" y="6" width="36" height="36" class="dg-cell"/><text x="154" y="24" class="dg-nt">0</text>
+              <!-- row 1: 0 0 0 1 -->
+              <rect x="28" y="42"  width="36" height="36" class="dg-cell"/><text x="46" y="60" class="dg-nt">0</text>
+              <rect x="64" y="42"  width="36" height="36" class="dg-cell"/><text x="82" y="60" class="dg-nt">0</text>
+              <rect x="100" y="42" width="36" height="36" class="dg-cell"/><text x="118" y="60" class="dg-nt">0</text>
+              <rect x="136" y="42" width="36" height="36" class="dg-fill"/><text x="154" y="60" class="dg-nt">1</text>
+              <!-- row 2: 0 0 0 1 -->
+              <rect x="28" y="78"  width="36" height="36" class="dg-cell"/><text x="46" y="96" class="dg-nt">0</text>
+              <rect x="64" y="78"  width="36" height="36" class="dg-cell"/><text x="82" y="96" class="dg-nt">0</text>
+              <rect x="100" y="78" width="36" height="36" class="dg-cell"/><text x="118" y="96" class="dg-nt">0</text>
+              <rect x="136" y="78" width="36" height="36" class="dg-fill"/><text x="154" y="96" class="dg-nt">1</text>
+              <!-- row 3: 1 0 0 0 -->
+              <rect x="28" y="114"  width="36" height="36" class="dg-fill"/><text x="46" y="132" class="dg-nt">1</text>
+              <rect x="64" y="114"  width="36" height="36" class="dg-cell"/><text x="82" y="132" class="dg-nt">0</text>
+              <rect x="100" y="114" width="36" height="36" class="dg-cell"/><text x="118" y="132" class="dg-nt">0</text>
+              <rect x="136" y="114" width="36" height="36" class="dg-cell"/><text x="154" y="132" class="dg-nt">0</text>
+            </g>
+
+            <!-- right: the list -->
+            <text x="700" y="28" class="dg-cap">adjacency list &mdash; &#920;(n+m)</text>
+            <g transform="translate(700,52)" font-family="var(--font-mono)">
+              <!-- row 0 -->
+              <rect x="0" y="6"  width="34" height="30" class="dg-node-bl"/><text x="17" y="21" class="dg-nt w">0</text>
+              <line x1="34" y1="21" x2="62" y2="21" class="dg-edge" marker-end="url(#ar-f1)"/>
+              <rect x="64" y="6" width="34" height="30" class="dg-cell"/><text x="81" y="21" class="dg-nt">1</text>
+              <line x1="98" y1="21" x2="120" y2="21" class="dg-edge" marker-end="url(#ar-f1)"/>
+              <rect x="122" y="6" width="34" height="30" class="dg-cell"/><text x="139" y="21" class="dg-nt">2</text>
+              <!-- row 1 -->
+              <rect x="0" y="50" width="34" height="30" class="dg-node"/><text x="17" y="65" class="dg-nt">1</text>
+              <line x1="34" y1="65" x2="62" y2="65" class="dg-edge" marker-end="url(#ar-f1)"/>
+              <rect x="64" y="50" width="34" height="30" class="dg-cell"/><text x="81" y="65" class="dg-nt">3</text>
+              <!-- row 2 -->
+              <rect x="0" y="94" width="34" height="30" class="dg-node"/><text x="17" y="109" class="dg-nt">2</text>
+              <line x1="34" y1="109" x2="62" y2="109" class="dg-edge" marker-end="url(#ar-f1)"/>
+              <rect x="64" y="94" width="34" height="30" class="dg-cell"/><text x="81" y="109" class="dg-nt">3</text>
+              <!-- row 3 -->
+              <rect x="0" y="138" width="34" height="30" class="dg-node"/><text x="17" y="153" class="dg-nt">3</text>
+              <line x1="34" y1="153" x2="62" y2="153" class="dg-edge" marker-end="url(#ar-f1)"/>
+              <rect x="64" y="138" width="34" height="30" class="dg-cell"/><text x="81" y="153" class="dg-nt">0</text>
+              <text x="0" y="200" class="dg-label sm">each row = one vertex&#8217;s out-neighbours</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 1 &mdash; the same five edges, two layouts.</b> The matrix spends sixteen cells to store five edges (eleven zeros); the list spends five links. On a million-vertex sparse graph that ratio is the terabyte-vs-megabyte gap of the hook. Read the matrix as &ldquo;row <code class="inl">u</code>, column <code class="inl">v</code>&rdquo; &mdash; a directed edge is one filled cell, not two.</figcaption>
+        </figure>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>Adjacency matrix vs. adjacency list (n vertices, m edges)</caption>
+            <thead>
+              <tr><th scope="col">question / operation</th><th scope="col">adjacency matrix</th><th scope="col">adjacency list</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">space</th><td class="bad">&#920;(n&#178;)</td><td class="good">&#920;(n+m)</td></tr>
+              <tr><th scope="row">edge exists? (u,v)</th><td class="good">O(1)</td><td class="mid">O(deg u)</td></tr>
+              <tr><th scope="row">list neighbours of u</th><td class="bad">&#920;(n)</td><td class="good">&#920;(deg u)</td></tr>
+              <tr><th scope="row">add an edge</th><td class="good">O(1)</td><td class="good">O(1)</td></tr>
+              <tr><th scope="row">iterate all edges (a full walk)</th><td class="bad">&#920;(n&#178;)</td><td class="good">&#920;(n+m)</td></tr>
+              <tr class="wrap-row"><th scope="row">best when&hellip;</th><td>dense (m &#8776; n&#178;), or you test edges constantly</td><td>sparse (m = O(n)), the usual case</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="3">The list's only red is the single-edge test; the matrix is red wherever the graph is sparse, which is almost always. Unless told otherwise, store graphs as adjacency lists &mdash; and notice that the row &ldquo;iterate all edges&rdquo; is exactly why BFS and DFS are &#920;(n+m) on a list and &#920;(n&#178;) on a matrix.</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> one skeleton, two disciplines</div>
+      <h2>The universal walk &mdash; and the container that names it</h2>
+      <div class="col">
+        <p>Both traversals are the <em>same</em> algorithm with one part swapped. The skeleton: keep a set of <span class="term">discovered</span> vertices so you never revisit, and a <span class="term">frontier</span> container of vertices seen but not yet expanded. Repeatedly take a vertex from the frontier, and for each undiscovered neighbour, mark it discovered and add it to the frontier. The walk ends when the frontier empties.</p>
+        <p>Everything hinges on <em>which</em> vertex you take next, and that is set entirely by the container:</p>
+        <ul>
+          <li>A <strong>queue</strong> (FIFO) takes the <em>oldest</em> frontier vertex first &mdash; the walk spreads outward in rings of equal distance. This is <span class="term">breadth-first search</span>.</li>
+          <li>A <strong>stack</strong> (LIFO), or equivalently the call stack of recursion, takes the <em>newest</em> first &mdash; the walk plunges as deep as it can before backing up. This is <span class="term">depth-first search</span>.</li>
+        </ul>
+        <p>Swap the queue for a stack and breadth becomes depth. That is the whole difference, and yet the two leave behind utterly different <span class="term">traversal trees</span> &mdash; the tree of edges along which discovery actually happened &mdash; and those trees expose different truths. Before the details, the cost, paid once for both:</p>
+        <div class="eq">
+          <span class="lbl">why every traversal here is linear</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>T</mi><mo>(</mo><mtext>BFS</mtext><mo>)</mo><mo>=</mo>
+              <mi>T</mi><mo>(</mo><mtext>DFS</mtext><mo>)</mo><mo>=</mo>
+              <mi>&#920;</mi><mo>(</mo><mi>n</mi><mo>+</mo><mi>m</mi><mo>)</mo>
+              <mo>=</mo><mi>&#920;</mi><mo>(</mo><mi>V</mi><mo>+</mo><mi>E</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>The accounting is exact: each vertex is discovered and expanded <em>once</em> (the visited set guarantees it), contributing <code class="inl">&#920;(n)</code>; and expanding a vertex scans its adjacency list, so across the whole run we scan every list end-to-end &mdash; by the handshaking lemma that is <code class="inl">&#920;(m)</code> work (or <code class="inl">2m</code> for undirected). Sum: <code class="inl">&#920;(n+m)</code>. No vertex, no edge, is ever touched a third time. <em>This linearity is the reason graphs are tractable at all</em>, and it is why the &sect;04 choice of an adjacency list matters so much: on a matrix the &ldquo;scan the neighbours&rdquo; step alone balloons to <code class="inl">&#920;(n&#178;)</code>.</p>
+        <p>A note on bookkeeping you will see in every implementation below: a three-state colour. <span class="term">White</span> = undiscovered, <span class="term">grey</span> = discovered but not finished (on the frontier / on the recursion stack), <span class="term">black</span> = finished (all neighbours explored). For BFS the grey/black split barely matters; for DFS it is the heart of cycle detection &mdash; a grey vertex is an ancestor you are still inside, so an edge back to it closes a loop.</p>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> the queue measures distance</div>
+      <h2>Breadth-first search: rings of equal distance</h2>
+      <div class="col">
+        <p>BFS explores in <span class="term">layers</span>. Layer&nbsp;0 is the source <code class="inl">s</code> alone. Layer&nbsp;1 is every vertex reachable in one edge. Layer&nbsp;2 is everything new reachable from layer&nbsp;1, and so on &mdash; an expanding wavefront. The queue enforces this: because we append newly discovered vertices to the back and remove from the front, the whole of layer <code class="inl">i</code> is processed before any of layer <code class="inl">i+1</code>. Here is the algorithm, with the one line people get wrong called out.</p>
+        <pre><code><span class="tok-fn">BFS</span>(G, s):
+  <span class="tok-kw">for each</span> vertex u: state[u] <span class="tok-op">&#8592;</span> WHITE; dist[u] <span class="tok-op">&#8592;</span> &#8734;; parent[u] <span class="tok-op">&#8592;</span> nil
+  state[s] <span class="tok-op">&#8592;</span> GREY; dist[s] <span class="tok-op">&#8592;</span> <span class="tok-num">0</span>
+  Q <span class="tok-op">&#8592;</span> empty queue; <span class="tok-fn">enqueue</span>(Q, s)
+  <span class="tok-kw">while</span> Q not empty:
+    u <span class="tok-op">&#8592;</span> <span class="tok-fn">dequeue</span>(Q)                  <span class="tok-com">// u leaves in non-decreasing dist order</span>
+    <span class="tok-kw">for each</span> v <span class="tok-kw">in</span> adj[u]:
+      <span class="tok-kw">if</span> state[v] = WHITE:
+        state[v] <span class="tok-op">&#8592;</span> GREY              <span class="tok-com">// MARK ON DISCOVERY — not on dequeue (see §12.1)</span>
+        dist[v] <span class="tok-op">&#8592;</span> dist[u] + <span class="tok-num">1</span>
+        parent[v] <span class="tok-op">&#8592;</span> u
+        <span class="tok-fn">enqueue</span>(Q, v)
+    state[u] <span class="tok-op">&#8592;</span> BLACK</code></pre>
+
+        <p>The payoff is a theorem, not a heuristic. The <code class="inl">parent</code> pointers form the <span class="term">BFS tree</span>, and the value <code class="inl">dist[v]</code> is exactly the <em>fewest edges</em> on any path from <code class="inl">s</code> to <code class="inl">v</code> &mdash; the <strong>unweighted shortest-path distance</strong>. BFS solves shortest paths for free, as long as every edge counts the same.</p>
+
+        <details>
+          <summary>Prove it: dist[v] from BFS equals the true shortest-path distance &#948;(s,v)</summary>
+          <div class="body">
+            <p>Let <code class="inl">&#948;(s,v)</code> be the true minimum edge-count. Two halves. <em>(Upper bound, dist &#8804; &#948; is automatic:</em> any discovery path the tree records is <em>a</em> path, so <code class="inl">dist[v] &#8805; &#948;(s,v)</code> can't be beaten downward without a real path.) The substance is the <em>key invariant</em>: <strong>BFS dequeues vertices in non-decreasing order of <code class="inl">dist</code>, and the queue ever holds only two adjacent layer-values <code class="inl">i</code> and <code class="inl">i+1</code>.</strong> Prove by induction on dequeue order. It holds initially (just <code class="inl">s</code>, <code class="inl">dist=0</code>). When we dequeue <code class="inl">u</code> with <code class="inl">dist[u]=i</code>, every white neighbour <code class="inl">v</code> gets <code class="inl">dist[v]=i+1</code> and is enqueued behind the existing tail, preserving monotonicity. Now suppose for contradiction some <code class="inl">v</code> got <code class="inl">dist[v] &gt; &#948;(s,v)</code>. Take the true shortest path <code class="inl">s &#8230; w &#8594; v</code> with <code class="inl">&#948;(s,w)=&#948;(s,v)-1</code>. By induction <code class="inl">w</code> was assigned <code class="inl">dist[w]=&#948;(s,w)</code> and was dequeued; at that moment <code class="inl">v</code> was either still white (so it received <code class="inl">dist[w]+1=&#948;(s,v)</code>, contradiction) or already discovered with a value <code class="inl">&#8804; dist[w]+1</code> by monotonicity (also a contradiction). Hence <code class="inl">dist[v]=&#948;(s,v)</code> for all <code class="inl">v</code>. &#9633;</p>
+          </div>
+        </details>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 780 330" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">Breadth-first search of an undirected graph drawn as distance layers from the source</title>
+            <desc id="f2d">The undirected graph on vertices 0 through 6 is laid out in five vertical bands by distance from source 0. Band distance 0 holds vertex 0; band 1 holds 1 and 2; band 2 holds 3; band 3 holds 4 and 5; band 4 holds 6. Solid edges are the BFS tree: 0 to 1, 0 to 2, 2 to 3, 3 to 4, 3 to 5, 5 to 6. Two dashed non-tree edges, 1 to 2 and 4 to 5, join vertices within the same band. Each vertex is labelled with its distance.</desc>
+            <!-- layer bands -->
+            <g>
+              <rect x="40"  y="40" width="120" height="230" class="dg-band"/>
+              <rect x="320" y="40" width="120" height="230" class="dg-band"/>
+              <rect x="600" y="40" width="130" height="230" class="dg-band"/>
+              <text x="100" y="292" class="dg-dist">dist 0</text>
+              <text x="240" y="292" class="dg-dist">dist 1</text>
+              <text x="380" y="292" class="dg-dist">dist 2</text>
+              <text x="520" y="292" class="dg-dist">dist 3</text>
+              <text x="665" y="292" class="dg-dist">dist 4</text>
+            </g>
+            <!-- non-tree edges (dashed) -->
+            <g class="dg-cross">
+              <line x1="240" y1="116" x2="240" y2="224"/>   <!-- 1-2 same layer -->
+              <line x1="520" y1="116" x2="520" y2="224"/>   <!-- 4-5 same layer -->
+            </g>
+            <!-- tree edges (solid) -->
+            <g class="dg-edge">
+              <line x1="100" y1="170" x2="240" y2="100"/>   <!-- 0-1 -->
+              <line x1="100" y1="170" x2="240" y2="240"/>   <!-- 0-2 -->
+              <line x1="240" y1="240" x2="380" y2="170"/>   <!-- 2-3 -->
+              <line x1="380" y1="170" x2="520" y2="100"/>   <!-- 3-4 -->
+              <line x1="380" y1="170" x2="520" y2="240"/>   <!-- 3-5 -->
+              <line x1="520" y1="240" x2="665" y2="170"/>   <!-- 5-6 -->
+            </g>
+            <!-- nodes -->
+            <circle cx="100" cy="170" r="18" class="dg-node-bl"/><text x="100" y="170" class="dg-nt w">0</text>
+            <circle cx="240" cy="100" r="18" class="dg-node"/><text x="240" y="100" class="dg-nt">1</text>
+            <circle cx="240" cy="240" r="18" class="dg-node"/><text x="240" y="240" class="dg-nt">2</text>
+            <circle cx="380" cy="170" r="18" class="dg-node"/><text x="380" y="170" class="dg-nt">3</text>
+            <circle cx="520" cy="100" r="18" class="dg-node"/><text x="520" y="100" class="dg-nt">4</text>
+            <circle cx="520" cy="240" r="18" class="dg-node"/><text x="520" y="240" class="dg-nt">5</text>
+            <circle cx="665" cy="170" r="18" class="dg-node"/><text x="665" y="170" class="dg-nt">6</text>
+            <!-- legend -->
+            <line x1="50" y1="22" x2="86" y2="22" class="dg-edge"/><text x="92" y="22" class="dg-label sm" dominant-baseline="central">tree edge (discovery)</text>
+            <line x1="300" y1="22" x2="336" y2="22" class="dg-cross"/><text x="342" y="22" class="dg-label sm" dominant-baseline="central">non-tree edge (same / adjacent layer)</text>
+          </svg>
+          <figcaption><b>Figure 2 &mdash; BFS as a wavefront.</b> Distances from <code class="inl">0</code> are <code class="inl">[0,1,1,2,3,3,4]</code>. The solid <em>tree</em> edges are where discovery happened; the dashed edges <code class="inl">{1,2}</code> and <code class="inl">{4,5}</code> connect vertices in the <em>same</em> layer. A signature fact: in an undirected BFS <strong>no edge ever jumps more than one layer</strong> &mdash; if it did, the deeper endpoint would have been discovered a layer sooner. (An odd-layer-jump edge is also how you 2-colour to test bipartiteness.)</figcaption>
+        </figure>
+
+        <h3>Worked trace &mdash; BFS from vertex 0</h3>
+        <p>The graph of Figure&nbsp;2, adjacency lists sorted ascending. Watch the queue stay sorted by distance, and each vertex get marked the instant it is <em>discovered</em>, not when it is later dequeued.</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>BFS queue trace — undirected graph, source 0</caption>
+            <thead>
+              <tr><th scope="col">step</th><th scope="col">dequeue u</th><th scope="col">white neighbours found</th><th scope="col">dist set</th><th scope="col">queue after</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">init</td><td class="mono">&mdash;</td><td class="mono">&mdash;</td><td class="mono">dist[0]=0</td><td class="mono">[0]</td></tr>
+              <tr><td class="mono">1</td><td class="mono">0</td><td class="mono">1, 2</td><td class="mono">dist[1]=1, dist[2]=1</td><td class="mono">[1, 2]</td></tr>
+              <tr><td class="mono">2</td><td class="mono">1</td><td class="mono">&mdash; (0,2 seen)</td><td class="mono">&mdash;</td><td class="mono">[2]</td></tr>
+              <tr><td class="mono">3</td><td class="mono">2</td><td class="mono">3</td><td class="mono">dist[3]=2</td><td class="mono">[3]</td></tr>
+              <tr><td class="mono">4</td><td class="mono">3</td><td class="mono">4, 5</td><td class="mono">dist[4]=3, dist[5]=3</td><td class="mono">[4, 5]</td></tr>
+              <tr><td class="mono">5</td><td class="mono">4</td><td class="mono">&mdash; (3,5 seen)</td><td class="mono">&mdash;</td><td class="mono">[5]</td></tr>
+              <tr><td class="mono">6</td><td class="mono">5</td><td class="mono">6</td><td class="mono">dist[6]=4</td><td class="mono">[6]</td></tr>
+              <tr><td class="mono">7</td><td class="mono">6</td><td class="mono">&mdash; (5 seen)</td><td class="mono">&mdash;</td><td class="mono">[ ]</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="5">Final <code class="inl">dist = [0,1,1,2,3,3,4]</code>. The queue is never out of order, so the first time a vertex is reached <em>is</em> via a shortest path &mdash; that is the whole correctness argument, made mechanical.</td></tr></tfoot>
+          </table>
+        </div>
+        <div class="note info"><span class="tag">where this goes</span>Multi-source BFS (seed the queue with <em>several</em> vertices at distance 0) computes the distance to the <em>nearest</em> source for every vertex in one pass &mdash; the engine behind grid problems like &ldquo;distance to nearest gate&rdquo; and Practice&nbsp;1's cousins. Grids are just implicit graphs: each cell is a vertex, each step an edge.</div>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> the stack measures structure</div>
+      <h2>Depth-first search: dive, backtrack, and timestamp</h2>
+      <div class="col">
+        <p>DFS commits to a direction and follows it to exhaustion before backing up. Written recursively it needs no explicit container &mdash; the call stack <em>is</em> the frontier. What turns DFS from a mere visiting order into an analytical instrument is a single global clock that stamps each vertex twice: a <span class="term">discovery time</span> <code class="inl">d[u]</code> when we first enter it, and a <span class="term">finish time</span> <code class="inl">f[u]</code> when we leave it for good, every descendant done.</p>
+        <pre><code><span class="tok-fn">DFS</span>(G):                          <span class="tok-com">// handles disconnected graphs → a forest</span>
+  clock <span class="tok-op">&#8592;</span> <span class="tok-num">1</span>; <span class="tok-kw">for each</span> u: color[u] <span class="tok-op">&#8592;</span> WHITE
+  <span class="tok-kw">for each</span> vertex u:
+    <span class="tok-kw">if</span> color[u] = WHITE: <span class="tok-fn">VISIT</span>(u)
+
+<span class="tok-fn">VISIT</span>(u):
+  color[u] <span class="tok-op">&#8592;</span> GREY; d[u] <span class="tok-op">&#8592;</span> clock; clock <span class="tok-op">&#8592;</span> clock + <span class="tok-num">1</span>
+  <span class="tok-kw">for each</span> v <span class="tok-kw">in</span> adj[u]:
+    <span class="tok-kw">if</span>   color[v] = WHITE: parent[v] <span class="tok-op">&#8592;</span> u; <span class="tok-fn">VISIT</span>(v)   <span class="tok-com">// TREE edge</span>
+    <span class="tok-kw">elif</span> color[v] = GREY:  record BACK edge (u&#8594;v)        <span class="tok-com">// v is a live ancestor → a CYCLE</span>
+    <span class="tok-kw">else</span>:                  record FORWARD or CROSS (u&#8594;v)  <span class="tok-com">// v already finished (black)</span>
+  color[u] <span class="tok-op">&#8592;</span> BLACK; f[u] <span class="tok-op">&#8592;</span> clock; clock <span class="tok-op">&#8592;</span> clock + <span class="tok-num">1</span></code></pre>
+
+        <p>Those timestamps obey the <span class="term">parenthesis theorem</span>: if you print <code class="inl">(u</code> at discovery and <code class="inl">u)</code> at finish, the result is a balanced parenthesis string. For any two vertices the intervals <code class="inl">[d[u],f[u]]</code> and <code class="inl">[d[v],f[v]]</code> are therefore either <em>disjoint</em> or <em>nested</em> &mdash; never crossing. Nesting is meaningful: <code class="inl">[d[v],f[v]]</code> sits inside <code class="inl">[d[u],f[u]]</code> <strong>iff</strong> <code class="inl">v</code> is a descendant of <code class="inl">u</code> in the DFS tree. The clock literally records the tree's ancestor structure.</p>
+        <p>And every edge falls into exactly one of four classes, read off the colour of its target at the moment it is explored:</p>
+        <ul>
+          <li><strong>Tree</strong> edge &mdash; target was white; discovery happened along it. These form the DFS forest.</li>
+          <li><strong>Back</strong> edge &mdash; target was grey (a live ancestor). <em>A back edge exists iff the graph has a cycle.</em> This is the single most useful fact about DFS.</li>
+          <li><strong>Forward</strong> edge &mdash; target was black and is a descendant (a shortcut down the tree).</li>
+          <li><strong>Cross</strong> edge &mdash; target was black and is neither ancestor nor descendant (it points &ldquo;sideways&rdquo; to an already-finished subtree).</li>
+        </ul>
+        <p>In an <em>undirected</em> graph the menu shrinks to two &mdash; only tree and back edges occur &mdash; which is exactly what makes the bridge test of &sect;10 so clean.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 600 530" role="img" aria-labelledby="f3t f3d">
+            <title id="f3t">Depth-first search of a directed graph, drawn as its DFS tree with discovery and finish times and classified non-tree edges</title>
+            <desc id="f3d">A directed graph on vertices 0 through 7 explored from 0. Solid tree edges form the spine 0 to 1, 1 to 2, 1 to 3, 3 to 4, 4 to 5, 5 to 7, 7 to 6. Three red back edges 2 to 0, 5 to 3, and 6 to 7 each close a cycle. One blue dashed forward edge runs 4 to 6. Each vertex carries its discovery slash finish times: 0 is 1/16, 1 is 2/15, 2 is 3/4, 3 is 5/14, 4 is 6/13, 5 is 7/12, 7 is 8/11, 6 is 9/10.</desc>
+            <defs>
+              <marker id="ar-f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--bau-ink)"/></marker>
+              <marker id="arR-f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--bau-red)"/></marker>
+              <marker id="arB-f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--bau-blue)"/></marker>
+            </defs>
+            <!-- tree edges -->
+            <g class="dg-edge" marker-end="url(#ar-f3)">
+              <line x1="140" y1="71" x2="140" y2="108"/>     <!-- 0->1 -->
+              <line x1="129" y1="142" x2="85"  y2="189"/>     <!-- 1->2 -->
+              <line x1="152" y1="141" x2="204" y2="190"/>     <!-- 1->3 -->
+              <line x1="220" y1="221" x2="220" y2="258"/>     <!-- 3->4 -->
+              <line x1="220" y1="296" x2="220" y2="333"/>     <!-- 4->5 -->
+              <line x1="220" y1="371" x2="220" y2="408"/>     <!-- 5->7 -->
+              <line x1="236" y1="430" x2="298" y2="430"/>     <!-- 7->6 -->
+            </g>
+            <!-- back edges (red) -->
+            <g class="dg-back">
+              <path d="M77,190 Q24,120 131,75" marker-end="url(#arR-f3)"/>      <!-- 2->0 -->
+              <path d="M232,341 Q300,275 232,217" marker-end="url(#arR-f3)"/>   <!-- 5->3 -->
+              <path d="M312,446 Q270,486 230,446" marker-end="url(#arR-f3)"/>   <!-- 6->7 -->
+            </g>
+            <!-- forward edge (blue dashed) -->
+            <path d="M229,293 Q300,345 305,412" class="dg-fwd" marker-end="url(#arB-f3)"/>   <!-- 4->6 -->
+            <!-- nodes + d/f labels -->
+            <circle cx="140" cy="55"  r="16" class="dg-node-bl"/><text x="140" y="55"  class="dg-nt w">0</text><text x="164" y="50"  class="dg-llab">1/16</text>
+            <circle cx="140" cy="130" r="16" class="dg-node"/><text x="140" y="130" class="dg-nt">1</text><text x="164" y="125" class="dg-llab">2/15</text>
+            <circle cx="70"  cy="205" r="16" class="dg-node"/><text x="70"  y="205" class="dg-nt">2</text><text x="22" y="200" class="dg-llab">3/4</text>
+            <circle cx="220" cy="205" r="16" class="dg-node"/><text x="220" y="205" class="dg-nt">3</text><text x="244" y="200" class="dg-llab">5/14</text>
+            <circle cx="220" cy="280" r="16" class="dg-node"/><text x="220" y="280" class="dg-nt">4</text><text x="244" y="275" class="dg-llab">6/13</text>
+            <circle cx="220" cy="355" r="16" class="dg-node"/><text x="220" y="355" class="dg-nt">5</text><text x="244" y="350" class="dg-llab">7/12</text>
+            <circle cx="220" cy="430" r="16" class="dg-node"/><text x="220" y="430" class="dg-nt">7</text><text x="180" y="462" class="dg-llab">8/11</text>
+            <circle cx="320" cy="430" r="16" class="dg-node"/><text x="320" y="430" class="dg-nt">6</text><text x="344" y="430" class="dg-llab">9/10</text>
+            <!-- legend -->
+            <g transform="translate(360,70)">
+              <line x1="0" y1="0" x2="34" y2="0" class="dg-edge" marker-end="url(#ar-f3)"/><text x="42" y="0" class="dg-label sm" dominant-baseline="central">tree</text>
+              <line x1="0" y1="26" x2="34" y2="26" class="dg-back" marker-end="url(#arR-f3)"/><text x="42" y="26" class="dg-label sm" dominant-baseline="central">back &rarr; cycle</text>
+              <line x1="0" y1="52" x2="34" y2="52" class="dg-fwd" marker-end="url(#arB-f3)"/><text x="42" y="52" class="dg-label sm" dominant-baseline="central">forward</text>
+              <text x="0" y="92" class="dg-label sm">label = d / f</text>
+              <text x="0" y="112" class="dg-label sm">(discovery / finish)</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 3 &mdash; the DFS forest, timestamped.</b> Three back edges <code class="inl">2&#8594;0</code>, <code class="inl">5&#8594;3</code>, <code class="inl">6&#8594;7</code> each point to a grey ancestor &mdash; each is a cycle, so this digraph is <em>not</em> a DAG. The forward edge <code class="inl">4&#8594;6</code> points to an already-finished descendant. The parenthesis string is <code class="inl">(0 (1 (2 )<sub>2</sub> (3 (4 (5 (7 (6 )<sub>6</sub> )<sub>7</sub> )<sub>5</sub> )<sub>4</sub> )<sub>3</sub> )<sub>1</sub> )<sub>0</sub></code> &mdash; perfectly nested, mirroring the tree.</figcaption>
+        </figure>
+
+        <p>Read the figure's times against the four classes to cement the rule. For a back edge like <code class="inl">5&#8594;3</code>, the target encloses the source: <code class="inl">d[3]=5 &lt; d[5]=7 &lt; f[5]=12 &lt; f[3]=14</code> &mdash; <code class="inl">5</code> is inside <code class="inl">3</code>, and the arrow points <em>up</em> to a living ancestor. For the forward edge <code class="inl">4&#8594;6</code>: <code class="inl">d[4]=6 &lt; d[6]=9 &lt; f[6]=10 &lt; f[4]=13</code> &mdash; nested again, but pointing <em>down</em> to a finished descendant. The timestamps don't just describe the walk; they <em>are</em> the classifier.</p>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> ordering what must come first</div>
+      <h2>Topological order &mdash; and the cycle that forbids it</h2>
+      <div class="col">
+        <p>A <span class="term">directed acyclic graph</span> (DAG) is a digraph with no cycles &mdash; precisely the graphs whose DFS finds <em>no back edge</em>. On a DAG a beautiful thing is possible: a <span class="term">topological order</span>, a linear arrangement of the vertices such that every edge <code class="inl">u&#8594;v</code> points <em>forward</em> (<code class="inl">u</code> before <code class="inl">v</code>). It is exactly &ldquo;a valid order to do the tasks&rdquo; when edges mean &ldquo;must come before.&rdquo; If &mdash; and only if &mdash; the graph has a cycle, no such order exists: the cycle is a set of tasks each waiting on the next.</p>
+        <p>Two algorithms produce it, and each doubles as a cycle detector.</p>
+        <h3>Method A &mdash; DFS by finish time</h3>
+        <p>Run DFS; as each vertex <em>finishes</em>, push it onto the front of a list. The result is a topological order. <em>Why:</em> for any edge <code class="inl">u&#8594;v</code> on a DAG, <code class="inl">f[u] &gt; f[v]</code> always (the only way <code class="inl">f[u]&lt;f[v]</code> would require <code class="inl">v</code> to be a grey ancestor &mdash; a back edge &mdash; which a DAG forbids). So ordering by <em>decreasing</em> finish time puts every edge's tail before its head. One DFS, <code class="inl">O(V+E)</code>; a back edge encountered along the way is the proof that no order exists.</p>
+        <h3>Method B &mdash; Kahn's algorithm (in-degree peeling)</h3>
+        <p>Repeatedly emit a vertex with <em>no remaining prerequisites</em> &mdash; in-degree 0 &mdash; and delete it, decrementing its neighbours' in-degrees. A queue makes it linear. If you emit all <code class="inl">n</code> vertices, that sequence is a topological order; if the queue empties early with vertices left over, those survivors all lie on or after a cycle &mdash; <strong>Kahn's leftover count is a cycle detector</strong>.</p>
+        <pre><code><span class="tok-fn">KAHN</span>(G):
+  <span class="tok-kw">for each</span> v: indeg[v] <span class="tok-op">&#8592;</span> number of edges into v
+  Q <span class="tok-op">&#8592;</span> all v with indeg[v] = <span class="tok-num">0</span>;   order <span class="tok-op">&#8592;</span> [ ]
+  <span class="tok-kw">while</span> Q not empty:
+    u <span class="tok-op">&#8592;</span> <span class="tok-fn">dequeue</span>(Q); append u to order
+    <span class="tok-kw">for each</span> v <span class="tok-kw">in</span> adj[u]:
+      indeg[v] <span class="tok-op">&#8592;</span> indeg[v] - <span class="tok-num">1</span>
+      <span class="tok-kw">if</span> indeg[v] = <span class="tok-num">0</span>: <span class="tok-fn">enqueue</span>(Q, v)
+  <span class="tok-kw">if</span> length(order) &lt; n: <span class="tok-kw">report</span> "CYCLE — no topological order"
+  <span class="tok-kw">else</span>: <span class="tok-kw">return</span> order</code></pre>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 760 360" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">A course-prerequisite DAG and one valid topological order produced by Kahn's algorithm</title>
+            <desc id="f4d">A directed acyclic graph of six courses. Intro (0) points to Data Structures (1) and Discrete Math (2). Data Structures points to Algorithms (3) and Operating Systems (4). Discrete Math points to Algorithms. Algorithms and Operating Systems both point to Databases (5). Below, a strip shows the emitted order 0, 1, 2, 4, 3, 5 with forward arrows, captioned as a valid topological order.</desc>
+            <defs>
+              <marker id="ar-f4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--bau-ink)"/></marker>
+            </defs>
+            <!-- edges -->
+            <g class="dg-edge" marker-end="url(#ar-f4)">
+              <line x1="86"  y1="150" x2="222" y2="92"/>    <!-- 0->1 -->
+              <line x1="86"  y1="166" x2="222" y2="224"/>   <!-- 0->2 -->
+              <line x1="256" y1="76"  x2="422" y2="76"/>    <!-- 1->4 -->
+              <line x1="256" y1="90"  x2="422" y2="188"/>   <!-- 1->3 -->
+              <line x1="256" y1="232" x2="422" y2="204"/>   <!-- 2->3 -->
+              <line x1="458" y1="76"  x2="624" y2="128"/>   <!-- 4->5 -->
+              <line x1="458" y1="196" x2="624" y2="146"/>   <!-- 3->5 -->
+            </g>
+            <!-- nodes -->
+            <circle cx="70"  cy="158" r="18" class="dg-node-bl"/><text x="70"  y="158" class="dg-nt w">0</text><text x="70"  y="190" class="dg-label sm" text-anchor="middle">Intro</text>
+            <circle cx="240" cy="76"  r="18" class="dg-node"/><text x="240" y="76"  class="dg-nt">1</text><text x="240" y="46" class="dg-label sm" text-anchor="middle">DataStruct</text>
+            <circle cx="240" cy="240" r="18" class="dg-node"/><text x="240" y="240" class="dg-nt">2</text><text x="240" y="272" class="dg-label sm" text-anchor="middle">Discrete</text>
+            <circle cx="440" cy="76"  r="18" class="dg-node"/><text x="440" y="76"  class="dg-nt">4</text><text x="440" y="46" class="dg-label sm" text-anchor="middle">OpSys</text>
+            <circle cx="440" cy="196" r="18" class="dg-node"/><text x="440" y="196" class="dg-nt">3</text><text x="440" y="228" class="dg-label sm" text-anchor="middle">Algorithms</text>
+            <circle cx="642" cy="138" r="18" class="dg-node"/><text x="642" y="138" class="dg-nt">5</text><text x="642" y="170" class="dg-label sm" text-anchor="middle">Databases</text>
+            <!-- order strip -->
+            <g transform="translate(0,312)">
+              <text x="30" y="6" class="dg-label sm">Kahn emits &rarr;</text>
+              <g font-family="var(--font-mono)">
+                <circle cx="170" cy="2" r="15" class="dg-node-hot"/><text x="170" y="2" class="dg-nt">0</text>
+                <circle cx="240" cy="2" r="15" class="dg-node-hot"/><text x="240" y="2" class="dg-nt">1</text>
+                <circle cx="310" cy="2" r="15" class="dg-node-hot"/><text x="310" y="2" class="dg-nt">2</text>
+                <circle cx="380" cy="2" r="15" class="dg-node-hot"/><text x="380" y="2" class="dg-nt">4</text>
+                <circle cx="450" cy="2" r="15" class="dg-node-hot"/><text x="450" y="2" class="dg-nt">3</text>
+                <circle cx="520" cy="2" r="15" class="dg-node-hot"/><text x="520" y="2" class="dg-nt">5</text>
+                <g class="dg-edge" marker-end="url(#ar-f4)">
+                  <line x1="187" y1="2" x2="223" y2="2"/>
+                  <line x1="257" y1="2" x2="293" y2="2"/>
+                  <line x1="327" y1="2" x2="363" y2="2"/>
+                  <line x1="397" y1="2" x2="433" y2="2"/>
+                  <line x1="467" y1="2" x2="503" y2="2"/>
+                </g>
+                <text x="560" y="2" class="dg-label sm" dominant-baseline="central">every arrow above points forward here</text>
+              </g>
+            </g>
+          </svg>
+          <figcaption><b>Figure 4 &mdash; a DAG and its order.</b> Take Intro before everything; after it, both DataStruct and Discrete are free. Kahn's queue empties to <code class="inl">0,1,2,4,3,5</code> &mdash; one valid order of several. Check any edge against the strip: each tail sits left of its head. Add a single back-pointing edge, say <code class="inl">5&#8594;0</code>, and the queue would stall with everyone stuck at in-degree&nbsp;&#8805;1: the cycle made the order impossible.</figcaption>
+        </figure>
+
+        <h3>Worked trace &mdash; Kahn on the course DAG</h3>
+        <div class="tbl-wrap">
+          <table>
+            <caption>Kahn's algorithm — in-degrees start [0:0, 1:1, 2:1, 3:2, 4:1, 5:2]</caption>
+            <thead>
+              <tr><th scope="col">pop u</th><th scope="col">append to order</th><th scope="col">decrements</th><th scope="col">newly zero &rarr; enqueue</th><th scope="col">queue after</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">0</td><td class="mono">0</td><td class="mono">1&#8594;0, 2&#8594;0</td><td class="mono">1, 2</td><td class="mono">[1, 2]</td></tr>
+              <tr><td class="mono">1</td><td class="mono">0 1</td><td class="mono">3&#8594;1, 4&#8594;0</td><td class="mono">4</td><td class="mono">[2, 4]</td></tr>
+              <tr><td class="mono">2</td><td class="mono">0 1 2</td><td class="mono">3&#8594;0</td><td class="mono">3</td><td class="mono">[4, 3]</td></tr>
+              <tr><td class="mono">4</td><td class="mono">0 1 2 4</td><td class="mono">5&#8594;1</td><td class="mono">&mdash;</td><td class="mono">[3]</td></tr>
+              <tr><td class="mono">3</td><td class="mono">0 1 2 4 3</td><td class="mono">5&#8594;0</td><td class="mono">5</td><td class="mono">[5]</td></tr>
+              <tr><td class="mono">5</td><td class="mono">0 1 2 4 3 5</td><td class="mono">&mdash;</td><td class="mono">&mdash;</td><td class="mono">[ ]</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="5">All six emitted &rArr; no cycle, and <code class="inl">0,1,2,4,3,5</code> is a valid order. Had two vertices remained stuck above zero, they would have pinpointed the cyclic core.</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> mutual reachability</div>
+      <h2>Strongly connected components</h2>
+      <div class="col">
+        <p>In a digraph, two vertices are <span class="term">strongly connected</span> if each can reach the other following arrows. This is an equivalence relation, so it partitions <code class="inl">V</code> into <span class="term">strongly connected components</span> (SCCs) &mdash; maximal blobs of mutual reachability. Contract each SCC to a single super-vertex and you get the <span class="term">condensation</span>, which is <em>always a DAG</em>: if two SCCs reached each other they would be one SCC. So every digraph is, at the coarse scale, a DAG of tightly-tangled clusters &mdash; a fact that underlies deadlock detection, dataflow analysis, and the &ldquo;2-SAT&rdquo; trick. Two linear-time algorithms find them.</p>
+
+        <h3>Kosaraju &mdash; two passes and a transpose</h3>
+        <p>The cleaner one to <em>understand</em>:</p>
+        <ol>
+          <li>Run DFS on <code class="inl">G</code>, pushing vertices on a stack as they <em>finish</em> (decreasing finish time).</li>
+          <li>Build <code class="inl">G&#7488;</code>, the <span class="term">transpose</span> &mdash; every edge reversed.</li>
+          <li>Pop vertices off the stack; from each unvisited one, run DFS on <code class="inl">G&#7488;</code>. Each tree this grows is exactly one SCC.</li>
+        </ol>
+        <p>Why it works in one line: reversing edges leaves SCCs unchanged (mutual reachability is symmetric), but the finish-time order ensures you start each second-pass DFS in a &ldquo;sink&rdquo; SCC of the condensation, so it cannot leak into another component. Two DFS passes &rArr; <code class="inl">O(V+E)</code>.</p>
+
+        <h3>Tarjan &mdash; one pass, one stack, the low-link</h3>
+        <p>Tarjan finds the same components in a <em>single</em> DFS by tracking, for each vertex, the oldest vertex its subtree can reach via at most one non-tree hop to a vertex still &ldquo;in progress.&rdquo; Maintain <code class="inl">disc[u]</code> (discovery index) and</p>
+        <div class="eq">
+          <span class="lbl">tarjan's low-link recurrence</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>low</mi><mo>[</mo><mi>u</mi><mo>]</mo><mo>=</mo><mi>min</mi>
+              <mrow><mo>{</mo>
+                <mi>disc</mi><mo>[</mo><mi>u</mi><mo>]</mo><mo>,</mo>
+                <munder><mi>min</mi><mtext>tree child c</mtext></munder><mi>low</mi><mo>[</mo><mi>c</mi><mo>]</mo><mo>,</mo>
+                <munder><mi>min</mi><mtext>edge u&#8594;w, w on stack</mtext></munder><mi>disc</mi><mo>[</mo><mi>w</mi><mo>]</mo>
+              <mo>}</mo></mrow>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Push every vertex on an explicit stack as it is discovered. When a vertex <code class="inl">u</code> finishes with <code class="inl">low[u]=disc[u]</code>, it is the <em>root</em> of an SCC: pop the stack down to and including <code class="inl">u</code> &mdash; those are its members. The critical subtlety (and &sect;12's classic bug): the third term uses <code class="inl">disc[w]</code>, <em>not</em> <code class="inl">low[w]</code>, and only for <code class="inl">w</code> still on the stack.</p>
+        <pre><code><span class="tok-fn">TARJAN</span>(G):
+  idx <span class="tok-op">&#8592;</span> <span class="tok-num">0</span>; S <span class="tok-op">&#8592;</span> empty stack; <span class="tok-kw">for each</span> u: disc[u] <span class="tok-op">&#8592;</span> UNSET
+  <span class="tok-kw">for each</span> u: <span class="tok-kw">if</span> disc[u] = UNSET: <span class="tok-fn">SC</span>(u)
+
+<span class="tok-fn">SC</span>(u):
+  disc[u] <span class="tok-op">&#8592;</span> low[u] <span class="tok-op">&#8592;</span> idx; idx <span class="tok-op">&#8592;</span> idx + <span class="tok-num">1</span>
+  <span class="tok-fn">push</span>(S, u); onStack[u] <span class="tok-op">&#8592;</span> true
+  <span class="tok-kw">for each</span> v <span class="tok-kw">in</span> adj[u]:
+    <span class="tok-kw">if</span>   disc[v] = UNSET: <span class="tok-fn">SC</span>(v); low[u] <span class="tok-op">&#8592;</span> min(low[u], low[v])    <span class="tok-com">// tree edge</span>
+    <span class="tok-kw">elif</span> onStack[v]:     low[u] <span class="tok-op">&#8592;</span> min(low[u], disc[v])         <span class="tok-com">// live cross/back — disc, not low!</span>
+  <span class="tok-kw">if</span> low[u] = disc[u]:                                       <span class="tok-com">// u roots an SCC</span>
+    start new component; <span class="tok-kw">repeat</span> w <span class="tok-op">&#8592;</span> <span class="tok-fn">pop</span>(S); onStack[w] <span class="tok-op">&#8592;</span> false; add w <span class="tok-kw">until</span> w = u</code></pre>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 760 330" role="img" aria-labelledby="f5t f5d">
+            <title id="f5t">A directed graph with three strongly connected components and its condensation DAG</title>
+            <desc id="f5d">A directed graph splits into three strongly connected components: SCC one is the 3-cycle on vertices 0, 1, 2; SCC two is the 3-cycle on 3, 4, 5; SCC three is the 2-cycle on 6, 7. Cross edges 1 to 3, 4 to 6, and 5 to 7 run only forward between components. Below, the condensation contracts each component to one node, giving a simple chain SCC1 to SCC2 to SCC3, which is acyclic.</desc>
+            <defs>
+              <marker id="ar-f5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--bau-ink)"/></marker>
+            </defs>
+            <!-- SCC blobs -->
+            <ellipse cx="132" cy="105" rx="74" ry="66" class="dg-scc"/>
+            <ellipse cx="382" cy="105" rx="74" ry="66" class="dg-scc"/>
+            <ellipse cx="600" cy="115" rx="48" ry="74" class="dg-scc"/>
+            <text x="132" y="22" class="dg-cap" text-anchor="middle">SCC&#8321;</text>
+            <text x="382" y="22" class="dg-cap" text-anchor="middle">SCC&#8322;</text>
+            <text x="600" y="22" class="dg-cap" text-anchor="middle">SCC&#8323;</text>
+            <!-- cross edges (between components) -->
+            <g class="dg-edge" marker-end="url(#ar-f5)">
+              <line x1="185" y1="80" x2="325" y2="80"/>     <!-- 1->3 -->
+              <line x1="434" y1="85" x2="581" y2="143"/>    <!-- 4->6 -->
+              <line x1="396" y1="145" x2="581" y2="86"/>    <!-- 5->7 -->
+            </g>
+            <!-- SCC1 internal cycle 0->1->2->0 -->
+            <g class="dg-edge" marker-end="url(#ar-f5)">
+              <line x1="110" y1="80" x2="150" y2="80"/>     <!-- 0->1 -->
+              <line x1="163" y1="93" x2="142" y2="132"/>    <!-- 1->2 -->
+              <line x1="125" y1="137" x2="104" y2="98"/>    <!-- 2->0 -->
+            </g>
+            <!-- SCC2 internal cycle 3->4->5->3 -->
+            <g class="dg-edge" marker-end="url(#ar-f5)">
+              <line x1="360" y1="80" x2="400" y2="80"/>     <!-- 3->4 -->
+              <line x1="413" y1="93" x2="392" y2="132"/>    <!-- 4->5 -->
+              <line x1="375" y1="137" x2="354" y2="98"/>    <!-- 5->3 -->
+            </g>
+            <!-- SCC3 internal cycle 6<->7 -->
+            <g class="dg-edge" marker-end="url(#ar-f5)">
+              <path d="M593,136 Q558,115 593,96"/>          <!-- 6->7 -->
+              <path d="M607,96 Q642,115 607,136"/>          <!-- 7->6 -->
+            </g>
+            <!-- nodes -->
+            <circle cx="95"  cy="80"  r="15" class="dg-node"/><text x="95"  y="80"  class="dg-nt">0</text>
+            <circle cx="170" cy="80"  r="15" class="dg-node"/><text x="170" y="80"  class="dg-nt">1</text>
+            <circle cx="132" cy="150" r="15" class="dg-node"/><text x="132" y="150" class="dg-nt">2</text>
+            <circle cx="345" cy="80"  r="15" class="dg-node"/><text x="345" y="80"  class="dg-nt">3</text>
+            <circle cx="420" cy="80"  r="15" class="dg-node"/><text x="420" y="80"  class="dg-nt">4</text>
+            <circle cx="382" cy="150" r="15" class="dg-node"/><text x="382" y="150" class="dg-nt">5</text>
+            <circle cx="600" cy="150" r="15" class="dg-node"/><text x="600" y="150" class="dg-nt">6</text>
+            <circle cx="600" cy="80"  r="15" class="dg-node"/><text x="600" y="80"  class="dg-nt">7</text>
+            <!-- condensation -->
+            <line x1="70" y1="240" x2="690" y2="240" class="dg-thin"/>
+            <text x="40" y="232" class="dg-label sm">condensation (contract each SCC) &mdash; always a DAG:</text>
+            <g transform="translate(0,278)">
+              <rect x="80"  y="-22" width="120" height="44" rx="10" class="dg-fill"/><text x="140" y="0" class="dg-nt">{0,1,2}</text>
+              <rect x="330" y="-22" width="120" height="44" rx="10" class="dg-fill"/><text x="390" y="0" class="dg-nt">{3,4,5}</text>
+              <rect x="555" y="-22" width="110" height="44" rx="10" class="dg-fill"/><text x="610" y="0" class="dg-nt">{6,7}</text>
+              <g class="dg-edge" marker-end="url(#ar-f5)">
+                <line x1="200" y1="0" x2="324" y2="0"/>
+                <line x1="450" y1="0" x2="549" y2="0"/>
+              </g>
+            </g>
+          </svg>
+          <figcaption><b>Figure 5 &mdash; clusters, then the DAG above them.</b> Inside each blob you can go round and round; between blobs the arrows only ever go forward. Tarjan stamps <code class="inl">disc/low</code> and pops a component each time <code class="inl">low[u]=disc[u]</code>: the roots here are <code class="inl">7</code> (pops <code class="inl">{6,7}</code>), then <code class="inl">3</code> (pops <code class="inl">{3,4,5}</code>), then <code class="inl">0</code> (pops <code class="inl">{0,1,2}</code>) &mdash; three roots, three SCCs.</figcaption>
+        </figure>
+
+        <details>
+          <summary>Tarjan trace on Figure 5 — the disc/low table and the three pops</summary>
+          <div class="body">
+            <p>Discovery order from <code class="inl">0</code>, neighbours ascending. Components are emitted bottom-up as each root finishes.</p>
+            <div class="tbl-wrap">
+              <table>
+                <caption>disc / low for the 8 vertices; a root has disc = low</caption>
+                <thead><tr><th scope="col">vertex</th><th scope="col">0</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th><th scope="col">5</th><th scope="col">7</th><th scope="col">6</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">disc</th><td class="mono">0</td><td class="mono">1</td><td class="mono">2</td><td class="mono">3</td><td class="mono">4</td><td class="mono">5</td><td class="mono">6</td><td class="mono">7</td></tr>
+                  <tr><th scope="row">low</th><td class="mono good">0</td><td class="mono">0</td><td class="mono">0</td><td class="mono good">3</td><td class="mono">3</td><td class="mono">3</td><td class="mono good">6</td><td class="mono">6</td></tr>
+                </tbody>
+                <tfoot><tr><td colspan="9">Blue cells are roots (<code class="inl">low=disc</code>): <code class="inl">7</code> finishes first and pops <code class="inl">{6,7}</code>; then <code class="inl">3</code> pops <code class="inl">{5,4,3}</code>; finally <code class="inl">0</code> pops <code class="inl">{2,1,0}</code>. Note <code class="inl">low[1]=low[2]=0</code> because the back edge <code class="inl">2&#8594;0</code> drags the whole cluster's low down to <code class="inl">disc[0]=0</code>.</td></tr></tfoot>
+              </table>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> the points of failure</div>
+      <h2>Bridges &amp; articulation points</h2>
+      <div class="col">
+        <p>Now an <em>undirected</em> question with real operational teeth. A <span class="term">bridge</span> is an edge whose removal disconnects the graph (splits one component into two); an <span class="term">articulation point</span> (cut vertex) is a vertex whose removal does. These are the single points of failure in a network: the one cable, the one router whose loss partitions everything. Naively you could delete each edge or vertex and re-run connectivity &mdash; <code class="inl">O(V&#183;E)</code>. DFS finds them <em>all</em> in one pass.</p>
+        <p>The instrument is the same low-link idea, specialised to undirected DFS (where only tree and back edges exist). For each vertex, <code class="inl">disc[u]</code> is its discovery time and</p>
+        <div class="eq">
+          <span class="lbl">undirected low — and the bridge / articulation tests</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>low</mi><mo>[</mo><mi>u</mi><mo>]</mo><mo>=</mo><mi>min</mi>
+              <mrow><mo>{</mo>
+                <mi>disc</mi><mo>[</mo><mi>u</mi><mo>]</mo><mo>,</mo>
+                <munder><mi>min</mi><mtext>back edge (u,w)</mtext></munder><mi>disc</mi><mo>[</mo><mi>w</mi><mo>]</mo><mo>,</mo>
+                <munder><mi>min</mi><mtext>tree child c</mtext></munder><mi>low</mi><mo>[</mo><mi>c</mi><mo>]</mo>
+              <mo>}</mo></mrow>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Read <code class="inl">low[u]</code> as &ldquo;the highest (oldest) vertex <code class="inl">u</code>'s subtree can climb back to.&rdquo; Then, for a tree edge <code class="inl">(u,c)</code> with <code class="inl">c</code> the child:</p>
+        <ul>
+          <li><strong>Bridge:</strong> <code class="inl">(u,c)</code> is a bridge <strong>iff</strong> <code class="inl">low[c] &gt; disc[u]</code> &mdash; <code class="inl">c</code>'s whole subtree has <em>no</em> back edge reaching <code class="inl">u</code> or above, so that one edge is its only lifeline.</li>
+          <li><strong>Articulation point (non-root):</strong> <code class="inl">u</code> is a cut vertex iff some child <code class="inl">c</code> has <code class="inl">low[c] &#8805; disc[u]</code> &mdash; the subtree can't bypass <code class="inl">u</code> to reach an ancestor.</li>
+          <li><strong>Articulation point (root):</strong> the DFS-tree root is a cut vertex iff it has <strong>two or more</strong> tree children &mdash; it is the only thing joining them.</li>
+        </ul>
+        <p>The single dangerous detail (&sect;12.4): when scanning <code class="inl">u</code>'s neighbours, skip the edge back to <code class="inl">u</code>'s parent <em>once</em> &mdash; but any <em>other</em> edge to an already-seen vertex is a genuine back edge that must update <code class="inl">low</code> via <code class="inl">disc</code>.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 470 590" role="img" aria-labelledby="f6t f6d">
+            <title id="f6t">The undirected graph's DFS tree with discovery and low values, marking two bridges and three articulation points</title>
+            <desc id="f6d">Depth-first search of the undirected graph from vertex 0 yields the path 0-1-2-3-4-5-6 as tree edges, with two red back edges: 2 up to 0, and 5 up to 3. Discovery slash low values are 0 is 0/0, 1 is 1/0, 2 is 2/0, 3 is 3/3, 4 is 4/3, 5 is 5/3, 6 is 6/6. The tree edge from 2 to 3 and the tree edge from 5 to 6 are drawn thick red as bridges, because low of the child exceeds disc of the parent. Vertices 2, 3, and 5 are ringed yellow as articulation points.</desc>
+            <defs>
+              <marker id="arR-f6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--bau-red)"/></marker>
+            </defs>
+            <!-- AP rings (drawn first, behind nodes) -->
+            <circle cx="200" cy="206" r="24" class="dg-ap"/>
+            <circle cx="200" cy="284" r="24" class="dg-ap"/>
+            <circle cx="200" cy="440" r="24" class="dg-ap"/>
+            <!-- bridges (thick red) under the normal edges -->
+            <line x1="200" y1="206" x2="200" y2="284" class="dg-bridge"/>   <!-- 2-3 bridge -->
+            <line x1="200" y1="440" x2="200" y2="518" class="dg-bridge"/>   <!-- 5-6 bridge -->
+            <!-- tree edges -->
+            <g class="dg-edge">
+              <line x1="200" y1="50"  x2="200" y2="128"/>   <!-- 0-1 -->
+              <line x1="200" y1="128" x2="200" y2="206"/>   <!-- 1-2 -->
+              <line x1="200" y1="284" x2="200" y2="362"/>   <!-- 3-4 -->
+            </g>
+            <!-- bridge tree edges drawn thin ink on top of the red so the line reads as an edge too -->
+            <g class="dg-edge">
+              <line x1="200" y1="206" x2="200" y2="284"/>
+              <line x1="200" y1="362" x2="200" y2="440"/>   <!-- 4-5 -->
+              <line x1="200" y1="440" x2="200" y2="518"/>
+            </g>
+            <!-- back edges (red, curved) -->
+            <path d="M184,200 Q104,128 184,58" class="dg-back" marker-end="url(#arR-f6)"/>     <!-- 2 -> 0 -->
+            <path d="M216,434 Q300,360 216,292" class="dg-back" marker-end="url(#arR-f6)"/>   <!-- 5 -> 3 -->
+            <!-- nodes + disc/low -->
+            <circle cx="200" cy="50"  r="16" class="dg-node-bl"/><text x="200" y="50"  class="dg-nt w">0</text><text x="232" y="50"  class="dg-llab">0 / 0</text>
+            <circle cx="200" cy="128" r="16" class="dg-node"/><text x="200" y="128" class="dg-nt">1</text><text x="232" y="128" class="dg-llab">1 / 0</text>
+            <circle cx="200" cy="206" r="16" class="dg-node"/><text x="200" y="206" class="dg-nt">2</text><text x="232" y="206" class="dg-llab">2 / 0</text>
+            <circle cx="200" cy="284" r="16" class="dg-node"/><text x="200" y="284" class="dg-nt">3</text><text x="232" y="284" class="dg-llab">3 / 3</text>
+            <circle cx="200" cy="362" r="16" class="dg-node"/><text x="200" y="362" class="dg-nt">4</text><text x="232" y="362" class="dg-llab">4 / 3</text>
+            <circle cx="200" cy="440" r="16" class="dg-node"/><text x="200" y="440" class="dg-nt">5</text><text x="232" y="440" class="dg-llab">5 / 3</text>
+            <circle cx="200" cy="518" r="16" class="dg-node"/><text x="200" y="518" class="dg-nt">6</text><text x="232" y="518" class="dg-llab">6 / 6</text>
+            <!-- tags -->
+            <text x="120" y="248" class="dg-tag">BRIDGE</text>
+            <text x="120" y="482" class="dg-tag">BRIDGE</text>
+            <!-- legend -->
+            <g transform="translate(40,556)">
+              <circle cx="8" cy="0" r="9" class="dg-ap"/><text x="24" y="0" class="dg-label sm" dominant-baseline="central">articulation point</text>
+              <line x1="180" y1="0" x2="214" y2="0" class="dg-bridge"/><text x="222" y="0" class="dg-label sm" dominant-baseline="central">bridge</text>
+              <path d="M330,-6 L360,0 L330,6" fill="none" class="dg-back"/><text x="368" y="0" class="dg-label sm" dominant-baseline="central">back edge</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 6 &mdash; one DFS, every weak point.</b> The two back edges <code class="inl">2&#8594;0</code> and <code class="inl">5&#8594;3</code> pull <code class="inl">low</code> down inside the two triangles, so those edges are <em>not</em> bridges. But edge <code class="inl">(2,3)</code> has <code class="inl">low[3]=3 &gt; disc[2]=2</code> and edge <code class="inl">(5,6)</code> has <code class="inl">low[6]=6 &gt; disc[5]=5</code> &mdash; both bridges. Vertices <code class="inl">2,3,5</code> each have a child whose <code class="inl">low &#8805; disc</code>, so all three are articulation points. Root <code class="inl">0</code> has only one child &mdash; not a cut vertex.</figcaption>
+        </figure>
+
+        <h3>Worked trace &mdash; the low-link decisions on this graph</h3>
+        <div class="tbl-wrap">
+          <table>
+            <caption>Undirected DFS low-link — bridge test low[c] &gt; disc[u], AP test low[c] &#8805; disc[u]</caption>
+            <thead>
+              <tr><th scope="col">tree edge (u,c)</th><th scope="col">disc[u]</th><th scope="col">low[c]</th><th scope="col">bridge? (low[c]&gt;disc[u])</th><th scope="col">u an AP? (low[c]&#8805;disc[u])</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">(0,1)</td><td class="mono">0</td><td class="mono">0</td><td class="mono">0&gt;0 no</td><td class="mono">root, 1 child &rarr; no</td></tr>
+              <tr><td class="mono">(1,2)</td><td class="mono">1</td><td class="mono">0</td><td class="mono">0&gt;1 no</td><td class="mono">0&#8805;1 no</td></tr>
+              <tr><td class="mono">(2,3)</td><td class="mono">2</td><td class="mono">3</td><td class="mono good">3&gt;2 BRIDGE</td><td class="mono good">3&#8805;2 &rarr; 2 is AP</td></tr>
+              <tr><td class="mono">(3,4)</td><td class="mono">3</td><td class="mono">3</td><td class="mono">3&gt;3 no</td><td class="mono good">3&#8805;3 &rarr; 3 is AP</td></tr>
+              <tr><td class="mono">(4,5)</td><td class="mono">4</td><td class="mono">3</td><td class="mono">3&gt;4 no</td><td class="mono">3&#8805;4 no</td></tr>
+              <tr><td class="mono">(5,6)</td><td class="mono">5</td><td class="mono">6</td><td class="mono good">6&gt;5 BRIDGE</td><td class="mono good">6&#8805;5 &rarr; 5 is AP</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="5">Bridges <code class="inl">{(2,3),(5,6)}</code>; articulation points <code class="inl">{2,3,5}</code>. Every bridge endpoint that is not a leaf or root is an articulation point &mdash; but the converse fails: a cut vertex can sit inside a cycle with no bridge (vertex <code class="inl">3</code> here is an AP whose incident tree edge <code class="inl">(3,4)</code> is <em>not</em> a bridge).</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> the ledger</div>
+      <h2>Every question, one linear walk</h2>
+      <div class="col">
+        <p>The whole lecture as a table. The striking column is the cost: with an adjacency list, <em>every</em> structural property below falls out of one or two traversals in time linear in the graph. Distance, order, cycles, clusters, cut-points &mdash; none costs more than reading the graph itself.</p>
+        <div class="stats">
+          <div class="stat lead"><span class="big">O(V+E)</span><span class="lab">cost of BFS, DFS, topo-sort, SCC, and bridges alike &mdash; each linear in the graph</span></div>
+          <div class="stat"><span class="big">2</span><span class="lab">traversals you actually learn; everything else is what their trees expose</span></div>
+          <div class="stat"><span class="big">4</span><span class="lab">DFS edge classes — tree, back, forward, cross (just 2 when undirected)</span></div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <caption>What each traversal exposes (n vertices, m edges, adjacency list)</caption>
+            <thead>
+              <tr><th scope="col">question</th><th scope="col">technique</th><th scope="col">walk</th><th scope="col">time</th><th scope="col">space</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">reachability / connected components</th><td>BFS or DFS from each unvisited vertex</td><td class="mono">either</td><td class="good">O(V+E)</td><td class="mono">O(V)</td></tr>
+              <tr><th scope="row">unweighted shortest path</th><td>BFS layers; <code class="inl">dist</code> on first discovery</td><td class="mono">BFS</td><td class="good">O(V+E)</td><td class="mono">O(V)</td></tr>
+              <tr><th scope="row">cycle detection (directed)</th><td>DFS back edge, or Kahn leftover</td><td class="mono">DFS</td><td class="good">O(V+E)</td><td class="mono">O(V)</td></tr>
+              <tr><th scope="row">topological order (DAG)</th><td>DFS finish-time, or Kahn peeling</td><td class="mono">either</td><td class="good">O(V+E)</td><td class="mono">O(V)</td></tr>
+              <tr><th scope="row">strongly connected components</th><td>Tarjan (1 pass) or Kosaraju (2 passes)</td><td class="mono">DFS</td><td class="good">O(V+E)</td><td class="mono">O(V)</td></tr>
+              <tr class="wrap-row"><th scope="row">bridges &amp; articulation points</th><td>undirected DFS low-link</td><td class="mono">DFS</td><td class="good">O(V+E)</td><td class="mono">O(V)</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="5">Every row is linear &mdash; <em>provided</em> the graph is an adjacency list (&sect;04). On a matrix the same rows become &#920;(V&#178;), because merely listing a vertex's neighbours already costs &#920;(V). The representation is not a detail; it is the difference between linear and quadratic.</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>The gap between the recurrence and the running loop is where mistakes appear. Here is where graph code goes wrong &mdash; the off-by-one of state, the seductive-but-wrong reach for the wrong tool, the detail that silently corrupts an answer that still looks plausible.</p>
+
+        <h3>1 &middot; Marking visited at dequeue instead of at discovery (BFS)</h3>
+        <p>If you only mark a vertex visited when you <em>pop</em> it, the same vertex can be enqueued many times before it is ever processed &mdash; the queue bloats, distances get overwritten, and on a dense graph it degrades toward quadratic. Mark <code class="inl">state[v]=GREY</code> the instant you enqueue it, exactly where the &sect;06 code flags it. One misplaced line is the difference between correct linear BFS and a slow, wrong one.</p>
+
+        <h3>2 &middot; Using BFS distances on a weighted graph</h3>
+        <p>The most seductive error. BFS counts <em>edges</em>; it returns true shortest paths only when every edge has equal weight. The moment edges carry distinct costs, a path with more edges can be cheaper, and BFS confidently returns a wrong answer. Weighted shortest paths need Dijkstra or Bellman-Ford (Lecture&nbsp;13). (The honourable exception: 0/1 weights yield to a deque-BFS, and small integer weights to edge-splitting &mdash; but plain BFS is not it.)</p>
+
+        <h3>3 &middot; Recursive DFS blowing the call stack</h3>
+        <p>A graph with a path of length <code class="inl">V</code> makes recursive DFS recurse <code class="inl">V</code> frames deep; at a few hundred thousand vertices that overflows the native stack and crashes &mdash; on exactly the large inputs you care about. Either convert to an explicit-stack iterative DFS, or raise the recursion limit deliberately. Tarjan in particular is usually written iteratively in production for this reason.</p>
+
+        <h3>4 &middot; The parent-edge trap in undirected low-link</h3>
+        <p>In undirected DFS you must ignore the edge back to your parent &mdash; but ignore it <em>exactly once</em>. Skipping <em>every</em> edge to the parent silently swallows a genuine second (parallel) edge to that same vertex, which is a real back edge and would correctly stop something from being a bridge. Track the parent <em>edge id</em>, not just the parent vertex, when multi-edges are possible. And update <code class="inl">low</code> from a back edge with <code class="inl">disc[w]</code>, never <code class="inl">low[w]</code>.</p>
+
+        <h3>5 &middot; Forgetting the graph is disconnected (and the forest)</h3>
+        <p>A single <code class="inl">BFS(s)</code> or <code class="inl">VISIT(s)</code> only reaches <code class="inl">s</code>'s component. Counting components, topological-sorting, or finding SCCs requires the <em>outer loop</em> that restarts the traversal from every still-white vertex, producing a <em>forest</em>. Omit it and you silently process only one component and report a confidently partial answer.</p>
+
+        <h3>6 &middot; Directed vs. undirected: building the wrong adjacency list</h3>
+        <p>For an undirected edge <code class="inl">{u,v}</code> you must push <code class="inl">v</code> into <code class="inl">adj[u]</code> <em>and</em> <code class="inl">u</code> into <code class="inl">adj[v]</code>; for a directed edge only the first. Add both directions to a directed problem and you fabricate reachability, merge SCCs, and destroy any topological order; add only one to an undirected problem and you sever half the graph. Decide the model first, build the list to match.</p>
+
+        <h3>7 &middot; Tarjan's <code class="inl">low</code> update: <code class="inl">disc[w]</code>, and only if on the stack</h3>
+        <p>Two bugs in one line. Updating <code class="inl">low[u]</code> with <code class="inl">low[w]</code> instead of <code class="inl">disc[w]</code> on a non-tree edge can wrongly merge distinct SCCs; and updating from a vertex <code class="inl">w</code> that has already been popped (no longer on the stack, i.e. its component is closed) is also wrong &mdash; that edge crosses <em>into a finished component</em> and must be ignored. The guard is precisely <code class="inl">elif onStack[v]: low[u] = min(low[u], disc[v])</code>.</p>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section id="s13" class="reveal">
+      <div class="eyebrow"><span class="n">13</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Shortest reach in an unweighted graph</h3>
+          <p class="meta">bfs distances &middot; mark-on-discovery &middot; single-source</p>
+          <p>Given <code class="inl">n</code> vertices labelled <code class="inl">0&hellip;n&minus;1</code>, a list of directed edges, and a source <code class="inl">s</code>, return an array <code class="inl">dist</code> where <code class="inl">dist[v]</code> is the minimum number of edges on a path <code class="inl">s&#8594;v</code>, or <code class="inl">&minus;1</code> if <code class="inl">v</code> is unreachable. Constraints: <code class="inl">1 &#8804; n &#8804; 10&#8309;</code>, up to <code class="inl">2&#215;10&#8309;</code> edges, no weights. Example: <code class="inl">n=6</code>, edges <code class="inl">[[0,1],[0,2],[1,3],[2,3],[3,4]]</code>, <code class="inl">s=0 &#8594; [0,1,1,2,3,&minus;1]</code> (vertex 5 isolated). Prove that the value written when a vertex is <em>first</em> dequeued is final and minimal, and give the <code class="inl">O(V+E)</code> bound.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Course Schedule II &mdash; return a build order</h3>
+          <p class="meta">topological sort &middot; cycle = impossible &middot; LeetCode 210</p>
+          <p>There are <code class="inl">numCourses</code> courses <code class="inl">0&hellip;numCourses&minus;1</code>; <code class="inl">prerequisites[i]=[a,b]</code> means <code class="inl">b</code> must be taken before <code class="inl">a</code>. Return <em>any</em> valid ordering of all courses, or the empty array <code class="inl">[]</code> if it is impossible. Constraints: up to <code class="inl">2000</code> courses and <code class="inl">&#8776;n&#178;</code> distinct prerequisite pairs. Examples: <code class="inl">numCourses=4, prereqs=[[1,0],[2,0],[3,1],[3,2]] &#8594; [0,1,2,3]</code> (or <code class="inl">[0,2,1,3]</code>); <code class="inl">[[1,0],[0,1]] &#8594; []</code>. Solve with Kahn's in-degree peeling <em>and</em> describe the DFS-finish-time alternative; state exactly how each detects the cyclic (impossible) case.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Critical Connections &mdash; find every bridge</h3>
+          <p class="meta">undirected low-link &middot; low[c] &gt; disc[u] &middot; LeetCode 1192</p>
+          <p>A network of <code class="inl">n</code> servers <code class="inl">0&hellip;n&minus;1</code> is connected by undirected <code class="inl">connections[i]=[u,v]</code>. A <em>critical connection</em> is an edge whose removal disconnects some servers. Return all of them, in any order. Constraints: <code class="inl">1 &#8804; n &#8804; 10&#8309;</code>, the graph is connected, no duplicate edges. Example: <code class="inl">n=4</code>, <code class="inl">[[0,1],[1,2],[2,0],[1,3]] &#8594; [[1,3]]</code> (the triangle <code class="inl">0-1-2</code> has no bridge; the spur to <code class="inl">3</code> is the only lifeline). Implement the single-DFS <code class="inl">disc</code>/<code class="inl">low</code> solution, apply the bridge test, and explain why no back edge can &ldquo;save&rdquo; a bridge.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Count the strongly connected components</h3>
+          <p class="meta">tarjan / kosaraju &middot; the condensation &middot; build problem</p>
+          <p>Given a directed graph on <code class="inl">n</code> vertices and a list of directed edges, return the number of strongly connected components. Constraints: <code class="inl">1 &#8804; n &#8804; 10&#8309;</code>, up to <code class="inl">2&#215;10&#8309;</code> edges; the graph may be disconnected (loop over all vertices as roots). Example: the Figure&nbsp;5 graph &mdash; edges <code class="inl">0&#8594;1,1&#8594;2,2&#8594;0,1&#8594;3,3&#8594;4,4&#8594;5,5&#8594;3,4&#8594;6,6&#8594;7,7&#8594;6,5&#8594;7</code> &mdash; has <strong>3</strong> SCCs: <code class="inl">{0,1,2},{3,4,5},{6,7}</code>. Give a one-pass Tarjan solution (count the roots where <code class="inl">low=disc</code>) and sketch the Kosaraju alternative; state why the components, once contracted, form a DAG.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section id="s14" class="reveal">
+      <div class="eyebrow"><span class="n">14</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>A graph traversal is one algorithm &mdash; visited-set plus a frontier &mdash; and the container you pick decides everything it reveals.</strong> A <em>queue</em> gives breadth-first search, and its layers <em>are</em> unweighted distance. A <em>stack</em> gives depth-first search, and its discovery/finish clock exposes cycles (the back edge), a topological order (decreasing finish time), strongly connected components (Tarjan's <code class="inl">low=disc</code> roots), and an undirected graph's bridges and articulation points (<code class="inl">low[c]&gt;disc[u]</code>). All of it in <code class="inl">O(V+E)</code> &mdash; provided you stored the graph as an adjacency list. Learn the two walks; collect the five structures for free.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 12</span>
+            <div class="ttl">Greedy on Graphs: Minimum Spanning Trees &amp; the Union-Find Structure</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We have walked graphs and read their structure; next we start <em>building</em> on them. Lecture&nbsp;12 adds weights and asks for the cheapest set of edges that keeps everything connected &mdash; the minimum spanning tree &mdash; proved optimal by the cut property, and powered by union-find, whose near-constant amortised cost ties straight back to the potential method of Lecture&nbsp;02. Then Lecture&nbsp;13 generalises BFS's distances to weighted shortest paths. The traversal forest you learned to read here is the soil everything graph-shaped grows in.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-10-range-queries-fenwick-and-segment-trees.html">← Previous study</a><a href="dsa-12-minimum-spanning-trees-and-union-find.html">Next study →</a></nav>
+</body>
+</html>

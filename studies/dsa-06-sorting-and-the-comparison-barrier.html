@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorting &amp; the &#x3A9;(n log n) Comparison Barrier</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:20ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.7rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.3rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.wrap-row td, tr.wrap-row th{background:color-mix(in oklab,var(--bau-yellow) 26%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-stroke{stroke:var(--on-surface); fill:none; stroke-width:2}
+  .dg-thin{stroke:var(--outline); fill:none; stroke-width:1}
+  .dg-dash{stroke:var(--outline); fill:none; stroke-width:1.5; stroke-dasharray:5 5}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+  .dg-red{stroke:var(--bau-red)}   .dg-red-f{fill:var(--bau-red)}
+  .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-cell{fill:var(--surface);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill{fill:var(--primary-container);stroke:var(--bau-ink);stroke-width:2}
+  .dg-label{font-family:var(--font-mono); font-size:14px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
+  .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
+
+  /* ===== inline cell strips (HTML, for state traces) ===== */
+  .cells{display:flex; gap:5px; flex-wrap:wrap; margin:.5em 0 1em; font-family:var(--font-mono); font-size:14px; align-items:flex-end}
+  .cells .c{min-width:40px; height:40px; display:grid; place-items:center; border:1.5px solid var(--bau-ink); border-radius:var(--r-xs); background:var(--surface-1); position:relative}
+  .cells .c.fill{background:var(--primary-container); color:var(--on-primary-container); font-weight:650}
+  .cells .c.piv{background:var(--bau-yellow); color:var(--bau-ink); font-weight:700}
+  .cells .c.lo{background:color-mix(in oklab,var(--bau-blue) 18%,var(--surface)); }
+  .cells .c.hi{background:color-mix(in oklab,var(--bau-red) 16%,var(--surface)); }
+  .cells .sep{align-self:center; color:var(--on-surface-variant)}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">06 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>06</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="200" height="156" viewBox="0 0 200 156" aria-hidden="true">
+    <!-- a sorted staircase of bars, a Bauhaus motif for "order" -->
+    <rect x="6"   y="118" width="26" height="34"  class="dg-blue-f"/>
+    <rect x="36"  y="96"  width="26" height="56"  class="dg-blue-f"/>
+    <rect x="66"  y="70"  width="26" height="82"  class="dg-red-f"/>
+    <rect x="96"  y="48"  width="26" height="104" class="dg-red-f"/>
+    <circle cx="143" cy="40" r="30" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
+    <path d="M150 96 L196 96 L173 150 Z" class="dg-blue-f"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 06</span> where cleverness meets a wall — and a door</div>
+    <h1>Sorting &amp; the &#x3A9;(n&nbsp;log&nbsp;n) Comparison Barrier</h1>
+    <p class="lede col">Sorting is the most-run non-trivial algorithm on Earth, and it is where this course first meets a <em>provable limit</em>. We will build <strong>randomized quicksort</strong> and prove it averages <code class="inl">O(n&nbsp;log&nbsp;n)</code> with nothing but indicator variables; then prove that <em>no</em> algorithm that learns about its data only by comparing pairs can ever beat <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> — a law, not a failure of imagination; then walk straight through that wall with <strong>counting</strong> and <strong>radix sort</strong>, which sort in <em>linear</em> time by refusing to compare at all.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A number to fix the stakes.</strong> Shuffle a standard 52-card deck. There are <code class="inl">52!&nbsp;&#8776;&nbsp;8.07&times;10&#x2076;&#x2077;</code> possible orderings. Any algorithm that sorts the deck by asking only &ldquo;is this card before that one?&rdquo; must, in the worst case, ask at least <code class="inl">&#8968;log&#8322;(52!)&#8969; = 226</code> yes/no questions. Not 226 on average for a clumsy method — <strong>226 is the floor for the best comparison sort that will ever be invented.</strong></p>
+        <p style="margin-bottom:0">Yet if those 52 cards carried integer ranks <code class="inl">0&hellip;51</code>, I can sort them in <strong>one linear pass</strong> with no comparison whatsoever. Two facts, both true, both proved on this page. The reconciliation — that the barrier guards a <em>model</em>, not the problem — is the deepest idea in elementary algorithmics.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>A wall and a door</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>The comparison model</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>Randomized quicksort</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Indicator-variable analysis</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>Worked: trace &amp; expectation</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>The decision-tree floor</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Escape I: counting sort</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Escape II: radix sort</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>The zoo, tabulated</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Where it breaks</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Practice</span></a></li>
+      <li><a href="#s13"><span class="num">13</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> a wall and a door</div>
+      <h2>Two true statements that seem to fight</h2>
+      <div class="col">
+        <p>I think first in terms of what a machine is <em>permitted to do</em>, because the permissions fix the price. Sorting hands us the cleanest example in the whole course of this principle. Restrict an algorithm to one kind of question about its data and a hard floor appears beneath every method, present and future. Grant it one extra power — the ability to read a key's value as an address — and the floor vanishes.</p>
+        <p>Hold both of these in your head at once; the lecture exists to make them coexist:</p>
+        <ul>
+          <li><strong>The wall.</strong> Every <span class="term">comparison sort</span> — merge sort, heapsort, quicksort, insertion sort, any algorithm whose only way of learning about the elements is to ask &ldquo;is <code class="inl">a &lt; b</code>?&rdquo; — must perform <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> comparisons in the worst case. This is a theorem about an <em>entire class of algorithms at once</em>, the rarest and most powerful kind of result in our field.</li>
+          <li><strong>The door.</strong> If the keys are integers drawn from a modest range, <span class="term">counting sort</span> and <span class="term">radix sort</span> sort them in <code class="inl">&#x398;(n)</code> time. They do not contradict the wall — they stand <em>outside the room the wall encloses</em>, because they never compare two keys; they use each key as an index.</li>
+        </ul>
+        <p>Randomized quicksort is our vehicle into the wall: a method so fast in practice that it is the default in most standard libraries, yet whose elegance is an <em>average</em>, paid for with a coin flip. We will prove its expected cost with a technique — the indicator variable — that you will reuse for hashing, for skip lists, for half the randomized structures in this syllabus. So this one lecture carries three of the deepest tools in the course: <strong>expectation as a design instrument, the adversary lower bound, and the change of model that escapes it.</strong></p>
+        <div class="note info"><span class="tag">the formal lens</span>A lower bound is a statement about a <em>model of computation</em>, never about a problem in the abstract. Before you accept &ldquo;this is as fast as it gets,&rdquo; always ask: <em>as fast as it gets in which model?</em> Change the permitted operations and the bound can dissolve. That single habit is most of what this lecture teaches.</div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>Implement</strong> randomized quicksort with a correct in-place partition, and say precisely <em>why</em> randomizing the pivot — not the input — is what buys the average-case guarantee.</li>
+          <li><strong>Prove</strong> that randomized quicksort makes <code class="inl">O(n&nbsp;log&nbsp;n)</code> comparisons in expectation, from scratch, using indicator variables and the &ldquo;<code class="inl">2/(j&minus;i+1)</code>&rdquo; lemma — and reproduce the harmonic-sum bound.</li>
+          <li><strong>Derive</strong> the <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> comparison lower bound by modelling any comparison sort as a binary decision tree with <code class="inl">&ge;&nbsp;n!</code> leaves, and explain why it pins <em>both</em> worst-case and average-case cost.</li>
+          <li><strong>Build</strong> counting sort and radix sort, prove their linear-time bounds, and state the exact conditions on the keys under which linear sorting is legitimate.</li>
+          <li><strong>Reconcile</strong> the wall and the door — articulate why linear-time sorting does not refute the lower bound, citing the operation each model is and is not allowed.</li>
+          <li><strong>Diagnose</strong> the classic disasters: quicksort's quadratic worst case, the sorted-input pivot trap, recursion-depth blow-up, the all-duplicates collapse, and counting sort's silent memory explosion when the key range is large.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>This lecture sits downstream of four ideas. Asymptotic notation is taught on the linked page; the others arrive in Lectures&nbsp;03 and&nbsp;05 of this same syllabus and are summarised where first used here.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotic notation — O / &Theta; / &Omega;</a>
+          <span class="chip">divide &amp; conquer</span>
+          <span class="chip">recurrences / Master Theorem</span>
+          <span class="chip">probability — expectation &amp; indicator variables</span>
+        </div>
+        <p style="margin-top:1em">The one tool you must hold firmly is <strong>linearity of expectation</strong>: for any random variables, <code class="inl">E[X&#8321;+&hellip;+X&#x2098;] = E[X&#8321;]+&hellip;+E[X&#x2098;]</code>, with <em>no</em> independence required. An <span class="term">indicator variable</span> is a random variable that is <code class="inl">1</code> when some event happens and <code class="inl">0</code> otherwise; its expectation equals the probability of that event, <code class="inl">E[X] = Pr[X = 1]</code>. Those two sentences are the entire engine of &sect;05.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> strip the problem to its skeleton</div>
+      <h2>The comparison model, made precise</h2>
+      <div class="col">
+        <p>Before any algorithm, fix what the algorithm is <em>allowed to know</em>. In the <span class="term">comparison model</span> the input is a sequence of <code class="inl">n</code> elements from some totally ordered universe, and the algorithm may inspect them in exactly one way: pick two, <code class="inl">a&#7522;</code> and <code class="inl">a&#11388;</code>, and learn which of <code class="inl">a&#7522; &lt; a&#11388;</code>, <code class="inl">a&#7522; = a&#11388;</code>, <code class="inl">a&#7522; &gt; a&#11388;</code> holds. It may move elements about freely, but it may not look inside them — not their bits, not their magnitude, only their order relative to one another.</p>
+        <p>Now extract the computational skeleton. The actual <em>values</em> are irrelevant; only their relative order matters. So sorting an input of distinct elements is exactly the task of <strong>identifying which of the <code class="inl">n!</code> permutations</strong> arranges the input into increasing order. The algorithm starts knowing nothing — any of the <code class="inl">n!</code> orderings is possible — and each comparison is a single yes/no question that splits the still-possible orderings into two groups. The algorithm is done only when one ordering remains. <em>That</em> reframing — sorting as a question-asking game against an unknown permutation — is the whole reason a lower bound exists, and we cash it in &sect;07.</p>
+        <p>This is also why the model matters so much. A comparison costs <code class="inl">&#x398;(1)</code>, but it also <em>yields</em> only one bit. An operation that reads a key and uses it as an array index yields <code class="inl">log k</code> bits in one step and lives in a <em>different</em> model — the model counting and radix sort inhabit. Keep the two straight and nothing on this page will ever seem paradoxical.</p>
+        <div class="pull">A comparison sort plays twenty questions against a hidden permutation. <span>With n! suspects, you cannot always win in fewer than log&#8322;(n!) questions.</span></div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> divide by a pivot</div>
+      <h2>Randomized quicksort &amp; the partition</h2>
+      <div class="col">
+        <p>Quicksort is divide-and-conquer with the cleverness moved to the <em>divide</em>. Choose one element as the <span class="term">pivot</span>; rearrange the array so that everything smaller sits to its left and everything larger to its right; the pivot is now in its final sorted position; recurse on the two sides. The combine step is empty — that is the trick. All the work is in the partition, and the quality of the split is decided by the pivot.</p>
+
+        <p>Here is the in-place <span class="term">Lomuto partition</span>, the cleanest to reason about. It keeps a single boundary <code class="inl">i</code> marking the end of the &ldquo;&le; pivot&rdquo; zone and scans the rest with <code class="inl">j</code>, swapping any small element across the boundary. The one line that makes it <em>randomized</em> — and so immune to adversarial input — is choosing the pivot index at random and parking it at the end before the scan begins.</p>
+
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">quicksort</span>(A, lo, hi):          <span class="tok-com"># sort A[lo..hi] in place</span>
+    <span class="tok-kw">if</span> lo &lt; hi:
+        p = <span class="tok-fn">partition</span>(A, lo, hi)        <span class="tok-com"># p = pivot's FINAL resting index</span>
+        <span class="tok-fn">quicksort</span>(A, lo, p <span class="tok-op">-</span> <span class="tok-num">1</span>)         <span class="tok-com"># the &le;-pivot side</span>
+        <span class="tok-fn">quicksort</span>(A, p <span class="tok-op">+</span> <span class="tok-num">1</span>, hi)         <span class="tok-com"># the &gt;-pivot side</span>
+
+<span class="tok-kw">function</span> <span class="tok-fn">partition</span>(A, lo, hi):
+    r = <span class="tok-fn">random_int</span>(lo, hi)             <span class="tok-com"># THE randomization: a uniform pivot</span>
+    <span class="tok-fn">swap</span>(A[r], A[hi])                  <span class="tok-com"># park the chosen pivot at the end</span>
+    pivot = A[hi]
+    i = lo <span class="tok-op">-</span> <span class="tok-num">1</span>                         <span class="tok-com"># i = last index of the "&le; pivot" zone</span>
+    <span class="tok-kw">for</span> j <span class="tok-kw">in</span> lo .. hi <span class="tok-op">-</span> <span class="tok-num">1</span>:
+        <span class="tok-kw">if</span> A[j] &le; pivot:               <span class="tok-com"># one comparison per loop step</span>
+            i = i <span class="tok-op">+</span> <span class="tok-num">1</span>
+            <span class="tok-fn">swap</span>(A[i], A[j])             <span class="tok-com"># move the small element across the boundary</span>
+    <span class="tok-fn">swap</span>(A[i <span class="tok-op">+</span> <span class="tok-num">1</span>], A[hi])              <span class="tok-com"># drop the pivot into its seat</span>
+    <span class="tok-kw">return</span> i <span class="tok-op">+</span> <span class="tok-num">1</span></code></pre>
+
+        <p>The loop performs exactly <code class="inl">hi &minus; lo</code> comparisons — one per non-pivot element against the pivot — and at most that many swaps, so a single partition of a block of <code class="inl">m</code> elements is <code class="inl">&#x398;(m)</code> time and <code class="inl">&#x398;(1)</code> extra space. Correctness rests on a loop invariant you should be able to state in your sleep:</p>
+        <div class="note info"><span class="tag">partition invariant</span>At the top of each iteration of the scan, the array is split into four contiguous zones: <code class="inl">A[lo..i]</code> are all <code class="inl">&le; pivot</code>; <code class="inl">A[i+1..j&minus;1]</code> are all <code class="inl">&gt; pivot</code>; <code class="inl">A[j..hi&minus;1]</code> are not yet examined; and <code class="inl">A[hi]</code> is the pivot. Each step restores it. When <code class="inl">j</code> reaches <code class="inl">hi</code>, the final swap drops the pivot exactly between the &le; and &gt; zones — its sorted home.</div>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 320" role="img" aria-labelledby="f1t f1d">
+            <title id="f1t">A snapshot of Lomuto partition mid-scan, showing the four invariant zones</title>
+            <desc id="f1d">A nine-cell array being partitioned around pivot value six parked at the last index. Indices zero to two hold two, one, four and form the less-than-or-equal zone ending at pointer i. Indices three to five hold seven, nine, eleven and form the greater-than zone. Indices six and seven hold three and ten and are unexamined, with the scan pointer j at index six. The next step compares three to six, finds it smaller, advances i and swaps it across the boundary.</desc>
+
+            <text x="24" y="34" class="dg-cap">partition around pivot = 6   (mid-scan, j at index 6)</text>
+
+            <!-- zone brackets -->
+            <text x="40"  y="74" class="dg-label sm dg-blue-f">&le; pivot zone</text>
+            <text x="320" y="74" class="dg-label sm dg-red-f">&gt; pivot zone</text>
+            <text x="600" y="74" class="dg-label sm">unexamined</text>
+            <text x="820" y="74" class="dg-label sm" style="fill:var(--bau-ink)">pivot</text>
+
+            <!-- cells: 9 cells, x from 40, width 88, gap built into 90 step -->
+            <g font-family="var(--font-mono)">
+              <!-- <= zone (blue fill) idx 0,1,2 -->
+              <rect x="40"  y="84" width="84" height="64" class="dg-fill" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="82"  y="124" text-anchor="middle" class="dg-val">2</text>
+              <rect x="130" y="84" width="84" height="64" class="dg-fill" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="172" y="124" text-anchor="middle" class="dg-val">1</text>
+              <rect x="220" y="84" width="84" height="64" class="dg-fill" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="262" y="124" text-anchor="middle" class="dg-val">4</text>
+              <!-- > zone (red outline) idx 3,4,5 -->
+              <rect x="310" y="84" width="84" height="64" class="dg-cell" stroke="var(--bau-red)" stroke-width="2.5"/><text x="352" y="124" text-anchor="middle" class="dg-val">7</text>
+              <rect x="400" y="84" width="84" height="64" class="dg-cell" stroke="var(--bau-red)" stroke-width="2.5"/><text x="442" y="124" text-anchor="middle" class="dg-val">9</text>
+              <rect x="490" y="84" width="84" height="64" class="dg-cell" stroke="var(--bau-red)" stroke-width="2.5"/><text x="532" y="124" text-anchor="middle" class="dg-val">11</text>
+              <!-- unexamined idx 6,7 -->
+              <rect x="580" y="84" width="84" height="64" class="dg-cell"/><text x="622" y="124" text-anchor="middle" class="dg-val">3</text>
+              <rect x="670" y="84" width="84" height="64" class="dg-cell"/><text x="712" y="124" text-anchor="middle" class="dg-val">10</text>
+              <!-- pivot idx 8 -->
+              <rect x="800" y="84" width="84" height="64" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2.5"/><text x="842" y="124" text-anchor="middle" class="dg-val">6</text>
+            </g>
+
+            <!-- index labels -->
+            <g class="dg-label sm" text-anchor="middle">
+              <text x="82" y="166">0</text><text x="172" y="166">1</text><text x="262" y="166">2</text>
+              <text x="352" y="166">3</text><text x="442" y="166">4</text><text x="532" y="166">5</text>
+              <text x="622" y="166">6</text><text x="712" y="166">7</text><text x="842" y="166">8</text>
+            </g>
+
+            <!-- pointers i and j -->
+            <g>
+              <path d="M262 196 L262 172" class="dg-stroke dg-blue" marker-end="url(#ahb)"/>
+              <text x="262" y="216" text-anchor="middle" class="dg-val dg-blue-f">i</text>
+              <text x="262" y="234" text-anchor="middle" class="dg-label sm">end of &le; zone</text>
+              <path d="M622 196 L622 172" class="dg-stroke dg-red" marker-end="url(#ahr)"/>
+              <text x="622" y="216" text-anchor="middle" class="dg-val dg-red-f">j</text>
+              <text x="622" y="234" text-anchor="middle" class="dg-label sm">scan</text>
+            </g>
+
+            <!-- next-step callout -->
+            <g transform="translate(40,256)">
+              <rect x="0" y="0" width="844" height="48" rx="8" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
+              <text x="16" y="30" class="dg-label">next step:  A[j]=3 &le; 6  &rarr;  i becomes 3, swap A[3]&harr;A[6]  &rArr;  the value 3 crosses into the &le; zone, 7 moves out to index 6.</text>
+            </g>
+
+            <defs>
+              <marker id="ahb" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+              <marker id="ahr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 1 — the partition invariant.</b> One pivot, two zones growing toward each other, one comparison per scanned cell. The whole cost of quicksort is the <em>sum of partition sizes</em> over the recursion — which is why a balanced split is everything, and the pivot decides the split.</figcaption>
+        </figure>
+
+        <h3>Why randomize the pivot rather than shuffle the input?</h3>
+        <p>Both work, and for the same reason, but randomizing the pivot is cleaner. A <em>deterministic</em> pivot rule — &ldquo;always take the first element&rdquo; — has a permanent worst-case enemy: feed it already-sorted data and every partition peels off just one element, giving <code class="inl">n + (n&minus;1) + &hellip; + 1 = &#x398;(n&#xB2;)</code> comparisons. Randomizing the pivot means <strong>no fixed input is bad</strong>; there is only <em>bad luck</em>, and bad luck cannot be arranged by an adversary who hands you the data. The expectation in &sect;05 is taken over the algorithm's coin flips, so it holds for <em>every</em> input equally. That is the precise, formal payoff of randomization: it converts &ldquo;slow on some inputs&rdquo; into &ldquo;slow only on some coin sequences, with vanishing probability.&rdquo;</p>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> the crown jewel</div>
+      <h2>Expected <code class="inl">O(n log n)</code> from indicator variables</h2>
+      <div class="col">
+        <p>We will not write or solve a recurrence. There is a far more beautiful route, and it is the template for nearly every randomized analysis you will meet later. The total running time of quicksort is dominated by the number of comparisons, so let <code class="inl">X</code> be the <strong>total number of comparisons</strong> across the entire sort. We want <code class="inl">E[X]</code>.</p>
+
+        <p>Rename the elements by their <em>sorted</em> rank: let <code class="inl">z&#8321; &lt; z&#8322; &lt; &hellip; &lt; z&#x2099;</code> be the elements in increasing order (the <span class="term">order statistics</span>). This renaming is just bookkeeping — the algorithm never sees it — but it lets us talk about any specific pair. For each pair <code class="inl">i &lt; j</code>, define the indicator</p>
+
+        <div class="eq">
+          <span class="lbl">indicator variable for one pair</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <msub><mi>X</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub>
+            <mo>=</mo>
+            <mrow><mo>{</mo>
+              <mtable columnalign="left">
+                <mtr><mtd><mn>1</mn></mtd><mtd><mtext>&#xA0;if&#xA0;</mtext><msub><mi>z</mi><mi>i</mi></msub><mtext>&#xA0;and&#xA0;</mtext><msub><mi>z</mi><mi>j</mi></msub><mtext>&#xA0;are ever compared</mtext></mtd></mtr>
+                <mtr><mtd><mn>0</mn></mtd><mtd><mtext>&#xA0;otherwise</mtext></mtd></mtr>
+              </mtable>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>Two facts make this the right variable. First, every comparison quicksort ever makes is between the pivot and another element, so any pair is compared <strong>at most once</strong> in the whole execution (once one of them is the pivot, it is removed from its subarray; two non-pivots in the same block are never compared directly). Second, the total comparison count is therefore <em>exactly</em> the sum of these indicators — nothing is double counted:</p>
+
+        <div class="eq">
+          <span class="lbl">total comparisons, then take expectation</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>X</mi><mo>=</mo>
+              <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi><mo>&#x2212;</mo><mn>1</mn></mrow></munderover>
+              <munderover><mo>&#x2211;</mo><mrow><mi>j</mi><mo>=</mo><mi>i</mi><mo>+</mo><mn>1</mn></mrow><mi>n</mi></munderover>
+              <msub><mi>X</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub>
+              <mtext>&#xA0;&#xA0;&#x21D2;&#xA0;&#xA0;</mtext>
+              <mi>E</mi><mo>[</mo><mi>X</mi><mo>]</mo>
+              <mo>=</mo>
+              <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi><mo>&#x2212;</mo><mn>1</mn></mrow></munderover>
+              <munderover><mo>&#x2211;</mo><mrow><mi>j</mi><mo>=</mo><mi>i</mi><mo>+</mo><mn>1</mn></mrow><mi>n</mi></munderover>
+              <mi>Pr</mi><mo>[</mo><msub><mi>z</mi><mi>i</mi></msub><mtext>,&#xA0;</mtext><msub><mi>z</mi><mi>j</mi></msub><mtext>&#xA0;compared</mtext><mo>]</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>The implication is <strong>linearity of expectation</strong>, and it asks for nothing — the <code class="inl">X&#7522;&#11388;</code> are wildly dependent, and we simply do not care. We have traded one hard question (the distribution of a sum) for <code class="inl">&#x398;(n&#xB2;)</code> easy ones (a single probability). Now the only thing left is that probability.</p>
+
+        <h3>The key lemma: <code class="inl">Pr[z&#7522;, z&#11388; compared] = 2/(j &minus; i + 1)</code></h3>
+        <p>Consider the contiguous band of order statistics <code class="inl">Z&#7522;&#11388; = {z&#7522;, z&#7522;&#8330;&#8321;, &hellip;, z&#11388;}</code> — there are <code class="inl">j &minus; i + 1</code> of them. Track which element of this band is chosen as a pivot <em>first</em> (somewhere in the recursion, some member of the band must be picked before the others, because pivots are removed one at a time). Everything turns on that first pick:</p>
+        <ul>
+          <li>If the first pivot drawn from the band is an <strong>interior</strong> element <code class="inl">z&#x2096;</code> with <code class="inl">i &lt; k &lt; j</code>, then <code class="inl">z&#7522;</code> and <code class="inl">z&#11388;</code> land on <em>opposite</em> sides of that partition (one below <code class="inl">z&#x2096;</code>, one above) and are separated forever — they can never be compared.</li>
+          <li>If the first pivot drawn from the band is an <strong>endpoint</strong> — <code class="inl">z&#7522;</code> itself or <code class="inl">z&#11388;</code> itself — then at that moment the whole band is still together in one subarray (nobody from the band has been a pivot yet), so the pivot is compared against every other band member, including the other endpoint. They <em>are</em> compared.</li>
+        </ul>
+        <p>So the pair is compared if and only if the first-chosen pivot of the band is one of its two endpoints. Because every pivot is chosen uniformly at random, each of the <code class="inl">j &minus; i + 1</code> band members is equally likely to be the first one picked. Two of them are favourable. Hence:</p>
+
+        <div class="eq">
+          <span class="lbl">the probability, and the sum it produces</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>Pr</mi><mo>[</mo><msub><mi>z</mi><mi>i</mi></msub><mtext>,&#xA0;</mtext><msub><mi>z</mi><mi>j</mi></msub><mtext>&#xA0;compared</mtext><mo>]</mo>
+              <mo>=</mo>
+              <mfrac><mn>2</mn><mrow><mi>j</mi><mo>&#x2212;</mo><mi>i</mi><mo>+</mo><mn>1</mn></mrow></mfrac>
+              <mtext>,&#xA0;&#xA0;&#xA0;so&#xA0;&#xA0;&#xA0;</mtext>
+              <mi>E</mi><mo>[</mo><mi>X</mi><mo>]</mo>
+              <mo>=</mo>
+              <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi><mo>&#x2212;</mo><mn>1</mn></mrow></munderover>
+              <munderover><mo>&#x2211;</mo><mrow><mi>j</mi><mo>=</mo><mi>i</mi><mo>+</mo><mn>1</mn></mrow><mi>n</mi></munderover>
+              <mfrac><mn>2</mn><mrow><mi>j</mi><mo>&#x2212;</mo><mi>i</mi><mo>+</mo><mn>1</mn></mrow></mfrac>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>Substitute <code class="inl">d = j &minus; i</code> (the gap), so the inner term is <code class="inl">2/(d+1)</code>. Summing the inner series and bounding it by a harmonic number <code class="inl">H&#x2099; = 1 + 1/2 + &hellip; + 1/n</code> gives the finish:</p>
+
+        <div class="eq">
+          <span class="lbl">close it with the harmonic bound</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>E</mi><mo>[</mo><mi>X</mi><mo>]</mo>
+              <mo>&lt;</mo>
+              <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover>
+              <mn>2</mn>
+              <munderover><mo>&#x2211;</mo><mrow><mi>d</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi></mrow></munderover>
+              <mfrac><mn>1</mn><mi>d</mi></mfrac>
+              <mo>=</mo>
+              <mn>2</mn><mi>n</mi><msub><mi>H</mi><mi>n</mi></msub>
+              <mo>=</mo>
+              <mn>2</mn><mi>n</mi><mo>(</mo><mi>ln</mi><mi>n</mi><mo>+</mo><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo><mo>)</mo>
+              <mo>=</mo>
+              <mi>O</mi><mo>(</mo><mi>n</mi><mi>log</mi><mi>n</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>That is the whole proof. No recurrence, no Master Theorem, no case analysis on the split — just a clean count of which pairs ever meet. The constant is sharp, too: <code class="inl">2&nbsp;ln&nbsp;2&nbsp;&#8776;&nbsp;1.39</code>, so randomized quicksort makes about <code class="inl">1.39&nbsp;n&nbsp;log&#8322;n</code> comparisons on average — only <code class="inl">39%</code> more than the information-theoretic floor we prove in &sect;07.</p>
+
+        <div class="stats">
+          <div class="stat lead">
+            <div class="big">1.39&#8201;n&#8201;log&#8322;n</div>
+            <span class="lab">expected comparisons, randomized quicksort (&#8776; 2n&#8201;ln&#8201;n)</span>
+          </div>
+          <div class="stat">
+            <div class="big">2 / (j&minus;i+1)</div>
+            <span class="lab">probability ranks i, j are ever compared</span>
+          </div>
+          <div class="stat">
+            <div class="big">&#x398;(n&#xB2;)</div>
+            <span class="lab">worst-case comparisons (vanishing probability)</span>
+          </div>
+          <div class="stat">
+            <div class="big">&#x398;(log n)</div>
+            <span class="lab">expected recursion depth (with the smaller-side trick)</span>
+          </div>
+        </div>
+
+        <details>
+          <summary>Why &ldquo;at most once&rdquo; is the load-bearing fact — a one-line guard</summary>
+          <div class="body">
+            <p style="margin:.6em 0 0">If a pair could be compared twice, the sum <code class="inl">X = &#x2211; X&#7522;&#11388;</code> would <em>undercount</em> and the analysis would be wrong. It holds because comparisons happen only against the current pivot, and the pivot is pulled out of the recursion before either of its subarrays is processed. So once <code class="inl">z&#7522;</code> and <code class="inl">z&#11388;</code> are compared, one of them was the pivot and is gone; they never share a subarray again. This is exactly why Lomuto/Hoare partitions never compare two non-pivot elements with each other — only pivot-versus-rest. Break that property (e.g. a partition that re-scans) and you must redo the count.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> see it run, see it sum</div>
+      <h2>Worked example: a full trace, then the expectation by hand</h2>
+      <div class="col">
+        <p>Two halves. First we run randomized quicksort on a concrete array and watch the recursion tree form. Then we compute <code class="inl">E[X]</code> exactly for a small <code class="inl">n</code>, so the abstract sum of &sect;05 becomes a number you can check on your fingers.</p>
+
+        <h3>Part A — trace on <code class="inl">A = [5, 2, 8, 1, 9, 3]</code></h3>
+        <p>Suppose the coin picks the pivots shown. Partitioning is Lomuto (&sect;04); equal-or-less goes left. I show each call as <em>block &rarr; (pivot) &rarr; left&nbsp;|&nbsp;right</em>, with the comparison count = block size &minus; 1.</p>
+
+        <div class="cells" aria-hidden="true">
+          <span class="c fill">5</span><span class="c fill">2</span><span class="c fill">8</span><span class="c fill">1</span><span class="c fill">9</span><span class="c piv">3</span>
+        </div>
+        <p style="margin-top:-.4em"><strong>Call 1.</strong> Block <code class="inl">[5,2,8,1,9,3]</code>, pivot <code class="inl">3</code> (5 comparisons). Smaller than 3: <code class="inl">2,1</code>. Larger: <code class="inl">5,8,9</code>. Result <code class="inl">[2,1] 3 [5,8,9]</code>; the <code class="inl">3</code> is now final, at index 2.</p>
+
+        <div class="cells" aria-hidden="true">
+          <span class="c lo">2</span><span class="c piv">1</span><span class="sep">&nbsp;3&nbsp;</span><span class="c hi">5</span><span class="c hi">8</span><span class="c hi">9</span>
+        </div>
+        <p style="margin-top:-.4em"><strong>Call 2</strong> (left). Block <code class="inl">[2,1]</code>, pivot <code class="inl">1</code> (1 comparison) &rarr; <code class="inl">[] 1 [2]</code>. Both sides size &le; 1, done; left half is <code class="inl">[1,2]</code>.<br>
+        <strong>Call 3</strong> (right). Block <code class="inl">[5,8,9]</code>, pivot <code class="inl">8</code> (2 comparisons) &rarr; <code class="inl">[5] 8 [9]</code>. Both sides size 1, done; right half is <code class="inl">[5,8,9]</code>.</p>
+        <p>Final array <code class="inl">[1,2,3,5,8,9]</code>. Total comparisons on this run: <code class="inl">5 + 1 + 2 = 8</code>. The recursion tree — the actual object whose total node-work <em>is</em> the running time — looks like this:</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 360" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">The quicksort recursion tree for the worked array</title>
+            <desc id="f2d">A tree of partition calls. The root partitions the six-element array around pivot three, doing five comparisons, splitting into a left block of two and a right block of three. The left block partitions around pivot one for one comparison, the right block around pivot eight for two comparisons, each producing singleton leaves. Summing comparisons over all internal nodes gives eight, and the sum of block sizes per level is at most n, illustrating why depth times n bounds the work.</desc>
+
+            <!-- root -->
+            <g>
+              <rect x="350" y="26" width="240" height="58" rx="10" class="dg-fill"/>
+              <text x="470" y="52" text-anchor="middle" class="dg-val">[5 2 8 1 9 3]</text>
+              <text x="470" y="72" text-anchor="middle" class="dg-label sm">pivot 3 &middot; 5 comparisons</text>
+            </g>
+            <!-- edges to L and R -->
+            <line x1="420" y1="84" x2="220" y2="150" class="dg-stroke dg-blue" marker-end="url(#ae)"/>
+            <line x1="520" y1="84" x2="720" y2="150" class="dg-stroke dg-red" marker-end="url(#ae2)"/>
+            <text x="300" y="120" class="dg-label sm dg-blue-f">&le; 3</text>
+            <text x="630" y="120" class="dg-label sm dg-red-f">&gt; 3</text>
+
+            <!-- level 2 left -->
+            <g>
+              <rect x="120" y="150" width="190" height="58" rx="10" class="dg-fill"/>
+              <text x="215" y="176" text-anchor="middle" class="dg-val">[2 1]</text>
+              <text x="215" y="196" text-anchor="middle" class="dg-label sm">pivot 1 &middot; 1 comparison</text>
+            </g>
+            <!-- level 2 right -->
+            <g>
+              <rect x="620" y="150" width="200" height="58" rx="10" class="dg-fill"/>
+              <text x="720" y="176" text-anchor="middle" class="dg-val">[5 8 9]</text>
+              <text x="720" y="196" text-anchor="middle" class="dg-label sm">pivot 8 &middot; 2 comparisons</text>
+            </g>
+
+            <!-- leaves from left -->
+            <line x1="200" y1="208" x2="160" y2="270" class="dg-thin" marker-end="url(#ae3)"/>
+            <line x1="240" y1="208" x2="280" y2="270" class="dg-thin" marker-end="url(#ae3)"/>
+            <rect x="120" y="270" width="80" height="44" rx="8" class="dg-cell"/><text x="160" y="298" text-anchor="middle" class="dg-val">[ ]</text>
+            <rect x="244" y="270" width="80" height="44" rx="8" class="dg-cell"/><text x="284" y="298" text-anchor="middle" class="dg-val">2</text>
+            <!-- leaves from right -->
+            <line x1="700" y1="208" x2="660" y2="270" class="dg-thin" marker-end="url(#ae3)"/>
+            <line x1="740" y1="208" x2="780" y2="270" class="dg-thin" marker-end="url(#ae3)"/>
+            <rect x="620" y="270" width="80" height="44" rx="8" class="dg-cell"/><text x="660" y="298" text-anchor="middle" class="dg-val">5</text>
+            <rect x="744" y="270" width="80" height="44" rx="8" class="dg-cell"/><text x="784" y="298" text-anchor="middle" class="dg-val">9</text>
+
+            <!-- ledger -->
+            <g transform="translate(24,150)">
+              <rect x="0" y="0" width="84" height="58" rx="8" fill="var(--surface-2)" stroke="var(--bau-ink)"/>
+              <text x="42" y="26" text-anchor="middle" class="dg-cap">&#x2211; = 8</text>
+              <text x="42" y="46" text-anchor="middle" class="dg-label sm">5+1+2</text>
+            </g>
+
+            <defs>
+              <marker id="ae"  markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+              <marker id="ae2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+              <marker id="ae3" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--outline)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 2 — the recursion tree.</b> Comparisons live on the internal nodes; their sum is the running time. The pivots here split well, so the tree is shallow. A run of unlucky pivots would make this tree a tall thin chain — the <code class="inl">&#x398;(n&#xB2;)</code> worst case &mdash; which &sect;05 proves is improbable.</figcaption>
+        </figure>
+
+        <h3>Part B — compute <code class="inl">E[X]</code> exactly for <code class="inl">n = 4</code></h3>
+        <p>For four elements <code class="inl">z&#8321; &lt; z&#8322; &lt; z&#8323; &lt; z&#8324;</code> there are <code class="inl">&#x2C&#x208C;&#x2082;&#x2C&#x2089; = 6</code> pairs. Each contributes <code class="inl">2/(j&minus;i+1)</code>. Tabulate every one:</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>Every pair's compare-probability for n = 4</caption>
+            <thead>
+              <tr><th scope="col">pair (i, j)</th><th scope="col">gap j&minus;i</th><th scope="col">band size j&minus;i+1</th><th scope="col">Pr = 2/(j&minus;i+1)</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row" class="mono">(1, 2)</th><td>1</td><td>2</td><td class="good mono">1.000</td></tr>
+              <tr><th scope="row" class="mono">(2, 3)</th><td>1</td><td>2</td><td class="good mono">1.000</td></tr>
+              <tr><th scope="row" class="mono">(3, 4)</th><td>1</td><td>2</td><td class="good mono">1.000</td></tr>
+              <tr><th scope="row" class="mono">(1, 3)</th><td>2</td><td>3</td><td class="mid mono">0.667</td></tr>
+              <tr><th scope="row" class="mono">(2, 4)</th><td>2</td><td>3</td><td class="mid mono">0.667</td></tr>
+              <tr><th scope="row" class="mono">(1, 4)</th><td>3</td><td>4</td><td class="bad mono">0.500</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="4"><b>E[X] = 1+1+1+0.667+0.667+0.5 = 4.833</b> comparisons, versus a maximum of 6 if every pair met. Adjacent ranks <em>always</em> get compared (Pr = 1); distant ranks rarely do.</td></tr></tfoot>
+          </table>
+        </div>
+        <p>Notice the structure the numbers reveal: neighbours in sorted order are <em>certain</em> to be compared — one of them must be the pivot that finally separates them — while the two extremes <code class="inl">z&#8321;, z&#8324;</code> meet only half the time. That decaying <code class="inl">2/(d+1)</code> is precisely the harmonic series in disguise, and the harmonic series is precisely where the <code class="inl">log n</code> comes from. The whole asymptotic story is visible in this <code class="inl">6</code>-row table.</p>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> the wall, proved</div>
+      <h2>Any comparison sort needs <code class="inl">&#x3A9;(n log n)</code></h2>
+      <div class="col">
+        <p>Now the result that makes quicksort's <code class="inl">1.39&nbsp;n&nbsp;log&#8322;n</code> look not lucky but nearly optimal. We prove that <em>every</em> comparison sort — including ones not yet invented — must, on some input, make <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> comparisons. The argument is one of the most elegant in computer science, and it is pure counting.</p>
+
+        <p>Model any comparison sort as a <span class="term">decision tree</span>. Each internal node is a single comparison <code class="inl">a&#7522; : a&#11388;</code>; its two children correspond to the two answers (<code class="inl">&le;</code> goes one way, <code class="inl">&gt;</code> the other). The algorithm starts at the root and walks down, one comparison per node, until it reaches a leaf — at which point it must output a definite permutation. A particular input drives a particular root-to-leaf path; the <em>length</em> of that path is the number of comparisons that input costs. So the <strong>worst-case comparison count is the height of the tree</strong>, and the average-case count is the average leaf depth.</p>
+
+        <p>Here is the crux, in two short claims:</p>
+        <ul>
+          <li><strong>The tree needs at least <code class="inl">n!</code> leaves.</strong> Each of the <code class="inl">n!</code> distinct input orderings requires a <em>different</em> output permutation to sort it. Two different orderings cannot end at the same leaf, because a leaf emits one fixed permutation, which would mis-sort at least one of them. So there are <code class="inl">&ge; n!</code> reachable leaves.</li>
+          <li><strong>A binary tree of height <code class="inl">h</code> has at most <code class="inl">2&#x2B0;</code> leaves.</strong> Trivial induction: doubling per level.</li>
+        </ul>
+        <p>Combine them and take logarithms, then apply Stirling's approximation <code class="inl">ln(n!) = n&nbsp;ln&nbsp;n &minus; n + O(log n)</code>:</p>
+
+        <div class="eq">
+          <span class="lbl">the floor, in one line</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <msup><mn>2</mn><mi>h</mi></msup><mo>&#x2265;</mo><mi>n</mi><mo>!</mo>
+              <mtext>&#xA0;&#x21D2;&#xA0;</mtext>
+              <mi>h</mi><mo>&#x2265;</mo>
+              <msub><mi>log</mi><mn>2</mn></msub><mo>(</mo><mi>n</mi><mo>!</mo><mo>)</mo>
+              <mo>=</mo>
+              <mi>n</mi><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi>
+              <mo>&#x2212;</mo>
+              <mi>n</mi><msub><mi>log</mi><mn>2</mn></msub><mi>e</mi>
+              <mo>+</mo><mi>O</mi><mo>(</mo><mi>log</mi><mi>n</mi><mo>)</mo>
+              <mo>=</mo>
+              <mi>&#x3A9;</mi><mo>(</mo><mi>n</mi><mi>log</mi><mi>n</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>That is the wall. With <code class="inl">log&#8322;e &#8776; 1.443</code>, the floor is about <code class="inl">n&nbsp;log&#8322;n &minus; 1.44&nbsp;n</code> comparisons — for the 52-card deck, <code class="inl">log&#8322;(52!) &#8776; 225.6</code>, i.e. <strong>226</strong>, the number from the hook. And it is not only a worst-case statement: the <em>average</em> leaf depth of any binary tree with <code class="inl">L</code> leaves is at least <code class="inl">log&#8322;L</code>, so even the average-case comparison count of any comparison sort is <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code>. Merge sort and heapsort hit the floor in the worst case; randomized quicksort hits it in expectation. No comparison method does better, ever.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 380" role="img" aria-labelledby="f3t f3d">
+            <title id="f3t">A comparison-sort decision tree for three elements</title>
+            <desc id="f3d">A binary decision tree sorting three elements a, b, c. The root compares a versus b. Each internal node is a comparison with two outcomes, less-or-equal to the left and greater to the right. The leaves are the six possible sorted orderings, equal to three factorial. The tree has height three, and three is the ceiling of log base two of six, showing the height must be at least log of the number of leaves.</desc>
+
+            <text x="24" y="32" class="dg-cap">sorting 3 elements: a binary decision tree must reach all 3! = 6 orders</text>
+
+            <!-- internal node helper look: rounded rect -->
+            <!-- root -->
+            <rect x="410" y="48" width="120" height="40" rx="20" class="dg-fill"/><text x="470" y="73" text-anchor="middle" class="dg-val">a : b</text>
+            <!-- level 2 -->
+            <rect x="210" y="138" width="120" height="40" rx="20" class="dg-fill"/><text x="270" y="163" text-anchor="middle" class="dg-val">b : c</text>
+            <rect x="610" y="138" width="120" height="40" rx="20" class="dg-fill"/><text x="670" y="163" text-anchor="middle" class="dg-val">a : c</text>
+            <!-- level 3 internal (two of them) -->
+            <rect x="110" y="228" width="120" height="40" rx="20" class="dg-fill"/><text x="170" y="253" text-anchor="middle" class="dg-val">a : c</text>
+            <rect x="510" y="228" width="120" height="40" rx="20" class="dg-fill"/><text x="570" y="253" text-anchor="middle" class="dg-val">b : c</text>
+
+            <!-- edges root -->
+            <line x1="440" y1="88" x2="290" y2="138" class="dg-stroke dg-blue" marker-end="url(#al)"/>
+            <line x1="500" y1="88" x2="650" y2="138" class="dg-stroke dg-red" marker-end="url(#al2)"/>
+            <text x="350" y="112" class="dg-label sm dg-blue-f">a&le;b</text>
+            <text x="566" y="112" class="dg-label sm dg-red-f">a&gt;b</text>
+
+            <!-- edges b:c (left) -->
+            <line x1="240" y1="178" x2="170" y2="228" class="dg-stroke dg-blue" marker-end="url(#al)"/>
+            <line x1="300" y1="178" x2="350" y2="232" class="dg-thin" marker-end="url(#al3)"/>
+            <!-- leaf abc -->
+            <rect x="316" y="232" width="86" height="36" rx="8" class="dg-cell" stroke="var(--bau-blue)"/><text x="359" y="256" text-anchor="middle" class="dg-val">a b c</text>
+
+            <!-- edges a:c (left-left) -->
+            <line x1="140" y1="268" x2="100" y2="320" class="dg-stroke dg-blue" marker-end="url(#al)"/>
+            <line x1="200" y1="268" x2="232" y2="320" class="dg-thin" marker-end="url(#al3)"/>
+            <rect x="58"  y="324" width="86" height="36" rx="8" class="dg-cell" stroke="var(--bau-blue)"/><text x="101" y="348" text-anchor="middle" class="dg-val">a c b</text>
+            <rect x="190" y="324" width="86" height="36" rx="8" class="dg-cell" stroke="var(--bau-red)"/><text x="233" y="348" text-anchor="middle" class="dg-val">c a b</text>
+
+            <!-- edges a:c (right) -->
+            <line x1="640" y1="178" x2="570" y2="228" class="dg-stroke dg-blue" marker-end="url(#al)"/>
+            <line x1="700" y1="178" x2="752" y2="232" class="dg-thin" marker-end="url(#al3)"/>
+            <rect x="716" y="232" width="86" height="36" rx="8" class="dg-cell" stroke="var(--bau-red)"/><text x="759" y="256" text-anchor="middle" class="dg-val">c b a</text>
+
+            <!-- edges b:c (right-left) -->
+            <line x1="540" y1="268" x2="500" y2="320" class="dg-stroke dg-blue" marker-end="url(#al)"/>
+            <line x1="600" y1="268" x2="632" y2="320" class="dg-thin" marker-end="url(#al3)"/>
+            <rect x="458" y="324" width="86" height="36" rx="8" class="dg-cell" stroke="var(--bau-blue)"/><text x="501" y="348" text-anchor="middle" class="dg-val">b a c</text>
+            <rect x="590" y="324" width="86" height="36" rx="8" class="dg-cell" stroke="var(--bau-red)"/><text x="633" y="348" text-anchor="middle" class="dg-val">b c a</text>
+
+            <!-- height bracket -->
+            <g transform="translate(844,48)">
+              <line x1="0" y1="0" x2="0" y2="300" class="dg-stroke" stroke-width="1.5"/>
+              <line x1="-6" y1="0" x2="6" y2="0" class="dg-stroke" stroke-width="1.5"/>
+              <line x1="-6" y1="300" x2="6" y2="300" class="dg-stroke" stroke-width="1.5"/>
+              <text x="14" y="140" class="dg-label">height</text>
+              <text x="14" y="160" class="dg-label">h = 3</text>
+              <text x="14" y="186" class="dg-label sm">&#8968;log&#8322;6&#8969;</text>
+            </g>
+
+            <defs>
+              <marker id="al"  markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+              <marker id="al2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+              <marker id="al3" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--outline)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 3 — the decision tree.</b> Six leaves for <code class="inl">3! = 6</code> orderings; any binary tree holding six leaves is at least <code class="inl">&#8968;log&#8322;6&#8969; = 3</code> tall. Scale the count to <code class="inl">n!</code> leaves and the height — the worst-case comparisons — is forced up to <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code>. The bound is about the <em>shape every such tree is forced into</em>, not about any one algorithm.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> walk through the door</div>
+      <h2>Escape I: counting sort</h2>
+      <div class="col">
+        <p>The lower bound's grip is total <em>within its model</em>. So we change the model. Suppose the keys are not abstract orderable tokens but <strong>integers in a known range <code class="inl">0 &hellip; k&minus;1</code></strong>. Now a key is not merely comparable — it is an <em>address</em>. We can read a key and use it to index an array, an operation the comparison model forbade. With that one new power the floor disappears.</p>
+
+        <p><span class="term">Counting sort</span> never compares two keys. It (1) tallies how many times each value appears, (2) turns those tallies into <em>positions</em> by a running prefix sum, and (3) places each element directly into its slot. The prefix-sum step is the clever part: after it, <code class="inl">C[v]</code> tells you exactly how many keys are <code class="inl">&le; v</code>, which is exactly where the last <code class="inl">v</code> belongs.</p>
+
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">counting_sort</span>(A, k):           <span class="tok-com"># keys A[i] in 0 .. k-1</span>
+    C = <span class="tok-fn">array</span>(k, <span class="tok-num">0</span>)                    <span class="tok-com"># 1) histogram</span>
+    <span class="tok-kw">for</span> x <span class="tok-kw">in</span> A:  C[x] = C[x] <span class="tok-op">+</span> <span class="tok-num">1</span>
+    <span class="tok-kw">for</span> v <span class="tok-kw">in</span> <span class="tok-num">1</span> .. k<span class="tok-op">-</span><span class="tok-num">1</span>:               <span class="tok-com"># 2) prefix sums: C[v] = #keys &le; v</span>
+        C[v] = C[v] <span class="tok-op">+</span> C[v<span class="tok-op">-</span><span class="tok-num">1</span>]
+    B = <span class="tok-fn">array</span>(n)
+    <span class="tok-kw">for</span> i <span class="tok-kw">in</span> n<span class="tok-op">-</span><span class="tok-num">1</span> .. <span class="tok-num">0</span>:                <span class="tok-com"># 3) place RIGHT-to-LEFT &rarr; stable</span>
+        v = A[i]
+        C[v] = C[v] <span class="tok-op">-</span> <span class="tok-num">1</span>
+        B[C[v]] = A[i]
+    <span class="tok-kw">return</span> B</code></pre>
+
+        <p>Two loops over <code class="inl">n</code> elements and one over <code class="inl">k</code> values give <code class="inl">&#x398;(n + k)</code> time and <code class="inl">&#x398;(n + k)</code> space. When <code class="inl">k = O(n)</code> — keys in a range proportional to the count — this is <strong><code class="inl">&#x398;(n)</code>, linear</strong>. And the right-to-left placement makes it <span class="term">stable</span>: equal keys keep their original relative order, which is the property that lets us bolt counting sort into radix sort next.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 360" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">Counting sort as a three-stage pipeline</title>
+            <desc id="f4d">Counting sort of the array two, five, two, zero, one, two with keys in range zero to five. Stage one builds a histogram counting one zero, one one, three twos, no threes or fours, one five. Stage two takes a prefix sum so each entry holds the number of keys less than or equal to that value: one, two, five, five, five, six. Stage three places each element by decrementing its cumulative count, landing the sorted output zero, one, two, two, two, five.</desc>
+
+            <!-- input -->
+            <text x="24" y="34" class="dg-cap">input  A = [2, 5, 2, 0, 1, 2]   keys in 0..5</text>
+            <g>
+              <rect x="40"  y="50" width="56" height="44" class="dg-fill"/><text x="68"  y="79" text-anchor="middle" class="dg-val">2</text>
+              <rect x="100" y="50" width="56" height="44" class="dg-fill"/><text x="128" y="79" text-anchor="middle" class="dg-val">5</text>
+              <rect x="160" y="50" width="56" height="44" class="dg-fill"/><text x="188" y="79" text-anchor="middle" class="dg-val">2</text>
+              <rect x="220" y="50" width="56" height="44" class="dg-fill"/><text x="248" y="79" text-anchor="middle" class="dg-val">0</text>
+              <rect x="280" y="50" width="56" height="44" class="dg-fill"/><text x="308" y="79" text-anchor="middle" class="dg-val">1</text>
+              <rect x="340" y="50" width="56" height="44" class="dg-fill"/><text x="368" y="79" text-anchor="middle" class="dg-val">2</text>
+            </g>
+
+            <!-- stage 1: histogram -->
+            <text x="24" y="142" class="dg-label">1 &middot; histogram C[v] = count of v</text>
+            <g>
+              <!-- value header row -->
+              <text x="430" y="120" class="dg-label sm" text-anchor="middle">v=0</text>
+              <text x="500" y="120" class="dg-label sm" text-anchor="middle">1</text>
+              <text x="570" y="120" class="dg-label sm" text-anchor="middle">2</text>
+              <text x="640" y="120" class="dg-label sm" text-anchor="middle">3</text>
+              <text x="710" y="120" class="dg-label sm" text-anchor="middle">4</text>
+              <text x="780" y="120" class="dg-label sm" text-anchor="middle">5</text>
+              <rect x="402" y="128" width="56" height="40" class="dg-cell"/><text x="430" y="154" text-anchor="middle" class="dg-val">1</text>
+              <rect x="472" y="128" width="56" height="40" class="dg-cell"/><text x="500" y="154" text-anchor="middle" class="dg-val">1</text>
+              <rect x="542" y="128" width="56" height="40" class="dg-cell" stroke="var(--bau-red)" stroke-width="2.5"/><text x="570" y="154" text-anchor="middle" class="dg-val">3</text>
+              <rect x="612" y="128" width="56" height="40" class="dg-cell"/><text x="640" y="154" text-anchor="middle" class="dg-val">0</text>
+              <rect x="682" y="128" width="56" height="40" class="dg-cell"/><text x="710" y="154" text-anchor="middle" class="dg-val">0</text>
+              <rect x="752" y="128" width="56" height="40" class="dg-cell"/><text x="780" y="154" text-anchor="middle" class="dg-val">1</text>
+            </g>
+
+            <!-- stage 2: prefix sum -->
+            <text x="24" y="226" class="dg-label">2 &middot; prefix sum C[v] = #keys &le; v</text>
+            <g>
+              <rect x="402" y="206" width="56" height="40" class="dg-cell"/><text x="430" y="232" text-anchor="middle" class="dg-val">1</text>
+              <rect x="472" y="206" width="56" height="40" class="dg-cell"/><text x="500" y="232" text-anchor="middle" class="dg-val">2</text>
+              <rect x="542" y="206" width="56" height="40" class="dg-cell"/><text x="570" y="232" text-anchor="middle" class="dg-val">5</text>
+              <rect x="612" y="206" width="56" height="40" class="dg-cell"/><text x="640" y="232" text-anchor="middle" class="dg-val">5</text>
+              <rect x="682" y="206" width="56" height="40" class="dg-cell"/><text x="710" y="232" text-anchor="middle" class="dg-val">5</text>
+              <rect x="752" y="206" width="56" height="40" class="dg-cell"/><text x="780" y="232" text-anchor="middle" class="dg-val">6</text>
+            </g>
+
+            <!-- stage 3: output -->
+            <text x="24" y="316" class="dg-label">3 &middot; place &amp; decrement &rarr; sorted</text>
+            <g>
+              <rect x="402" y="296" width="56" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="430" y="325" text-anchor="middle" class="dg-val">0</text>
+              <rect x="462" y="296" width="56" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="490" y="325" text-anchor="middle" class="dg-val">1</text>
+              <rect x="522" y="296" width="56" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="550" y="325" text-anchor="middle" class="dg-val">2</text>
+              <rect x="582" y="296" width="56" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="610" y="325" text-anchor="middle" class="dg-val">2</text>
+              <rect x="642" y="296" width="56" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="670" y="325" text-anchor="middle" class="dg-val">2</text>
+              <rect x="702" y="296" width="56" height="44" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/><text x="730" y="325" text-anchor="middle" class="dg-val">5</text>
+            </g>
+
+            <!-- arrows linking stages -->
+            <line x1="570" y1="170" x2="570" y2="204" class="dg-stroke dg-red" marker-end="url(#ac)"/>
+            <line x1="590" y1="248" x2="590" y2="294" class="dg-stroke dg-blue" marker-end="url(#ac2)"/>
+
+            <defs>
+              <marker id="ac"  markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+              <marker id="ac2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 4 — counting sort.</b> No two keys are ever compared. The histogram becomes a prefix sum, the prefix sum becomes an address book, and each element is dropped straight home. Linear when <code class="inl">k = O(n)</code>; the lower bound simply does not apply, because there is not a single comparison in sight.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> through the door, at scale</div>
+      <h2>Escape II: radix sort</h2>
+      <div class="col">
+        <p>Counting sort is linear only while <code class="inl">k</code> stays small. For 32-bit integers, <code class="inl">k = 2&#xB3;&#xB2; &#8776; 4&times;10&#x2079;</code> — a four-billion-cell count array to sort, perhaps, a thousand numbers. Absurd. <span class="term">Radix sort</span> fixes this by sorting on the keys' <em>digits</em>, one digit at a time, using counting sort (with its small per-digit range) as the inner engine. Process digits from <strong>least significant to most significant</strong> (LSD), and a subtle miracle occurs: the order is built up correctly across passes — <em>provided the inner sort is stable.</em></p>
+
+        <p>Stability is the entire trick. When you sort on the tens digit, two numbers with the same tens digit must stay in the order their <em>ones</em> digit already established. Counting sort gives us exactly that, so each pass refines the previous one instead of scrambling it.</p>
+
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">radix_sort</span>(A, d, b):           <span class="tok-com"># d digits, base b, LSD first</span>
+    <span class="tok-kw">for</span> p <span class="tok-kw">in</span> <span class="tok-num">0</span> .. d<span class="tok-op">-</span><span class="tok-num">1</span>:                <span class="tok-com"># p = 0 is the least significant digit</span>
+        A = <span class="tok-fn">stable_counting_sort_by_digit</span>(A, p, b)
+    <span class="tok-kw">return</span> A                          <span class="tok-com"># each pass keeps the previous order on ties</span></code></pre>
+
+        <p>Each of the <code class="inl">d</code> passes is a counting sort over base-<code class="inl">b</code> digits, costing <code class="inl">&#x398;(n + b)</code>, so the total is <code class="inl">&#x398;(d(n + b))</code>. The art is choosing <code class="inl">b</code>. To sort <code class="inl">n</code> integers in the range <code class="inl">0 &hellip; n&#x1D9C;&minus;1</code> for a constant <code class="inl">c</code>, write them in base <code class="inl">b = n</code>: then each number has only <code class="inl">d = c</code> digits, and the cost is <code class="inl">&#x398;(c&#x2219;(n + n)) = &#x398;(n)</code>. <strong>Linear sorting of integers in any polynomial range.</strong></p>
+
+        <div class="eq">
+          <span class="lbl">why base = n makes it linear</span>
+          <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <mrow>
+              <mi>T</mi><mo>=</mo><mi>&#x398;</mi><mo>(</mo><mi>d</mi><mo>(</mo><mi>n</mi><mo>+</mo><mi>b</mi><mo>)</mo><mo>)</mo>
+              <mtext>,&#xA0;&#xA0;</mtext>
+              <mi>b</mi><mo>=</mo><mi>n</mi><mo>,</mo>
+              <mtext>&#xA0;&#xA0;</mtext>
+              <mi>d</mi><mo>=</mo>
+              <msub><mi>log</mi><mi>n</mi></msub><mo>(</mo><mtext>max key</mtext><mo>)</mo>
+              <mo>=</mo><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo>
+              <mtext>&#xA0;for max key&#xA0;</mtext><mo>=</mo>
+              <msup><mi>n</mi><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow></msup>
+              <mtext>&#xA0;&#x21D2;&#xA0;</mtext>
+              <mi>T</mi><mo>=</mo><mi>&#x398;</mi><mo>(</mo><mi>n</mi><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 330" role="img" aria-labelledby="f5t f5d">
+            <title id="f5t">LSD radix sort over two-digit numbers in two stable passes</title>
+            <desc id="f5d">Six two-digit numbers thirty-two, ten, fifty-two, thirteen, eleven, thirty-one are sorted in two passes. Pass one sorts by the ones digit, giving ten, thirty-one, eleven, thirty-two, fifty-two, thirteen. Pass two sorts by the tens digit, and because the sort is stable the ones-digit order is preserved within each tens group, giving the fully sorted ten, eleven, thirteen, thirty-one, thirty-two, fifty-two.</desc>
+
+            <text x="24" y="32" class="dg-cap">radix sort, base 10, LSD first &mdash; stability carries each pass forward</text>
+
+            <!-- columns header -->
+            <text x="110" y="70" text-anchor="middle" class="dg-label">input</text>
+            <text x="430" y="70" text-anchor="middle" class="dg-label">after pass 1 (ones digit)</text>
+            <text x="800" y="70" text-anchor="middle" class="dg-label">after pass 2 (tens digit)</text>
+
+            <!-- input column -->
+            <g font-family="var(--font-mono)">
+              <rect x="70" y="86"  width="80" height="34" class="dg-fill"/><text x="110" y="110" text-anchor="middle" class="dg-val">32</text>
+              <rect x="70" y="124" width="80" height="34" class="dg-fill"/><text x="110" y="148" text-anchor="middle" class="dg-val">10</text>
+              <rect x="70" y="162" width="80" height="34" class="dg-fill"/><text x="110" y="186" text-anchor="middle" class="dg-val">52</text>
+              <rect x="70" y="200" width="80" height="34" class="dg-fill"/><text x="110" y="224" text-anchor="middle" class="dg-val">13</text>
+              <rect x="70" y="238" width="80" height="34" class="dg-fill"/><text x="110" y="262" text-anchor="middle" class="dg-val">11</text>
+              <rect x="70" y="276" width="80" height="34" class="dg-fill"/><text x="110" y="300" text-anchor="middle" class="dg-val">31</text>
+            </g>
+
+            <!-- pass 1 column: sorted by ones digit; underline the ones digit (red) -->
+            <g font-family="var(--font-mono)">
+              <rect x="390" y="86"  width="80" height="34" class="dg-cell"/><text x="430" y="110" text-anchor="middle" class="dg-val">1<tspan class="dg-red-f">0</tspan></text>
+              <rect x="390" y="124" width="80" height="34" class="dg-cell"/><text x="430" y="148" text-anchor="middle" class="dg-val">3<tspan class="dg-red-f">1</tspan></text>
+              <rect x="390" y="162" width="80" height="34" class="dg-cell"/><text x="430" y="186" text-anchor="middle" class="dg-val">1<tspan class="dg-red-f">1</tspan></text>
+              <rect x="390" y="200" width="80" height="34" class="dg-cell"/><text x="430" y="224" text-anchor="middle" class="dg-val">3<tspan class="dg-red-f">2</tspan></text>
+              <rect x="390" y="238" width="80" height="34" class="dg-cell"/><text x="430" y="262" text-anchor="middle" class="dg-val">5<tspan class="dg-red-f">2</tspan></text>
+              <rect x="390" y="276" width="80" height="34" class="dg-cell"/><text x="430" y="300" text-anchor="middle" class="dg-val">1<tspan class="dg-red-f">3</tspan></text>
+            </g>
+
+            <!-- pass 2 column: sorted by tens digit; underline tens digit (blue) -->
+            <g font-family="var(--font-mono)">
+              <rect x="760" y="86"  width="80" height="34" class="dg-cell"/><text x="800" y="110" text-anchor="middle" class="dg-val"><tspan class="dg-blue-f">1</tspan>0</text>
+              <rect x="760" y="124" width="80" height="34" class="dg-cell"/><text x="800" y="148" text-anchor="middle" class="dg-val"><tspan class="dg-blue-f">1</tspan>1</text>
+              <rect x="760" y="162" width="80" height="34" class="dg-cell"/><text x="800" y="186" text-anchor="middle" class="dg-val"><tspan class="dg-blue-f">1</tspan>3</text>
+              <rect x="760" y="200" width="80" height="34" class="dg-cell"/><text x="800" y="224" text-anchor="middle" class="dg-val"><tspan class="dg-blue-f">3</tspan>1</text>
+              <rect x="760" y="238" width="80" height="34" class="dg-cell"/><text x="800" y="262" text-anchor="middle" class="dg-val"><tspan class="dg-blue-f">3</tspan>2</text>
+              <rect x="760" y="276" width="80" height="34" class="dg-cell"/><text x="800" y="300" text-anchor="middle" class="dg-val"><tspan class="dg-blue-f">5</tspan>2</text>
+            </g>
+
+            <!-- arrows -->
+            <line x1="158" y1="180" x2="384" y2="180" class="dg-stroke dg-red"  marker-end="url(#ar)"/>
+            <line x1="478" y1="180" x2="754" y2="180" class="dg-stroke dg-blue" marker-end="url(#ar2)"/>
+            <text x="270" y="168" text-anchor="middle" class="dg-label sm dg-red-f">stable by ones</text>
+            <text x="616" y="168" text-anchor="middle" class="dg-label sm dg-blue-f">stable by tens</text>
+
+            <!-- callout: 31 before 32 preserved -->
+            <text x="430" y="328" text-anchor="middle" class="dg-label sm">note 31 stays before 32 from pass 1 &rarr; preserved when both share tens digit 3</text>
+
+            <defs>
+              <marker id="ar"  markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
+              <marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 5 — radix sort, LSD.</b> Sort by the least significant digit, then the next, using a <em>stable</em> inner sort so ties never undo earlier work. Watch <code class="inl">31</code> and <code class="inl">32</code>: pass&nbsp;1 puts <code class="inl">31</code> first by its ones digit; pass&nbsp;2, sorting by the shared tens digit <code class="inl">3</code>, leaves that order intact. Two passes, fully sorted, zero comparisons between keys.</figcaption>
+        </figure>
+
+        <div class="note warn"><span class="tag">reconciling the wall &amp; the door</span>Counting and radix sort do <em>not</em> break the &sect;07 theorem. That theorem bounds algorithms whose only data operation is a comparison. These algorithms use a strictly more powerful operation — reading a key and using its value as an array index — so they live outside the model the bound describes. The bound is intact; we simply stopped playing the game it governs. <strong>Whenever a result claims optimality, the first question is always: in which model?</strong></div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> the field, at a glance</div>
+      <h2>The sorting zoo, tabulated</h2>
+      <div class="col">
+        <p>One table to hold the whole landscape. Read the last two columns as the deciding ones: whether a method is a comparison sort fixes whether the <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> floor binds it, and whether it is stable fixes whether it can serve as a radix pass or preserve secondary order.</p>
+        <div class="tbl-wrap">
+          <table>
+            <caption>Comparison vs. non-comparison sorts — the essential profile</caption>
+            <thead>
+              <tr>
+                <th scope="col">algorithm</th>
+                <th scope="col">best</th>
+                <th scope="col">average</th>
+                <th scope="col">worst</th>
+                <th scope="col">extra space</th>
+                <th scope="col">stable</th>
+                <th scope="col">model</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Randomized quicksort</th><td class="good mono">n log n</td><td class="good mono">n log n*</td><td class="bad mono">n&#xB2;</td><td class="mono">log n</td><td>no</td><td>comparison</td></tr>
+              <tr><th scope="row">Merge sort</th><td class="good mono">n log n</td><td class="good mono">n log n</td><td class="good mono">n log n</td><td class="mono">n</td><td>yes</td><td>comparison</td></tr>
+              <tr><th scope="row">Heapsort</th><td class="good mono">n log n</td><td class="good mono">n log n</td><td class="good mono">n log n</td><td class="mono">1</td><td>no</td><td>comparison</td></tr>
+              <tr><th scope="row">Insertion sort</th><td class="good mono">n</td><td class="bad mono">n&#xB2;</td><td class="bad mono">n&#xB2;</td><td class="mono">1</td><td>yes</td><td>comparison</td></tr>
+              <tr class="wrap-row"><th scope="row">Counting sort</th><td class="good mono">n+k</td><td class="good mono">n+k</td><td class="good mono">n+k</td><td class="mono">n+k</td><td>yes</td><td>integer-key</td></tr>
+              <tr class="wrap-row"><th scope="row">Radix sort (LSD)</th><td class="good mono">d(n+b)</td><td class="good mono">d(n+b)</td><td class="good mono">d(n+b)</td><td class="mono">n+b</td><td>yes</td><td>integer-key</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="7">* <code>n log n</code> in <em>expectation</em>, over the algorithm's coins, for every input. The shaded rows are non-comparison sorts: linear when <code>k = O(n)</code> (counting) or keys are polynomially bounded (radix), and exempt from the <code>&#x3A9;(n log n)</code> floor entirely.</td></tr></tfoot>
+          </table>
+        </div>
+        <p>A practitioner's reading: comparison sorts are the universal default because they assume nothing about the keys; among them, merge sort buys worst-case <code class="inl">n&nbsp;log&nbsp;n</code> and stability at the cost of <code class="inl">&#x398;(n)</code> space, heapsort buys <code class="inl">&#x398;(1)</code> space and a worst-case guarantee but is cache-unfriendly, and randomized quicksort wins in raw speed thanks to a tiny constant and excellent locality (recall Lecture&nbsp;01) — at the price of only an <em>expected</em> bound. The integer-key sorts are the specialists: spectacular when their precondition holds, useless when it does not.</p>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>Keep the gap between the model and the running machine in view. Here is where these methods bite — the quadratic traps, the stability you forgot you depended on, the &ldquo;linear&rdquo; sort that quietly allocates a continent of memory.</p>
+
+        <h3>1 &middot; Quicksort's <code class="inl">&#x398;(n&#xB2;)</code> worst case is real, just rare</h3>
+        <p>The expected bound is not a guarantee on every run. If the coins conspire to pick the minimum or maximum as pivot every time, partitions peel off one element and you get <code class="inl">&#x398;(n&#xB2;)</code> comparisons and <code class="inl">&#x398;(n)</code> recursion depth. With random pivots the probability of anything near this is astronomically small, but in an adversarial or safety-critical setting where worst case must be bounded, reach for heapsort or merge sort, or use the deterministic <em>median-of-medians</em> pivot to force a guaranteed balanced split (at a larger constant). &ldquo;Expected&rdquo; and &ldquo;guaranteed&rdquo; are different promises; know which one your context demands.</p>
+
+        <h3>2 &middot; The deterministic-pivot-on-sorted-input trap</h3>
+        <p>Choosing the <em>first</em> (or last) element as a fixed pivot turns the single most common real-world input — already-sorted or reverse-sorted data — into the exact worst case. This is not a rare coincidence; sorted-ish data is everywhere. Either randomize the pivot (one line, &sect;04) or take median-of-three. Shipping <code class="inl">pivot = A[lo]</code> is a latent quadratic bomb.</p>
+
+        <h3>3 &middot; Recursion depth: recurse small, loop large</h3>
+        <p>Even with good pivots, naively recursing on both halves can build <code class="inl">&#x398;(n)</code> stack frames in the bad case and overflow. The fix is <em>tail-recursion elimination</em>: always recurse into the <strong>smaller</strong> partition and loop on the larger. This caps stack depth at <code class="inl">&#x398;(log n)</code> regardless of pivot luck, because each recursive call at least halves the subproblem size.</p>
+
+        <h3>4 &middot; The all-duplicates collapse &mdash; use a 3-way partition</h3>
+        <p>Two-way (Lomuto/Hoare) partitioning on an array of <em>many equal keys</em> degrades to <code class="inl">&#x398;(n&#xB2;)</code>: every key equals the pivot, so each partition is maximally unbalanced. The cure is <span class="term">three-way partitioning</span> (Dijkstra's Dutch-national-flag): split into <code class="inl">&lt; pivot</code>, <code class="inl">= pivot</code>, <code class="inl">&gt; pivot</code>, and recurse only on the outer two. Equal keys are placed once and never revisited, restoring near-linear behaviour on low-diversity data. This is Practice&nbsp;2.</p>
+
+        <h3>5 &middot; Misreading the scope of the lower bound</h3>
+        <p>Three honest misreadings. (a) The bound says <em>comparison</em> sorts need <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> — it does <strong>not</strong> say sorting needs <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code>; radix sort is the counterexample. (b) It is a <em>worst-case over inputs</em> bound; a specific easy input (already sorted) can be verified or sorted faster by an adaptive method. (c) It bounds <em>comparisons</em>, not wall-clock time; constants, cache behaviour, and branch prediction decide real races among <code class="inl">n&nbsp;log&nbsp;n</code> algorithms. The theorem is precise; quoting it loosely is the error.</p>
+
+        <h3>6 &middot; Counting sort's silent memory explosion</h3>
+        <p><code class="inl">&#x398;(n + k)</code> is linear only when <code class="inl">k = O(n)</code>. Apply counting sort directly to 64-bit keys and <code class="inl">k = 2&#x2076;&#x2074;</code>: the count array alone is a request for <code class="inl">10&#xB9;&#x2079;</code> cells — an instant out-of-memory, not a slow program. The range, not the count, governs feasibility. When <code class="inl">k</code> is large, that is the signal to switch to radix sort (decompose the key into small digits) rather than count over the raw range.</p>
+
+        <h3>7 &middot; Radix sort with an unstable inner sort, or MSD-first confusion</h3>
+        <p>LSD radix sort is <em>correct only if every digit pass is stable</em>; swap in an unstable counting/bucket pass and later digits scramble the order earlier digits earned, silently producing wrong output on ties. Equally, do not sort LSD-first with an MSD mindset: MSD radix is a different (recursive, bucket-partitioning) algorithm. And radix assumes a fixed-width, decomposable key — variable-length strings need careful padding or an MSD variant. Stability here is not a nicety; it is the correctness condition.</p>
+
+        <h3>8 &middot; Forgetting that &ldquo;optimal&rdquo; is model-relative</h3>
+        <p>The meta-mistake that contains the rest: treating &ldquo;<code class="inl">n&nbsp;log&nbsp;n</code> is optimal&rdquo; as an absolute. It is optimal <em>in the comparison model</em>. Change the assumptions — integer keys, bounded range, external memory, parallel hardware, a stream you see once — and the right algorithm and the right bound both change. Always re-state the model before you invoke its limits.</p>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12" class="reveal">
+      <div class="eyebrow"><span class="n">12</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Kth largest element via quickselect</h3>
+          <p class="meta">partition reuse &middot; expected O(n) &middot; LeetCode 215</p>
+          <p>Given an integer array <code class="inl">nums</code> and an integer <code class="inl">k</code>, return the <code class="inl">k</code>-th largest element, in <strong>expected <code class="inl">O(n)</code></strong> time and without fully sorting. Use the randomized partition of &sect;04 but recurse into only the side that must contain the answer (this is <em>quickselect</em>). Then prove the expected linear bound: set up the recurrence <code class="inl">T(n) = T(picked side) + &#x398;(n)</code> under a uniformly random pivot, or adapt the indicator argument, and show the expected total work is <code class="inl">&#x398;(n)</code>, not <code class="inl">&#x398;(n&nbsp;log&nbsp;n)</code>. State your worst case and how to avoid the sorted-input trap.</p>
+          <pre><code><span class="tok-fn">findKthLargest</span>(nums, k) <span class="tok-op">-&gt;</span> int   <span class="tok-com"># 1 &le; k &le; nums.length &le; 1e5</span></code></pre>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Sort an array of 0s, 1s, and 2s in one pass</h3>
+          <p class="meta">three-way partition &middot; O(n) time, O(1) space &middot; LeetCode 75</p>
+          <p>Given <code class="inl">nums</code> containing only <code class="inl">0</code>, <code class="inl">1</code>, <code class="inl">2</code> (representing colours), sort it <strong>in place in a single pass</strong> with <code class="inl">O(1)</code> extra space, without using a library sort. This is Dijkstra's Dutch-national-flag — the three-way partition that cures the all-duplicates collapse of failure mode&nbsp;4. Maintain three pointers <code class="inl">low</code>, <code class="inl">mid</code>, <code class="inl">high</code> and state the invariant precisely: what is guaranteed about <code class="inl">[0, low)</code>, <code class="inl">[low, mid)</code>, <code class="inl">[mid, high]</code>, and <code class="inl">(high, n)</code> at every step? Identify the one case where you advance <code class="inl">mid</code> after the swap and the one where you must not.</p>
+          <pre><code><span class="tok-fn">sortColors</span>(nums) <span class="tok-op">-&gt;</span> void        <span class="tok-com"># in place; nums[i] &isin; {0,1,2}</span></code></pre>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Maximum gap in linear time</h3>
+          <p class="meta">beat the barrier &middot; bucket / radix &middot; LeetCode 164</p>
+          <p>Given an unsorted array <code class="inl">nums</code>, return the maximum difference between two <em>successive</em> elements in its sorted order, or <code class="inl">0</code> if it has fewer than two elements. The catch: you must run in <strong><code class="inl">O(n)</code> time and <code class="inl">O(n)</code> space</strong> — so a comparison sort is forbidden by the very lower bound of &sect;07. Escape it. Either radix-sort the integers, or use the pigeonhole idea: with <code class="inl">n</code> values spread over <code class="inl">[min, max]</code>, place them in <code class="inl">n&minus;1</code> buckets of width <code class="inl">&#8968;(max&minus;min)/(n&minus;1)&#8969;</code>; the max gap must straddle two buckets, so track each bucket's min and max only. Justify why the answer never lies <em>within</em> a bucket.</p>
+          <pre><code><span class="tok-fn">maximumGap</span>(nums) <span class="tok-op">-&gt;</span> int        <span class="tok-com"># 0 &le; nums[i] &le; 1e9</span></code></pre>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>A lower bound for merging two sorted lists</h3>
+          <p class="meta">adversary / decision-tree argument &middot; proof</p>
+          <p>Two sorted arrays, each of length <code class="inl">n</code>, are to be merged into one sorted array of length <code class="inl">2n</code> using only comparisons between elements. Prove that <strong>any</strong> comparison-based merge must perform at least <code class="inl">2n&minus;1</code> comparisons in the worst case. Build the argument the way &sect;07 builds its bound: either count the leaves a correct merge's decision tree must have, or run an adversary that answers each comparison so as to keep two outputs consistent until <code class="inl">2n&minus;1</code> comparisons have been forced (consider interleavings where every adjacent pair from opposite lists must be directly compared). Then exhibit a merge achieving exactly <code class="inl">2n&minus;1</code>, proving the bound tight.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section id="s13" class="reveal">
+      <div class="eyebrow"><span class="n">13</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>A lower bound is a statement about a model, not a problem.</strong> In the comparison model, sorting <code class="inl">n</code> items demands <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> — proved by counting the <code class="inl">n!</code> leaves a decision tree must reach — and randomized quicksort nearly meets it, <code class="inl">&#8776;1.39&nbsp;n&nbsp;log&#8322;n</code> in expectation, proved by summing one indicator per pair at probability <code class="inl">2/(j&minus;i+1)</code>. Change the model — let keys be integers you may use as addresses — and counting and radix sort sort in <code class="inl">&#x398;(n)</code>, walking straight through a wall that never moved. Ask always: <em>optimal in which model?</em></p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 07</span>
+            <div class="ttl">The Dictionary Problem I: Balanced Search Trees and the Logarithmic Ideal</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">We have ordered a static collection. Next we keep one <em>ordered while it changes</em>: insert, delete, and search in a structure that never lets itself fall out of balance. The binary search tree, why imbalance is fatal, and the self-balancing invariants — AVL and red-black, B-trees for disk — that pin search, insert, and delete to a worst-case <code class="inl">O(log n)</code>. The same <code class="inl">log n</code> we just proved is a floor for sorting becomes the <em>ceiling</em> we engineer a living structure to hold.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-05-probability-for-algorithms.html">← Previous study</a><a href="dsa-07-balanced-search-trees.html">Next study →</a></nav>
+</body>
+</html>

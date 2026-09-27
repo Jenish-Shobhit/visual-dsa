@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Divide, Solve, Combine: Recurrences &amp; the Master Theorem</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* Bauhaus cobalt blue is the primary hue (ada's fixed skin) */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, accents (not as body text) */
+    --bau-red:    oklch(57% 0.21 27);
+    --bau-yellow: oklch(85% 0.17 92);
+    --bau-blue:   oklch(46% 0.17 256);
+    --bau-ink:    oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33%,var(--bau-red) 33% 66%,var(--bau-yellow) 66% 100%);
+    animation:bar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes bar{to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*2);
+    padding:calc(var(--sp)*1.5) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 78%, transparent);
+    backdrop-filter:saturate(1.4) blur(12px);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant); display:flex; gap:.6em; flex-wrap:wrap; align-items:center;
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:600}
+  .masthead .crumb .sep{color:var(--bau-red); font-weight:700}
+  .sigil{flex:0 0 auto}
+
+  /* ===== layout ===== */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3)}
+  .grid{
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+    align-items:start; padding-block:calc(var(--sp)*4) calc(var(--sp)*8);
+  }
+  .rail{position:sticky; top:84px; align-self:start; font-family:var(--font-mono)}
+  .rail ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  .rail a{
+    display:grid; grid-template-columns:26px 1fr; gap:8px; align-items:baseline;
+    text-decoration:none; color:var(--on-surface-variant);
+    padding:6px 8px; border-radius:var(--r-sm); border-left:3px solid transparent;
+    font-size:12.5px; line-height:1.3; min-height:34px;
+  }
+  .rail a .num{color:var(--bau-blue); font-weight:700; letter-spacing:.02em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 9%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:var(--surface-2)}
+  .rail a:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+
+  article{min-width:0}
+  .col{max-width:68ch}
+  section{margin-block:calc(var(--sp)*7)}
+  section:first-child{margin-top:calc(var(--sp)*2)}
+
+  /* ===== type ===== */
+  h1{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(2.3rem,5.5vw,3.6rem); line-height:1.04; margin:.2em 0 .3em;
+    max-width:18ch;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.01em;
+    font-size:clamp(1.5rem,3vw,2.05rem); line-height:1.1; margin:0 0 .5em;
+  }
+  h3{font-family:var(--font-display); font-weight:600; font-size:1.2rem; margin:1.6em 0 .4em; letter-spacing:-.005em}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:lowercase;
+    color:var(--bau-red); font-weight:700; display:flex; align-items:center; gap:.6em; margin-bottom:.4em;
+  }
+  .eyebrow .n{
+    font-variant-numeric:tabular-nums; color:var(--on-surface);
+    background:var(--bau-yellow); color:var(--bau-ink);
+    padding:.05em .5em; border-radius:var(--r-xs); border:1.5px solid var(--bau-ink);
+  }
+  p{margin:0 0 1.05em}
+  strong{font-weight:650}
+  a.inline{color:var(--primary); text-decoration-thickness:1.5px; text-underline-offset:2px}
+  .lede{font-size:1.18rem; line-height:1.55; color:var(--on-surface)}
+  .defn{font-style:normal}
+  .term{font-weight:650; color:var(--on-primary-container);
+    background:var(--primary-container); padding:0 .28em; border-radius:var(--r-xs)}
+
+  /* ===== hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    border-bottom:1px solid var(--outline-variant);
+    padding:calc(var(--sp)*6) 0 calc(var(--sp)*5);
+  }
+  .hero::before{ /* the single atmospheric gesture */
+    content:""; position:absolute; inset:-30% -10% auto auto; width:60vmax; height:60vmax;
+    background:radial-gradient(closest-side, color-mix(in oklab,var(--bau-blue) 16%,transparent), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .hero .wrap{position:relative; z-index:1}
+  .hero .shapes{position:absolute; right:calc(var(--sp)*3); top:calc(var(--sp)*4); z-index:0; opacity:.95}
+  @media (max-width:880px){.hero .shapes{display:none}}
+
+  /* ===== bands / callouts ===== */
+  .band{
+    background:var(--surface-2); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); padding:calc(var(--sp)*3);
+    box-shadow:0 1px 2px rgba(20,24,40,.05), 0 8px 24px -16px rgba(20,24,40,.18);
+  }
+  .band.flush{max-width:none}
+  .accentbar{height:8px; border-radius:99px; margin:0 0 calc(var(--sp)*2);
+    background:linear-gradient(90deg,var(--bau-blue) 0 40%,var(--bau-red) 40% 72%,var(--bau-yellow) 72% 100%)}
+  .note{border-left:4px solid var(--bau-blue); padding-left:calc(var(--sp)*2); margin:1.4em 0; color:var(--on-surface)}
+  .note.warn{border-left-color:var(--bau-red)}
+  .note .tag{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--bau-red); font-weight:700; display:block; margin-bottom:.2em}
+  .note.info .tag{color:var(--bau-blue)}
+
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:start}
+  ul.obj li::before{
+    content:""; width:18px; height:18px; margin-top:5px; display:block;
+    background:var(--bau-blue);
+    clip-path:polygon(50% 0,100% 100%,0 100%); /* triangle marker */
+  }
+  ul.obj li:nth-child(3n+2)::before{background:var(--bau-red); clip-path:circle(50%)}
+  ul.obj li:nth-child(3n)::before{background:var(--bau-yellow); border:1.5px solid var(--bau-ink); clip-path:none; border-radius:2px}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:.4em 0 0}
+  .chip{font-family:var(--font-mono); font-size:12px; padding:5px 11px; border-radius:99px;
+    border:1.5px solid var(--outline); color:var(--on-surface-variant); background:var(--surface-1); text-decoration:none}
+  a.chip:hover{border-color:var(--bau-blue); color:var(--on-surface); background:color-mix(in oklab,var(--bau-blue) 8%,transparent)}
+
+  /* ===== stat block (M3 — one lead stat + quieter peers) ===== */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:1.5em 0}
+  .stat{background:var(--surface-2); border:1px solid var(--outline-variant); border-radius:var(--r-md); padding:14px 16px}
+  .stat .big{font-family:var(--font-display); font-weight:700; font-size:1.95rem; line-height:1; color:var(--bau-blue); font-variant-numeric:tabular-nums}
+  .stat.lead{border-top:5px solid var(--bau-red)}
+  .stat.lead .big{font-size:2.6rem; color:var(--bau-red)}
+  .stat .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--on-surface-variant); margin-top:8px; display:block; line-height:1.35}
+
+  /* ===== pull quote ===== */
+  .pull{
+    margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*3) 0;
+    border-top:3px solid var(--bau-ink); border-bottom:3px solid var(--bau-ink);
+    font-family:var(--font-display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.5rem,3.4vw,2.2rem); line-height:1.12; color:var(--on-surface);
+    max-width:none;
+  }
+  .pull span{color:var(--bau-red)}
+
+  /* ===== tables (cap-tabular-data-done-right) ===== */
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--outline-variant); border-radius:var(--r-md); margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; font-size:15px; font-variant-numeric:tabular-nums}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 12px 8px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left;
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px; letter-spacing:.04em; padding:9px 12px}
+  tbody th{text-align:left; font-weight:650; background:var(--surface-2)}
+  td,tbody th{padding:8px 12px; border-top:1px solid var(--outline-variant)}
+  tbody tr:nth-child(even){background:color-mix(in oklab,var(--surface-2) 55%,transparent)}
+  td.bad{color:var(--bau-red); font-weight:650}
+  td.good{color:var(--bau-blue); font-weight:650}
+  td.mid{color:var(--on-surface-variant); font-weight:600}
+  tr.hl td, tr.hl th{background:color-mix(in oklab,var(--bau-yellow) 26%,var(--surface)) !important}
+  tfoot td{border-top:2px solid var(--bau-ink); font-size:13px; color:var(--on-surface-variant); font-style:italic}
+  .mono{font-family:var(--font-mono); font-size:13.5px}
+
+  /* ===== code (cap-code-typeset) ===== */
+  pre{margin:1.2em 0; padding:calc(var(--sp)*2); overflow-x:auto;
+    background:var(--bau-ink); color:#eef1f7; border-radius:var(--r-md);
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.6;
+    border-left:5px solid var(--bau-yellow)}
+  pre code{font-family:inherit}
+  .tok-kw{color:#ffd166; font-weight:600}
+  .tok-fn{color:#8ec7ff; font-weight:600}
+  .tok-num{color:#ff9e7d}
+  .tok-op{color:#c9d2e3}
+  .tok-com{color:#8a94ab; font-style:italic}
+  .tok-str{color:#a8e6a1}
+  code.inl{font-family:var(--font-mono); font-size:.86em; background:var(--surface-3);
+    padding:.08em .4em; border-radius:var(--r-xs); border:1px solid var(--outline-variant)}
+
+  /* ===== math ===== */
+  math{font-size:1.12em}
+  .eq{margin:1.1em 0; padding:calc(var(--sp)*2); background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-md); overflow-x:auto}
+  .eq .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bau-blue); display:block; margin-bottom:6px}
+  .eq.red{border-left-color:var(--bau-red)} .eq.red .lbl{color:var(--bau-red)}
+
+  /* ===== figures ===== */
+  figure{margin:1.6em 0; max-width:none}
+  figure svg{width:100%; height:auto; display:block; background:var(--surface-1);
+    border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  figcaption{font-size:14px; color:var(--on-surface-variant); margin-top:.6em; padding-left:2px}
+  figcaption b{color:var(--on-surface)}
+  .dg-stroke{stroke:var(--on-surface); fill:none; stroke-width:2}
+  .dg-thin{stroke:var(--outline); fill:none; stroke-width:1}
+  .dg-dash{stroke:var(--outline); fill:none; stroke-width:1.5; stroke-dasharray:5 5}
+  .dg-ink{fill:var(--on-surface)}
+  .dg-muted{fill:var(--on-surface-variant)}
+  .dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+  .dg-red{stroke:var(--bau-red)}   .dg-red-f{fill:var(--bau-red)}
+  .dg-yellow-f{fill:var(--bau-yellow)}
+  .dg-cell{fill:var(--surface);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill{fill:var(--primary-container);stroke:var(--bau-ink);stroke-width:2}
+  .dg-fill-y{fill:color-mix(in oklab,var(--bau-yellow) 45%,var(--surface));stroke:var(--bau-ink);stroke-width:2}
+  .dg-label{font-family:var(--font-mono); font-size:14px; fill:var(--on-surface)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
+  .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
+  .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
+
+  /* ===== two-up ===== */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
+  @media (max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* ===== details (cap-disclosure-widgets) ===== */
+  details{margin:1.1em 0; border:1px solid var(--outline-variant); border-radius:var(--r-md);
+    background:var(--surface-1); overflow:hidden}
+  details summary{cursor:pointer; padding:12px 16px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:.03em; color:var(--on-surface); list-style:none; display:flex; align-items:center; gap:10px;
+    min-height:44px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; color:var(--bau-red); font-weight:700; font-size:18px; width:1em}
+  details[open] summary::before{content:"\2013"}
+  details summary:hover{background:color-mix(in oklab,var(--primary) 8%,transparent)}
+  details summary:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+  details .body{padding:0 16px 14px; font-size:15.5px}
+
+  /* ===== practice ===== */
+  .drill{display:grid; grid-template-columns:auto 1fr; gap:16px; margin:1.4em 0;
+    padding:calc(var(--sp)*2.5); background:var(--surface-1); border:1px solid var(--outline-variant);
+    border-radius:var(--r-lg); border-top:5px solid var(--bau-blue)}
+  .drill:nth-of-type(3n+2){border-top-color:var(--bau-red)}
+  .drill:nth-of-type(3n){border-top-color:var(--bau-yellow)}
+  .drill .no{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;
+    color:var(--bau-ink); font-variant-numeric:tabular-nums}
+  .drill h3{margin:.1em 0 .4em; font-size:1.08rem}
+  .drill p{font-size:15.5px; margin-bottom:.6em}
+  .drill .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--on-surface-variant)}
+  .drill pre{font-size:12.5px}
+
+  /* ===== recap / next ===== */
+  .next{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:1.4em; padding:calc(var(--sp)*2.5); border-radius:var(--r-lg);
+    background:var(--bau-ink); color:#eef1f7}
+  .next .lab{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-yellow)}
+  .next .ttl{font-family:var(--font-display); font-weight:650; font-size:1.15rem; color:#fff}
+  .next .arrow{font-size:1.8rem; color:var(--bau-yellow)}
+
+  footer.colophon{border-top:1px solid var(--outline-variant); padding:calc(var(--sp)*4) 0 calc(var(--sp)*8);
+    font-family:var(--font-mono); font-size:12.5px; color:var(--on-surface-variant)}
+  footer.colophon .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  footer.colophon b{color:var(--on-surface)}
+
+  /* ===== reveal motion (cap-css-transitions-keyframes) ===== */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  /* ===== responsive ===== */
+  @media (max-width:760px){
+    body{font-size:17px}
+    .grid{grid-template-columns:1fr; gap:calc(var(--sp)*2)}
+    .rail{display:none}
+    thead th{top:0}
+    .wrap{padding:0 calc(var(--sp)*2)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .progress{display:none}
+    .reveal{opacity:1; transform:none}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">03 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
+    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
+    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
+  </svg>
+  <div class="crumb">
+    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
+    Visual DSA<span class="sep">/</span>
+    Lecture <b>03</b>
+  </div>
+</header>
+
+<!-- ============ HERO / HOOK ============ -->
+<div class="hero">
+  <svg class="shapes" width="200" height="160" viewBox="0 0 200 160" aria-hidden="true">
+    <!-- a tiny branching-by-two tree: the lecture's motif -->
+    <line x1="100" y1="22" x2="44"  y2="80" class="dg-stroke"/>
+    <line x1="100" y1="22" x2="156" y2="80" class="dg-stroke"/>
+    <line x1="44"  y1="80" x2="20"  y2="140" class="dg-stroke"/>
+    <line x1="44"  y1="80" x2="68"  y2="140" class="dg-stroke"/>
+    <line x1="156" y1="80" x2="132" y2="140" class="dg-stroke"/>
+    <line x1="156" y1="80" x2="180" y2="140" class="dg-stroke"/>
+    <circle cx="100" cy="20" r="15" class="dg-blue-f"/>
+    <path d="M30 66 L58 66 L44 94 Z" class="dg-red-f"/>
+    <path d="M142 66 L170 66 L156 94 Z" class="dg-red-f"/>
+    <rect x="9"   y="129" width="22" height="22" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <rect x="57"  y="129" width="22" height="22" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <rect x="121" y="129" width="22" height="22" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <rect x="169" y="129" width="22" height="22" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow"><span class="n">Lecture 03</span> a problem that solves its own smaller self</div>
+    <h1>Divide, Solve, Combine</h1>
+    <p class="lede col">Some problems are most easily solved by an act of <em>self-reference</em>: cut the input into a few smaller copies of the very same problem, solve those, and stitch the answers back together. The cost of such an algorithm is not a sum you can read off &mdash; it is a <strong>recurrence</strong>, an equation that defines a function in terms of itself. This lecture gives you two instruments to solve that equation every time: the <strong>recursion tree</strong> you can always draw, and the <strong>Master Theorem</strong> that mechanizes the common case.</p>
+
+    <div class="col" style="margin-top:1.6em">
+      <div class="band flush">
+        <div class="accentbar" aria-hidden="true"></div>
+        <p style="margin-bottom:.5em"><strong>A conjecture broken in a week.</strong> For as long as anyone had multiplied, two <code class="inl">n</code>-digit numbers cost <code class="inl">n&#xB2;</code> single-digit products &mdash; it is exactly the long-multiplication you were taught. In 1960 Andrei Kolmogorov, one of the century's great mathematicians, conjectured this <code class="inl">&#x3A9;(n&#xB2;)</code> was <em>unavoidable</em>. A few days later his student Anatoly Karatsuba demolished it with one line of algebra and a recurrence, reaching <code class="inl">n&#x1D58;&#x1D52;&#x1D4D;&#x2082;&#xB3; &#x2248; n&#xB9;&#x22C5;&#x2075;&#x2078;&#x2075;</code>.</p>
+        <p style="margin-bottom:0">For two thousand-digit numbers that is the difference between <strong>1,000,000</strong> and roughly <strong>57,000</strong> digit-products &mdash; about <strong>18&times;</strong> fewer &mdash; and the gap widens without bound: at a million digits it is near <strong>300&times;</strong>. The entire speedup is <em>proved</em> by the single tool of this lecture. By the end you will wield it &mdash; and see the question it leaves open: can we multiply faster still?</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============ LEFT RAIL ============ -->
+  <nav class="rail" aria-label="Lecture contents">
+    <ol>
+      <li><a href="#s01"><span class="num">01</span><span>The paradigm</span></a></li>
+      <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
+      <li><a href="#s03"><span class="num">03</span><span>Merge sort, made concrete</span></a></li>
+      <li><a href="#s04"><span class="num">04</span><span>The recursion tree</span></a></li>
+      <li><a href="#s05"><span class="num">05</span><span>Counting the leaves</span></a></li>
+      <li><a href="#s06"><span class="num">06</span><span>The Master Theorem</span></a></li>
+      <li><a href="#s07"><span class="num">07</span><span>Three algorithms, three regimes</span></a></li>
+      <li><a href="#s08"><span class="num">08</span><span>Karatsuba: buying an exponent</span></a></li>
+      <li><a href="#s09"><span class="num">09</span><span>Where it breaks</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Practice</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Recap &amp; next</span></a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ ARTICLE ============ -->
+  <article>
+
+    <!-- 01 -->
+    <section id="s01" class="reveal">
+      <div class="eyebrow"><span class="n">01</span> the paradigm</div>
+      <h2>One pattern, three moves</h2>
+      <div class="col">
+        <p>Keep two things apart: the <em>operation</em> &mdash; the abstract pattern we wish to carry out &mdash; and the <em>engine</em> that realises it. <span class="term">Divide and conquer</span> is an operation of unusually pure form, because it is defined by reference to itself. To solve an instance of size <code class="inl">n</code>, you make exactly three moves:</p>
+        <ul class="obj">
+          <li><strong>Divide.</strong> Break the instance into <code class="inl">a</code> subproblems, each an instance of <em>the same problem</em> at size <code class="inl">n/b</code>. (Usually <code class="inl">a</code> and <code class="inl">b</code> are small constants, and they need not be equal.)</li>
+          <li><strong>Conquer.</strong> Solve each subproblem <em>recursively</em>. The recursion bottoms out at a <span class="term">base case</span> &mdash; a size so small it is solved directly, in constant time.</li>
+          <li><strong>Combine.</strong> Assemble the <code class="inl">a</code> sub-answers into the answer for the whole, doing some non-recursive work <code class="inl">f(n)</code> at this level.</li>
+        </ul>
+        <p>Notice what has happened to the cost. The work to solve size <code class="inl">n</code> is the combine cost <code class="inl">f(n)</code> <em>plus</em> the cost of the <code class="inl">a</code> recursive solves &mdash; but each of those is the same unknown function evaluated at a smaller argument. The running time <code class="inl">T(n)</code> therefore obeys an equation that mentions <code class="inl">T</code> on both sides:</p>
+
+        <div class="eq" role="group" aria-label="The master recurrence">
+          <span class="lbl">the divide-and-conquer recurrence</span>
+          <div class="math-scroll"><math display="block">
+            <mrow>
+              <mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo>
+              <mi>a</mi><mo>&#x2062;</mo><mi>T</mi><mo>(</mo><mfrac><mi>n</mi><mi>b</mi></mfrac><mo>)</mo>
+              <mo>+</mo><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo>
+              <mo>,</mo><mspace width="1.2em"/>
+              <mi>a</mi><mo>&#x2265;</mo><mn>1</mn><mo>,</mo><mspace width="0.5em"/>
+              <mi>b</mi><mo>&gt;</mo><mn>1</mn><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>A <span class="term">recurrence</span> is exactly this: a function defined in terms of its own values at smaller inputs, anchored by a base case. It is not yet an answer &mdash; <code class="inl">T(n)</code> still appears on the right. The labour of this lecture is to <em>close</em> the recurrence: to produce a clean asymptotic form, <code class="inl">T(n) = &#x398;(&hellip;)</code>, with no <code class="inl">T</code> left in it. Three numbers will decide the answer, so fix their meaning now and never confuse them:</p>
+
+        <div class="stats" role="group" aria-label="The three parameters of a recurrence">
+          <div class="stat lead"><div class="big">a</div><span class="lab">branching factor &mdash; how many subproblems you recurse into</span></div>
+          <div class="stat"><div class="big">b</div><span class="lab">shrink factor &mdash; each subproblem is 1/b the size</span></div>
+          <div class="stat"><div class="big">f(n)</div><span class="lab">combine cost &mdash; non-recursive work at this level</span></div>
+        </div>
+
+        <p>This is, to my taste, a beautiful thing: an entire class of algorithms collapses to a three-parameter equation, and &mdash; as we will see &mdash; the solving of that equation can itself be <em>mechanized</em>. That is precisely the kind of leverage I look for: a single procedure that disposes of a whole family of problems at once.</p>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="s02" class="reveal">
+      <div class="eyebrow"><span class="n">02</span> objectives &amp; prerequisites</div>
+      <h2>What you will be able to do</h2>
+      <div class="col">
+        <ul class="obj">
+          <li><strong>Read off</strong> <code class="inl">a</code>, <code class="inl">b</code>, and <code class="inl">f(n)</code> from any divide-and-conquer algorithm and write its recurrence <code class="inl">T(n) = a&#x22C5;T(n/b) + f(n)</code>.</li>
+          <li><strong>Solve</strong> that recurrence two independent ways &mdash; by drawing and summing a <em>recursion tree</em>, and by applying the <em>Master Theorem</em> &mdash; and check one against the other.</li>
+          <li><strong>Compute</strong> the critical exponent <code class="inl">log&#8203;_b&#8203;a</code> and decide which of three regimes (leaf-heavy, balanced, root-heavy) a recurrence lands in.</li>
+          <li><strong>Derive</strong> the cost of <em>merge sort</em> (<code class="inl">&#x398;(n&#160;log&#160;n)</code>), <em>binary search</em> (<code class="inl">&#x398;(log&#160;n)</code>), and <em>Karatsuba multiplication</em> (<code class="inl">&#x398;(n&#185;&#183;&#8309;&#8312;&#8309;)</code>) from first principles.</li>
+          <li><strong>Name</strong> three situations where the Master Theorem does <em>not</em> apply, and fall back to the recursion tree instead.</li>
+          <li><strong>Explain</strong> why lowering the branching factor <code class="inl">a</code> &mdash; as Karatsuba does, 4&#8594;3 &mdash; lowers the exponent, and why that sets up the next lecture.</li>
+        </ul>
+
+        <h3>Prerequisites</h3>
+        <p>Three ideas are assumed; if any is shaky, repair it first.</p>
+        <div class="chips">
+          <a class="chip" href="dsa-00-cost-of-a-computation.html">&#8599; asymptotic notation (O / &#x398; / &#x3A9;)</a>
+          <span class="chip">recursion &amp; the call stack</span>
+          <span class="chip">mathematical induction</span>
+          <span class="chip">logarithms &amp; geometric series</span>
+        </div>
+        <p style="margin-top:1em">You need <code class="inl">O</code>, <code class="inl">&#x398;</code>, <code class="inl">&#x3A9;</code> to <em>state</em> the answer; recursion to read the algorithms; induction because the Master Theorem is, underneath, an induction on <code class="inl">n</code>; and the sum of a geometric series, because every recursion tree is one.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="s03" class="reveal">
+      <div class="eyebrow"><span class="n">03</span> the paradigm, made concrete</div>
+      <h2>Merge sort: the canonical instance</h2>
+      <div class="col">
+        <p>Abstraction is only as good as the example that grounds it. Take the most-used divide-and-conquer algorithm there is &mdash; <span class="term">merge sort</span> &mdash; and watch the three moves appear.</p>
+        <p>To sort a sub-array <code class="inl">A[lo..hi)</code>: if it holds zero or one element it is already sorted (<strong>base case</strong>). Otherwise <strong>divide</strong> at the midpoint into two halves, <strong>conquer</strong> by sorting each half recursively, and <strong>combine</strong> by <em>merging</em> the two now-sorted halves into one sorted run.</p>
+
+        <pre aria-label="Merge sort pseudocode"><code><span class="tok-kw">function</span> <span class="tok-fn">mergeSort</span>(A, lo, hi):        <span class="tok-com"># sort A[lo..hi)</span>
+    <span class="tok-kw">if</span> hi - lo <span class="tok-op">&lt;=</span> <span class="tok-num">1</span>: <span class="tok-kw">return</span>           <span class="tok-com"># base case: 0 or 1 element, already sorted</span>
+    mid <span class="tok-op">=</span> lo + (hi - lo) <span class="tok-op">//</span> <span class="tok-num">2</span>         <span class="tok-com"># DIVIDE — Theta(1)</span>
+    <span class="tok-fn">mergeSort</span>(A, lo, mid)             <span class="tok-com"># CONQUER left   — T(n/2)</span>
+    <span class="tok-fn">mergeSort</span>(A, mid, hi)             <span class="tok-com"># CONQUER right  — T(n/2)</span>
+    <span class="tok-fn">merge</span>(A, lo, mid, hi)             <span class="tok-com"># COMBINE        — Theta(n)</span></code></pre>
+
+        <p>The combine step is the engine of the whole method, so look at it closely. Merging two sorted runs is a <strong>two-pointer scan</strong>: keep a finger on the front of each run, repeatedly copy the smaller of the two front elements into the output, and advance that finger. Each comparison emits one output element, so merging a total of <code class="inl">n</code> elements costs <code class="inl">&#x398;(n)</code> &mdash; linear, and not a step more.</p>
+
+        <pre aria-label="Merge pseudocode"><code><span class="tok-kw">function</span> <span class="tok-fn">merge</span>(A, lo, mid, hi):
+    L <span class="tok-op">=</span> A[lo..mid]   ;   R <span class="tok-op">=</span> A[mid..hi]   <span class="tok-com"># the two sorted runs</span>
+    i <span class="tok-op">=</span> <span class="tok-num">0</span> ; j <span class="tok-op">=</span> <span class="tok-num">0</span> ; k <span class="tok-op">=</span> lo
+    <span class="tok-kw">while</span> i <span class="tok-op">&lt;</span> len(L) <span class="tok-kw">and</span> j <span class="tok-op">&lt;</span> len(R):
+        <span class="tok-kw">if</span> L[i] <span class="tok-op">&lt;=</span> R[j]: A[k] <span class="tok-op">=</span> L[i] ; i <span class="tok-op">+=</span> <span class="tok-num">1</span>   <span class="tok-com"># &lt;= keeps it stable</span>
+        <span class="tok-kw">else</span>:            A[k] <span class="tok-op">=</span> R[j] ; j <span class="tok-op">+=</span> <span class="tok-num">1</span>
+        k <span class="tok-op">+=</span> <span class="tok-num">1</span>
+    <span class="tok-kw">while</span> i <span class="tok-op">&lt;</span> len(L): A[k] <span class="tok-op">=</span> L[i] ; i <span class="tok-op">+=</span> <span class="tok-num">1</span> ; k <span class="tok-op">+=</span> <span class="tok-num">1</span>  <span class="tok-com"># drain remainder</span>
+    <span class="tok-kw">while</span> j <span class="tok-op">&lt;</span> len(R): A[k] <span class="tok-op">=</span> R[j] ; j <span class="tok-op">+=</span> <span class="tok-num">1</span> ; k <span class="tok-op">+=</span> <span class="tok-num">1</span></code></pre>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 900 290" role="img" aria-labelledby="f1t f1d">
+            <title id="f1t">One snapshot of the two-pointer merge</title>
+            <desc id="f1d">Two sorted runs L = 2,4,5,8 and R = 1,3,6,7 are merged into an output array. Three elements 1,2,3 are already written. Pointer i rests on 4 in L; pointer j rests on 6 in R. The smaller front element, 4, is selected next and i advances. Each step emits one element, so the whole merge is linear in the number of elements.</desc>
+
+            <text x="22" y="34" class="dg-cap">merge two sorted runs &mdash; take the smaller front, advance that finger</text>
+
+            <!-- L run -->
+            <text x="22" y="78" class="dg-label sm">L</text>
+            <g font-family="var(--font-mono)">
+              <rect x="60"  y="58" width="54" height="44" class="dg-cell" opacity="0.45"/><text x="87"  y="86" text-anchor="middle" class="dg-val" opacity="0.5">2</text>
+              <rect x="114" y="58" width="54" height="44" class="dg-fill" stroke="var(--bau-blue)" stroke-width="3"/><text x="141" y="86" text-anchor="middle" class="dg-val">4</text>
+              <rect x="168" y="58" width="54" height="44" class="dg-cell"/><text x="195" y="86" text-anchor="middle" class="dg-val">5</text>
+              <rect x="222" y="58" width="54" height="44" class="dg-cell"/><text x="249" y="86" text-anchor="middle" class="dg-val">8</text>
+            </g>
+            <text x="141" y="124" text-anchor="middle" class="dg-label sm dg-blue-f">&#9650; i</text>
+
+            <!-- R run -->
+            <text x="22" y="178" class="dg-label sm">R</text>
+            <g font-family="var(--font-mono)">
+              <rect x="60"  y="158" width="54" height="44" class="dg-cell" opacity="0.45"/><text x="87"  y="186" text-anchor="middle" class="dg-val" opacity="0.5">1</text>
+              <rect x="114" y="158" width="54" height="44" class="dg-cell" opacity="0.45"/><text x="141" y="186" text-anchor="middle" class="dg-val" opacity="0.5">3</text>
+              <rect x="168" y="158" width="54" height="44" class="dg-fill-y" stroke="var(--bau-red)" stroke-width="3"/><text x="195" y="186" text-anchor="middle" class="dg-val">6</text>
+              <rect x="222" y="158" width="54" height="44" class="dg-cell"/><text x="249" y="186" text-anchor="middle" class="dg-val">7</text>
+            </g>
+            <text x="195" y="224" text-anchor="middle" class="dg-label sm dg-red-f">&#9650; j</text>
+
+            <!-- compare callout -->
+            <g transform="translate(330,96)">
+              <rect x="0" y="0" width="232" height="70" rx="8" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
+              <text x="16" y="28" class="dg-label">min( L[i]=4 , R[j]=6 )</text>
+              <text x="16" y="52" class="dg-val dg-blue-f">= 4 &#8594; write 4, then i++</text>
+            </g>
+
+            <!-- output -->
+            <text x="600" y="44" class="dg-label sm">output (k so far)</text>
+            <g font-family="var(--font-mono)">
+              <rect x="600" y="58" width="44" height="44" class="dg-fill"/><text x="622" y="86" text-anchor="middle" class="dg-val">1</text>
+              <rect x="644" y="58" width="44" height="44" class="dg-fill"/><text x="666" y="86" text-anchor="middle" class="dg-val">2</text>
+              <rect x="688" y="58" width="44" height="44" class="dg-fill"/><text x="710" y="86" text-anchor="middle" class="dg-val">3</text>
+              <rect x="732" y="58" width="44" height="44" class="dg-cell" stroke-dasharray="4 4"/><text x="754" y="86" text-anchor="middle" class="dg-val dg-muted">?</text>
+              <rect x="776" y="58" width="44" height="44" class="dg-cell" stroke-dasharray="4 4"/>
+              <rect x="820" y="58" width="44" height="44" class="dg-cell" stroke-dasharray="4 4"/>
+            </g>
+            <text x="600" y="138" class="dg-label sm">sources so far:&#160; 1&#8592;R&#160; 2&#8592;L&#160; 3&#8592;R</text>
+            <text x="600" y="200" class="dg-label sm" style="fill:var(--on-surface)">every step emits exactly one element</text>
+            <text x="600" y="222" class="dg-val dg-red-f">&#8658; merge of n elements = &#x398;(n)</text>
+          </svg>
+          <figcaption><b>Figure 1 &mdash; the combine step.</b> Merging never backtracks: two fingers sweep forward once across <code class="inl">n</code> elements total. That linearity is the <code class="inl">f(n) = &#x398;(n)</code> of merge sort's recurrence &mdash; remember the number, it decides everything below.</figcaption>
+        </figure>
+
+        <p>So the cost of merge sort obeys <code class="inl">T(n) = 2&#x22C5;T(n/2) + &#x398;(n)</code>: two subproblems (<code class="inl">a=2</code>), each half the size (<code class="inl">b=2</code>), linear combine (<code class="inl">f(n)=&#x398;(n)</code>). To find what that equals, we must solve the recurrence &mdash; and the surest way to <em>see</em> the answer before trusting any theorem is to draw the tree.</p>
+
+        <details>
+          <summary>worked trace &mdash; merge sort on [5, 2, 8, 4, 1, 6, 3, 7]</summary>
+          <div class="body">
+            <p style="margin-top:.8em"><strong>Divide</strong> (top down) until singletons:</p>
+            <p class="mono" style="font-size:13px">[5 2 8 4 | 1 6 3 7] &#8594; [5 2 | 8 4] [1 6 | 3 7] &#8594; [5|2] [8|4] [1|6] [3|7] &#8594; eight singletons</p>
+            <p><strong>Combine</strong> (bottom up), merging pairs:</p>
+            <p class="mono" style="font-size:13px">[5][2]&#8594;[2 5]&#160;&#160; [8][4]&#8594;[4 8]&#160;&#160; [1][6]&#8594;[1 6]&#160;&#160; [3][7]&#8594;[3 7]</p>
+            <p class="mono" style="font-size:13px">[2 5]+[4 8]&#8594;[2 4 5 8]&#160;&#160;&#160; [1 6]+[3 7]&#8594;[1 3 6 7]</p>
+            <p class="mono" style="font-size:13px">[2 4 5 8]+[1 3 6 7]&#8594;[1 2 3 4 5 6 7 8]</p>
+            <p style="margin-bottom:.4em">Three levels of merging, each touching all <code class="inl">8</code> elements: <code class="inl">3&#x22C5;8 = 24</code> element-moves, and indeed <code class="inl">n&#160;log&#8322;n = 8&#x22C5;3 = 24</code>.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="s04" class="reveal">
+      <div class="eyebrow"><span class="n">04</span> the recursion tree</div>
+      <h2>Where the cost actually lives</h2>
+      <div class="col">
+        <p>A recurrence hides its cost inside the self-reference. The <span class="term">recursion tree</span> drags it into the open: draw a node for every call, label each with <em>only the combine work done at that node</em> (never the work of its children &mdash; that is what the children's own nodes account for), and the total running time is simply the sum of every label in the tree.</p>
+        <p>Build merge sort's tree. The root is the original call on size <code class="inl">n</code>; its label is the combine cost there, <code class="inl">n</code>. It has <code class="inl">a=2</code> children, each a call on size <code class="inl">n/2</code> with label <code class="inl">n/2</code>. They in turn each have two children of size <code class="inl">n/4</code>, and so on, until the calls reach size <code class="inl">1</code> &mdash; the leaves.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 470" role="img" aria-labelledby="f2t f2d">
+            <title id="f2t">The recursion tree for T(n) = 2T(n/2) + n</title>
+            <desc id="f2d">A binary tree of calls. The root is size n with combine work n. Level 1 has two nodes of size n/2 totalling n. Level 2 has four nodes of size n/4 totalling n. The leaf level has n nodes of size 1 totalling n. There are log base 2 of n plus 1 levels, each contributing n units of work, so the sum is n log n.</desc>
+
+            <!-- ledger panel -->
+            <g transform="translate(648,40)">
+              <rect x="0" y="0" width="276" height="392" rx="12" fill="var(--surface-2)" stroke="var(--outline-variant)"/>
+              <text x="20" y="34" class="dg-cap">work per level</text>
+              <text x="20" y="66"  class="dg-label sm">level 0</text><text x="256" y="66"  text-anchor="end" class="dg-val">1 &#xB7; n = n</text>
+              <text x="20" y="100" class="dg-label sm">level 1</text><text x="256" y="100" text-anchor="end" class="dg-val">2 &#xB7; n/2 = n</text>
+              <text x="20" y="134" class="dg-label sm">level 2</text><text x="256" y="134" text-anchor="end" class="dg-val">4 &#xB7; n/4 = n</text>
+              <text x="20" y="168" class="dg-label sm">&#8942;</text><text x="256" y="168" text-anchor="end" class="dg-label sm">&#8942;</text>
+              <text x="20" y="202" class="dg-label sm">level log&#8322;n</text><text x="256" y="202" text-anchor="end" class="dg-val">n &#xB7; 1 = n</text>
+              <line x1="20" y1="224" x2="256" y2="224" class="dg-thin"/>
+              <text x="20" y="258" class="dg-label">(log&#8322;n + 1) levels,</text>
+              <text x="20" y="282" class="dg-label">each costing exactly n</text>
+              <rect x="20" y="306" width="236" height="62" rx="8" fill="var(--surface)" stroke="var(--bau-red)" stroke-width="2"/>
+              <text x="138" y="332" text-anchor="middle" class="dg-cap" style="font-size:14px">T(n) = n &#xB7; log&#8322;n</text>
+              <text x="138" y="356" text-anchor="middle" class="dg-val dg-red-f">= &#x398;(n log n)</text>
+            </g>
+
+            <!-- tree -->
+            <!-- root -->
+            <rect x="296" y="40" width="78" height="38" rx="6" class="dg-fill"/>
+            <text x="335" y="64" text-anchor="middle" class="dg-val">n</text>
+            <text x="430" y="63" class="dg-label sm dg-red-f">&#8594; n</text>
+
+            <!-- edges to L1 -->
+            <line x1="335" y1="78" x2="170" y2="116" class="dg-stroke"/>
+            <line x1="335" y1="78" x2="500" y2="116" class="dg-stroke"/>
+            <!-- L1 -->
+            <rect x="132" y="116" width="76" height="36" rx="6" class="dg-fill"/><text x="170" y="139" text-anchor="middle" class="dg-val">n/2</text>
+            <rect x="462" y="116" width="76" height="36" rx="6" class="dg-fill"/><text x="500" y="139" text-anchor="middle" class="dg-val">n/2</text>
+            <text x="566" y="139" class="dg-label sm dg-red-f">&#8594; n</text>
+
+            <!-- edges to L2 -->
+            <line x1="170" y1="152" x2="96"  y2="190" class="dg-stroke"/>
+            <line x1="170" y1="152" x2="244" y2="190" class="dg-stroke"/>
+            <line x1="500" y1="152" x2="426" y2="190" class="dg-stroke"/>
+            <line x1="500" y1="152" x2="574" y2="190" class="dg-stroke"/>
+            <!-- L2 -->
+            <rect x="62"  y="190" width="68" height="34" rx="6" class="dg-fill"/><text x="96"  y="212" text-anchor="middle" class="dg-val">n/4</text>
+            <rect x="210" y="190" width="68" height="34" rx="6" class="dg-fill"/><text x="244" y="212" text-anchor="middle" class="dg-val">n/4</text>
+            <rect x="392" y="190" width="68" height="34" rx="6" class="dg-fill"/><text x="426" y="212" text-anchor="middle" class="dg-val">n/4</text>
+            <rect x="540" y="190" width="68" height="34" rx="6" class="dg-fill"/><text x="574" y="212" text-anchor="middle" class="dg-val">n/4</text>
+            <text x="624" y="211" class="dg-label sm dg-red-f">&#8594; n</text>
+
+            <!-- dashed edges down -->
+            <line x1="96"  y1="224" x2="96"  y2="262" class="dg-dash"/>
+            <line x1="244" y1="224" x2="244" y2="262" class="dg-dash"/>
+            <line x1="426" y1="224" x2="426" y2="262" class="dg-dash"/>
+            <line x1="574" y1="224" x2="574" y2="262" class="dg-dash"/>
+            <text x="335" y="252" text-anchor="middle" class="dg-label sm dg-muted">&#8942;&#160;&#160;each level halves the size and doubles the count&#160;&#160;&#8942;</text>
+
+            <!-- leaves -->
+            <g>
+              <rect x="60"  y="300" width="26" height="26" class="dg-fill-y"/>
+              <rect x="96"  y="300" width="26" height="26" class="dg-fill-y"/>
+              <rect x="210" y="300" width="26" height="26" class="dg-fill-y"/>
+              <rect x="246" y="300" width="26" height="26" class="dg-fill-y"/>
+              <rect x="392" y="300" width="26" height="26" class="dg-fill-y"/>
+              <rect x="428" y="300" width="26" height="26" class="dg-fill-y"/>
+              <rect x="540" y="300" width="26" height="26" class="dg-fill-y"/>
+              <rect x="576" y="300" width="26" height="26" class="dg-fill-y"/>
+              <text x="120" y="318" class="dg-label sm dg-muted">&#8230;</text>
+              <text x="320" y="318" class="dg-label sm dg-muted">&#8230;</text>
+              <text x="500" y="318" class="dg-label sm dg-muted">&#8230;</text>
+            </g>
+            <!-- leaf brace -->
+            <path d="M58 338 Q58 348 70 348 L322 348 Q334 348 334 358 Q334 348 346 348 L598 348 Q610 348 610 338" class="dg-thin"/>
+            <text x="334" y="378" text-anchor="middle" class="dg-label">n leaves of size 1, &#x398;(1) each</text>
+            <text x="334" y="400" text-anchor="middle" class="dg-val dg-red-f">&#8594; n</text>
+          </svg>
+          <figcaption><b>Figure 2 &mdash; the master picture.</b> Going down, the node count multiplies by <code class="inl">a=2</code> while each node's size divides by <code class="inl">b=2</code>; the two effects cancel, so <em>every level sums to <code class="inl">n</code></em>. With <code class="inl">log&#8322;n + 1</code> levels, the grand total is <code class="inl">n&#160;log&#8322;n</code>. The whole of merge sort is in this one diagram.</figcaption>
+        </figure>
+
+        <p>This generalises exactly. At depth <code class="inl">i</code> there are <code class="inl">a&#8305;</code> nodes, each of size <code class="inl">n/b&#8305;</code>, each charging <code class="inl">f(n/b&#8305;)</code>; the leaves sit at depth <code class="inl">log&#8203;_b&#8203;n</code>. Summing label by label gives the one formula every solution specialises:</p>
+
+        <div class="eq" role="group" aria-label="The recursion-tree sum">
+          <span class="lbl">recursion-tree master sum</span>
+          <div class="math-scroll"><math display="block">
+            <mrow>
+              <mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo>
+              <munderover>
+                <mo>&#x2211;</mo>
+                <mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow>
+                <mrow><msub><mi>log</mi><mi>b</mi></msub><mo>&#x2061;</mo><mi>n</mi><mo>&#x2212;</mo><mn>1</mn></mrow>
+              </munderover>
+              <msup><mi>a</mi><mi>i</mi></msup>
+              <mspace width="0.2em"/>
+              <mi>f</mi><mo>(</mo><mfrac><mi>n</mi><msup><mi>b</mi><mi>i</mi></msup></mfrac><mo>)</mo>
+              <mspace width="0.6em"/><mo>+</mo><mspace width="0.6em"/>
+              <munder><mo>&#x238B;</mo><mtext>leaves</mtext></munder>
+              <mspace width="0.2em"/>
+              <mi>&#x398;</mi><mo>(</mo><msup><mi>n</mi><mrow><msub><mi>log</mi><mi>b</mi></msub><mo>&#x2061;</mo><mi>a</mi></mrow></msup><mo>)</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>The first term sums the combine work of every internal node, level by level; the second is the cost of the leaves. Read this sum and you can already feel the three possible outcomes: either the per-level terms <em>grow</em> toward the leaves, or they <em>stay level</em>, or they <em>shrink</em> toward the leaves. Which of the three happens is settled by one quantity &mdash; the exponent <code class="inl">log&#8203;_b&#8203;a</code> &mdash; so it deserves its own section.</p>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="s05" class="reveal">
+      <div class="eyebrow"><span class="n">05</span> counting the leaves</div>
+      <h2>The critical exponent</h2>
+      <div class="col">
+        <p>How many leaves does the tree have? The tree has depth <code class="inl">log&#8203;_b&#8203;n</code> (you can divide <code class="inl">n</code> by <code class="inl">b</code> only that many times before reaching <code class="inl">1</code>), and the node count multiplies by <code class="inl">a</code> at each step, so there are <code class="inl">a&#8319;&#7497;&#7510;&#7511;&#7716;</code> leaves. The small miracle is what that equals:</p>
+
+        <div class="eq red" role="group" aria-label="The leaf-count identity">
+          <span class="lbl">leaf count &mdash; the identity that powers everything</span>
+          <div class="math-scroll"><math display="block">
+            <mrow>
+              <msup><mi>a</mi><mrow><msub><mi>log</mi><mi>b</mi></msub><mo>&#x2061;</mo><mi>n</mi></mrow></msup>
+              <mo>=</mo>
+              <msup><mi>n</mi><mrow><msub><mi>log</mi><mi>b</mi></msub><mo>&#x2061;</mo><mi>a</mi></mrow></msup>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>The number of leaves is <code class="inl">n</code> raised to the <span class="term">critical exponent</span> <code class="inl">log&#8203;_b&#8203;a</code>. This single number is the cost of <em>pure recursion</em> &mdash; the price of all the leaf-work, before any combine step has been paid for. The entire question of solving the recurrence reduces to a contest between this leaf cost, <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</code>, and the combine cost, <code class="inl">f(n)</code>.</p>
+
+        <details>
+          <summary>why a^(log_b n) = n^(log_b a)</summary>
+          <div class="body">
+            <p style="margin-top:.8em">Take <code class="inl">log&#8203;_b</code> of each side. Left: <code class="inl">log&#8203;_b(a&#8319;&#7497;&#7510;&#7511;&#7716;) = (log&#8203;_b&#8203;n)(log&#8203;_b&#8203;a)</code>. Right: <code class="inl">log&#8203;_b(n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;) = (log&#8203;_b&#8203;a)(log&#8203;_b&#8203;n)</code>. The two are the same product, so the original quantities are equal. The identity is nothing more than &ldquo;exponents multiply commutatively,&rdquo; but it is what lets us write the leaf cost as a clean power of <code class="inl">n</code>.</p>
+          </div>
+        </details>
+
+        <p>Build intuition with the three exemplars of this lecture:</p>
+        <ul class="obj">
+          <li><strong>Merge sort</strong> &mdash; <code class="inl">a=2, b=2</code>: critical exponent <code class="inl">log&#8322;2 = 1</code>, so <code class="inl">n&#185;= n</code> leaves. The leaf cost is linear.</li>
+          <li><strong>Binary search</strong> &mdash; <code class="inl">a=1, b=2</code>: exponent <code class="inl">log&#8322;1 = 0</code>, so <code class="inl">n&#8304;= 1</code> leaf. There is a single path, not a tree &mdash; recursion that never branches.</li>
+          <li><strong>Karatsuba</strong> &mdash; <code class="inl">a=3, b=2</code>: exponent <code class="inl">log&#8322;3 &#x2248; 1.585</code>, so <code class="inl">n&#185;&#183;&#8309;&#8312;&#8309;</code> leaves &mdash; superlinear, but well under <code class="inl">n&#xB2;</code>. The recursion alone already commits Karatsuba to its famous exponent.</li>
+        </ul>
+
+        <p>Hold onto that last line. In a divide-and-conquer algorithm the branching factor <code class="inl">a</code> is not a footnote &mdash; it sits <em>in the exponent of the running time</em>. Halving the input is cheap leverage; spawning one extra subproblem is dear. The whole drama of Karatsuba, and of the next lecture, is a fight to keep <code class="inl">a</code> small.</p>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="s06" class="reveal">
+      <div class="eyebrow"><span class="n">06</span> the master theorem</div>
+      <h2>Mechanizing the answer</h2>
+      <div class="col">
+        <p>We can now state the procedure that closes the recurrence in the common case &mdash; the <span class="term">Master Theorem</span>. It is exactly the contest just described: compare the combine cost <code class="inl">f(n)</code> against the leaf cost <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</code>, and whichever wins, by a polynomial margin, dictates the total.</p>
+
+        <p>Let <code class="inl">T(n) = a&#x22C5;T(n/b) + f(n)</code> with <code class="inl">a&#x2265;1</code>, <code class="inl">b&gt;1</code> constants and <code class="inl">f</code> positive. Write the critical exponent as <code class="inl">c&#42; = log&#8203;_b&#8203;a</code>. Then:</p>
+
+        <div class="eq" role="group" aria-label="Master Theorem case 1">
+          <span class="lbl">case 1 &mdash; leaves win (f is polynomially smaller)</span>
+          <div class="math-scroll"><math display="block">
+            <mrow>
+              <mtext>if&#160;</mtext><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo>
+              <mi>O</mi><mo>(</mo><msup><mi>n</mi><mrow><msup><mi>c</mi><mo>&#42;</mo></msup><mo>&#x2212;</mo><mi>&#x3B5;</mi></mrow></msup><mo>)</mo>
+              <mtext>&#160;for some&#160;</mtext><mi>&#x3B5;</mi><mo>&gt;</mo><mn>0</mn><mo>,</mo>
+              <mspace width="0.8em"/><mtext>then&#160;</mtext>
+              <mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo>
+              <mi>&#x398;</mi><mo>(</mo><msup><mi>n</mi><mrow><msup><mi>c</mi><mo>&#42;</mo></msup></mrow></msup><mo>)</mo><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <div class="eq" role="group" aria-label="Master Theorem case 2">
+          <span class="lbl">case 2 &mdash; balanced (same order, every level costs the same)</span>
+          <div class="math-scroll"><math display="block">
+            <mrow>
+              <mtext>if&#160;</mtext><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo>
+              <mi>&#x398;</mi><mo>(</mo><msup><mi>n</mi><mrow><msup><mi>c</mi><mo>&#42;</mo></msup></mrow></msup><msup><mi>log</mi><mi>k</mi></msup><mo>&#x2061;</mo><mi>n</mi><mo>)</mo><mo>,</mo><mspace width="0.4em"/><mi>k</mi><mo>&#x2265;</mo><mn>0</mn><mo>,</mo>
+              <mspace width="0.6em"/><mtext>then&#160;</mtext>
+              <mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo>
+              <mi>&#x398;</mi><mo>(</mo><msup><mi>n</mi><mrow><msup><mi>c</mi><mo>&#42;</mo></msup></mrow></msup><msup><mi>log</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msup><mo>&#x2061;</mo><mi>n</mi><mo>)</mo><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <div class="eq" role="group" aria-label="Master Theorem case 3">
+          <span class="lbl">case 3 &mdash; root wins (f polynomially larger, plus regularity)</span>
+          <div class="math-scroll"><math display="block">
+            <mrow>
+              <mtext>if&#160;</mtext><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo>
+              <mi>&#x3A9;</mi><mo>(</mo><msup><mi>n</mi><mrow><msup><mi>c</mi><mo>&#42;</mo></msup><mo>+</mo><mi>&#x3B5;</mi></mrow></msup><mo>)</mo>
+              <mtext>&#160;and&#160;</mtext>
+              <mi>a</mi><mo>&#x2062;</mo><mi>f</mi><mo>(</mo><mfrac><mi>n</mi><mi>b</mi></mfrac><mo>)</mo><mo>&#x2264;</mo><mi>c</mi><mo>&#x2062;</mo><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>,</mo><mspace width="0.3em"/><mi>c</mi><mo>&lt;</mo><mn>1</mn><mo>,</mo>
+              <mspace width="0.5em"/><mtext>then&#160;</mtext>
+              <mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><mi>&#x398;</mi><mo>(</mo><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>)</mo><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>Why three cases, and not more? Because the per-level terms <code class="inl">a&#8305;f(n/b&#8305;)</code> form a <em>geometric series</em>, and a geometric series has exactly three behaviours: increasing (dominated by its last term, the leaves), constant (dominated by the count of terms, <code class="inl">log&#160;n</code> of them), or decreasing (dominated by its first term, the root). The diagram makes the three profiles visible.</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 360" role="img" aria-labelledby="f3t f3d">
+            <title id="f3t">The three Master-Theorem regimes as per-level work profiles</title>
+            <desc id="f3d">Three panels, each showing the total work at each level of the recursion tree from root at top to leaves at bottom. Case 1, f small: bars grow downward, the leaf level dominates, answer Theta of n to the critical exponent. Case 2, f balanced: all bars equal, answer Theta of n to the critical exponent times log n. Case 3, f large: bars shrink downward, the root dominates, answer Theta of f of n.</desc>
+
+            <!-- PANEL A: case 1 -->
+            <g transform="translate(16,0)">
+              <text x="0" y="34" class="dg-cap">case 1 &middot; f small</text>
+              <text x="0" y="54" class="dg-label sm">leaf level dominates</text>
+              <line x1="40" y1="78" x2="40" y2="262" class="dg-thin"/>
+              <rect x="40" y="84"  width="26"  height="26" class="dg-blue-f" opacity="0.4"/>
+              <rect x="40" y="124" width="44"  height="26" class="dg-blue-f" opacity="0.55"/>
+              <rect x="40" y="164" width="70"  height="26" class="dg-blue-f" opacity="0.7"/>
+              <rect x="40" y="204" width="108" height="26" class="dg-blue-f" opacity="0.85"/>
+              <rect x="40" y="244" width="160" height="26" class="dg-red-f"/>
+              <text x="208" y="261" class="dg-label sm dg-red-f">&#9664; biggest</text>
+              <text x="14" y="100" class="dg-label sm dg-muted">root</text>
+              <text x="6"  y="260" class="dg-label sm dg-muted">leaf</text>
+              <rect x="40" y="290" width="200" height="46" rx="8" fill="var(--surface-2)" stroke="var(--bau-red)" stroke-width="1.5"/>
+              <text x="140" y="318" text-anchor="middle" class="dg-val dg-red-f">&#x398;(n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;)</text>
+            </g>
+
+            <!-- PANEL B: case 2 -->
+            <g transform="translate(345,0)">
+              <text x="0" y="34" class="dg-cap">case 2 &middot; f balanced</text>
+              <text x="0" y="54" class="dg-label sm">every level equal</text>
+              <line x1="40" y1="78" x2="40" y2="262" class="dg-thin"/>
+              <rect x="40" y="84"  width="118" height="26" class="dg-blue-f" opacity="0.75"/>
+              <rect x="40" y="124" width="118" height="26" class="dg-blue-f" opacity="0.75"/>
+              <rect x="40" y="164" width="118" height="26" class="dg-blue-f" opacity="0.75"/>
+              <rect x="40" y="204" width="118" height="26" class="dg-blue-f" opacity="0.75"/>
+              <rect x="40" y="244" width="118" height="26" class="dg-blue-f" opacity="0.75"/>
+              <text x="170" y="180" class="dg-label sm">all the same</text>
+              <text x="170" y="198" class="dg-label sm">&#8594; &times; (log n) levels</text>
+              <rect x="40" y="290" width="220" height="46" rx="8" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="1.5"/>
+              <text x="150" y="318" text-anchor="middle" class="dg-val dg-blue-f">&#x398;(n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491; &#xB7; log n)</text>
+            </g>
+
+            <!-- PANEL C: case 3 -->
+            <g transform="translate(674,0)">
+              <text x="0" y="34" class="dg-cap">case 3 &middot; f large</text>
+              <text x="0" y="54" class="dg-label sm">root dominates</text>
+              <line x1="40" y1="78" x2="40" y2="262" class="dg-thin"/>
+              <rect x="40" y="84"  width="160" height="26" class="dg-red-f"/>
+              <rect x="40" y="124" width="108" height="26" class="dg-blue-f" opacity="0.85"/>
+              <rect x="40" y="164" width="70"  height="26" class="dg-blue-f" opacity="0.7"/>
+              <rect x="40" y="204" width="44"  height="26" class="dg-blue-f" opacity="0.55"/>
+              <rect x="40" y="244" width="26"  height="26" class="dg-blue-f" opacity="0.4"/>
+              <text x="208" y="101" class="dg-label sm dg-red-f">&#9664; biggest</text>
+              <rect x="40" y="290" width="150" height="46" rx="8" fill="var(--surface-2)" stroke="var(--bau-red)" stroke-width="1.5"/>
+              <text x="115" y="318" text-anchor="middle" class="dg-val dg-red-f">&#x398;(f(n))</text>
+            </g>
+          </svg>
+          <figcaption><b>Figure 3 &mdash; three geometric series, three answers.</b> Each bar is the <em>total</em> work at one level. When the bars grow downward the leaves pay the bill; when they are flat the bill is the level cost times the number of levels; when they shrink the root pays. The Master Theorem is just this picture, made into a rule.</figcaption>
+        </figure>
+
+        <div class="note info">
+          <span class="tag">read the cases as a comparison</span>
+          <p style="margin-bottom:0">Always compute <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</code> first, then ask where <code class="inl">f(n)</code> stands relative to it. Case&#160;1: <code class="inl">f</code> is below by a polynomial factor &#8594; answer is the leaf cost. Case&#160;2: <code class="inl">f</code> ties (up to a power of <code class="inl">log</code>) &#8594; multiply by one extra <code class="inl">log</code>. Case&#160;3: <code class="inl">f</code> is above by a polynomial factor (and well-behaved) &#8594; answer is <code class="inl">f</code> itself.</p>
+        </div>
+
+        <p class="pull">The leaves cost <span>n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</span>; the combine costs <span>f(n)</span>. The Master Theorem is the referee that declares which one wins.</p>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="s07" class="reveal">
+      <div class="eyebrow"><span class="n">07</span> three algorithms, three regimes</div>
+      <h2>The theorem at work</h2>
+      <div class="col">
+        <p>Now the payoff: one tool resolves three different algorithms by changing only <code class="inl">a</code>, <code class="inl">b</code>, and <code class="inl">f</code>. Two of them land in the balanced case from opposite corners; the third tips to the leaves.</p>
+
+        <p><strong>Merge sort</strong>, <code class="inl">T(n)=2T(n/2)+&#x398;(n)</code>. Here <code class="inl">c&#42;=log&#8322;2=1</code>, so <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;=n</code>, and <code class="inl">f(n)=&#x398;(n)=&#x398;(n&#185;)</code> ties it. Case&#160;2 with <code class="inl">k=0</code> gives <code class="inl">T(n)=&#x398;(n&#160;log&#160;n)</code> &mdash; the same answer the tree gave us by hand.</p>
+
+        <p><strong>Binary search</strong>, <code class="inl">T(n)=T(n/2)+&#x398;(1)</code>. Search a sorted array by probing the middle and recursing into the <em>one</em> half that can contain the target. Crucially <code class="inl">a=1</code> &mdash; we make a single recursive call, discarding the other half untouched &mdash; so <code class="inl">c&#42;=log&#8322;1=0</code> and <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;=n&#8304;=1</code>. The combine <code class="inl">f(n)=&#x398;(1)=&#x398;(n&#8304;)</code> ties it: Case&#160;2 again, giving <code class="inl">T(n)=&#x398;(1&#x22C5;log&#160;n)=&#x398;(log&#160;n)</code>. The recursion tree degenerates to a single path of length <code class="inl">log&#8322;n</code> &mdash; a chain, not a branching tree &mdash; and its length <em>is</em> the answer.</p>
+
+        <pre aria-label="Binary search pseudocode"><code><span class="tok-kw">function</span> <span class="tok-fn">binarySearch</span>(A, target):     <span class="tok-com"># A sorted ascending, half-open [lo, hi)</span>
+    lo <span class="tok-op">=</span> <span class="tok-num">0</span> ; hi <span class="tok-op">=</span> len(A)
+    <span class="tok-kw">while</span> lo <span class="tok-op">&lt;</span> hi:
+        mid <span class="tok-op">=</span> lo + (hi - lo) <span class="tok-op">//</span> <span class="tok-num">2</span>
+        <span class="tok-kw">if</span>   A[mid] <span class="tok-op">==</span> target: <span class="tok-kw">return</span> mid
+        <span class="tok-kw">elif</span> A[mid] <span class="tok-op">&lt;</span>  target: lo <span class="tok-op">=</span> mid + <span class="tok-num">1</span>   <span class="tok-com"># discard the left half — ONE recursive direction</span>
+        <span class="tok-kw">else</span>:                 hi <span class="tok-op">=</span> mid       <span class="tok-com"># discard the right half</span>
+    <span class="tok-kw">return</span> -<span class="tok-num">1</span></code></pre>
+
+        <p><strong>Karatsuba</strong>, <code class="inl">T(n)=3T(n/2)+&#x398;(n)</code> &mdash; the next section earns this recurrence. Here <code class="inl">c&#42;=log&#8322;3&#x2248;1.585</code>, so <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;=n&#185;&#183;&#8309;&#8312;&#8309;</code>, which <em>dominates</em> the linear combine <code class="inl">f(n)=&#x398;(n)=O(n&#185;&#183;&#8309;&#8312;&#8309;&#8315;&#x3B5;)</code>. Case&#160;1: <code class="inl">T(n)=&#x398;(n&#185;&#183;&#8309;&#8312;&#8309;)</code>. The leaves &mdash; the recursion itself &mdash; set the price.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <caption>Reading a, b, f and the case off five recurrences</caption>
+            <thead>
+              <tr><th scope="col">algorithm</th><th scope="col">recurrence</th><th scope="col">a</th><th scope="col">b</th><th scope="col">c&#42; = log&#8203;_b&#8203;a</th><th scope="col">f(n)</th><th scope="col">case</th><th scope="col">T(n)</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">binary search</th><td class="mono">T(n/2)+&#x398;(1)</td><td>1</td><td>2</td><td>0</td><td class="mono">&#x398;(1)</td><td class="mid">2</td><td class="good mono">&#x398;(log n)</td></tr>
+              <tr class="hl"><th scope="row">merge sort</th><td class="mono">2T(n/2)+&#x398;(n)</td><td>2</td><td>2</td><td>1</td><td class="mono">&#x398;(n)</td><td class="mid">2</td><td class="good mono">&#x398;(n log n)</td></tr>
+              <tr><th scope="row">Karatsuba</th><td class="mono">3T(n/2)+&#x398;(n)</td><td>3</td><td>2</td><td>1.585</td><td class="mono">&#x398;(n)</td><td class="mid">1</td><td class="good mono">&#x398;(n<sup>1.585</sup>)</td></tr>
+              <tr><th scope="row">naive multiply</th><td class="mono">4T(n/2)+&#x398;(n)</td><td>4</td><td>2</td><td>2</td><td class="mono">&#x398;(n)</td><td class="mid">1</td><td class="bad mono">&#x398;(n&#xB2;)</td></tr>
+              <tr><th scope="row">Strassen (preview)</th><td class="mono">7T(n/2)+&#x398;(n&#xB2;)</td><td>7</td><td>2</td><td>2.807</td><td class="mono">&#x398;(n&#xB2;)</td><td class="mid">1</td><td class="mono">&#x398;(n<sup>2.807</sup>)</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="8">Same machine, five settings of (a, b, f). Notice naive multiply and Karatsuba differ only in a = 4 vs 3 &mdash; and that one change moves the exponent from 2 to 1.585.</td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="s08" class="reveal">
+      <div class="eyebrow"><span class="n">08</span> karatsuba</div>
+      <h2>Buying an exponent with additions</h2>
+      <div class="col">
+        <p>Now to the algorithm the hook promised. Multiply two <code class="inl">n</code>-digit numbers <code class="inl">x</code> and <code class="inl">y</code>. Split each at the middle into a high half and a low half, with <code class="inl">B = 10&#8319;&#xFE52;&#xB2;</code> the place value of the split:</p>
+
+        <div class="eq" role="group" aria-label="Splitting the operands">
+          <span class="lbl">divide each operand in half</span>
+          <div class="math-scroll"><math display="block">
+            <mrow>
+              <mi>x</mi><mo>=</mo><msub><mi>x</mi><mn>1</mn></msub><mi>B</mi><mo>+</mo><msub><mi>x</mi><mn>0</mn></msub><mo>,</mo>
+              <mspace width="1.4em"/>
+              <mi>y</mi><mo>=</mo><msub><mi>y</mi><mn>1</mn></msub><mi>B</mi><mo>+</mo><msub><mi>y</mi><mn>0</mn></msub><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>Then the product expands as</p>
+
+        <div class="eq" role="group" aria-label="The product expanded">
+          <span class="lbl">the schoolbook expansion</span>
+          <div class="math-scroll"><math display="block">
+            <mrow>
+              <mi>x</mi><mi>y</mi><mo>=</mo>
+              <msub><mi>x</mi><mn>1</mn></msub><msub><mi>y</mi><mn>1</mn></msub><mo>&#x2062;</mo><msup><mi>B</mi><mn>2</mn></msup>
+              <mo>+</mo>
+              <mo>(</mo><msub><mi>x</mi><mn>1</mn></msub><msub><mi>y</mi><mn>0</mn></msub><mo>+</mo><msub><mi>x</mi><mn>0</mn></msub><msub><mi>y</mi><mn>1</mn></msub><mo>)</mo><mi>B</mi>
+              <mo>+</mo>
+              <msub><mi>x</mi><mn>0</mn></msub><msub><mi>y</mi><mn>0</mn></msub><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+
+        <p>Read naively, this asks for <strong>four</strong> products of half-size numbers &mdash; <code class="inl">x&#8321;y&#8321;</code>, <code class="inl">x&#8321;y&#8320;</code>, <code class="inl">x&#8320;y&#8321;</code>, <code class="inl">x&#8320;y&#8320;</code> &mdash; assembled with shifts and adds in <code class="inl">&#x398;(n)</code>. That is <code class="inl">T(n)=4T(n/2)+&#x398;(n)</code>, and by the table above it solves to <code class="inl">&#x398;(n&#xB2;)</code>. We have wrapped recursion around long multiplication and gained <em>nothing</em>: <code class="inl">a=4, b=2</code> gives <code class="inl">c&#42;=2</code> exactly.</p>
+
+        <p>Karatsuba's move is to notice that we do not need the middle two products separately &mdash; we need only their <em>sum</em> <code class="inl">x&#8321;y&#8320;+x&#8320;y&#8321;</code>. And that sum can be recovered from a single extra product, not two:</p>
+
+        <figure class="reveal">
+          <svg viewBox="0 0 940 400" role="img" aria-labelledby="f4t f4d">
+            <title id="f4t">Karatsuba collapses four half-size products into three</title>
+            <desc id="f4d">On the left, the naive method computes four products of the half-operands: x1 y1, x1 y0, x0 y1, x0 y0, needing the two middle products x1 y0 and x0 y1. On the right, Karatsuba computes three products P1 = x1 y1, P2 = x0 y0, and P3 = the product of the sums x1 plus x0 and y1 plus y0, then recovers the middle term as P3 minus P1 minus P2. Three recursive multiplications instead of four lowers the recurrence from 4 T of n over 2 to 3 T of n over 2, and the exponent from 2 to log base 2 of 3.</desc>
+
+            <!-- naive side -->
+            <text x="24" y="40" class="dg-cap">naive &mdash; four products</text>
+            <g font-family="var(--font-mono)">
+              <rect x="24"  y="60" width="120" height="44" class="dg-fill"/><text x="84"  y="88" text-anchor="middle" class="dg-val">x&#8321;y&#8321;</text>
+              <rect x="24"  y="112" width="120" height="44" class="dg-fill-y" stroke="var(--bau-red)" stroke-width="3"/><text x="84"  y="140" text-anchor="middle" class="dg-val">x&#8321;y&#8320;</text>
+              <rect x="24"  y="164" width="120" height="44" class="dg-fill-y" stroke="var(--bau-red)" stroke-width="3"/><text x="84"  y="192" text-anchor="middle" class="dg-val">x&#8320;y&#8321;</text>
+              <rect x="24"  y="216" width="120" height="44" class="dg-fill"/><text x="84"  y="244" text-anchor="middle" class="dg-val">x&#8320;y&#8320;</text>
+            </g>
+            <text x="24" y="286" class="dg-label sm dg-red-f">the boxed pair needs two products&hellip;</text>
+            <text x="24" y="306" class="dg-label sm">&hellip;but we only want their <tspan font-weight="700">sum</tspan>.</text>
+
+            <!-- arrow -->
+            <path d="M180 180 L300 180" class="dg-stroke dg-blue" marker-end="url(#kah)"/>
+            <text x="240" y="168" text-anchor="middle" class="dg-label sm dg-blue-f">3, not 4</text>
+
+            <!-- karatsuba side -->
+            <text x="336" y="40" class="dg-cap">Karatsuba &mdash; three products</text>
+            <g font-family="var(--font-mono)">
+              <rect x="336" y="60"  width="240" height="40" class="dg-fill"/><text x="350" y="86" class="dg-val">P&#8321; = x&#8321;y&#8321;</text>
+              <rect x="336" y="106" width="240" height="40" class="dg-fill"/><text x="350" y="132" class="dg-val">P&#8322; = x&#8320;y&#8320;</text>
+              <rect x="336" y="152" width="240" height="40" class="dg-fill" stroke="var(--bau-blue)" stroke-width="3"/><text x="350" y="178" class="dg-val">P&#8323; = (x&#8321;+x&#8320;)(y&#8321;+y&#8320;)</text>
+            </g>
+            <g transform="translate(336,210)">
+              <rect x="0" y="0" width="240" height="86" rx="8" fill="var(--surface-2)" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <text x="14" y="28" class="dg-label">middle = P&#8323; &#8722; P&#8321; &#8722; P&#8322;</text>
+              <text x="14" y="52" class="dg-label sm">= x&#8321;y&#8320; + x&#8320;y&#8321;</text>
+              <text x="14" y="76" class="dg-label sm dg-blue-f">xy = P&#8321;&#xB7;B&#xB2; + middle&#xB7;B + P&#8322;</text>
+            </g>
+
+            <!-- recurrences compared -->
+            <g transform="translate(620,60)">
+              <rect x="0" y="0" width="296" height="120" rx="10" fill="var(--surface)" stroke="var(--bau-red)" stroke-width="2"/>
+              <text x="18" y="34" class="dg-label">naive: a = 4</text>
+              <text x="18" y="62" class="dg-val">T = 4T(n/2) + n</text>
+              <text x="18" y="92" class="dg-cap dg-red-f">&#8594; &#x398;(n&#xB2;)</text>
+            </g>
+            <g transform="translate(620,200)">
+              <rect x="0" y="0" width="296" height="120" rx="10" fill="var(--surface)" stroke="var(--bau-blue)" stroke-width="2"/>
+              <text x="18" y="34" class="dg-label">Karatsuba: a = 3</text>
+              <text x="18" y="62" class="dg-val">T = 3T(n/2) + n</text>
+              <text x="18" y="92" class="dg-cap dg-blue-f">&#8594; &#x398;(n&#185;&#183;&#8309;&#8312;&#8309;)</text>
+            </g>
+            <text x="620" y="356" class="dg-label sm">one fewer subproblem, paid for with a</text>
+            <text x="620" y="376" class="dg-label sm">few extra &#x398;(n) additions in the combine.</text>
+
+            <defs>
+              <marker id="kah" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--bau-blue)"/></marker>
+            </defs>
+          </svg>
+          <figcaption><b>Figure 4 &mdash; the trade that lowers the exponent.</b> <code class="inl">P&#8323;=(x&#8321;+x&#8320;)(y&#8321;+y&#8320;)</code> expands to <code class="inl">x&#8321;y&#8321;+x&#8321;y&#8320;+x&#8320;y&#8321;+x&#8320;y&#8320;</code>; subtract off <code class="inl">P&#8321;</code> and <code class="inl">P&#8322;</code> and the middle term <code class="inl">x&#8321;y&#8320;+x&#8320;y&#8321;</code> falls out. Three recursive multiplications, a handful of linear-time additions, and the branching factor drops from 4 to 3.</figcaption>
+        </figure>
+
+        <pre aria-label="Karatsuba pseudocode"><code><span class="tok-kw">function</span> <span class="tok-fn">karatsuba</span>(x, y):             <span class="tok-com"># x, y are n-digit numbers</span>
+    <span class="tok-kw">if</span> n <span class="tok-op">==</span> <span class="tok-num">1</span>: <span class="tok-kw">return</span> x <span class="tok-op">*</span> y           <span class="tok-com"># base case: one digit-multiply</span>
+    m <span class="tok-op">=</span> n <span class="tok-op">//</span> <span class="tok-num">2</span> ; B <span class="tok-op">=</span> <span class="tok-num">10</span><span class="tok-op">**</span>m
+    x1, x0 <span class="tok-op">=</span> divmod(x, B)             <span class="tok-com"># x = x1*B + x0</span>
+    y1, y0 <span class="tok-op">=</span> divmod(y, B)
+    P1 <span class="tok-op">=</span> <span class="tok-fn">karatsuba</span>(x1, y1)            <span class="tok-com"># recurse — high</span>
+    P2 <span class="tok-op">=</span> <span class="tok-fn">karatsuba</span>(x0, y0)            <span class="tok-com"># recurse — low</span>
+    P3 <span class="tok-op">=</span> <span class="tok-fn">karatsuba</span>(x1 + x0, y1 + y0)  <span class="tok-com"># recurse — the clever one</span>
+    middle <span class="tok-op">=</span> P3 - P1 - P2             <span class="tok-com"># = x1*y0 + x0*y1</span>
+    <span class="tok-kw">return</span> P1 <span class="tok-op">*</span> B<span class="tok-op">**</span><span class="tok-num">2</span> + middle <span class="tok-op">*</span> B + P2  <span class="tok-com"># shifts + adds: Theta(n)</span></code></pre>
+
+        <p><strong>Worked example &mdash; <code class="inl">12 &times; 34</code>.</strong> Split with <code class="inl">B=10</code>: <code class="inl">x&#8321;=1, x&#8320;=2</code> and <code class="inl">y&#8321;=3, y&#8320;=4</code>. Three single-digit products:</p>
+        <div class="band flush" style="margin:1em 0">
+          <p class="mono" style="margin:0 0 .4em; font-size:14px">P&#8321; = x&#8321;y&#8321; = 1&#xD7;3 = 3</p>
+          <p class="mono" style="margin:0 0 .4em; font-size:14px">P&#8322; = x&#8320;y&#8320; = 2&#xD7;4 = 8</p>
+          <p class="mono" style="margin:0 0 .4em; font-size:14px">P&#8323; = (x&#8321;+x&#8320;)(y&#8321;+y&#8320;) = 3 &#xD7; 7 = 21</p>
+          <p class="mono" style="margin:0 0 .4em; font-size:14px">middle = P&#8323; &#8722; P&#8321; &#8722; P&#8322; = 21 &#8722; 3 &#8722; 8 = 10</p>
+          <p class="mono" style="margin:0; font-size:14px">xy = 3&#xD7;100 + 10&#xD7;10 + 8 = 300 + 100 + 8 = <strong>408</strong> &#160;&#10003;&#160; (12&#xD7;34 = 408)</p>
+        </div>
+        <p>Three multiplications, not four &mdash; and on larger inputs each of those three is itself done by the same trick, recursively. The recurrence is <code class="inl">T(n)=3T(n/2)+&#x398;(n)</code>, and the Master Theorem's Case&#160;1 closes it at <code class="inl">&#x398;(n&#x1D58;&#x1D52;&#x1D4D;&#x2082;&#xB3;) = &#x398;(n&#185;&#183;&#8309;&#8312;&#8309;)</code>.</p>
+
+        <div class="note">
+          <span class="tag">the lesson worth carrying</span>
+          <p style="margin-bottom:0">Karatsuba did not make the combine <em>cheaper</em> &mdash; it made it slightly more expensive (more additions). It made the recursion <em>narrower</em>, dropping <code class="inl">a</code> from 4 to 3. Because <code class="inl">a</code> lives in the exponent <code class="inl">log&#8203;_b&#8203;a</code> and <code class="inl">f</code> does not, that is a trade always worth making. This is the strategic core of divide and conquer: <strong>spend linear work in the combine to buy a smaller branching factor.</strong> The natural next question &mdash; can we push the exponent toward <code class="inl">1</code>? &mdash; is exactly where the next lecture begins.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="s09" class="reveal">
+      <div class="eyebrow"><span class="n">09</span> where it breaks</div>
+      <h2>Failure modes &amp; common mistakes</h2>
+      <div class="col">
+        <p>The Master Theorem is a sharp tool, which means it cuts you when held wrong. Here is where formalization reaches its boundary &mdash; the cases it cannot decide, and the errors that quietly produce a wrong exponent.</p>
+
+        <h3>1. Confusing <code class="inl">a</code> with <code class="inl">b</code></h3>
+        <p>The single most common error. <code class="inl">a</code> is the number of recursive <em>calls you actually make</em>; <code class="inl">b</code> is the factor by which the input <em>shrinks</em>. Binary search <em>looks</em> at two halves but recurses into only <strong>one</strong>, so <code class="inl">a=1</code>, not 2. Score it as <code class="inl">a=2</code> and you would predict <code class="inl">&#x398;(n)</code> &mdash; off by an entire factor of <code class="inl">n</code>. Count the calls in the code, do not count the conceptual pieces.</p>
+
+        <h3>2. Letting <code class="inl">f(n)</code> swallow the recursive work</h3>
+        <p>The combine cost <code class="inl">f(n)</code> is the work at <em>this level only</em> &mdash; the divide plus the merge &mdash; explicitly <strong>not</strong> the cost of the recursive calls. Folding the children's cost into <code class="inl">f</code> double-counts the entire tree. Write <code class="inl">f(n)</code> as what you would pay if the recursive calls were free.</p>
+
+        <h3>3. The polynomial-gap requirement &mdash; the &ldquo;Case&#160;2&frac12;&rdquo; hole</h3>
+        <p>Cases&#160;1 and&#160;3 demand that <code class="inl">f</code> differ from <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</code> by a factor of <code class="inl">n&#x3B5;</code> &mdash; a <em>polynomial</em> gap. A merely logarithmic gap falls between the cracks. The classic offender:</p>
+        <div class="eq red" role="group" aria-label="A recurrence the Master Theorem cannot solve">
+          <span class="lbl">Master Theorem does NOT apply</span>
+          <div class="math-scroll"><math display="block">
+            <mrow>
+              <mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><mn>2</mn><mi>T</mi><mo>(</mo><mfrac><mi>n</mi><mn>2</mn></mfrac><mo>)</mo><mo>+</mo><mfrac><mi>n</mi><mrow><mi>log</mi><mo>&#x2061;</mo><mi>n</mi></mrow></mfrac>
+              <mspace width="0.8em"/><mo>&#x27F9;</mo><mspace width="0.6em"/>
+              <mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><mi>&#x398;</mi><mo>(</mo><mi>n</mi><mspace width="0.15em"/><mi>log</mi><mo>&#x2061;</mo><mi>log</mi><mo>&#x2061;</mo><mi>n</mi><mo>)</mo><mo>.</mo>
+            </mrow>
+          </math></div>
+        </div>
+        <p>Here <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;=n</code> and <code class="inl">f=n/log&#160;n</code> is smaller &mdash; but only by <code class="inl">log&#160;n</code>, not by any <code class="inl">n&#x3B5;</code>. Case&#160;1 fails (no polynomial gap), Case&#160;2 fails (<code class="inl">f</code> is not <code class="inl">&#x398;(n&#160;log&#7484;n)</code>). You must sum the tree directly: level <code class="inl">i</code> costs <code class="inl">n/(log&#160;n - i)</code>, and the sum is the harmonic series, <code class="inl">n&#x22C5;H&#8336;&#8338;&#8348;&#8345; = &#x398;(n&#160;log&#160;log&#160;n)</code>. The tree never lies; the theorem sometimes abstains.</p>
+
+        <h3>4. Unequal subproblem sizes</h3>
+        <p>The Master Theorem assumes <em>all</em> subproblems share the size <code class="inl">n/b</code>. A recurrence like <code class="inl">T(n)=T(n/3)+T(2n/3)+&#x398;(n)</code> &mdash; the shape that arises in median-finding and some quickselect analyses &mdash; is <strong>not</strong> of the form <code class="inl">a&#x22C5;T(n/b)</code> and is out of scope. Draw the (now lopsided) tree, or reach for the <span class="term">Akra&#8211;Bazzi</span> method, the generalisation built for unequal splits. (For that example the longest root-to-leaf path has length <code class="inl">log&#8203;_{3/2}&#8203;n</code> and every level still costs <code class="inl">&#x398;(n)</code>, giving <code class="inl">&#x398;(n&#160;log&#160;n)</code>.)</p>
+
+        <h3>5. Case&#160;3 without the regularity check</h3>
+        <p>Case&#160;3 needs <em>two</em> conditions: <code class="inl">f=&#x3A9;(n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;&#8314;&#x3B5;)</code> <strong>and</strong> the regularity condition <code class="inl">a&#x22C5;f(n/b) &#x2264; c&#x22C5;f(n)</code> for some <code class="inl">c&lt;1</code>. For every polynomial <code class="inl">f</code> you will meet in practice, regularity holds automatically &mdash; but for contrived or oscillating <code class="inl">f</code> it can fail even when <code class="inl">f</code> is polynomially larger, and then Case&#160;3's conclusion is not licensed. Do not skip the check on exotic <code class="inl">f</code>.</p>
+
+        <h3>6. Floors, ceilings, and a forgotten base case</h3>
+        <p>Real splits give <code class="inl">T(&#8970;n/2&#8971;)</code> and <code class="inl">T(&#8968;n/2&#8969;)</code>, not an exact <code class="inl">n/2</code>. It is a theorem that the floors and ceilings do not change the asymptotic answer, so we derive on powers of <code class="inl">b</code> and quote the general result &mdash; but you must <em>know</em> that is what you are doing. And never omit the base case: a recurrence with no anchor describes infinite recursion, and <code class="inl">T(1)=&#x398;(1)</code> is what makes the leaf level finite.</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10" class="reveal">
+      <div class="eyebrow"><span class="n">10</span> practice</div>
+      <h2>Problems</h2>
+      <div class="col">
+      </div>
+
+      <div class="drill">
+        <div class="no">1</div>
+        <div>
+          <h3>Solve the battery &mdash; and find the one that resists</h3>
+          <p class="meta">master theorem &middot; recursion tree &middot; the polynomial-gap rule</p>
+          <p>For each recurrence give a tight <code class="inl">&#x398;</code> bound. State <code class="inl">a</code>, <code class="inl">b</code>, the critical exponent <code class="inl">log&#8203;_b&#8203;a</code>, and which Master-Theorem case applies (or why none does):</p>
+          <p class="mono" style="font-size:13.5px; margin:.2em 0 0">(a)&#160; T(n) = 4T(n/2) + n<br>
+          (b)&#160; T(n) = 4T(n/2) + n&#xB2;<br>
+          (c)&#160; T(n) = 4T(n/2) + n&#xB3;<br>
+          (d)&#160; T(n) = 2T(n/2) + n&#160;log&#160;n<br>
+          (e)&#160; T(n) = 2T(n/2) + n / log&#160;n</p>
+          <p style="margin-top:.6em">Exactly one of these the Master Theorem cannot solve. Identify it, explain precisely why (which condition fails), and solve it by summing the recursion tree instead.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">2</div>
+        <div>
+          <h3>Count inversions</h3>
+          <p class="meta">modify merge sort's combine &middot; O(n log n)</p>
+          <p>An <em>inversion</em> in an array <code class="inl">nums</code> is a pair of indices <code class="inl">i &lt; j</code> with <code class="inl">nums[i] &gt; nums[j]</code> &mdash; a measure of how far from sorted the array is. Return the number of inversions.</p>
+          <p class="mono" style="font-size:13px">countInversions(nums) -&gt; int<br>
+          Example: nums = [2,4,1,3,5] -&gt; 3&#160;&#160; (pairs (2,1),(4,1),(4,3))<br>
+          Constraints: 1 &#x2264; len(nums) &#x2264; 1e5,&#160; values fit in 64-bit.</p>
+          <p style="margin-top:.6em">A quadratic double loop is the obvious <code class="inl">O(n&#xB2;)</code>. Beat it: count inversions <em>during a merge sort</em>, in <code class="inl">O(n&#160;log&#160;n)</code>. State your recurrence, and pin down the exact moment in the merge at which a batch of inversions is detected and how many to add when it occurs.</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">3</div>
+        <div>
+          <h3>Maximum subarray, by divide and conquer</h3>
+          <p class="meta">three-case combine &middot; the crossing scan</p>
+          <p>Given an integer array <code class="inl">nums</code>, return the largest sum of any contiguous non-empty subarray &mdash; solved with <strong>divide and conquer</strong> (not Kadane).</p>
+          <p class="mono" style="font-size:13px">maxSubArray(nums) -&gt; int<br>
+          Example: nums = [-2,1,-3,4,-1,2,1,-5,4] -&gt; 6&#160;&#160; (subarray [4,-1,2,1])<br>
+          Constraints: 1 &#x2264; len(nums) &#x2264; 1e5.</p>
+          <p style="margin-top:.6em">Split at the midpoint. The best subarray lies entirely in the left half, entirely in the right half, or <em>crosses</em> the midpoint. Show how to compute the crossing case in <code class="inl">&#x398;(n)</code>, write the resulting recurrence, and solve it. Which Master-Theorem case is this, and what is the cost?</p>
+        </div>
+      </div>
+
+      <div class="drill">
+        <div class="no">4</div>
+        <div>
+          <h3>Strassen's exponent &mdash; Karatsuba for matrices</h3>
+          <p class="meta">generalize the a-reduction &middot; the break-even combine</p>
+          <p>Multiplying two <code class="inl">n&#xD7;n</code> matrices by blocks splits each into four <code class="inl">(n/2)&#xD7;(n/2)</code> quadrants; the naive method forms <strong>8</strong> products of half-size matrices and adds them, giving <code class="inl">T(n)=8T(n/2)+&#x398;(n&#xB2;)</code>.</p>
+          <p>(a) Solve that recurrence &mdash; which case, and what familiar bound results? (b) Strassen's identities compute the same product with only <strong>7</strong> half-size multiplications (at the cost of more <code class="inl">&#x398;(n&#xB2;)</code> additions): <code class="inl">T(n)=7T(n/2)+&#x398;(n&#xB2;)</code>. Solve it and give the exponent to three decimals. (c) Echoing Karatsuba, explain why trading one multiplication for extra additions lowers the exponent &mdash; and determine the <em>largest</em> number of subproblems <code class="inl">a</code> at <code class="inl">b=2</code> for which an <code class="inl">&#x398;(n&#xB2;)</code> combine would still leave the algorithm at <code class="inl">&#x398;(n&#xB2;)</code> overall.</p>
+        </div>
+      </div>
+
+      <div class="col">
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11" class="reveal">
+      <div class="eyebrow"><span class="n">11</span> recap &amp; next</div>
+      <h2>The one thing to remember</h2>
+      <div class="col">
+        <div class="band flush">
+          <div class="accentbar" aria-hidden="true"></div>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>A divide-and-conquer algorithm is a recurrence <code class="inl">T(n)=a&#x22C5;T(n/b)+f(n)</code>, and you solve it by a single contest:</strong> compare the leaf cost <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</code> against the combine cost <code class="inl">f(n)</code>. Leaves win by a polynomial margin &#8594; <code class="inl">&#x398;(n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;)</code>; a tie &#8594; one extra <code class="inl">log</code>; the combine wins &#8594; <code class="inl">&#x398;(f(n))</code>. When the theorem abstains, the recursion tree always answers. And remember the branching factor <code class="inl">a</code> sits in the exponent &mdash; which is why Karatsuba's 4&#8594;3 is worth a few extra additions.</p>
+        </div>
+
+        <div class="next">
+          <div>
+            <span class="lab">next &middot; lecture 04</span>
+            <div class="ttl">The Fast Fourier Transform: Convolution and n&#160;log&#160;n Multiplication</div>
+          </div>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </div>
+        <p style="margin-top:1em">Karatsuba dragged multiplication from <code class="inl">n&#xB2;</code> down to <code class="inl">n&#185;&#183;&#8309;&#8312;&#8309;</code> by shaving the branching factor. Can we reach <code class="inl">n&#160;log&#160;n</code>? Yes &mdash; but it takes a different kind of divide and conquer: not splitting the digits, but <em>changing representation</em>, evaluating a polynomial at the complex roots of unity so that the costly convolution becomes a cheap pointwise product. The FFT is the most beautiful recurrence in this course, and it answers the question this lecture leaves hanging.</p>
+      </div>
+    </section>
+
+    
+
+  </article>
+</div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -10% 0px', threshold:0.08});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  // left-rail active-section highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('article section[id]'));
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          var a = map[e.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+    secs.forEach(function(s){ so.observe(s); });
+  }
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-02-amortized-cost-aggregate-accounting-potential.html">← Previous study</a><a href="dsa-04-fast-fourier-transform.html">Next study →</a></nav>
+</body>
+</html>

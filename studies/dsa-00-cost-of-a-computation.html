@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Cost of a Computation</title>
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+  :root{
+    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    --h: 256;                            /* cobalt-blue hue carries the Bauhaus primary */
+    /* M3 tonal roles */
+    --primary:              oklch(46% 0.16 var(--h));
+    --on-primary:           oklch(99% 0.01 var(--h));
+    --primary-container:    oklch(93% 0.05 var(--h));
+    --on-primary-container: oklch(28% 0.10 var(--h));
+    --secondary:            oklch(50% 0.05 var(--h));
+    --tertiary:             oklch(55% 0.12 calc(var(--h) + 60));
+    /* surfaces + elevation tints (light) */
+    --surface:              oklch(99%   0.004 var(--h));
+    --surface-1:            oklch(98%   0.008 var(--h));
+    --surface-2:            oklch(96.5% 0.012 var(--h));
+    --surface-3:            oklch(95%   0.016 var(--h));
+    --surface-variant:      oklch(93%   0.012 var(--h));
+    --on-surface:           oklch(21%   0.02 var(--h));
+    --on-surface-variant:   oklch(42%   0.02 var(--h));
+    --outline:              oklch(62%   0.02 var(--h));
+    --outline-variant:      oklch(87%   0.01 var(--h));
+    /* Bauhaus primaries — used as shapes, bars, rules (not as body text) */
+    --bau-red:      oklch(57% 0.21 27);
+    --bau-red-deep: oklch(50% 0.20 27);   /* AA-safe under white text, large */
+    --bau-yellow:   oklch(86% 0.17 92);
+    --bau-blue:     oklch(46% 0.17 256);
+    --bau-ink:      oklch(18% 0.02 256);
+    /* M3 shape scale */
+    --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:28px;
+    /* 8px rhythm */ --sp:8px;
+    /* type — geometric sans for a Bauhaus skin */
+    --font-display:"Futura","Futura PT","Century Gothic","ITC Avant Garde Gothic","Avenir Next",system-ui,sans-serif;
+    --font-body:"Avenir Next","Avenir","Helvetica Neue",Inter,system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Menlo",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--surface);
+    color:var(--on-surface);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ===== scroll progress hairline (cap-scroll-driven-animation) ===== */
+  .progress{
+    position:fixed; inset:0 0 auto 0; height:4px; z-index:120;
+    transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg,var(--bau-blue) 0 33.3%,var(--bau-red) 33.3% 66.6%,var(--bau-yellow) 66.6% 100%);
+    animation:growbar linear both; animation-timeline:scroll(root);
+  }
+  @keyframes growbar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+  /* ===== masthead ===== */
+  .masthead{
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:calc(var(--sp)*1.5);
+    padding:calc(var(--sp)*1.25) calc(var(--sp)*3);
+    background:color-mix(in oklab, var(--surface) 82%, transparent);
+    -webkit-backdrop-filter:saturate(1.4) blur(12px);
+    backdrop-filter:saturate(1.4) blur(12px);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .masthead .sigil{flex:0 0 auto; width:34px; height:34px; display:block}
+  .masthead .crumb{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--on-surface-variant);
+  }
+  .masthead .crumb b{color:var(--on-surface); font-weight:700}
+  .masthead .spacer{flex:1}
+  .masthead .ed{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--on-primary); background:var(--bau-blue); padding:4px 10px; border-radius:var(--r-xs);
+  }
+
+  /* ===== layout: slim rail + wide column ===== */
+  .layout{
+    max-width:1180px; margin:0 auto; padding:0 calc(var(--sp)*3);
+    display:grid; grid-template-columns:200px minmax(0,1fr); gap:calc(var(--sp)*5);
+  }
+  .rail{ position:sticky; top:84px; align-self:start; height:max-content; padding-top:calc(var(--sp)*6); }
+  .rail ol{list-style:none; margin:0; padding:0}
+  .rail li{margin:0 0 6px}
+  .rail a{
+    display:flex; align-items:baseline; gap:10px; text-decoration:none;
+    padding:6px 8px; border-radius:var(--r-sm);
+    color:var(--on-surface-variant); font-size:13.5px; line-height:1.3;
+    border-left:3px solid transparent;
+  }
+  .rail a .no{font-family:var(--font-mono); font-size:12px; color:var(--outline); letter-spacing:.04em}
+  .rail a:hover{background:color-mix(in oklab,var(--primary) 8%,transparent); color:var(--on-surface)}
+  .rail a.active{border-left-color:var(--bau-red); color:var(--on-surface); background:color-mix(in oklab,var(--primary) 6%,transparent)}
+  .rail a.active .no{color:var(--bau-red)}
+  .rail .meterwrap{margin:14px 8px 0; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-surface-variant)}
+  .rail meter{width:100%; height:8px; margin-top:6px}
+
+  main{padding:calc(var(--sp)*6) 0 calc(var(--sp)*10); min-width:0}
+  section{margin:0 0 calc(var(--sp)*9); scroll-margin-top:84px}
+  .prose{max-width:68ch}
+  .prose p{margin:0 0 calc(var(--sp)*2)}
+
+  h1,h2,h3,h4{font-family:var(--font-display); font-weight:700; color:var(--on-surface); line-height:1.04; letter-spacing:-0.01em}
+  .eyebrow{font-family:var(--font-mono); font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:var(--bau-red); margin:0 0 14px}
+  h1{font-size:clamp(40px,6.2vw,76px); letter-spacing:-0.025em; margin:0 0 18px}
+  h1 .accentword{color:var(--bau-blue)}
+  .deck{font-size:clamp(19px,2.2vw,23px); color:var(--on-surface-variant); max-width:60ch; line-height:1.42; margin:0 0 calc(var(--sp)*4)}
+  h2{font-size:clamp(28px,3.6vw,40px); margin:0 0 calc(var(--sp)*2.5)}
+  h3{font-size:22px; margin:calc(var(--sp)*4) 0 calc(var(--sp)*1.5)}
+  h4{font-size:16.5px; margin:calc(var(--sp)*3) 0 var(--sp); font-family:var(--font-body); font-weight:700}
+
+  .secnum{display:flex; align-items:center; gap:14px; margin:0 0 calc(var(--sp)*3)}
+  .secnum .tag{font-family:var(--font-mono); font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--on-surface-variant)}
+  .secnum .rule{flex:1; height:2px; background:linear-gradient(90deg,var(--bau-blue),transparent)}
+
+  a.inl{color:var(--bau-blue); text-underline-offset:3px; text-decoration-thickness:1.5px}
+  a.inl:hover{color:var(--bau-red-deep)}
+  code{font-family:var(--font-mono); font-size:.86em; background:var(--surface-2); padding:1px 5px; border-radius:var(--r-xs); color:var(--on-primary-container)}
+  strong{color:var(--on-surface)}
+  em.term{font-style:normal; font-weight:700; color:var(--bau-red-deep)}
+  mark{background:var(--bau-yellow); color:var(--bau-ink); padding:0 3px; border-radius:2px}
+
+  /* cards & surfaces */
+  .card{background:var(--surface-1); border:1px solid var(--outline-variant); border-radius:var(--r-lg); padding:calc(var(--sp)*3)}
+  .band{background:var(--surface-2); border-radius:var(--r-xl); padding:calc(var(--sp)*4); margin:calc(var(--sp)*3) 0}
+  .elev{box-shadow:0 1px 2px rgba(20,24,40,.06), 0 8px 28px -12px rgba(20,24,40,.16)}
+
+  /* stat block */
+  .stats{display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:calc(var(--sp)*2); margin:calc(var(--sp)*3) 0}
+  .stat{background:var(--surface-1); border:1px solid var(--outline-variant); border-radius:var(--r-lg); padding:calc(var(--sp)*2.5)}
+  .stat.lead{background:var(--bau-blue); border-color:transparent; color:var(--on-primary)}
+  .stat .k{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; opacity:.85}
+  .stat .v{font-family:var(--font-display); font-weight:700; font-size:clamp(28px,4vw,46px); line-height:1; margin:8px 0 6px; font-variant-numeric:tabular-nums}
+  .stat.lead .v{color:#fff}
+  .stat .s{font-size:13.5px; line-height:1.4; color:var(--on-surface-variant)}
+  .stat.lead .s{color:color-mix(in oklab,#fff 86%,var(--bau-blue))}
+
+  /* objectives / prereqs lists */
+  ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  ul.obj li{display:flex; gap:14px; align-items:flex-start; padding:12px 14px; background:var(--surface-1); border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  ul.obj li .mk{flex:0 0 auto; width:14px; height:14px; margin-top:5px}
+  .chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:6px}
+  .chip{font-size:13.5px; padding:7px 13px; border-radius:999px; background:var(--surface-2); border:1px solid var(--outline-variant); color:var(--on-surface)}
+  .chip b{color:var(--bau-red-deep)}
+
+  /* pull quote */
+  .pull{margin:calc(var(--sp)*5) 0; padding:calc(var(--sp)*4); border-left:8px solid var(--bau-red); background:var(--surface-1); border-radius:0 var(--r-lg) var(--r-lg) 0}
+  .pull blockquote{margin:0; font-family:var(--font-display); font-weight:700; font-size:clamp(22px,3.2vw,32px); line-height:1.16; letter-spacing:-0.015em; color:var(--on-surface)}
+  .pull .by{margin-top:14px; font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-surface-variant)}
+
+  /* code listings (cap-code-typeset) */
+  figure.code{margin:calc(var(--sp)*2.5) 0; border:1px solid var(--outline-variant); border-radius:var(--r-md); overflow:hidden; background:var(--surface-1)}
+  figure.code figcaption{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--on-surface-variant); padding:9px 14px; background:var(--surface-2); border-bottom:1px solid var(--outline-variant); display:flex; justify-content:space-between; gap:10px}
+  figure.code figcaption .cst{color:var(--bau-red-deep)}
+  pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:var(--font-mono); font-size:13.5px; line-height:1.62; color:var(--on-surface); tab-size:2}
+  pre .ln{color:var(--outline); user-select:none}
+  .tok-kw{color:var(--bau-blue); font-weight:600}
+  .tok-fn{color:var(--bau-red-deep); font-weight:600}
+  .tok-num{color:oklch(45% 0.13 150)}
+  .tok-str{color:oklch(45% 0.12 150)}
+  .tok-com{color:var(--on-surface-variant); font-style:italic}
+  .tok-op{color:var(--on-surface-variant)}
+  .cost{color:var(--bau-red-deep); font-weight:600}
+
+  /* tables (cap-tabular-data-done-right) */
+  .tblwrap{overflow-x:auto; margin:calc(var(--sp)*2.5) 0; border:1px solid var(--outline-variant); border-radius:var(--r-md)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px}
+  caption{caption-side:top; text-align:left; font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--on-surface-variant); padding:10px 14px}
+  thead th{position:sticky; top:64px; background:var(--bau-ink); color:#fff; text-align:left; font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:10px 14px; font-weight:600}
+  tbody td,tbody th{padding:9px 14px; border-top:1px solid var(--outline-variant); font-variant-numeric:tabular-nums; vertical-align:top}
+  tbody th{text-align:left; font-weight:700; color:var(--on-surface); background:var(--surface-1); white-space:nowrap}
+  tbody tr:nth-child(even) td{background:var(--surface-1)}
+  td .vg{font-weight:700}
+  .vg.good{color:oklch(45% 0.13 150)} .vg.warn{color:var(--bau-red-deep)} .vg.mid{color:oklch(52% 0.12 70)}
+
+  /* figures / svg */
+  figure.fig{margin:calc(var(--sp)*4) 0; padding:0}
+  figure.fig svg{width:100%; height:auto; display:block; background:var(--surface-1); border:1px solid var(--outline-variant); border-radius:var(--r-lg)}
+  figure.fig figcaption{margin-top:12px; font-size:14px; color:var(--on-surface-variant); max-width:66ch}
+  figure.fig figcaption b{color:var(--on-surface)}
+  /* svg ink classes */
+  .dg-stroke{stroke:var(--on-surface); fill:none}
+  .dg-faint{stroke:var(--outline-variant); fill:none}
+  .dg-axis{stroke:var(--on-surface-variant); fill:none}
+  .dg-blue{stroke:var(--bau-blue); fill:none}
+  .dg-red{stroke:var(--bau-red); fill:none}
+  .dg-fill-blue{fill:var(--bau-blue)}
+  .dg-fill-red{fill:var(--bau-red)}
+  .dg-fill-yellow{fill:var(--bau-yellow)}
+  .dg-fill-ink{fill:var(--bau-ink)}
+  .dg-label{fill:var(--on-surface); font-family:var(--font-mono); font-size:13px}
+  .dg-axislabel{fill:var(--on-surface-variant); font-family:var(--font-mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase}
+  .dg-tick{fill:var(--on-surface-variant); font-family:var(--font-mono); font-size:11px}
+  .dg-strong{fill:var(--on-surface); font-family:var(--font-display); font-weight:700; font-size:15px}
+
+  /* math */
+  math{font-size:1.06em; color:var(--on-surface)}
+  .mathline{background:var(--surface-1); border:1px solid var(--outline-variant); border-left:5px solid var(--bau-blue); border-radius:var(--r-sm); padding:14px 18px; margin:calc(var(--sp)*2) 0; overflow-x:auto}
+  .mathline .mlabel{display:block; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--on-surface-variant); margin-bottom:8px}
+
+  /* details reveal */
+  details.reveal-box{margin:calc(var(--sp)*2) 0; border:1px dashed var(--outline); border-radius:var(--r-md); background:var(--surface-1); padding:0 16px}
+  details.reveal-box summary{cursor:pointer; padding:13px 0; font-weight:700; color:var(--bau-blue); list-style:none; display:flex; align-items:center; gap:10px}
+  details.reveal-box summary::-webkit-details-marker{display:none}
+  details.reveal-box summary::before{content:"+"; font-family:var(--font-mono); width:20px; height:20px; display:grid; place-items:center; border:2px solid var(--bau-blue); border-radius:4px; font-weight:700}
+  details.reveal-box[open] summary::before{content:"\2212"}
+  details.reveal-box .inner{padding:0 0 16px}
+
+  /* callouts */
+  .note{display:grid; grid-template-columns:auto 1fr; gap:14px; align-items:start; padding:16px 18px; border-radius:var(--r-md); margin:calc(var(--sp)*2.5) 0}
+  .note .ic{width:22px;height:22px;flex:0 0 auto;margin-top:2px}
+  .note.warn{background:color-mix(in oklab,var(--bau-red) 9%,var(--surface)); border:1px solid color-mix(in oklab,var(--bau-red) 30%,var(--outline-variant))}
+  .note.key{background:var(--primary-container); border:1px solid color-mix(in oklab,var(--bau-blue) 26%,var(--outline-variant))}
+  .note p{margin:0}
+  .note .lbl{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; display:block; margin-bottom:4px; color:var(--bau-red-deep)}
+  .note.key .lbl{color:var(--bau-blue)}
+
+  /* failure list */
+  ol.fail{counter-reset:f; list-style:none; margin:0; padding:0; display:grid; gap:14px}
+  ol.fail li{counter-increment:f; position:relative; padding:16px 18px 16px 60px; background:var(--surface-1); border:1px solid var(--outline-variant); border-left:4px solid var(--bau-red); border-radius:var(--r-md)}
+  ol.fail li::before{content:counter(f,decimal-leading-zero); position:absolute; left:16px; top:16px; font-family:var(--font-mono); font-weight:700; font-size:15px; color:var(--bau-red-deep)}
+  ol.fail li h4{margin:0 0 4px}
+
+  /* practice */
+  .pcard{background:var(--surface-1); border:1px solid var(--outline-variant); border-radius:var(--r-lg); padding:calc(var(--sp)*3); margin:calc(var(--sp)*2.5) 0; position:relative; overflow:hidden}
+  .pcard::before{content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--bau-yellow)}
+  .pcard .pno{font-family:var(--font-mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--bau-red-deep); margin:0 0 8px; display:flex; align-items:center; gap:10px}
+  .pcard .pno .sq{width:12px;height:12px;background:var(--bau-red)}
+  .pcard h3{margin:0 0 10px; font-size:20px}
+  .pcard .meta{font-size:13.5px; color:var(--on-surface-variant)}
+  .pcard pre{background:var(--surface-2); border-radius:var(--r-sm); margin-top:10px}
+  .pcard .ex{margin-top:10px; padding:10px 14px; background:var(--surface-2); border-radius:var(--r-sm); font-family:var(--font-mono); font-size:13px; line-height:1.6}
+
+  /* recap / next */
+  .nextcard{display:grid; grid-template-columns:auto 1fr auto; gap:18px; align-items:center; text-decoration:none; color:inherit; background:var(--bau-ink); border-radius:var(--r-xl); padding:calc(var(--sp)*3.5); margin-top:calc(var(--sp)*3)}
+  .nextcard .nk{font-family:var(--font-mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--bau-yellow)}
+  .nextcard .nt{font-family:var(--font-display); font-weight:700; font-size:22px; color:#fff; line-height:1.1; margin-top:6px}
+  .nextcard .arrow{font-size:30px; color:#fff}
+  .nextcard:hover{outline:3px solid var(--bau-blue); outline-offset:3px}
+
+  footer.colophon{max-width:68ch; border-top:2px solid var(--bau-ink); padding-top:calc(var(--sp)*3); margin-top:calc(var(--sp)*6); font-size:14px; color:var(--on-surface-variant)}
+  footer.colophon .meta{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase}
+
+  /* reveal motion */
+  .reveal{opacity:0; transform:translateY(14px)}
+  .reveal.in{opacity:1; transform:none; transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1)}
+
+  /* focus + targets */
+  a:focus-visible, summary:focus-visible, .nextcard:focus-visible{outline:3px solid var(--bau-blue); outline-offset:2px; border-radius:var(--r-xs)}
+  .rail a, .nextcard, summary{min-height:0}
+
+  @media (max-width:880px){
+    .layout{grid-template-columns:1fr; gap:0}
+    .rail{display:none}
+    .stats{grid-template-columns:1fr}
+    thead th{top:60px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important; transition:none !important; scroll-behavior:auto !important}
+    .reveal{opacity:1; transform:none}
+    .progress{transform:scaleX(0)}
+  }
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">00 / 23</span></nav>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" viewBox="0 0 40 40" role="img" aria-label="Bauhaus sigil: blue circle, yellow triangle, red square">
+    <circle cx="12" cy="12" r="11" fill="var(--bau-blue)"/>
+    <polygon points="28,3 39,25 17,25" fill="var(--bau-yellow)"/>
+    <rect x="20" y="20" width="18" height="18" fill="var(--bau-red)"/>
+  </svg>
+  <span class="crumb">DSA · Visual DSA · Lecture 00</span>
+  <span class="spacer"></span>
+  <span class="ed">Cost &amp; Growth</span>
+</header>
+
+<div class="layout">
+  <aside class="rail" aria-label="Lesson contents">
+    <nav>
+      <ol>
+        <li><a href="#hook"><span class="no">01</span><span>The hook</span></a></li>
+        <li><a href="#objectives"><span class="no">02</span><span>Objectives</span></a></li>
+        <li><a href="#prereqs"><span class="no">03</span><span>Prerequisites</span></a></li>
+        <li><a href="#principles"><span class="no">04</span><span>First principles</span></a></li>
+        <li><a href="#worked"><span class="no">05</span><span>Worked examples</span></a></li>
+        <li><a href="#failure"><span class="no">06</span><span>Where it breaks</span></a></li>
+        <li><a href="#practice"><span class="no">07</span><span>Practice</span></a></li>
+        <li><a href="#recap"><span class="no">08</span><span>Recap &amp; next</span></a></li>
+      </ol>
+      <div class="meterwrap">Reading progress
+        <meter id="prog" min="0" max="100" value="0"></meter>
+      </div>
+    </nav>
+  </aside>
+
+  <main>
+    <!-- 01 HOOK -->
+    <section id="hook">
+      <p class="eyebrow">Data Structures &amp; Algorithms · Lecture 00</p>
+      <h1>The Cost of a <span class="accentword">Computation</span></h1>
+      <p class="deck">The Analytical Engine could weave a calculation as a loom weaves flowers. But before a single value is computed, we can already foretell whether the weaving will finish before lunch — or after the Sun burns out. That foretelling is a science. This is its first lecture.</p>
+
+      <div class="band elev reveal">
+        <p style="margin-top:0"><strong>One problem, two engines.</strong> Find a name in a sorted directory of <strong>8 billion</strong> people. Engine A reads top to bottom. Engine B halves the remaining range each step. Both are "correct." On a machine doing one billion comparisons per second:</p>
+        <div class="stats">
+          <div class="stat lead">
+            <div class="k">Engine B · binary search</div>
+            <div class="v">33</div>
+            <div class="s">comparisons, worst case. Finished before you blink — about 33 nanoseconds.</div>
+          </div>
+          <div class="stat">
+            <div class="k">Engine A · linear scan</div>
+            <div class="v">8×10⁹</div>
+            <div class="s">comparisons, worst case — about 8 seconds. A 240-million-fold gap.</div>
+          </div>
+          <div class="stat">
+            <div class="k">The lesson</div>
+            <div class="v">log n</div>
+            <div class="s">The gap is not the machine. It is the <em class="term">order of growth</em>. Buy a faster computer and Engine A is still hopeless.</div>
+          </div>
+        </div>
+        <p style="margin-bottom:0">Now push it. An algorithm that tries every subset of <em class="term">n</em> items does <math><msup><mn>2</mn><mi>n</mi></msup></math> units of work. At <em class="term">n</em>=100, that is more operations than there are atoms in the observable universe — at a billion per second, it outlasts the age of the cosmos by a margin that has its own zeros. A different algorithm for the very same task might run in <math><msup><mi>n</mi><mn>2</mn></msup></math> = 10,000 steps: ten microseconds. <strong>Same problem. The difference between "instant" and "never" is the shape of a function.</strong></p>
+      </div>
+
+      <div class="prose">
+        <p>The aim is to find the <em class="term">computational skeleton</em> beneath a problem — to strip away the surface and ask what is really being mechanized, and at what cost. Today the skeleton <em>is</em> the cost itself. We will build, from first principles, a way to measure the price of a computation that does not depend on which machine you own, which language you wrote it in, or what mood the operating system is in. We will measure the algorithm, not the run.</p>
+      </div>
+    </section>
+
+    <!-- 02 OBJECTIVES -->
+    <section id="objectives">
+      <div class="secnum"><span class="tag">02 · Objectives</span><span class="rule"></span></div>
+      <h2>After this lecture you can…</h2>
+      <ul class="obj">
+        <li><svg class="mk" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="7" fill="var(--bau-blue)"/></svg><span>State the <strong>RAM model</strong> precisely and use it to count an algorithm's steps as a function <math><mrow><mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow></math> of input size <em class="term">n</em>.</span></li>
+        <li><svg class="mk" viewBox="0 0 14 14" aria-hidden="true"><polygon points="7,0 14,14 0,14" fill="var(--bau-yellow)"/></svg><span>Give the <strong>formal definitions</strong> of <math><mi>O</mi></math>, <math><mi>Θ</mi></math>, and <math><mi>Ω</mi></math> — and prove a bound by exhibiting the constants <em class="term">c</em> and <math><msub><mi>n</mi><mn>0</mn></msub></math>.</span></li>
+        <li><svg class="mk" viewBox="0 0 14 14" aria-hidden="true"><rect width="14" height="14" fill="var(--bau-red)"/></svg><span>Separate the <strong>two independent axes</strong>: <em class="term">which case</em> (best / average / worst) versus <em class="term">which bound</em> (ceiling / tight / floor).</span></li>
+        <li><svg class="mk" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="7" fill="var(--bau-blue)"/></svg><span>Derive running times with the standard <strong>summation toolkit</strong> — arithmetic, geometric, and harmonic series, and the halving argument for <math><mrow><mi>log</mi><mi>n</mi></mrow></math>.</span></li>
+        <li><svg class="mk" viewBox="0 0 14 14" aria-hidden="true"><polygon points="7,0 14,14 0,14" fill="var(--bau-yellow)"/></svg><span>Say what <strong>"efficient" formally means</strong> (polynomial time, the class <math><mi>P</mi></math>) — and name where that definition lies to you.</span></li>
+        <li><svg class="mk" viewBox="0 0 14 14" aria-hidden="true"><rect width="14" height="14" fill="var(--bau-red)"/></svg><span>Spot the <strong>failure modes</strong>: confusing <math><mi>O</mi></math> with worst-case, pseudo-polynomial traps, and the lies the RAM model tells about memory.</span></li>
+      </ul>
+    </section>
+
+    <!-- 03 PREREQS -->
+    <section id="prereqs">
+      <div class="secnum"><span class="tag">03 · Prerequisites</span><span class="rule"></span></div>
+      <h2>What you should already hold</h2>
+      <div class="prose"><p>Nothing exotic. If any chip below is unfamiliar, pause and shore it up — the rest of the course leans on all three.</p></div>
+      <div class="chips">
+        <span class="chip"><b>Basic programming</b> — loops, arrays, function calls, recursion</span>
+        <span class="chip"><b>Discrete math</b> — logarithms &amp; exponents, summation (Σ) notation</span>
+        <span class="chip"><b>Mathematical induction</b> — to trust a derived closed form</span>
+      </div>
+      <div class="note key reveal">
+        <svg class="ic" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="none" stroke="var(--bau-blue)" stroke-width="2"/><path d="M11 6v6M11 15.5v.5" stroke="var(--bau-blue)" stroke-width="2.4" stroke-linecap="round"/></svg>
+        <p><span class="lbl">Notation we will lean on</span> The summation <math><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mi>i</mi></mrow></math> means "add the integers from 1 to <em class="term">n</em>." Its closed form, <math><mfrac><mrow><mi>n</mi><mo>(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></mfrac></math>, is the single most-used identity in this lecture.</p>
+      </div>
+    </section>
+
+    <!-- 04 FIRST PRINCIPLES -->
+    <section id="principles">
+      <div class="secnum"><span class="tag">04 · Build it from first principles</span><span class="rule"></span></div>
+      <h2>Measuring the algorithm, not the run</h2>
+
+      <h3>Why a stopwatch is the wrong instrument</h3>
+      <div class="prose">
+        <p>The naive way to ask "how fast is this algorithm?" is to run it and time it. But a wall-clock measurement answers a question we did not ask. It folds together your CPU's clock speed, the compiler's cleverness, the language's overhead, the cache's mood, what else the machine was doing, and the one specific input you happened to feed it. Change any of these and the number changes — yet the <em>algorithm</em> did not. A stopwatch measures a <em class="term">run</em>; we want a property of the <em class="term">method</em>.</p>
+        <p>So we make two moves. First, we stop measuring seconds and start <strong>counting operations</strong> — a quantity intrinsic to the procedure. Second, we report that count not as a single number but as a <strong>function of the input size</strong> <math><mi>n</mi></math>, because the only honest answer to "how expensive?" is "expensive <em>relative to how much data?</em>" The result is <math><mrow><mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow></math>: the number of basic steps the algorithm performs on an input of size <math><mi>n</mi></math>. But "basic step" is doing a lot of quiet work in that sentence. To make it precise we need a model of the machine.</p>
+      </div>
+
+      <h3>The RAM model — an honest fiction</h3>
+      <div class="prose">
+        <p>The <em class="term">Random Access Machine</em> (RAM) is the idealized computer on which all of classical algorithm analysis stands. It is deliberately simple, and deliberately a fiction. Its rules:</p>
+        <ul>
+          <li><strong>One processor, one instruction at a time.</strong> No parallelism, no hidden concurrency. Steps happen in sequence.</li>
+          <li><strong>Memory is an unbounded array of cells.</strong> Each cell holds one <em class="term">word</em> — an integer of <math><mi>w</mi></math> bits. Accessing <em>any</em> cell by its address costs the same: one unit. This is the "random access" promise — cell 2 and cell 2,000,000 are equally near. (This is the model's most beautiful lie; hold that thought.)</li>
+          <li><strong>The basic operations each cost one unit of time.</strong> Arithmetic (<code>+ − × ÷ mod</code>), comparison (<code>&lt; = &gt;</code>), a load or store, following an array index, a branch, a function-call hop. One "step" = one of these.</li>
+          <li><strong>The word is wide enough to be useful.</strong> We assume <math><mrow><mi>w</mi><mo>=</mo><mi>Θ</mi><mo>(</mo><mi>log</mi><mi>n</mi><mo>)</mo></mrow></math> bits — large enough to hold an index into the input and to add two such indices in one step, but not so large that we can cheat by packing the whole input into one cell.</li>
+        </ul>
+        <p>This is the <em class="term">uniform-cost</em> model: every basic operation is priced at 1, regardless of the actual magnitudes involved. Its purpose is not to be true — it is to be <strong>portable</strong>. An operation count in the RAM model is a statement about the algorithm that survives translation across machines, decades, and languages. When we later need more truth (huge integers, real caches), we will name exactly where the fiction tore.</p>
+      </div>
+      <div class="note key">
+        <svg class="ic" viewBox="0 0 22 22" aria-hidden="true"><rect x="2" y="2" width="18" height="18" rx="3" fill="none" stroke="var(--bau-blue)" stroke-width="2"/><path d="M6 11h10M11 6v10" stroke="var(--bau-blue)" stroke-width="2" stroke-linecap="round"/></svg>
+        <p><span class="lbl">The contract</span> <strong>Cost = number of unit-cost RAM operations, as a function of input size <em>n</em>.</strong> That single sentence is what "running time" will mean for the rest of this course.</p>
+      </div>
+
+      <h3>What is <em>n</em>, exactly?</h3>
+      <div class="prose">
+        <p>The input <em class="term">size</em> is the number of words it takes to write the input down. For an array of items, <math><mi>n</mi></math> is the number of items. For a graph, it is two numbers, <math><mi>V</mi></math> and <math><mi>E</mi></math>. For a single integer <math><mi>N</mi></math>, here is the subtlety that trips everyone: the size is not <math><mi>N</mi></math> but the number of <em>bits</em> to write it, <math><mrow><mi>n</mi><mo>=</mo><mo>⌈</mo><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi><mo>⌉</mo></mrow></math>. Doubling <math><mi>N</mi></math> adds one bit. An algorithm that loops <math><mi>N</mi></math> times is <em>exponential</em> in its input size — a trap we will spring deliberately in the failure-modes section.</p>
+      </div>
+
+      <h3>Why we go asymptotic: the tyranny of constants</h3>
+      <div class="prose">
+        <p>Suppose careful counting gives one algorithm <math><mrow><mi>T</mi><mi>A</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><mn>100</mn><mi>n</mi></mrow></math> and a rival <math><mrow><mi>T</mi><mi>B</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><mfrac><mrow><msup><mi>n</mi><mn>2</mn></msup></mrow><mn>100</mn></mfrac></mrow></math>. For small <math><mi>n</mi></math>, B looks faster. But set them equal: <math><mrow><mn>100</mn><mi>n</mi><mo>=</mo><msup><mi>n</mi><mn>2</mn></msup><mo>/</mo><mn>100</mn></mrow></math> gives <math><mrow><mi>n</mi><mo>=</mo><mn>10000</mn></mrow></math>. Beyond that crossover, A wins and the lead only widens — forever. The <strong>leading term's shape</strong> eventually dominates every constant factor and every lower-order term. Since we deploy algorithms on data that grows, we care about behavior as <math><mrow><mi>n</mi><mo>→</mo><mi>∞</mi></mrow></math>. This is the asymptotic stance: <em>throw away constants and lower-order terms, keep the shape.</em></p>
+        <p>That throwing-away must be made rigorous — otherwise "keep the shape" is hand-waving. The rigor is three pieces of notation.</p>
+      </div>
+
+      <h3>Big-O — the ceiling</h3>
+      <div class="prose"><p>We write <math><mrow><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><mi>O</mi><mo>(</mo><mi>g</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>)</mo></mrow></math> to say "<em>f</em> grows no faster than <em>g</em>, up to a constant, eventually." Formally:</p></div>
+      <div class="mathline">
+        <span class="mlabel">Definition · Big-O (asymptotic upper bound)</span>
+        <div class="math-scroll"><math display="block">
+          <mrow><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><mi>O</mi><mo>(</mo><mi>g</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>)</mo></mrow>
+          <mtext>&nbsp;&nbsp;⟺&nbsp;&nbsp;</mtext>
+          <mrow><mo>∃</mo><mi>c</mi><mo>&gt;</mo><mn>0</mn><mo>,</mo><mspace width="3px"/><msub><mi>n</mi><mn>0</mn></msub><mo>&gt;</mo><mn>0</mn></mrow>
+          <mspace width="6px"/><mtext>s.t.</mtext><mspace width="6px"/>
+          <mrow><mn>0</mn><mo>≤</mo><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>≤</mo><mi>c</mi><mo>·</mo><mi>g</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow>
+          <mspace width="6px"/><mtext>for all</mtext><mspace width="6px"/>
+          <mrow><mi>n</mi><mo>≥</mo><msub><mi>n</mi><mn>0</mn></msub></mrow><mo>.</mo>
+        </math></div>
+      </div>
+      <div class="prose">
+        <p>Read it as a promise with two escape hatches: you may scale <em>g</em> up by any constant <em>c</em> you like, and you may ignore all small <em>n</em> below some threshold <math><msub><mi>n</mi><mn>0</mn></msub></math>. If, with those allowances, <em>g</em> sits above <em>f</em>, then <em>f</em> is <math><mi>O</mi><mo>(</mo><mi>g</mi><mo>)</mo></math>.</p>
+        <p><strong>Worked claim:</strong> <math><mrow><mn>3</mn><msup><mi>n</mi><mn>2</mn></msup><mo>+</mo><mn>5</mn><mi>n</mi><mo>+</mo><mn>7</mn><mo>=</mo><mi>O</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></mrow></math>. We must <em>exhibit</em> a <em>c</em> and an <math><msub><mi>n</mi><mn>0</mn></msub></math>.</p>
+      </div>
+      <details class="reveal-box">
+        <summary>Unfold the proof — exhibit the constants</summary>
+        <div class="inner prose">
+          <p>For every <math><mrow><mi>n</mi><mo>≥</mo><mn>1</mn></mrow></math> we have <math><mrow><mi>n</mi><mo>≤</mo><msup><mi>n</mi><mn>2</mn></msup></mrow></math> and <math><mrow><mn>1</mn><mo>≤</mo><msup><mi>n</mi><mn>2</mn></msup></mrow></math>. Therefore</p>
+          <p><div class="math-scroll"><math display="block"><mrow><mn>3</mn><msup><mi>n</mi><mn>2</mn></msup><mo>+</mo><mn>5</mn><mi>n</mi><mo>+</mo><mn>7</mn><mo>≤</mo><mn>3</mn><msup><mi>n</mi><mn>2</mn></msup><mo>+</mo><mn>5</mn><msup><mi>n</mi><mn>2</mn></msup><mo>+</mo><mn>7</mn><msup><mi>n</mi><mn>2</mn></msup><mo>=</mo><mn>15</mn><msup><mi>n</mi><mn>2</mn></msup></mrow></math></div></p>
+          <p>So the definition holds with <math><mrow><mi>c</mi><mo>=</mo><mn>15</mn></mrow></math> and <math><mrow><msub><mi>n</mi><mn>0</mn></msub><mo>=</mo><mn>1</mn></mrow></math>. The constants are not unique — <math><mrow><mi>c</mi><mo>=</mo><mn>4</mn><mo>,</mo><msub><mi>n</mi><mn>0</mn></msub><mo>=</mo><mn>6</mn></mrow></math> works too. <strong>Existence is all the definition asks for.</strong> That is the whole game: bound the small terms by the big one, collect the coefficients.</p>
+        </div>
+      </details>
+      <div class="note warn">
+        <svg class="ic" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 2l9 17H2z" fill="none" stroke="var(--bau-red)" stroke-width="2" stroke-linejoin="round"/><path d="M11 8v5M11 16v.5" stroke="var(--bau-red)" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <p><span class="lbl">A ceiling, not a portrait</span> <math><mi>O</mi></math> is an <em>upper</em> bound, so a true <math><mi>O</mi></math> statement can be wildly loose. <math><mrow><mn>3</mn><msup><mi>n</mi><mn>2</mn></msup></mrow></math> really is <math><mi>O</mi><mo>(</mo><msup><mi>n</mi><mn>3</mn></msup><mo>)</mo></math>, and even <math><mi>O</mi><mo>(</mo><msup><mn>2</mn><mi>n</mi></msup><mo>)</mo></math>. Both are correct and both are useless. And note the abuse of "=": <math><mrow><mi>f</mi><mo>=</mo><mi>O</mi><mo>(</mo><mi>g</mi><mo>)</mo></mrow></math> really means <em>f</em> belongs to the <em>set</em> <math><mi>O</mi><mo>(</mo><mi>g</mi><mo>)</mo></math>; it never runs the other way.</p>
+      </div>
+
+      <h3>Omega and Theta — the floor and the tight fit</h3>
+      <div class="prose"><p>Flip the inequality and you get the lower bound; demand both at once and you get a tight bound.</p></div>
+      <div class="mathline">
+        <span class="mlabel">Definition · Big-Omega (lower) &amp; Big-Theta (tight)</span>
+        <div class="math-scroll"><math display="block">
+          <mrow><mi>f</mi><mo>=</mo><mi>Ω</mi><mo>(</mo><mi>g</mi><mo>)</mo></mrow>
+          <mtext>:&nbsp;</mtext>
+          <mrow><mo>∃</mo><mi>c</mi><mo>&gt;</mo><mn>0</mn></mrow><mo>,</mo><mspace width="3px"/>
+          <mrow><mn>0</mn><mo>≤</mo><mi>c</mi><mo>·</mo><mi>g</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>≤</mo><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow>
+          <mtext>&nbsp;eventually.</mtext>
+        </math></div>
+        <div class="math-scroll"><math display="block">
+          <mrow><mi>f</mi><mo>=</mo><mi>Θ</mi><mo>(</mo><mi>g</mi><mo>)</mo></mrow>
+          <mtext>:&nbsp;</mtext>
+          <mrow><mo>∃</mo><msub><mi>c</mi><mn>1</mn></msub><mo>,</mo><msub><mi>c</mi><mn>2</mn></msub><mo>&gt;</mo><mn>0</mn></mrow><mo>,</mo><mspace width="3px"/>
+          <mrow><msub><mi>c</mi><mn>1</mn></msub><mo>·</mo><mi>g</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>≤</mo><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>≤</mo><msub><mi>c</mi><mn>2</mn></msub><mo>·</mo><mi>g</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow>
+          <mtext>&nbsp;eventually.</mtext>
+        </math></div>
+      </div>
+      <div class="prose">
+        <p>So <math><mrow><mi>Θ</mi><mo>(</mo><mi>g</mi><mo>)</mo><mo>=</mo><mi>O</mi><mo>(</mo><mi>g</mi><mo>)</mo><mo>∩</mo><mi>Ω</mi><mo>(</mo><mi>g</mi><mo>)</mo></mrow></math>: <em>f</em> is trapped between two constant multiples of <em>g</em>. <math><mi>Θ</mi></math> is the honest answer to "what is the growth rate?" — it commits to a shape from both sides. There are strict cousins too: <strong>little-o</strong> (<math><mrow><mi>f</mi><mo>=</mo><mi>o</mi><mo>(</mo><mi>g</mi><mo>)</mo></mrow></math>, "<em>f</em> is dominated by <em>g</em> for <em>every</em> constant," e.g. <math><mrow><mi>n</mi><mo>=</mo><mi>o</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></mrow></math>) and <strong>little-ω</strong>, its mirror. Most of the time, reach for <math><mi>Θ</mi></math> and say exactly what you mean.</p>
+      </div>
+
+      <figure class="fig reveal">
+        <svg viewBox="0 0 720 430" role="img" aria-labelledby="thetaT thetaD">
+          <title id="thetaT">The Theta sandwich</title>
+          <desc id="thetaD">A wiggling curve f(n) is shown trapped between two straight lines c1·g(n) and c2·g(n) for all n past a marked threshold n-zero; before the threshold f lies outside the band.</desc>
+          <!-- axes -->
+          <line class="dg-axis" x1="70" y1="40" x2="70" y2="380" stroke-width="2"/>
+          <line class="dg-axis" x1="70" y1="380" x2="700" y2="380" stroke-width="2"/>
+          <polygon class="dg-fill-ink" points="70,32 66,44 74,44"/>
+          <polygon class="dg-fill-ink" points="708,380 696,376 696,384"/>
+          <text class="dg-axislabel" x="78" y="28">operations</text>
+          <text class="dg-axislabel" x="600" y="402">input size n →</text>
+          <!-- band wedge between c1 g and c2 g -->
+          <polygon class="dg-fill-yellow" points="70,380 690,108 690,278" opacity="0.32"/>
+          <!-- upper line c2 g -->
+          <line class="dg-blue" x1="70" y1="380" x2="690" y2="108" stroke-width="2.5"/>
+          <!-- lower line c1 g -->
+          <line class="dg-blue" x1="70" y1="380" x2="690" y2="278" stroke-width="2.5" stroke-dasharray="2 0"/>
+          <!-- f(n) wiggling polyline -->
+          <polyline class="dg-red" stroke-width="3" points="70,332.4 132,325.6 194,315.4 256,308.6 318,291.6 380,267.8 442,257.6 504,220.2 566,203.2 628,176 690,155.6"/>
+          <!-- n0 marker -->
+          <line class="dg-faint" x1="256" y1="40" x2="256" y2="380" stroke-width="1.5" stroke-dasharray="5 5"/>
+          <circle class="dg-fill-red" cx="256" cy="308.6" r="5"/>
+          <text class="dg-tick" x="244" y="398">n₀</text>
+          <!-- labels -->
+          <text class="dg-label dg-fill-blue" x="600" y="98" fill="var(--bau-blue)">c₂·g(n)</text>
+          <text class="dg-label dg-fill-blue" x="600" y="270" fill="var(--bau-blue)">c₁·g(n)</text>
+          <text class="dg-label dg-fill-red" x="600" y="150" fill="var(--bau-red-deep)">f(n)</text>
+          <text class="dg-label" x="300" y="60">f enters the band at n₀ and never leaves →</text>
+        </svg>
+        <figcaption><b>Θ drawn literally.</b> The yellow wedge is "every function that is <math><mi>Θ</mi><mo>(</mo><mi>g</mi><mo>)</mo></math>." For small <em>n</em>, <math><mi>f</mi></math> (red) may roam outside — the definition forgives everything before <math><msub><mi>n</mi><mn>0</mn></msub></math>. Past that threshold it is pinned between <math><msub><mi>c</mi><mn>1</mn></msub><mi>g</mi></math> and <math><msub><mi>c</mi><mn>2</mn></msub><mi>g</mi></math>. <math><mi>O</mi></math> is just the upper edge; <math><mi>Ω</mi></math> the lower.</figcaption>
+      </figure>
+
+      <h3>The growth race: a hierarchy worth memorizing</h3>
+      <div class="prose"><p>A handful of growth classes account for nearly every algorithm you will meet. Ranked from blessing to curse:</p></div>
+
+      <figure class="fig reveal">
+        <svg viewBox="0 0 720 470" role="img" aria-labelledby="raceT raceD">
+          <title id="raceT">The order-of-growth race</title>
+          <desc id="raceD">Five curves on shared axes — log n, n, n log n, n squared, and two-to-the-n — showing how dramatically faster the higher-order functions climb as input size grows; two-to-the-n overtakes n squared at n equals four and leaves the chart, while log n hugs the floor.</desc>
+          <!-- grid -->
+          <g class="dg-faint" stroke-width="1">
+            <line x1="70" y1="340" x2="690" y2="340"/><line x1="70" y1="280" x2="690" y2="280"/>
+            <line x1="70" y1="220" x2="690" y2="220"/><line x1="70" y1="160" x2="690" y2="160"/>
+            <line x1="70" y1="100" x2="690" y2="100"/>
+          </g>
+          <!-- axes -->
+          <line class="dg-axis" x1="70" y1="40" x2="70" y2="400" stroke-width="2"/>
+          <line class="dg-axis" x1="70" y1="400" x2="700" y2="400" stroke-width="2"/>
+          <polygon class="dg-fill-ink" points="70,32 66,44 74,44"/>
+          <polygon class="dg-fill-ink" points="708,400 696,396 696,404"/>
+          <text class="dg-axislabel" x="78" y="28">operations →</text>
+          <text class="dg-axislabel" x="560" y="424">input size n →</text>
+          <!-- 2^n (red) clipped at top -->
+          <polyline class="dg-red" stroke-width="3" points="132,392.8 194,385.6 256,371.2 318,342.4 380,284.8 442,169.6 482,40"/>
+          <!-- n^2 (blue) -->
+          <polyline class="dg-blue" stroke-width="3" points="70,400 132,396.4 194,385.6 256,367.6 318,342.4 380,310 442,270.4 504,223.6 566,169.6 628,108.4 690,40"/>
+          <!-- n log n (ink) -->
+          <polyline class="dg-stroke" stroke-width="2.5" points="132,400 194,392.8 256,382.9 318,371.2 380,358.2 442,344.2 504,329.3 566,313.6 628,297.3 690,280.4"/>
+          <!-- n (ink dashed) -->
+          <polyline class="dg-stroke" stroke-width="2" stroke-dasharray="6 5" points="70,400 690,364"/>
+          <!-- log n (ink dotted) -->
+          <polyline class="dg-stroke" stroke-width="2" stroke-dasharray="2 5" points="132,400 194,396.4 318,392.8 566,389.2 690,388.05"/>
+          <!-- crossover marker at n=4 -->
+          <circle class="dg-fill-yellow" cx="318" cy="342.4" r="6" stroke="var(--bau-ink)" stroke-width="1.5"/>
+          <text class="dg-tick" x="300" y="332">n=4</text>
+          <!-- labels -->
+          <text class="dg-label dg-fill-red" x="470" y="58" fill="var(--bau-red-deep)">2ⁿ</text>
+          <text class="dg-label dg-fill-blue" x="638" y="34" fill="var(--bau-blue)">n²</text>
+          <text class="dg-label" x="636" y="276">n log n</text>
+          <text class="dg-label" x="636" y="360">n</text>
+          <text class="dg-label" x="636" y="384">log n</text>
+          <text class="dg-tick" x="200" y="358">2ⁿ overtakes n² at n=4, then erupts</text>
+        </svg>
+        <figcaption><b>Shape is destiny.</b> <math><msup><mn>2</mn><mi>n</mi></msup></math> (red) starts below <math><msup><mi>n</mi><mn>2</mn></msup></math> (blue) but crosses at <math><mi>n</mi><mo>=</mo><mn>4</mn></math> and shoots off the chart almost immediately — that is the wall between "feasible" and "never." Meanwhile <math><mi>log</mi><mi>n</mi></math> hugs the floor so tightly it is nearly the axis. This single picture is why a logarithmic algorithm searches 8 billion records in 33 steps.</figcaption>
+      </figure>
+
+      <div class="tblwrap reveal">
+        <table>
+          <caption>Operation counts by growth class — at one billion (10⁹) operations per second</caption>
+          <thead>
+            <tr><th scope="col">Class</th><th scope="col">Name</th><th scope="col">n = 10</th><th scope="col">n = 1,000</th><th scope="col">n = 1,000,000</th><th scope="col">Verdict</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row"><math><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></math></th><td>constant</td><td>1</td><td>1</td><td>1</td><td><span class="vg good">instant</span></td></tr>
+            <tr><th scope="row"><math><mi>O</mi><mo>(</mo><mi>log</mi><mi>n</mi><mo>)</mo></math></th><td>logarithmic</td><td>3</td><td>10</td><td>20</td><td><span class="vg good">instant</span></td></tr>
+            <tr><th scope="row"><math><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></math></th><td>linear</td><td>10</td><td>1,000</td><td>10⁶ · ~1 ms</td><td><span class="vg good">scales</span></td></tr>
+            <tr><th scope="row"><math><mi>O</mi><mo>(</mo><mi>n</mi><mi>log</mi><mi>n</mi><mo>)</mo></math></th><td>linearithmic</td><td>33</td><td>~10⁴</td><td>~2×10⁷ · ~20 ms</td><td><span class="vg good">scales</span></td></tr>
+            <tr><th scope="row"><math><mi>O</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></math></th><td>quadratic</td><td>100</td><td>10⁶</td><td>10¹² · ~17 min</td><td><span class="vg mid">strains</span></td></tr>
+            <tr><th scope="row"><math><mi>O</mi><mo>(</mo><msup><mi>n</mi><mn>3</mn></msup><mo>)</mo></math></th><td>cubic</td><td>1,000</td><td>10⁹ · ~1 s</td><td>10¹⁸ · ~31 yr</td><td><span class="vg warn">sluggish</span></td></tr>
+            <tr><th scope="row"><math><mi>O</mi><mo>(</mo><msup><mn>2</mn><mi>n</mi></msup><mo>)</mo></math></th><td>exponential</td><td>1,024</td><td>10³⁰¹ · ✦</td><td>beyond physics</td><td><span class="vg warn">intractable</span></td></tr>
+            <tr><th scope="row"><math><mi>O</mi><mo>(</mo><mi>n</mi><mo>!</mo><mo>)</mo></math></th><td>factorial</td><td>3.6×10⁶</td><td>✦</td><td>✦</td><td><span class="vg warn">hopeless</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prose"><p style="font-size:14px;color:var(--on-surface-variant)">✦ = a number so large that the unit (seconds, years, atoms) is irrelevant. For <math><msup><mn>2</mn><mi>n</mi></msup></math> at <math><mi>n</mi><mo>=</mo><mn>1000</mn></math>, the count has ~301 digits; the universe is ~10¹⁷ seconds old.</p></div>
+
+      <div class="pull reveal">
+        <blockquote>We can estimate how work grows before running the program. That estimate helps us choose which computations are feasible.</blockquote>
+      </div>
+
+      <h3>The two axes — and why people conflate them</h3>
+      <div class="prose">
+        <p>Here is the single most common confusion in this entire subject, and the reason I draw it twice. There are <strong>two independent questions</strong> hiding inside "what is the running time?":</p>
+        <ol>
+          <li><strong>Which input?</strong> — the <em class="term">case</em>. For a fixed size <math><mi>n</mi></math>, different inputs cost different amounts. <em>Worst-case</em> <math><mrow><msub><mi>T</mi><mtext>worst</mtext></msub><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><munder><mi>max</mi><mrow><mo>|</mo><mi>x</mi><mo>|</mo><mo>=</mo><mi>n</mi></mrow></munder><mi>cost</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow></math> is the guarantee — the promise that holds no matter what. <em>Best-case</em> is the minimum. <em>Average-case</em> is the expectation over a stated input distribution — and "stated" is load-bearing: there is no average without a distribution.</li>
+          <li><strong>Which bound?</strong> — the <em class="term">notation</em>. Once you have fixed a case, its cost is a function of <math><mi>n</mi></math>, and you can put a ceiling (<math><mi>O</mi></math>), a floor (<math><mi>Ω</mi></math>), or a tight fit (<math><mi>Θ</mi></math>) on <em>that</em> function.</li>
+        </ol>
+        <p>These axes are perpendicular. "The worst case is <math><mi>O</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></math>" and "the best case is <math><mi>Θ</mi><mo>(</mo><mi>n</mi><mo>)</mo></math>" are both well-formed and can both be true of one algorithm. The category error — and you will hear it constantly — is to say "<math><mi>O</mi></math> means worst case." It does not. <math><mi>O</mi></math> is a bound; it can bound any case.</p>
+      </div>
+
+      <figure class="fig reveal">
+        <svg viewBox="0 0 720 420" role="img" aria-labelledby="axesT axesD">
+          <title id="axesT">The two independent axes of running-time analysis</title>
+          <desc id="axesD">A horizontal axis labels which input — best, average, worst — using a blue circle, yellow triangle and red square; a vertical axis labels which bound — Omega floor, Theta tight, O ceiling. A grid of cells is filled with insertion sort's bounds, showing the two questions are independent.</desc>
+          <!-- vertical axis: which bound -->
+          <line class="dg-axis" x1="150" y1="40" x2="150" y2="330" stroke-width="2"/>
+          <polygon class="dg-fill-ink" points="150,32 146,44 154,44"/>
+          <text class="dg-axislabel" x="20" y="30">which bound ↑</text>
+          <text class="dg-label" x="96" y="96">O ceiling</text>
+          <text class="dg-label" x="96" y="190">Θ tight</text>
+          <text class="dg-label" x="96" y="284">Ω floor</text>
+          <!-- horizontal axis: which input -->
+          <line class="dg-axis" x1="150" y1="330" x2="690" y2="330" stroke-width="2"/>
+          <polygon class="dg-fill-ink" points="698,330 686,326 686,334"/>
+          <text class="dg-axislabel" x="430" y="408">which input →</text>
+          <!-- column headers with bauhaus shapes -->
+          <circle class="dg-fill-blue" cx="270" cy="360" r="11"/><text class="dg-label" x="245" y="392">best</text>
+          <polygon class="dg-fill-yellow" points="420,349 432,371 408,371"/><text class="dg-label" x="392" y="392">average</text>
+          <rect class="dg-fill-red" x="560" y="349" width="22" height="22"/><text class="dg-label" x="552" y="392">worst</text>
+          <!-- grid cells (insertion sort) -->
+          <g class="dg-faint" stroke-width="1.5">
+            <rect x="210" y="68" width="120" height="56" fill="var(--surface-2)"/>
+            <rect x="360" y="68" width="120" height="56" fill="var(--surface-2)"/>
+            <rect x="510" y="68" width="120" height="56" fill="var(--surface-2)"/>
+            <rect x="210" y="162" width="120" height="56" fill="var(--surface-2)"/>
+            <rect x="360" y="162" width="120" height="56" fill="var(--surface-2)"/>
+            <rect x="510" y="162" width="120" height="56" fill="var(--surface-2)"/>
+            <rect x="210" y="256" width="120" height="56" fill="var(--surface-2)"/>
+            <rect x="360" y="256" width="120" height="56" fill="var(--surface-2)"/>
+            <rect x="510" y="256" width="120" height="56" fill="var(--surface-2)"/>
+          </g>
+          <g class="dg-strong" text-anchor="middle">
+            <text x="270" y="102">O(n)</text><text x="420" y="102">O(n²)</text><text x="570" y="102">O(n²)</text>
+            <text x="270" y="196">Θ(n)</text><text x="420" y="196">Θ(n²)</text><text x="570" y="196">Θ(n²)</text>
+            <text x="270" y="290">Ω(n)</text><text x="420" y="290">Ω(n²)</text><text x="570" y="290">Ω(n²)</text>
+          </g>
+          <text class="dg-tick" x="210" y="58">Insertion sort — every cell is a legitimate, different statement</text>
+        </svg>
+        <figcaption><b>Two questions, not one.</b> For insertion sort, the <em>best</em> case (already-sorted input) is <math><mi>Θ</mi><mo>(</mo><mi>n</mi><mo>)</mo></math> while the <em>worst</em> (reversed input) is <math><mi>Θ</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></math>. Each column is a different input regime; each row is a different kind of bound on it. Picking a notation does <em>not</em> pick a case — that is the error to unlearn now.</figcaption>
+      </figure>
+
+      <h3>What "efficient" formally means</h3>
+      <div class="prose">
+        <p>We have ranked growth classes by feel. Theory draws a hard line: an algorithm is <em class="term">efficient</em> if its worst-case running time is <math><mi>O</mi><mo>(</mo><msup><mi>n</mi><mi>k</mi></msup><mo>)</mo></math> for some constant <math><mi>k</mi></math> — <strong>polynomial time</strong>. The problems solvable this way form the class <math><mi>P</mi></math>. Everything that needs super-polynomial time — <math><msup><mn>2</mn><mi>n</mi></msup></math>, <math><mi>n</mi><mo>!</mo></math> — we call (so far as anyone can prove) <em class="term">intractable</em>.</p>
+        <p>Why draw the line at polynomial, and not, say, at <math><msup><mi>n</mi><mn>2</mn></msup></math>? Two reasons, both about <em>robustness</em>. First, polynomials are <strong>closed under composition and addition</strong>: a polynomial-time routine calling another polynomial-time routine a polynomial number of times is still polynomial. The class does not leak. Second — and this is the deep one — the boundary is <strong>model-independent</strong>. Whether you compute on a RAM, a Turing machine, or any other reasonable sequential model, the set of polynomial-time-solvable problems is the same. (Quantum machines are the live exception — the boundary of the classical model, which we will reach at the very end of this course.) Polynomial is the largest class that stays invariant under the things we are choosing to ignore. That is why it is <em>the</em> definition of feasible, and it is a profound statement about the limits of mechanization, not a mere convenience.</p>
+      </div>
+      <div class="note warn">
+        <svg class="ic" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 2l9 17H2z" fill="none" stroke="var(--bau-red)" stroke-width="2" stroke-linejoin="round"/><path d="M11 8v5M11 16v.5" stroke="var(--bau-red)" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <p><span class="lbl">Polynomial ≠ practical</span> The definition is necessary, not sufficient. An <math><mi>O</mi><mo>(</mo><msup><mi>n</mi><mn>100</mn></msup><mo>)</mo></math> algorithm, or one with a constant of <math><msup><mn>10</mn><mn>40</mn></msup></math> hiding inside the <math><mi>O</mi></math>, is "efficient" by the theory and worthless in the world. These are called <em class="term">galactic algorithms</em>. Polynomial is the floor of the conversation, never the end of it.</p>
+      </div>
+
+      <h3>The derivation toolkit — turning loops into closed forms</h3>
+      <div class="prose"><p>To get <math><mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo></math> from code, translate each loop into a sum and collapse the sum. Four identities do almost all the work:</p></div>
+      <div class="mathline">
+        <span class="mlabel">The four series that run the course</span>
+        <div class="math-scroll"><math display="block"><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mi>i</mi><mo>=</mo><mfrac><mrow><mi>n</mi><mo>(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></mfrac><mo>=</mo><mi>Θ</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></mrow><mspace width="18px"/><mtext>(arithmetic)</mtext></math></div>
+        <div class="math-scroll"><math display="block"><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mi>k</mi></munderover><msup><mn>2</mn><mi>i</mi></msup><mo>=</mo><msup><mn>2</mn><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msup><mo>−</mo><mn>1</mn><mo>=</mo><mi>Θ</mi><mo>(</mo><msup><mn>2</mn><mi>k</mi></msup><mo>)</mo></mrow><mspace width="18px"/><mtext>(geometric)</mtext></math></div>
+        <div class="math-scroll"><math display="block"><mrow><msub><mi>H</mi><mi>n</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mfrac><mn>1</mn><mi>i</mi></mfrac><mo>=</mo><mi>Θ</mi><mo>(</mo><mi>log</mi><mi>n</mi><mo>)</mo></mrow><mspace width="18px"/><mtext>(harmonic)</mtext></math></div>
+        <div class="math-scroll"><math display="block"><mrow><mtext>halving</mtext><mo>:</mo><mspace width="4px"/><mi>n</mi><mo>→</mo><mfrac><mi>n</mi><mn>2</mn></mfrac><mo>→</mo><mfrac><mi>n</mi><mn>4</mn></mfrac><mo>→</mo><mo>⋯</mo><mo>→</mo><mn>1</mn><mspace width="6px"/><mtext>takes</mtext><mspace width="4px"/><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mspace width="4px"/><mtext>steps</mtext></mrow></math></div>
+      </div>
+      <div class="prose">
+        <p>A note on the last two: because <math><mrow><msub><mi>log</mi><mi>a</mi></msub><mi>n</mi><mo>=</mo><msub><mi>log</mi><mi>b</mi></msub><mi>n</mi><mo>/</mo><msub><mi>log</mi><mi>b</mi></msub><mi>a</mi></mrow></math>, changing the logarithm's base only multiplies by a constant — so <math><mi>Θ</mi><mo>(</mo><mi>log</mi><mi>n</mi><mo>)</mo></math> needs no base. That is also why "halve the problem each step" and "double a counter until it passes <math><mi>n</mi></math>" both cost <math><mi>Θ</mi><mo>(</mo><mi>log</mi><mi>n</mi><mo>)</mo></math>. Armed with these, we can analyze real code — which is the next section.</p>
+      </div>
+    </section>
+
+    <!-- 05 WORKED EXAMPLES -->
+    <section id="worked">
+      <div class="secnum"><span class="tag">05 · Worked examples</span><span class="rule"></span></div>
+      <h2>Two derivations, every step shown</h2>
+
+      <h3>Example 1 — "Does a pair sum to the target?" — counting <math><mi>Θ</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></math>, then beating it</h3>
+      <div class="prose"><p>The task: given an array <code>A</code> of <math><mi>n</mi></math> numbers and a target <code>t</code>, decide whether some two distinct elements sum to <code>t</code>. The first idea is to try every pair.</p></div>
+
+      <figure class="code">
+        <figcaption><span>hasPair — brute force</span><span class="cst">per-line cost annotated</span></figcaption>
+<pre><span class="tok-kw">def</span> <span class="tok-fn">hasPair</span>(A, t):              <span class="cost"># n = len(A)</span>
+  <span class="tok-kw">for</span> i <span class="tok-kw">in</span> range(n):           <span class="cost"># outer: i = 0 … n−1</span>
+    <span class="tok-kw">for</span> j <span class="tok-kw">in</span> range(i<span class="tok-op">+</span><span class="tok-num">1</span>, n):     <span class="cost"># inner runs (n−1−i) times</span>
+      <span class="tok-kw">if</span> A[i] <span class="tok-op">+</span> A[j] <span class="tok-op">==</span> t:     <span class="cost"># 1 unit each iteration</span>
+        <span class="tok-kw">return</span> <span class="tok-num">True</span>           <span class="cost"># at most once</span>
+  <span class="tok-kw">return</span> <span class="tok-num">False</span>               <span class="cost"># 1 unit</span></pre>
+      </figure>
+
+      <div class="prose">
+        <p><strong>Count the dominant work</strong> — the inner comparison. For a fixed <math><mi>i</mi></math>, the inner loop runs <math><mrow><mo>(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>i</mi><mo>)</mo></mrow></math> times. Sum over <math><mi>i</mi></math>:</p>
+      </div>
+      <div class="mathline">
+        <span class="mlabel">Total inner comparisons (worst case — no early return)</span>
+        <div class="math-scroll"><math display="block"><mrow><mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></munderover><mo>(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>i</mi><mo>)</mo><mo>=</mo><mo>(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>+</mo><mo>(</mo><mi>n</mi><mo>−</mo><mn>2</mn><mo>)</mo><mo>+</mo><mo>⋯</mo><mo>+</mo><mn>1</mn><mo>+</mo><mn>0</mn><mo>=</mo><mfrac><mrow><mi>n</mi><mo>(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></mfrac><mo>=</mo><mi>Θ</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></mrow></math></div>
+      </div>
+      <div class="prose">
+        <p>The arithmetic series collapses to <math><mfrac><mrow><mi>n</mi><mo>(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></mfrac></math>, which is <math><mi>Θ</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></math>: the constant <math><mtext>½</mtext></math> and the loop overhead vanish into the notation. Now mind the <strong>two axes</strong>:</p>
+        <ul>
+          <li><strong>Worst case</strong> (no pair, or the only pair is the last one checked): all <math><mfrac><mrow><mi>n</mi><mo>(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></mfrac></math> comparisons run → <math><mi>Θ</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></math>.</li>
+          <li><strong>Best case</strong> (<code>A[0]+A[1]==t</code>): one comparison, then <code>return</code> → <math><mi>Θ</mi><mo>(</mo><mn>1</mn><mo>)</mo></math>.</li>
+          <li><strong>Space</strong>: a handful of variables → <math><mi>Θ</mi><mo>(</mo><mn>1</mn><mo>)</mo></math> extra memory.</li>
+        </ul>
+        <p><strong>Can we do better?</strong> Yes — by spending memory to buy time. Walk once through <code>A</code>; for each <code>x</code>, ask a hash set whether <code>t − x</code> was already seen.</p>
+      </div>
+
+      <figure class="code">
+        <figcaption><span>hasPair — hashed, one pass</span><span class="cst">time ↓ &nbsp; space ↑</span></figcaption>
+<pre><span class="tok-kw">def</span> <span class="tok-fn">hasPairFast</span>(A, t):          <span class="cost"># n = len(A)</span>
+  seen <span class="tok-op">=</span> set()                <span class="cost"># empty hash set</span>
+  <span class="tok-kw">for</span> x <span class="tok-kw">in</span> A:                 <span class="cost"># n iterations</span>
+    <span class="tok-kw">if</span> (t <span class="tok-op">-</span> x) <span class="tok-kw">in</span> seen:       <span class="cost"># Θ(1) expected</span>
+      <span class="tok-kw">return</span> <span class="tok-num">True</span>
+    seen.add(x)               <span class="cost"># Θ(1) expected</span>
+  <span class="tok-kw">return</span> <span class="tok-num">False</span></pre>
+      </figure>
+      <div class="prose">
+        <p>One pass of <math><mi>n</mi></math> iterations, each doing <math><mi>Θ</mi><mo>(</mo><mn>1</mn><mo>)</mo></math> expected hash work → <math><mi>Θ</mi><mo>(</mo><mi>n</mi><mo>)</mo></math> expected time, at the price of <math><mi>Θ</mi><mo>(</mo><mi>n</mi><mo>)</mo></math> space for the set. This is the recurring bargain of the entire course — the <em class="term">time–space trade-off</em> — and a preview of how a <em>data structure</em> (the hash set, Lecture 08) collapses a quadratic into a linear. Notice too that "expected" appears because hashing's <math><mi>Θ</mi><mo>(</mo><mn>1</mn><mo>)</mo></math> is an average over hash outcomes, not a worst-case guarantee. The axes never stop mattering.</p>
+      </div>
+
+      <h3>Example 2 — Binary search — deriving <math><mi>Θ</mi><mo>(</mo><mi>log</mi><mi>n</mi><mo>)</mo></math> from halving</h3>
+      <div class="prose"><p>Back to the hook. The array is <strong>sorted</strong>. To find <code>key</code>, probe the middle; the comparison throws away half the array; repeat on the survivor.</p></div>
+      <figure class="code">
+        <figcaption><span>binarySearch — sorted A</span><span class="cst">loop count = the unknown</span></figcaption>
+<pre><span class="tok-kw">def</span> <span class="tok-fn">binarySearch</span>(A, key):       <span class="cost"># A sorted ascending, n elements</span>
+  lo, hi <span class="tok-op">=</span> <span class="tok-num">0</span>, n <span class="tok-op">-</span> <span class="tok-num">1</span>
+  <span class="tok-kw">while</span> lo <span class="tok-op">&lt;=</span> hi:            <span class="cost"># how many times can this run?</span>
+    mid <span class="tok-op">=</span> (lo <span class="tok-op">+</span> hi) <span class="tok-op">//</span> <span class="tok-num">2</span>     <span class="cost"># Θ(1)</span>
+    <span class="tok-kw">if</span> A[mid] <span class="tok-op">==</span> key: <span class="tok-kw">return</span> mid
+    <span class="tok-kw">elif</span> A[mid] <span class="tok-op">&lt;</span> key: lo <span class="tok-op">=</span> mid <span class="tok-op">+</span> <span class="tok-num">1</span>   <span class="cost"># keep right half</span>
+    <span class="tok-kw">else</span>: hi <span class="tok-op">=</span> mid <span class="tok-op">-</span> <span class="tok-num">1</span>          <span class="cost"># keep left half</span>
+  <span class="tok-kw">return</span> <span class="tok-op">-</span><span class="tok-num">1</span>                  <span class="cost"># absent</span></pre>
+      </figure>
+      <div class="prose">
+        <p>Each iteration is <math><mi>Θ</mi><mo>(</mo><mn>1</mn><mo>)</mo></math>, so the whole cost is <math><mi>Θ</mi></math>(number of iterations). Let the window size be <math><mi>m</mi></math>; the body replaces <math><mi>m</mi></math> with at most <math><mo>⌊</mo><mi>m</mi><mo>/</mo><mn>2</mn><mo>⌋</mo></math>. Starting at <math><mi>m</mi><mo>=</mo><mi>n</mi></math>, after <math><mi>k</mi></math> iterations the window is at most <math><mi>n</mi><mo>/</mo><msup><mn>2</mn><mi>k</mi></msup></math>. The loop ends when the window falls below 1:</p>
+      </div>
+      <div class="mathline">
+        <span class="mlabel">Solving for the iteration count</span>
+        <div class="math-scroll"><math display="block"><mrow><mfrac><mi>n</mi><msup><mn>2</mn><mi>k</mi></msup></mfrac><mo>&lt;</mo><mn>1</mn><mspace width="14px"/><mo>⟺</mo><mspace width="14px"/><msup><mn>2</mn><mi>k</mi></msup><mo>&gt;</mo><mi>n</mi><mspace width="14px"/><mo>⟺</mo><mspace width="14px"/><mi>k</mi><mo>&gt;</mo><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi></mrow></math></div>
+      </div>
+      <div class="prose"><p>So the loop runs at most <math><mrow><mo>⌊</mo><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo>⌋</mo><mo>+</mo><mn>1</mn></mrow></math> times: <strong>worst case <math><mi>Θ</mi><mo>(</mo><mi>log</mi><mi>n</mi><mo>)</mo></math></strong> (key absent), <strong>best case <math><mi>Θ</mi><mo>(</mo><mn>1</mn><mo>)</mo></math></strong> (key sits at the first <code>mid</code>). Watch the halving evaporate a galaxy of data:</p></div>
+
+      <figure class="fig reveal">
+        <svg viewBox="0 0 720 300" role="img" aria-labelledby="halveT halveD">
+          <title id="halveT">Binary search halving the window</title>
+          <desc id="halveD">Four stacked rows depict a sixteen-cell array; each row highlights the active window and a circular probe at its midpoint. The window shrinks sixteen, eight, four, two, one across the rows, reaching a single cell in four probes.</desc>
+          <g font-family="var(--font-mono)">
+            <!-- row builder: 16 cells, width 36 each from x=150 -->
+            <!-- Step 1: full 0..15, mid at 7 -->
+            <text class="dg-tick" x="20" y="48">step 1 · 16</text>
+            <g>
+              <rect x="150" y="30" width="540" height="30" fill="var(--bau-yellow)" opacity="0.28" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <circle class="dg-fill-blue" cx="411" cy="45" r="11"/><text x="411" y="49" fill="#fff" text-anchor="middle" font-size="11">mid</text>
+            </g>
+            <!-- Step 2: keep left 0..6, mid at 3 -->
+            <text class="dg-tick" x="20" y="108">step 2 · 8</text>
+            <g>
+              <rect x="150" y="90" width="540" height="30" fill="none" stroke="var(--outline-variant)" stroke-width="1.5"/>
+              <rect x="150" y="90" width="252" height="30" fill="var(--bau-yellow)" opacity="0.28" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <circle class="dg-fill-blue" cx="276" cy="105" r="11"/><text x="276" y="109" fill="#fff" text-anchor="middle" font-size="11">mid</text>
+            </g>
+            <!-- Step 3: keep 4..6 -> window 4, mid -->
+            <text class="dg-tick" x="20" y="168">step 3 · 4</text>
+            <g>
+              <rect x="150" y="150" width="540" height="30" fill="none" stroke="var(--outline-variant)" stroke-width="1.5"/>
+              <rect x="276" y="150" width="126" height="30" fill="var(--bau-yellow)" opacity="0.28" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <circle class="dg-fill-blue" cx="339" cy="165" r="11"/><text x="339" y="169" fill="#fff" text-anchor="middle" font-size="11">mid</text>
+            </g>
+            <!-- Step 4: single cell -->
+            <text class="dg-tick" x="20" y="228">step 4 · 1</text>
+            <g>
+              <rect x="150" y="210" width="540" height="30" fill="none" stroke="var(--outline-variant)" stroke-width="1.5"/>
+              <rect x="339" y="210" width="63" height="30" fill="var(--bau-red)" opacity="0.30" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <circle class="dg-fill-red" cx="370" cy="225" r="11"/><text x="370" y="229" fill="#fff" text-anchor="middle" font-size="11">hit</text>
+            </g>
+          </g>
+          <text class="dg-strong" x="150" y="278">16 → 8 → 4 → 2 → 1&nbsp;&nbsp;&nbsp;⌈log₂16⌉ = 4 probes find any element among 16</text>
+        </svg>
+        <figcaption><b>Logarithm, made visible.</b> Each probe deletes half the candidates, so the number of probes is the number of times you can halve <math><mi>n</mi></math> before reaching 1 — by definition, <math><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi></math>. Doubling the data from 8 to 16 billion adds a single probe. This is why logarithmic algorithms feel like cheating.</figcaption>
+      </figure>
+
+      <div class="tblwrap reveal">
+        <table>
+          <caption>Binary search — probes vs. directory size (worst case)</caption>
+          <thead><tr><th scope="col">Records n</th><th scope="col">Linear scan (≈ n)</th><th scope="col">Binary search (≈ log₂ n)</th><th scope="col">Speed-up</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">1,000</th><td>1,000</td><td>10</td><td>100×</td></tr>
+            <tr><th scope="row">1,000,000</th><td>1,000,000</td><td>20</td><td>50,000×</td></tr>
+            <tr><th scope="row">8,000,000,000</th><td>8,000,000,000</td><td>33</td><td>~240,000,000×</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 06 FAILURE MODES -->
+    <section id="failure">
+      <div class="secnum"><span class="tag">06 · Where it breaks</span><span class="rule"></span></div>
+      <h2>Failure modes &amp; the lies of the model</h2>
+      <div class="prose"><p>Formal elegance can blind you to where the formalism stops applying — that is the thing I most often have to remind myself of. Here are the traps, in the order they bite.</p></div>
+      <ol class="fail">
+        <li>
+          <h4>Treating "Big-O" as a synonym for "worst case"</h4>
+          <p>The deepest and most common error. <math><mi>O</mi></math>, <math><mi>Θ</mi></math>, <math><mi>Ω</mi></math> are <em>bounds</em>; best / average / worst are <em>cases</em>. You can put an <math><mi>O</mi></math> on the best case and an <math><mi>Ω</mi></math> on the worst. When someone says "the complexity is <math><mi>O</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></math>," always ask: <em>of which case?</em></p>
+        </li>
+        <li>
+          <h4>Saying <math><mi>O</mi></math> when you mean <math><mi>Θ</mi></math> — over- and under-claiming</h4>
+          <p>Every merge sort is <math><mi>O</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></math> — true and useless, because it is also <math><mi>Θ</mi><mo>(</mo><mi>n</mi><mi>log</mi><mi>n</mi><mo>)</mo></math>. An <math><mi>O</mi></math> alone never tells you the bound is <em>tight</em>. If you know the matching lower bound, say <math><mi>Θ</mi></math> and mean it; if you only have a ceiling, do not pretend it is the rate.</p>
+        </li>
+        <li>
+          <h4>Dropping constants when constants are the whole story</h4>
+          <p>Asymptotics describe the limit, not your actual <math><mi>n</mi></math>. For small inputs the constant and lower-order terms dominate — which is exactly why real sort libraries fall back to insertion sort below ~16 elements even though it is <math><mi>Θ</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></math>. And a "galactic" <math><mi>O</mi><mo>(</mo><mi>n</mi><mi>log</mi><mi>n</mi><mo>)</mo></math> with a constant of <math><msup><mn>10</mn><mn>40</mn></msup></math> loses to a quadratic on every input mankind will ever run.</p>
+        </li>
+        <li>
+          <h4>The RAM model's beautiful lie #1 — unit-cost arithmetic</h4>
+          <p>We priced <code>×</code> at one unit. For machine-word integers, fine. But multiply two <math><mi>n</mi></math>-<em>bit</em> numbers and it is <em>not</em> <math><mi>Θ</mi><mo>(</mo><mn>1</mn><mo>)</mo></math> — schoolbook multiplication is <math><mi>Θ</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></math> bit-operations (the FFT in Lecture 04 does far better). When numbers grow with the input, switch from the word model to the <em class="term">bit-cost</em> model.</p>
+        </li>
+        <li>
+          <h4>The RAM model's beautiful lie #2 — uniform memory</h4>
+          <p>"Every memory access costs 1" ignores the cache hierarchy, where an L1 hit and a DRAM miss differ by ~100×. A cache-friendly <math><mi>Θ</mi><mo>(</mo><mi>n</mi><mi>log</mi><mi>n</mi><mo>)</mo></math> algorithm can crush a pointer-chasing <math><mi>Θ</mi><mo>(</mo><mi>n</mi><mo>)</mo></math> one in wall-clock time. The RAM count is still the right <em>first</em> question — just know it is not the last.</p>
+        </li>
+        <li>
+          <h4>"Average case" with no distribution named</h4>
+          <p>Average-case is an <em>expectation</em>, and an expectation is meaningless without a probability distribution over inputs. Quicksort's celebrated <math><mi>Θ</mi><mo>(</mo><mi>n</mi><mi>log</mi><mi>n</mi><mo>)</mo></math> "average" assumes a uniform-random permutation (or random pivots). State the distribution or do not say "average."</p>
+        </li>
+        <li>
+          <h4>Adding when you should multiply (and vice-versa)</h4>
+          <p>Sequential blocks <em>add</em>: <math><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></math> then <math><mi>O</mi><mo>(</mo><mi>m</mi><mo>)</mo></math> is <math><mi>O</mi><mo>(</mo><mi>n</mi><mo>+</mo><mi>m</mi><mo>)</mo></math>. Nested loops <em>multiply</em>: <math><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></math> inside <math><mi>O</mi><mo>(</mo><mi>m</mi><mo>)</mo></math> is <math><mi>O</mi><mo>(</mo><mi>n</mi><mi>m</mi><mo>)</mo></math>. Also: <math><mrow><mi>max</mi><mo>(</mo><mi>f</mi><mo>,</mo><mi>g</mi><mo>)</mo><mo>=</mo><mi>Θ</mi><mo>(</mo><mi>f</mi><mo>+</mo><mi>g</mi><mo>)</mo></mrow></math>, so a sum's growth is just its largest term.</p>
+        </li>
+        <li>
+          <h4>The pseudo-polynomial trap — looping to a <em>value</em></h4>
+          <p>A loop <code>for k in range(N)</code> over a numeric input <math><mi>N</mi></math> runs <math><mi>N</mi></math> times — which <em>looks</em> linear but is <math><mi>Θ</mi><mo>(</mo><msup><mn>2</mn><mi>n</mi></msup><mo>)</mo></math> in the input <em>size</em> <math><mrow><mi>n</mi><mo>=</mo><mo>⌈</mo><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi><mo>⌉</mo></mrow></math>. Such "pseudo-polynomial" algorithms (trial-division primality, the textbook knapsack DP) are exponential in disguise. This is Practice Problem 4.</p>
+        </li>
+        <li>
+          <h4>Forgetting space — including the call stack</h4>
+          <p>"Fast" is half the question. A recursion <math><mi>n</mi></math> levels deep uses <math><mi>Θ</mi><mo>(</mo><mi>n</mi><mo>)</mo></math> stack memory even if it returns nothing; a naive recursive Fibonacci is <math><mi>Θ</mi><mo>(</mo><msup><mi>φ</mi><mi>n</mi></msup><mo>)</mo></math> in <em>time</em>. Always report both time and space.</p>
+        </li>
+        <li>
+          <h4>Confusing amortized with average</h4>
+          <p>They sound alike and are not. <em class="term">Average-case</em> averages over random <em>inputs</em>; <em class="term">amortized</em> averages over a <em>sequence of operations</em> on a worst-case input — a deterministic guarantee with no randomness. The doubling array's <math><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></math> amortized append (Lecture 02) holds for <em>every</em> input, not on average.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- 07 PRACTICE -->
+    <section id="practice">
+      <div class="secnum"><span class="tag">07 · Practice</span><span class="rule"></span></div>
+      <h2>Four problems — attempt before you peek</h2>
+
+      <div class="pcard reveal">
+        <p class="pno"><span class="sq"></span>Problem 1 · Name the growth class</p>
+        <h3>Tightest Θ of three loop nests</h3>
+        <p class="meta">For each fragment, give the tightest <math><mi>Θ</mi></math>-bound on how many times <code>op()</code> runs, as a function of <math><mi>n</mi></math>. Then, for fragment <strong>C</strong>, <em>prove</em> your bound by exhibiting concrete <math><mi>c</mi><mn>1</mn></math>, <math><mi>c</mi><mn>2</mn></math>, and <math><msub><mi>n</mi><mn>0</mn></msub></math>.</p>
+<pre><span class="tok-com"># A</span>                         <span class="tok-com"># B</span>                          <span class="tok-com"># C</span>
+<span class="tok-kw">for</span> i <span class="tok-kw">in</span> range(n):           i <span class="tok-op">=</span> <span class="tok-num">1</span>                        <span class="tok-kw">for</span> i <span class="tok-kw">in</span> range(n):
+  <span class="tok-kw">for</span> j <span class="tok-kw">in</span> range(i):         <span class="tok-kw">while</span> i <span class="tok-op">&lt;</span> n:                    j <span class="tok-op">=</span> <span class="tok-num">1</span>
+    op()                       i <span class="tok-op">=</span> i <span class="tok-op">*</span> <span class="tok-num">2</span>                    <span class="tok-kw">while</span> j <span class="tok-op">&lt;</span> n:
+                               op()                         j <span class="tok-op">=</span> j <span class="tok-op">*</span> <span class="tok-num">2</span>; op()</pre>
+        <div class="ex">constraints: n ≥ 1, integer · deliverable: three Θ-classes + one full proof for C</div>
+      </div>
+
+      <div class="pcard reveal">
+        <p class="pno"><span class="sq"></span>Problem 2 · The two axes on one algorithm</p>
+        <h3>Insertion sort: best, worst, average</h3>
+        <p class="meta">For <code>insertionSort</code> below, give a tight <math><mi>Θ</mi></math>-bound on the number of element-comparisons for (a) the <strong>best</strong> case, (b) the <strong>worst</strong> case, and (c) the <strong>average</strong> case over a uniformly random permutation of <math><mi>n</mi></math> distinct keys. For (a) and (b), exhibit an input of each size <math><mi>n</mi></math> that achieves the bound.</p>
+<pre><span class="tok-kw">def</span> <span class="tok-fn">insertionSort</span>(A):           <span class="cost"># n = len(A)</span>
+  <span class="tok-kw">for</span> i <span class="tok-kw">in</span> range(<span class="tok-num">1</span>, n):
+    key, j <span class="tok-op">=</span> A[i], i <span class="tok-op">-</span> <span class="tok-num">1</span>
+    <span class="tok-kw">while</span> j <span class="tok-op">&gt;=</span> <span class="tok-num">0</span> <span class="tok-kw">and</span> A[j] <span class="tok-op">&gt;</span> key:    <span class="cost"># the comparison we count</span>
+      A[j<span class="tok-op">+</span><span class="tok-num">1</span>] <span class="tok-op">=</span> A[j]; j <span class="tok-op">-=</span> <span class="tok-num">1</span>
+    A[j<span class="tok-op">+</span><span class="tok-num">1</span>] <span class="tok-op">=</span> key</pre>
+        <div class="ex">constraints: 1 ≤ n ≤ 10⁵ · deliverable: three Θ-bounds (state the distribution) + worst/best witnesses</div>
+      </div>
+
+      <div class="pcard reveal">
+        <p class="pno"><span class="sq"></span>Problem 3 · Asymptotic true-or-false</p>
+        <h3>Which of these claims are true?</h3>
+        <p class="meta">Return the subset that hold, and justify each verdict from the definitions (a one-line constant-exhibit, or a counterexample / limit argument).</p>
+<pre>(a)  <span class="tok-num">2</span><sup>n+1</sup> <span class="tok-op">=</span> O(<span class="tok-num">2</span><sup>n</sup>)
+(b)  <span class="tok-num">2</span><sup>2n</sup>  <span class="tok-op">=</span> O(<span class="tok-num">2</span><sup>n</sup>)
+(c)  log(n!) <span class="tok-op">=</span> Θ(n log n)
+(d)  n<sup>1.999</sup> <span class="tok-op">=</span> O(n<sup>2</sup> / log n)
+(e)  f(n) <span class="tok-op">=</span> O(g(n))  ⟹  g(n) <span class="tok-op">=</span> Ω(f(n))
+(f)  max(f, g) <span class="tok-op">=</span> Θ(f <span class="tok-op">+</span> g)   <span class="tok-com"># for f, g ≥ 0</span></pre>
+        <div class="ex">deliverable: the true-subset + a one-line justification per item</div>
+      </div>
+
+      <div class="pcard reveal">
+        <p class="pno"><span class="sq"></span>Problem 4 · The pseudo-polynomial trap</p>
+        <h3>Is trial-division primality "efficient"?</h3>
+        <p class="meta">The routine tests whether integer <math><mi>N</mi></math> is prime by trial-dividing up to <math><msqrt><mi>N</mi></msqrt></math>. Express its worst-case running time (a) as a function of the <strong>value</strong> <math><mi>N</mi></math>, and (b) as a function of the <strong>input size</strong> <math><mrow><mi>n</mi><mo>=</mo><mo>⌈</mo><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi><mo>⌉</mo></mrow></math> bits. Is it polynomial-time by the formal definition? Justify, and name what would have to change to make primality testing provably poly-time in <math><mi>n</mi></math>.</p>
+<pre><span class="tok-kw">def</span> <span class="tok-fn">isPrime</span>(N):                  <span class="cost"># N ≥ 2, integer</span>
+  d <span class="tok-op">=</span> <span class="tok-num">2</span>
+  <span class="tok-kw">while</span> d <span class="tok-op">*</span> d <span class="tok-op">&lt;=</span> N:             <span class="cost"># runs until d > √N</span>
+    <span class="tok-kw">if</span> N <span class="tok-op">%</span> d <span class="tok-op">==</span> <span class="tok-num">0</span>: <span class="tok-kw">return</span> <span class="tok-num">False</span>
+    d <span class="tok-op">+=</span> <span class="tok-num">1</span>
+  <span class="tok-kw">return</span> <span class="tok-num">True</span></pre>
+        <div class="ex">deliverable: T(N) and T(n), the poly-time verdict with justification, and the resolution</div>
+      </div>
+
+      <div class="note key">
+        <svg class="ic" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="none" stroke="var(--bau-blue)" stroke-width="2"/><path d="M7 11l3 3 5-6" stroke="var(--bau-blue)" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </section>
+
+    <!-- 08 RECAP -->
+    <section id="recap">
+      <div class="secnum"><span class="tag">08 · Recap &amp; next</span><span class="rule"></span></div>
+      <h2>The one thing to remember</h2>
+      <div class="band elev">
+        <p style="margin-top:0; font-size:20px; line-height:1.5"><strong>Cost is the order of growth of unit-cost operations in the RAM model — and you must state it on two independent axes: which <em class="term">case</em> (best / average / worst) and which <em class="term">bound</em> (<math><mi>O</mi></math> ceiling / <math><mi>Θ</mi></math> tight / <math><mi>Ω</mi></math> floor).</em></strong></p>
+        <p style="margin-bottom:0">Everything downstream — every data structure, every algorithm in this course — is an attempt to move a problem to a better growth class, or to prove that no better class exists. You now own the language in which all of those claims are made. Keep the growth-race picture in your head; it is the map of the whole territory.</p>
+      </div>
+
+      <a class="nextcard" href="dsa-01-linear-layouts-and-access-disciplines.html">
+        <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true"><rect x="3" y="3" width="40" height="40" rx="6" fill="none" stroke="var(--bau-yellow)" stroke-width="2"/><circle cx="16" cy="23" r="6" fill="var(--bau-blue)"/><rect x="26" y="17" width="12" height="12" fill="var(--bau-red)"/></svg>
+        <span>
+          <span class="nk">Next · Lecture 01</span>
+          <span class="nt">Linear Layouts &amp; Access Disciplines: Arrays, Linked Lists, Stacks, Queues</span>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </section>
+
+    
+  </main>
+</div>
+
+<script>
+  // staggered reveal — disabled under reduced motion
+  (function(){
+    var rm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var items = document.querySelectorAll('.reveal');
+    if(rm || !('IntersectionObserver' in window)){
+      items.forEach(function(el){ el.classList.add('in'); });
+    } else {
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, {rootMargin:'0px 0px -8% 0px', threshold:0.08});
+      items.forEach(function(el){ io.observe(el); });
+    }
+  })();
+
+  // rail active-section highlight + reading-progress meter
+  (function(){
+    var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var secs = Array.prototype.slice.call(document.querySelectorAll('main section'));
+    var meter = document.getElementById('prog');
+    if('IntersectionObserver' in window){
+      var so = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if(e.isIntersecting){
+            links.forEach(function(a){ a.classList.remove('active'); });
+            var a = map[e.target.id]; if(a){ a.classList.add('active'); }
+          }
+        });
+      }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+      secs.forEach(function(s){ so.observe(s); });
+    }
+    function upd(){
+      var h = document.documentElement;
+      var max = h.scrollHeight - h.clientHeight;
+      var p = max > 0 ? Math.min(100, Math.round(h.scrollTop / max * 100)) : 0;
+      if(meter){ meter.value = p; }
+    }
+    document.addEventListener('scroll', upd, {passive:true});
+    upd();
+  })();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="../chapters/04-complexity.html">← Beginner path</a><a href="dsa-01-linear-layouts-and-access-disciplines.html">Next study →</a></nav>
+</body>
+</html>

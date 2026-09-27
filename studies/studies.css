@@ -1,0 +1,137 @@
+/* The research track keeps each lesson's diagram rules, while sharing the
+   typography and navigation of Visual DSA. */
+html:has(.study-page) { overflow-x: hidden; }
+:root {
+  color-scheme: light;
+  --primary: #e86a33;
+  --on-primary: #fff;
+  --primary-container: #fbe9dc;
+  --on-primary-container: #7d3416;
+  --secondary: #566d68;
+  --tertiary: #285951;
+  --surface: #f8f5ee;
+  --surface-1: #fffefa;
+  --surface-2: #edf1eb;
+  --surface-3: #e0e9df;
+  --surface-variant: #e8eee8;
+  --on-surface: #172a2a;
+  --on-surface-variant: #526963;
+  --outline: #647373;
+  --outline-variant: #c9d2cc;
+  --bau-red: #e86a33;
+  --bau-red-deep: #a74320;
+  --bau-red-ink: #a74320;
+  --bau-yellow: #f4dfb2;
+  --bau-blue: #2563a6;
+  --bau-blue-ink: #1b476f;
+  --bau-ink: #172a2a;
+  --r-xs: 0px;
+  --r-sm: 0px;
+  --r-md: 0px;
+  --r-lg: 0px;
+  --r-xl: 0px;
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --serif: Georgia, "Times New Roman", serif;
+  --geo: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.study-page {
+  color: #172a2a;
+  background: #f8f5ee;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  overflow-x: clip;
+}
+.study-page h1,
+.study-page h2 { font-family: Georgia, "Times New Roman", serif; }
+.study-page .card,
+.study-page .band,
+.study-page .stat,
+.study-page .note,
+.study-page .nextcard { border-radius: 0; box-shadow: none; }
+.study-page :is(main, article, section, .layout, .shell, .content, .prose) { min-width: 0; }
+.study-page pre,
+.study-page .table-wrap,
+.study-page table { max-width: 100%; overflow-x: auto; }
+.study-page figure { max-width: 100%; }
+.study-page figure svg { max-width: 100%; height: auto; }
+.study-page a:focus-visible { outline: 2px solid #e86a33; outline-offset: 3px; }
+
+.study-nav,
+.study-bottom {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2vw, 28px);
+  padding: 15px clamp(18px, 4vw, 48px);
+  background: #f8f5ee;
+  border-bottom: 1px solid #172a2a;
+  color: #172a2a;
+  font: 600 12px/1.4 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.study-nav {
+  position: relative;
+  z-index: 101;
+  min-height: 52px;
+}
+.study-nav a,
+.study-bottom a { color: inherit; text-decoration: none; }
+.study-nav a:hover,
+.study-bottom a:hover { color: #e86a33; }
+.study-brand { font-size: 14px; letter-spacing: -.02em; margin-right: auto; }
+.study-position { color: #e86a33; font-variant-numeric: tabular-nums; }
+.study-bottom { border-top: 1px solid #172a2a; border-bottom: 0; justify-content: space-between; flex-wrap: wrap; }
+.study-page .masthead { top: 0; }
+.study-page .rail { top: 84px; }
+
+@media (max-width: 700px) {
+  .study-nav { gap: 12px; padding: 12px 16px; }
+  .study-nav .study-position { display: none; }
+  .study-bottom { padding: 20px 16px; gap: 18px; }
+  .study-page :is(main, article, section) { max-width: 100%; }
+  .study-page :is(pre, table, .table-wrap) { overflow-x: auto; }
+  .study-page :is(div, article, section, pre, code, figure, table, math) { min-width: 0; }
+  .study-page pre { display: block; width: 100%; max-width: 100%; overflow-x: auto; }
+  .study-page math[display="block"] { display: block; max-width: 100%; overflow-x: auto; }
+  .study-page table { display: block; width: 100%; max-width: 100%; overflow-x: auto; }
+  .study-page .math-scroll { display: block; max-width: 100%; overflow-x: auto; }
+}
+
+/* Directory */
+.study-index { background: #f8f5ee; color: #172a2a; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; }
+.study-index .wrap { width: min(100% - 36px, 1200px); margin: 0 auto; }
+.study-index header { border-bottom: 1px solid #172a2a; padding: 18px 0; }
+.study-index header .wrap { display: flex; justify-content: space-between; gap: 20px; align-items: baseline; }
+.study-index header a { text-decoration: none; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.study-index header .tag { color: #e86a33; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }
+.study-index .intro { padding: clamp(70px, 11vw, 140px) 0 78px; }
+.study-index .kicker { color: #e86a33; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin: 0 0 22px; }
+.study-index h1 { font:700 clamp(60px, 10vw, 142px)/.9 Georgia,"Times New Roman",serif; letter-spacing: -.075em; margin: 0; max-width: 960px; }
+.study-index .lead { font-size: clamp(19px, 2.3vw, 28px); line-height: 1.3; max-width: 670px; margin: 36px 0 0 auto; }
+.study-index .return { display: inline-block; margin-top: 25px; color: #a74320; font-weight: 700; }
+.study-index .group { margin-bottom: 75px; }
+.study-index .group-heading { border-top: 1px solid #172a2a; display: grid; grid-template-columns: 2fr 7fr 3fr; gap: 18px; padding: 16px 0 25px; align-items: baseline; }
+.study-index .group-heading .number { color: #e86a33; font-size: 13px; font-weight: 700; }
+.study-index .group-heading h2 { margin: 0; font:700 clamp(27px, 4vw, 48px)/1 Georgia,"Times New Roman",serif; letter-spacing: -.05em; }
+.study-index .group-heading p { margin: 0; color: #666; font-size: 14px; line-height: 1.4; }
+.study-index ol { list-style: none; margin: 0; padding: 0; }
+.study-index li { border-top: 1px solid #c9d2cc; }
+.study-index li:last-child { border-bottom: 1px solid #c9d2cc; }
+.study-index li a { display: grid; grid-template-columns: 2fr 7fr 3fr; gap: 18px; padding: 17px 0; color: inherit; text-decoration: none; align-items: baseline; }
+.study-index li a:hover .lesson-title { color: #e86a33; }
+.study-index .lesson-no { color: #e86a33; font-size: 14px; font-variant-numeric: tabular-nums; }
+.study-index .lesson-title { font:700 clamp(20px, 2.6vw, 31px)/1.16 Georgia,"Times New Roman",serif; letter-spacing: -.04em; }
+.study-index .lesson-note { font-size: 13px; line-height: 1.4; color: #666; }
+.study-index footer { border-top: 1px solid #172a2a; padding: 20px 0 45px; font-size: 13px; color: #647373; }
+@media (max-width: 700px) {
+  .study-index .group-heading,
+  .study-index li a { grid-template-columns: 42px minmax(0, 1fr); gap: 12px; }
+  .study-index .group-heading p,
+  .study-index .lesson-note { grid-column: 2; }
+  .study-index .group-heading h2 { grid-column: 2; }
+  .study-index .group-heading .number { grid-row: 1; }
+  .study-index li a { align-items: start; }
+}

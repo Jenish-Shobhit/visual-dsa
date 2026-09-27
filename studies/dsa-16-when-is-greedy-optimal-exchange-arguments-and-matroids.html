@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSA · Lesson 16 — When Is Greedy Optimal? Exchange Arguments and Matroids</title>
+<meta name="description" content="A visual study of the exact structural reason a greedy choice can be provably optimal: the exchange argument as proof technique, the matroid as the formal object it generalises, the Rado–Edmonds theorem (greedy is optimal for every weighting iff the feasible sets form a matroid), and how to recognise when a problem instead demands dynamic programming.">
+<link rel="stylesheet" href="../css/atlas.css">
+<style>
+:root{
+  color-scheme: light;                 /* LIGHT ONLY — no dark, no toggle */
+  --h: 27;                             /* Bauhaus red, the binding hue */
+  /* ---- M3 tonal roles (light) ---- */
+  --primary:              oklch(50% 0.205 var(--h));
+  --on-primary:           oklch(99% 0.01 var(--h));
+  --primary-container:    oklch(94% 0.045 var(--h));
+  --on-primary-container: oklch(34% 0.14 var(--h));
+  --secondary:            oklch(48% 0.05 var(--h));
+  --tertiary:             oklch(50% 0.16 256);
+  /* surfaces + elevation tints (warm Bauhaus paper) */
+  --surface:              oklch(98.6% 0.006 80);
+  --surface-1:            oklch(97.4% 0.010 80);
+  --surface-2:            oklch(95.8% 0.013 80);
+  --surface-3:            oklch(94.0% 0.016 80);
+  --surface-variant:      oklch(92%  0.014 80);
+  --on-surface:           oklch(21%  0.02 60);
+  --on-surface-variant:   oklch(41%  0.02 60);
+  --outline:              oklch(58%  0.02 60);
+  --outline-variant:      oklch(85%  0.012 60);
+  /* ---- Bauhaus primaries (Kandinsky's three) ---- */
+  --bau-red:    oklch(57% 0.215 27);
+  --bau-red-ink:oklch(45% 0.18 27);
+  --bau-yellow: oklch(86.5% 0.165 92);
+  --bau-blue:   oklch(50% 0.16 256);
+  --bau-blue-ink:oklch(42% 0.15 256);
+  --bau-ink:    oklch(18% 0.02 60);
+  /* M3 shape scale — kept toward the hard-edged end for Bauhaus */
+  --r-xs:2px; --r-sm:4px; --r-md:8px; --r-lg:12px; --r-xl:16px;
+  --sp:8px;
+  --measure: 66ch;
+  --maxw: 1180px;
+  --serif: "Futura","Avenir Next",-apple-system,system-ui,sans-serif;
+  --geo:   "Futura","Avenir Next","Century Gothic",system-ui,sans-serif;
+  --body:  -apple-system,"SF Pro Text",system-ui,"Segoe UI",sans-serif;
+  --mono:  ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+body{
+  margin:0; background:var(--surface); color:var(--on-surface);
+  font-family:var(--body); font-size:18px; line-height:1.65;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+
+/* ---------- scroll progress hairline (pure CSS) ---------- */
+.scroll-progress{position:fixed;left:0;top:0;height:4px;width:100%;z-index:60;
+  transform-origin:0 50%;
+  background:linear-gradient(90deg,var(--bau-red) 0 33%,var(--bau-yellow) 33% 66%,var(--bau-blue) 66% 100%);}
+@supports (animation-timeline: scroll()){
+  .scroll-progress{transform:scaleX(0);animation:grow auto linear;animation-timeline:scroll(root);}
+  @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+}
+@supports not (animation-timeline: scroll()){ .scroll-progress{transform:scaleX(1)} }
+@media (prefers-reduced-motion: reduce){ .scroll-progress{animation:none;transform:scaleX(1)} }
+
+/* ---------- masthead ---------- */
+.masthead{position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:14px;
+  padding:10px clamp(16px,4vw,40px);
+  background:color-mix(in oklch, var(--surface) 82%, transparent);
+  backdrop-filter:blur(12px) saturate(1.3);
+  border-bottom:2px solid var(--bau-ink);}
+.sigil{flex:0 0 auto;width:38px;height:38px}
+.mast-txt{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--on-surface-variant);display:flex;gap:.6ch;flex-wrap:wrap;align-items:baseline}
+.mast-txt b{color:var(--bau-red-ink);font-weight:700}
+.mast-txt .sep{color:var(--outline)}
+.mast-spacer{flex:1}
+.mast-lec{font-family:var(--geo);font-weight:800;font-size:14px;letter-spacing:.04em;
+  color:var(--on-primary);background:var(--bau-red);padding:3px 10px;border-radius:var(--r-xs)}
+
+/* ---------- shell / grid ---------- */
+.shell{max-width:var(--maxw);margin:0 auto;padding:0 clamp(16px,4vw,40px);
+  display:grid;grid-template-columns:148px minmax(0,1fr);gap:clamp(20px,3vw,48px);}
+@media (max-width:860px){ .shell{grid-template-columns:1fr} .rail{display:none} }
+
+/* left rail */
+.rail{position:sticky;top:64px;align-self:start;height:max-content;
+  padding-top:36px;font-family:var(--mono);font-size:11px;}
+.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.rail a{display:grid;grid-template-columns:14px 1fr;gap:8px;align-items:center;
+  text-decoration:none;color:var(--on-surface-variant);
+  padding:6px 6px;border-radius:var(--r-xs);border-left:2px solid transparent;
+  text-transform:uppercase;letter-spacing:.06em;line-height:1.25}
+.rail a:hover{background:color-mix(in oklch,var(--bau-red) 10%,transparent);color:var(--bau-red-ink);border-left-color:var(--bau-red)}
+.rail .mk{width:11px;height:11px;display:inline-block}
+.rail .num{color:var(--outline);font-size:10px}
+.rail .ti{display:block;font-size:10.5px}
+.mk.sq{background:var(--bau-red)}
+.mk.ci{background:var(--bau-blue);border-radius:50%}
+.mk.tr{width:0;height:0;background:none;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid var(--bau-yellow)}
+
+/* content column */
+.content{min-width:0;padding-bottom:80px}
+section{scroll-margin-top:72px}
+.reveal{opacity:1}
+@media (prefers-reduced-motion: no-preference){
+  .js .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+  .js .reveal.in{opacity:1;transform:none}
+}
+
+/* ---------- hero ---------- */
+.hero{position:relative;padding:48px 0 28px}
+.hero::before{content:"";position:absolute;inset:-40px -30vw auto -10vw;height:380px;z-index:-1;
+  background:radial-gradient(60% 80% at 30% 20%, color-mix(in oklch,var(--bau-red) 16%,transparent), transparent 70%);}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--bau-blue-ink);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+.eyebrow .bar{height:11px;width:30px;background:var(--bau-blue);display:inline-block}
+h1{font-family:var(--geo);font-weight:800;letter-spacing:-.02em;line-height:1.02;
+  font-size:clamp(34px,6vw,62px);margin:0 0 18px;color:var(--bau-ink);max-width:18ch}
+h1 .em{color:var(--bau-red)}
+.standfirst{font-size:clamp(18px,2.3vw,22px);line-height:1.5;max-width:62ch;color:var(--on-surface-variant)}
+.standfirst b{color:var(--on-surface);font-weight:600}
+
+/* stat block */
+.stats{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:2px;margin:34px 0 8px;
+  border:2px solid var(--bau-ink);background:var(--bau-ink)}
+@media (max-width:620px){.stats{grid-template-columns:1fr}}
+.stat{background:var(--surface);padding:18px 20px}
+.stat.lead{background:var(--bau-yellow)}
+.stat .k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--on-surface-variant)}
+.stat.lead .k{color:oklch(34% 0.06 92)}
+.stat .v{font-family:var(--geo);font-weight:800;font-size:clamp(26px,4vw,40px);line-height:1.05;color:var(--bau-ink);margin-top:4px}
+.stat .v small{font-size:.5em;font-weight:700;color:var(--on-surface-variant)}
+
+/* ---------- typography of body ---------- */
+.content h2{font-family:var(--geo);font-weight:800;letter-spacing:-.01em;
+  font-size:clamp(25px,3.4vw,36px);line-height:1.1;margin:64px 0 6px;color:var(--bau-ink);
+  max-width:24ch;}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--bau-red-ink);display:flex;align-items:center;gap:10px;margin:0}
+.kicker .n{display:inline-grid;place-items:center;width:26px;height:26px;background:var(--bau-ink);
+  color:#fff;border-radius:var(--r-xs);font-weight:700;font-size:12px}
+.content h3{font-family:var(--geo);font-weight:700;font-size:21px;margin:34px 0 4px;color:var(--bau-ink)}
+.content h4{font-family:var(--geo);font-weight:700;font-size:16px;margin:24px 0 2px;color:var(--bau-blue-ink);
+  text-transform:uppercase;letter-spacing:.04em}
+.content p{max-width:var(--measure)}
+.content p,.content li{font-size:18px}
+.content a{color:var(--bau-red-ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1.5px}
+.content a:hover{background:color-mix(in oklch,var(--bau-yellow) 55%,transparent)}
+strong{color:var(--bau-ink)}
+em.term{font-style:normal;font-weight:700;color:var(--bau-blue-ink);
+  border-bottom:2px solid color-mix(in oklch,var(--bau-blue) 40%,transparent)}
+ul,ol{max-width:var(--measure);padding-left:1.25em}
+li{margin:6px 0}
+.lede{font-size:20px;line-height:1.55;color:var(--on-surface)}
+
+/* objective / prereq cards */
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:2px;
+  border:2px solid var(--bau-ink);background:var(--bau-ink);margin:22px 0;max-width:var(--maxw)}
+.cardgrid .cell{background:var(--surface);padding:16px 18px}
+.cardgrid .cell .lab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--bau-red-ink);display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.cardgrid .cell p{margin:0;font-size:16px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--bau-blue);display:inline-block}
+
+/* callout bands */
+.band{border:2px solid var(--bau-ink);background:var(--surface-1);padding:20px 22px;margin:26px 0;border-radius:var(--r-sm)}
+.band.blue{border-color:var(--bau-blue);background:color-mix(in oklch,var(--bau-blue) 7%,var(--surface))}
+.band.red{border-color:var(--bau-red);background:color-mix(in oklch,var(--bau-red) 6%,var(--surface))}
+.band.yellow{border-color:oklch(70% 0.16 92);background:color-mix(in oklch,var(--bau-yellow) 24%,var(--surface))}
+.band .bl{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--on-surface-variant);margin:0 0 6px}
+.band p:last-child{margin-bottom:0}
+
+/* pull quote */
+.pq{margin:54px 0;padding:8px 0 8px 26px;border-left:10px solid var(--bau-red);
+  font-family:var(--geo);font-weight:800;font-size:clamp(24px,3.6vw,38px);line-height:1.12;
+  color:var(--bau-ink);max-width:20ch;letter-spacing:-.01em}
+.pq .by{display:block;margin-top:10px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--bau-red-ink)}
+
+/* recipe steps */
+.recipe{counter-reset:step;list-style:none;padding:0;margin:22px 0;max-width:var(--maxw)}
+.recipe>li{counter-increment:step;position:relative;padding:14px 16px 14px 56px;margin:2px 0;
+  background:var(--surface-1);border:1.5px solid var(--outline-variant);border-radius:var(--r-sm)}
+.recipe>li::before{content:counter(step,decimal-leading-zero);position:absolute;left:14px;top:13px;
+  font-family:var(--mono);font-weight:700;font-size:14px;color:#fff;background:var(--bau-ink);
+  width:28px;height:24px;display:grid;place-items:center;border-radius:var(--r-xs)}
+.recipe b{color:var(--bau-blue-ink)}
+
+/* figures */
+figure{margin:30px 0;border:2px solid var(--bau-ink);background:var(--surface);border-radius:var(--r-sm);overflow:hidden}
+figure svg{display:block;width:100%;height:auto;background:var(--surface)}
+figcaption{font-size:14.5px;line-height:1.5;color:var(--on-surface-variant);
+  padding:12px 18px;border-top:1.5px solid var(--outline-variant);background:var(--surface-1)}
+figcaption b{color:var(--bau-ink)}
+.fig-num{font-family:var(--mono);font-weight:700;color:var(--bau-red-ink);letter-spacing:.05em}
+
+/* SVG ink system */
+.dg-stroke{stroke:var(--bau-ink);fill:none}
+.dg-fill-ink{fill:var(--bau-ink)}
+.dg-red{stroke:var(--bau-red)} .dg-red-f{fill:var(--bau-red)}
+.dg-blue{stroke:var(--bau-blue)} .dg-blue-f{fill:var(--bau-blue)}
+.dg-yel-f{fill:var(--bau-yellow)}
+.dg-faint{stroke:var(--outline-variant);fill:none}
+.dg-lab{font-family:var(--mono);font-size:12px;fill:var(--on-surface)}
+.dg-lab-sm{font-family:var(--mono);font-size:11px;fill:var(--on-surface-variant)}
+.dg-val{font-family:var(--mono);font-size:15px;font-weight:700;fill:var(--bau-ink)}
+.dg-ttl{font-family:var(--geo);font-size:14px;font-weight:800;fill:var(--bau-ink)}
+.dg-white{fill:#fff}
+
+/* math */
+math{font-size:1.06em}
+.mathrow{margin:18px 0;padding:14px 18px;background:var(--surface-2);border-left:6px solid var(--bau-blue);
+  border-radius:var(--r-xs);overflow-x:auto;max-width:var(--maxw)}
+.mathrow .cap{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--on-surface-variant);margin-bottom:8px}
+
+/* axiom list */
+.axioms{list-style:none;padding:0;margin:20px 0;max-width:var(--maxw)}
+.axioms li{display:grid;grid-template-columns:64px 1fr;gap:14px;align-items:start;
+  padding:14px 16px;margin:2px 0;background:var(--surface-1);border:1.5px solid var(--outline-variant);border-radius:var(--r-sm)}
+.axioms .tag{font-family:var(--mono);font-weight:700;font-size:13px;color:#fff;background:var(--bau-blue);
+  text-align:center;padding:4px 0;border-radius:var(--r-xs)}
+.axioms li.heart .tag{background:var(--bau-red)}
+.axioms .nm{font-family:var(--geo);font-weight:700;color:var(--bau-ink);font-size:15px;display:block;margin-bottom:2px}
+.axioms .dd{font-size:15.5px;margin:0;color:var(--on-surface)}
+
+/* code */
+pre{margin:18px 0;background:var(--surface-2);border:1.5px solid var(--outline-variant);
+  border-left:6px solid var(--bau-ink);border-radius:var(--r-xs);
+  padding:16px 18px;overflow-x:auto;max-width:var(--maxw)}
+code{font-family:var(--mono);font-size:13.5px;line-height:1.6}
+p code,li code{background:var(--surface-2);padding:1px 5px;border-radius:var(--r-xs);font-size:.86em;
+  border:1px solid var(--outline-variant)}
+.kw{color:var(--bau-blue-ink);font-weight:700}
+.fn{color:var(--bau-red-ink);font-weight:600}
+.num{color:oklch(45% 0.13 300)}
+.str{color:oklch(42% 0.11 150)}
+.com{color:var(--on-surface-variant);font-style:italic}
+.op{color:var(--bau-red-ink)}
+
+/* table */
+.tablewrap{overflow-x:auto;margin:24px 0;border:2px solid var(--bau-ink);border-radius:var(--r-sm)}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:620px;background:var(--surface)}
+caption{caption-side:top;text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--on-surface-variant);padding:12px 14px 10px;background:var(--surface-1)}
+thead th{position:sticky;top:0;background:var(--bau-ink);color:#fff;font-family:var(--geo);font-weight:700;
+  text-align:left;padding:10px 14px;font-size:13px;letter-spacing:.02em;z-index:1}
+tbody th{text-align:left;font-weight:700;color:var(--bau-ink);font-family:var(--geo)}
+td,tbody th{padding:9px 14px;border-top:1px solid var(--outline-variant);vertical-align:top}
+tbody tr:nth-child(even){background:var(--surface-1)}
+td .mono,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.yes{color:var(--bau-blue-ink);font-weight:700}
+.no{color:var(--bau-red-ink);font-weight:700}
+tfoot td{background:var(--surface-2);font-size:13px;color:var(--on-surface-variant);font-style:italic}
+
+/* details */
+details{margin:18px 0;border:1.5px solid var(--outline-variant);border-radius:var(--r-sm);
+  background:var(--surface-1);max-width:var(--maxw)}
+details[open]{border-color:var(--bau-blue)}
+summary{cursor:pointer;padding:12px 16px;font-family:var(--geo);font-weight:700;font-size:15px;color:var(--bau-blue-ink);
+  list-style:none;display:flex;align-items:center;gap:10px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);font-weight:700;color:#fff;background:var(--bau-blue);
+  width:20px;height:20px;display:grid;place-items:center;border-radius:var(--r-xs);font-size:14px}
+details[open] summary::before{content:"\2212"}
+details .inner{padding:0 16px 16px}
+:focus-visible{outline:3px solid var(--bau-blue);outline-offset:2px}
+
+/* practice */
+.prob{border:2px solid var(--bau-ink);border-radius:var(--r-sm);margin:18px 0;background:var(--surface);max-width:var(--maxw)}
+.prob .head{display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--bau-ink);color:#fff}
+.prob .pn{font-family:var(--mono);font-weight:700;font-size:13px;background:var(--bau-yellow);color:var(--bau-ink);
+  padding:2px 9px;border-radius:var(--r-xs)}
+.prob .pt{font-family:var(--geo);font-weight:800;font-size:17px}
+.prob .lc{margin-left:auto;font-family:var(--mono);font-size:11px;color:#fff;opacity:.8;letter-spacing:.05em}
+.prob .body{padding:14px 18px}
+.prob .body p{margin:8px 0}
+.prob .sig{font-family:var(--mono);font-size:13px;background:var(--surface-2);border:1px solid var(--outline-variant);
+  padding:8px 12px;border-radius:var(--r-xs);display:block;color:var(--bau-blue-ink);white-space:pre-wrap;margin:6px 0}
+.prob .ex{font-family:var(--mono);font-size:12.5px;color:var(--on-surface-variant);white-space:pre-wrap}
+.tag-pill{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  padding:2px 8px;border-radius:999px;border:1.5px solid var(--outline);color:var(--on-surface-variant)}
+.tag-pill.mat{border-color:var(--bau-blue);color:var(--bau-blue-ink)}
+.tag-pill.dp{border-color:var(--bau-red);color:var(--bau-red-ink)}
+
+/* next / recap */
+.recap{border:2px solid var(--bau-red);background:color-mix(in oklch,var(--bau-red) 6%,var(--surface));
+  padding:22px 24px;border-radius:var(--r-sm);margin:26px 0}
+.nextcard{display:flex;gap:16px;align-items:center;border:2px solid var(--bau-ink);border-radius:var(--r-sm);
+  padding:18px 20px;margin:22px 0;background:var(--bau-yellow)}
+.nextcard .meta{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:oklch(34% 0.06 92)}
+.nextcard .t{font-family:var(--geo);font-weight:800;font-size:19px;color:var(--bau-ink);line-height:1.1;margin-top:3px}
+.nextcard .arrow{margin-left:auto;font-family:var(--geo);font-weight:800;font-size:30px;color:var(--bau-red)}
+
+/* colophon */
+.colophon{margin-top:60px;border-top:2px solid var(--bau-ink);padding-top:20px;
+  font-family:var(--mono);font-size:12px;color:var(--on-surface-variant);line-height:1.7}
+.colophon b{color:var(--bau-red-ink)}
+.colophon .shapes{display:inline-flex;gap:6px;vertical-align:middle;margin-right:8px}
+.colophon .s{width:12px;height:12px;display:inline-block}
+
+hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:var(--maxw)}
+.note{font-size:14px;color:var(--on-surface-variant)}
+</style>
+<link rel="stylesheet" href="studies.css?v=5">
+</head>
+<body class="study-page">
+<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">16 / 23</span></nav>
+<div class="scroll-progress" aria-hidden="true"></div>
+
+<header class="masthead">
+  <svg class="sigil" viewBox="0 0 40 40" role="img" aria-label="Bauhaus sigil: blue circle, yellow triangle, red square">
+    <rect x="1" y="1" width="38" height="38" fill="none" stroke="var(--bau-ink)" stroke-width="1.5"/>
+    <circle cx="12" cy="12" r="8" fill="var(--bau-blue)"/>
+    <polygon points="28,4 38,22 18,22" fill="var(--bau-yellow)"/>
+    <rect x="20" y="22" width="16" height="16" fill="var(--bau-red)"/>
+  </svg>
+  <div class="mast-txt">
+    <b>DSA</b><span class="sep">·</span>Visual DSA<span class="sep">·</span>exchange &amp; matroids
+  </div>
+  <div class="mast-spacer"></div>
+  <div class="mast-lec">LESSON 16</div>
+</header>
+
+<div class="shell">
+  <!-- LEFT RAIL -->
+  <nav class="rail" aria-label="Lesson sections">
+    <ol>
+      <li><a href="#hook"><span class="mk sq"></span><span><span class="num">01</span><span class="ti">The hook</span></span></a></li>
+      <li><a href="#setup"><span class="mk ci"></span><span><span class="num">02</span><span class="ti">Objectives</span></span></a></li>
+      <li><a href="#commit"><span class="mk tr"></span><span><span class="num">03</span><span class="ti">Greedy = commitment</span></span></a></li>
+      <li><a href="#exchange"><span class="mk sq"></span><span><span class="num">04</span><span class="ti">The exchange argument</span></span></a></li>
+      <li><a href="#matroid"><span class="mk ci"></span><span><span class="num">05</span><span class="ti">The matroid</span></span></a></li>
+      <li><a href="#rado"><span class="mk tr"></span><span><span class="num">06</span><span class="ti">Rado–Edmonds</span></span></a></li>
+      <li><a href="#concrete"><span class="mk sq"></span><span><span class="num">07</span><span class="ti">Two structures, drawn</span></span></a></li>
+      <li><a href="#breaks"><span class="mk ci"></span><span><span class="num">08</span><span class="ti">Where it breaks</span></span></a></li>
+      <li><a href="#practice"><span class="mk tr"></span><span><span class="num">09</span><span class="ti">Practice</span></span></a></li>
+      <li><a href="#recap"><span class="mk sq"></span><span><span class="num">10</span><span class="ti">Recap &amp; next</span></span></a></li>
+    </ol>
+  </nav>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- 01 HOOK -->
+    <section id="hook" class="hero reveal">
+      <p class="eyebrow"><span class="bar"></span>Greedy &amp; its proof · Lecture 16</p>
+      <h1>When is greedy <span class="em">provably</span> optimal?</h1>
+      <p class="standfirst">Two problems wear the same instinct — <b>take the best per pound, never look back</b>. On <em class="term">fractional</em> knapsack that instinct is exactly optimal. On <em class="term">0/1</em> knapsack the very same greedy leaves a quarter of the value on the floor. The difference is not the objective. It is the <b>shape of the feasible set</b> — and that shape has a name.</p>
+
+      <div class="stats" role="group" aria-label="The 0/1 knapsack greedy gap">
+        <div class="stat lead">
+          <div class="k">Greedy-by-ratio · 3 items · W=50</div>
+          <div class="v">160</div>
+        </div>
+        <div class="stat">
+          <div class="k">True optimum</div>
+          <div class="v">220</div>
+        </div>
+        <div class="stat">
+          <div class="k">Value greedy threw away</div>
+          <div class="v">27<small>%</small></div>
+        </div>
+      </div>
+      <p class="note">Items (value, weight): (60,10), (100,20), (120,30), capacity 50. Greedy ranks by value-per-pound — 6, 5, 4 — takes the first two (value 160, weight 30), and cannot fit the third. The optimum skips the densest item and takes the last two (value 220, weight 50). Same rule, opposite fate. This lecture is about <em>why</em>, stated precisely enough to predict it in advance.</p>
+    </section>
+
+    <!-- 02 OBJECTIVES + PREREQS -->
+    <section id="setup" class="reveal">
+      <p class="kicker"><span class="n">02</span> What you will be able to do</p>
+      <h2>Objectives &amp; prerequisites</h2>
+      <p class="lede">By the end of this page you should be able to look at a fresh optimisation problem and say — with a proof, not a hunch — whether a greedy choice is safe, and if it is not, name the structural defect that sends you to dynamic programming.</p>
+
+      <h4>After this you can…</h4>
+      <ul>
+        <li><strong>Run the exchange-argument template</strong> on a greedy algorithm: take any optimum, swap in the greedy choice, show it never gets worse, repeat.</li>
+        <li><strong>Define a matroid</strong> from its three independence axioms, and read the third — the <em>exchange axiom</em> — as the abstract form of that swap.</li>
+        <li><strong>State and apply the Rado–Edmonds theorem</strong>: weight-ordered greedy maximises <em>every non-negative</em> weighting over a downward-closed set system <em>if and only if</em> that system is a matroid.</li>
+        <li><strong>Recognise the three canonical matroids</strong> — uniform, partition, graphic — and map a new problem onto one (Kruskal's MST is greedy on the graphic matroid).</li>
+        <li><strong>Diagnose why greedy fails</strong> on 0/1 knapsack, weighted interval scheduling, and non-canonical coin systems — a broken exchange axiom — and reach for DP instead.</li>
+      </ul>
+
+      <h4>Bring these with you</h4>
+      <div class="cardgrid">
+        <div class="cell">
+          <div class="lab"><span class="dot"></span>Greedy on graphs (MST)</div>
+          <p>Kruskal adds the cheapest safe edge and never revisits. <a href="dsa-12-minimum-spanning-trees-and-union-find.html">Lesson 12 · MST &amp; Union-Find</a>.</p>
+        </div>
+        <div class="cell">
+          <div class="lab"><span class="dot"></span>Dynamic programming</div>
+          <p>The fallback when local commitment is unsafe. <a href="dsa-15-dynamic-programming-optimal-substructure-over-a-subproblem-dag.html">Lesson 15 · DP over a subproblem DAG</a>.</p>
+        </div>
+        <div class="cell">
+          <div class="lab"><span class="dot"></span>Proof by exchange argument</div>
+          <p>Transform an optimum into the greedy solution one swap at a time, monotonically.</p>
+        </div>
+        <div class="cell">
+          <div class="lab"><span class="dot"></span>Sets &amp; cardinality</div>
+          <p>Subsets, union, set-difference, and the idea that <code>|A| &lt; |B|</code> forces structure.</p>
+        </div>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- 03 GREEDY AS COMMITMENT -->
+    <section id="commit" class="reveal">
+      <p class="kicker"><span class="n">03</span> Build it from first principles</p>
+      <h2>A greedy algorithm is a commitment strategy</h2>
+
+      <p>Strip the costume off every greedy algorithm and the same machine is underneath. It builds a solution one element at a time; at each step it picks the locally best element by some fixed criterion; and — this is the whole gamble — it <strong>never reconsiders</strong>. No backtracking, no lookahead. The key question is: <em>when does a sequence of irrevocable, locally-best commitments compose into a globally optimal object?</em></p>
+
+      <p>That question is not about the scoring function. It is about the <em class="term">feasible family</em> — the collection of partial solutions you are allowed to hold. Greedy walks that family, and whether the walk lands on the optimum depends on whether the family has a particular closure property. Two ingredients must both be present:</p>
+
+      <ul class="recipe">
+        <li><b>Greedy-choice property.</b> There exists an optimal solution that <em>agrees</em> with greedy's first choice. You never need to look ahead because a best answer is always reachable through the locally best move.</li>
+        <li><b>Optimal substructure.</b> Once that first choice is committed, what remains is a smaller instance of the same problem, and gluing the choice onto an optimum of the remainder yields a global optimum.</li>
+      </ul>
+
+      <p>Optimal substructure you met in <a href="dsa-15-dynamic-programming-optimal-substructure-over-a-subproblem-dag.html">Lesson 15</a> — it is shared with DP. The thing that <em>separates</em> greedy from DP is the first property: the claim that a single local move is always safe. <strong>The exchange argument is the technique that proves it</strong>, and the matroid is the structure that guarantees the technique always succeeds, for any weighting at all.</p>
+
+      <div class="band blue">
+        <p class="bl">The one distinction to hold</p>
+        <p><strong>DP compares alternatives</strong> when choices interact. <strong>Greedy commits to one choice.</strong> An exchange proof can license that commitment for a particular objective. A matroid gives a stronger guarantee: the standard weight-ordered greedy algorithm works for every non-negative weighting.</p>
+      </div>
+    </section>
+
+    <!-- 04 EXCHANGE ARGUMENT -->
+    <section id="exchange" class="reveal">
+      <p class="kicker"><span class="n">04</span> Worked example I — the technique</p>
+      <h2>The exchange argument, fully worked</h2>
+
+      <p>The exchange argument proves the greedy-choice property by <em>transforming</em> rather than constructing. You do not build the optimum; you take an arbitrary optimum <code>OPT</code> and rewrite it, one swap at a time, into greedy's answer <code>G</code>, proving every swap leaves it (a) feasible and (b) no worse. If <code>OPT</code> can become <code>G</code> without ever losing quality, then <code>G</code> is itself optimal. Let me run it end to end on the cleanest case.</p>
+
+      <h3>Interval scheduling: maximise the count of compatible activities</h3>
+      <p>You are given activities, each an interval <code>[start, finish)</code>. Two activities are <em class="term">compatible</em> if they do not overlap. Choose the largest set of pairwise-compatible activities. The greedy rule: <strong>sort by finish time, repeatedly take the next activity that starts no earlier than the last one you took.</strong></p>
+
+      <p>Run it on six activities. Sorted by finish time:</p>
+
+      <div class="tablewrap">
+        <table>
+          <caption>Trace · earliest-finish-time greedy · "last finish" starts at −∞</caption>
+          <thead>
+            <tr><th scope="col">Step</th><th scope="col">Activity</th><th scope="col">[start, finish)</th><th scope="col">start ≥ last?</th><th scope="col">Action</th><th scope="col">Chosen so far</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><th scope="row">A</th><td class="mono">[1, 3)</td><td class="mono">1 ≥ −∞ ✓</td><td class="yes">TAKE · last=3</td><td class="mono">{A}</td></tr>
+            <tr><td>2</td><th scope="row">B</th><td class="mono">[2, 5)</td><td class="mono">2 ≥ 3 ✗</td><td class="no">skip</td><td class="mono">{A}</td></tr>
+            <tr><td>3</td><th scope="row">C</th><td class="mono">[4, 7)</td><td class="mono">4 ≥ 3 ✓</td><td class="yes">TAKE · last=7</td><td class="mono">{A, C}</td></tr>
+            <tr><td>4</td><th scope="row">F</th><td class="mono">[2, 8)</td><td class="mono">2 ≥ 7 ✗</td><td class="no">skip</td><td class="mono">{A, C}</td></tr>
+            <tr><td>5</td><th scope="row">D</th><td class="mono">[6, 9)</td><td class="mono">6 ≥ 7 ✗</td><td class="no">skip</td><td class="mono">{A, C}</td></tr>
+            <tr><td>6</td><th scope="row">E</th><td class="mono">[8, 10)</td><td class="mono">8 ≥ 7 ✓</td><td class="yes">TAKE · last=10</td><td class="mono">{A, C, E}</td></tr>
+          </tbody>
+          <tfoot><tr><td colspan="6">Greedy returns {A, C, E}, three activities. No set of four compatible activities exists here, so greedy is optimal — but the trace is not a proof. The exchange argument is.</td></tr></tfoot>
+        </table>
+      </div>
+
+      <h3>The proof: greedy's first pick is always safe</h3>
+      <p>Let <code>a₁</code> be the activity with the <strong>earliest finish time</strong> overall — greedy's first choice. <em>Claim:</em> some optimal solution contains <code>a₁</code>.</p>
+
+      <p><em>Exchange.</em> Take any optimal solution <code>O</code> and sort its activities by finish time; call the first one <code>aₖ</code>. If <code>aₖ = a₁</code> we are done. Otherwise, because <code>a₁</code> finishes <em>earliest of all activities</em>, it finishes no later than <code>aₖ</code>. So <code>a₁</code> cannot overlap anything that came after <code>aₖ</code> in <code>O</code> (those all start after <code>aₖ</code> finishes ≥ after <code>a₁</code> finishes). Swap: <code>O' = O − {aₖ} + {a₁}</code>. This <code>O'</code> is still pairwise-compatible, and <code>|O'| = |O|</code>, so it is still optimal — and it contains <code>a₁</code>. The greedy choice is vindicated.</p>
+
+      <p><em>Induction.</em> Delete <code>a₁</code> and every activity overlapping it; what remains is a strictly smaller interval-scheduling instance. By the same argument greedy's next pick is safe there, and so on. By induction the whole greedy set is optimal. <span class="mono">∎</span></p>
+
+      <details>
+        <summary>Why "earliest finish," not "shortest" or "earliest start"?</summary>
+        <div class="inner">
+          <p>Earliest finish time is the criterion that <em>maximises the leftover</em> — it ends the chosen activity as early as possible, leaving the most room for the recursive subproblem. The two tempting alternatives both break:</p>
+          <ul>
+            <li><strong>Shortest duration first</strong> fails when <code>[2,4)</code> is chosen ahead of the compatible pair <code>[0,3)</code> and <code>[3,6)</code>: the short middle interval blocks two activities.</li>
+            <li><strong>Earliest start first</strong> fails on one long early interval <code>[0,100)</code> that devours the timeline against many short ones.</li>
+          </ul>
+          <p>The exchange argument is what <em>certifies</em> "earliest finish" — it is the only one of the three for which the swap above goes through. That is the discipline: the criterion is not chosen by taste, it is chosen because a swap proof exists for it.</p>
+        </div>
+      </details>
+
+      <div class="band yellow">
+        <p class="bl">Generalising the swap</p>
+        <p>Notice the shape of the move: replace one choice in an optimum with the earliest-finishing activity, preserving the number of activities. This proves the unweighted interval-scheduling rule. Compatible interval sets are generally <em>not</em> a matroid, so this proof does not justify choosing the heaviest interval first. The matroid exchange axiom, introduced next, is a stronger property that guarantees weight-ordered greedy for every weighting.</p>
+      </div>
+    </section>
+
+    <!-- 05 THE MATROID -->
+    <section id="matroid" class="reveal">
+      <p class="kicker"><span class="n">05</span> The abstraction</p>
+      <h2>The matroid: independence, axiomatised</h2>
+
+      <p>In 1935 Hassler Whitney noticed that two utterly different notions of "independence" — linearly independent columns of a matrix, and acyclic sets of edges in a graph — obey the <em>same three rules</em>. He distilled the rules and called the object a <em class="term">matroid</em>. It is one of the most economical abstractions in mathematics, and it is precisely the structure that makes greedy honest.</p>
+
+      <p>A matroid is a pair <code>M = (E, I)</code>: a finite <strong>ground set</strong> <code>E</code> and a family <code>I</code> of subsets of <code>E</code>, called <em class="term">independent sets</em>, satisfying three axioms.</p>
+
+      <ul class="axioms">
+        <li>
+          <span class="tag">I1</span>
+          <div><span class="nm">Non-triviality</span><p class="dd">The empty set is independent: <code>∅ ∈ I</code>. (There is always somewhere to start.)</p></div>
+        </li>
+        <li>
+          <span class="tag">I2</span>
+          <div><span class="nm">Heredity — downward closed</span><p class="dd">Every subset of an independent set is independent: if <code>A ∈ I</code> and <code>B ⊆ A</code>, then <code>B ∈ I</code>. (Removing elements never creates a conflict.)</p></div>
+        </li>
+        <li class="heart">
+          <span class="tag">I3</span>
+          <div><span class="nm">Exchange / augmentation — the heart</span><p class="dd">If <code>A, B ∈ I</code> and <code>|A| &lt; |B|</code>, then some element of <code>B</code> can be moved into <code>A</code> keeping it independent.</p></div>
+        </li>
+      </ul>
+
+      <div class="mathrow">
+        <div class="cap">The exchange axiom (I3), formally</div>
+        <div class="math-scroll"><math display="block">
+          <mrow>
+            <mi>A</mi><mo>,</mo><mi>B</mi><mo>&#x2208;</mo><mi mathvariant="script">I</mi>
+            <mtext>&#xA0;and&#xA0;</mtext>
+            <mo>|</mo><mi>A</mi><mo>|</mo><mo>&lt;</mo><mo>|</mo><mi>B</mi><mo>|</mo>
+            <mspace width="0.5em"/><mo>&#x27F9;</mo><mspace width="0.5em"/>
+            <mo>&#x2203;</mo><mspace width="0.15em"/><mi>x</mi><mo>&#x2208;</mo><mi>B</mi><mo>&#x2216;</mo><mi>A</mi>
+            <mspace width="0.3em"/><mo>:</mo><mspace width="0.3em"/>
+            <mi>A</mi><mo>&#x222A;</mo><mo>{</mo><mi>x</mi><mo>}</mo><mo>&#x2208;</mo><mi mathvariant="script">I</mi>
+          </mrow>
+        </math></div>
+      </div>
+
+      <p>Axioms I1 and I2 just say <code>I</code> is a non-empty, downward-closed family — that much is true of <em>any</em> reasonable feasibility notion (compatible activities, sub-budget item sets, acyclic edge sets). The entire weight of the theory sits in <strong>I3</strong>. It is the abstract swap: a smaller independent set is never "stuck"; it can always grow toward any larger one. Here is what it looks like.</p>
+
+      <figure>
+        <svg viewBox="0 0 760 290" role="img" aria-labelledby="f1t f1d">
+          <title id="f1t">Figure 1 — the exchange axiom (I3) drawn</title>
+          <desc id="f1d">Independent set A has three red squares; independent set B has four blue circles. Because A is smaller, the axiom guarantees some element x of B that is not already in A can be added to A, producing an independent set of size four.</desc>
+          <!-- titles -->
+          <text x="30" y="34" class="dg-ttl">A &#x2208; I</text>
+          <text x="30" y="52" class="dg-lab-sm">|A| = 3 (smaller)</text>
+          <text x="300" y="34" class="dg-ttl">B &#x2208; I</text>
+          <text x="300" y="52" class="dg-lab-sm">|B| = 4 (larger)</text>
+          <!-- A column: 3 red squares -->
+          <rect x="40" y="74"  width="40" height="40" class="dg-red-f"/>
+          <rect x="40" y="124" width="40" height="40" class="dg-red-f"/>
+          <rect x="40" y="174" width="40" height="40" class="dg-red-f"/>
+          <rect x="35" y="69" width="50" height="200" rx="4" class="dg-stroke"/>
+          <!-- B column: 4 blue circles, one (x) highlighted yellow -->
+          <circle cx="330" cy="94"  r="20" class="dg-blue-f"/>
+          <circle cx="330" cy="144" r="20" class="dg-blue-f"/>
+          <circle cx="330" cy="194" r="20" class="dg-blue-f"/>
+          <circle cx="330" cy="244" r="20" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="2"/>
+          <text x="330" y="249" text-anchor="middle" class="dg-val">x</text>
+          <rect x="305" y="69" width="50" height="200" rx="4" class="dg-stroke"/>
+          <text x="300" y="288" class="dg-lab-sm">x &#x2208; B &#x2216; A : the borrowable element</text>
+          <!-- arrow: move x into A -->
+          <path d="M 355 244 C 470 244 470 150 88 150" class="dg-stroke" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#ah)"/>
+          <defs>
+            <marker id="ah" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--bau-ink)"/>
+            </marker>
+          </defs>
+          <!-- result -->
+          <text x="540" y="34" class="dg-ttl">A &#x222A; {x} &#x2208; I</text>
+          <text x="540" y="52" class="dg-lab-sm">size 4 — still independent</text>
+          <rect x="560" y="74"  width="40" height="40" class="dg-red-f"/>
+          <rect x="560" y="124" width="40" height="40" class="dg-red-f"/>
+          <rect x="560" y="174" width="40" height="40" class="dg-red-f"/>
+          <rect x="555" y="224" width="50" height="46" rx="4" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="2"/>
+          <text x="580" y="252" text-anchor="middle" class="dg-val">x</text>
+          <rect x="550" y="69" width="60" height="206" rx="4" class="dg-stroke"/>
+        </svg>
+        <figcaption><span class="fig-num">FIG 1</span> · The exchange axiom is the engine. Whenever one independent set is strictly smaller than another, it is guaranteed a legal way to grow. A consequence (the rank theorem): <b>all maximal independent sets — the "bases" — have the same size.</b> That equal-size guarantee is exactly what lets greedy stop without regret.</figcaption>
+      </figure>
+
+      <p>Two pieces of vocabulary fall straight out of I3. A maximal independent set is a <em class="term">basis</em>; by the axiom every basis has the same cardinality, the <em class="term">rank</em> of the matroid. (In the column matroid this is the rank of the matrix; in the graphic matroid it is <code>|V| − (number of components)</code>, the size of a spanning forest.) Greedy, as we will now see, builds a maximum-weight basis.</p>
+    </section>
+
+    <!-- 06 RADO–EDMONDS -->
+    <section id="rado" class="reveal">
+      <p class="kicker"><span class="n">06</span> Worked example II — the theorem</p>
+      <h2>Rado–Edmonds: greedy is optimal ⟺ matroid</h2>
+
+      <p>Here is the payoff — the sharpest answer the title can be given. Fix a downward-closed set system <code>M = (E, I)</code> (so I1, I2 hold) and a non-negative weight <code>w : E → ℝ≥0</code>. The greedy algorithm is:</p>
+
+      <pre><code><span class="kw">def</span> <span class="fn">greedy_matroid</span>(E, w, independent):
+    <span class="com"># E: ground set · w: weights · independent(S): is S in I?</span>
+    S = []
+    <span class="kw">for</span> e <span class="kw">in</span> <span class="fn">sorted</span>(E, key=w, reverse=<span class="kw">True</span>):   <span class="com"># heaviest first</span>
+        <span class="kw">if</span> w(e) &lt;= <span class="num">0</span>: <span class="kw">break</span>                      <span class="com"># non-neg objective: ignore junk</span>
+        <span class="kw">if</span> independent(S + [e]):                 <span class="com"># does it stay legal?</span>
+            S.append(e)                          <span class="com"># COMMIT — never reconsider</span>
+    <span class="kw">return</span> S</code></pre>
+
+      <div class="band red">
+        <p class="bl">Rado–Edmonds theorem (1957 / 1971)</p>
+        <p><code>greedy_matroid</code> returns a maximum-weight independent set for <strong>every non-negative</strong> weight function <code>w</code> <strong>if and only if</strong> <code>M</code> is a matroid — that is, if and only if <code>M</code> also satisfies the exchange axiom I3.</p>
+      </div>
+
+      <p>The "for every <code>w</code>" is the soul of the statement. A particular weighting can get lucky on a non-matroid; the theorem says luck holds for <em>all</em> weightings precisely when I3 holds. Both directions are instructive. Let me prove the direction you will use — <em>matroid ⟹ greedy optimal</em> — by an exchange argument, then sketch the converse, which is where the real insight lives.</p>
+
+      <h3>Direction ⟸ : if M is a matroid, greedy is optimal</h3>
+      <p>Let greedy output <code>G = {g₁, g₂, …, g_k}</code> in the order added, so <code>w(g₁) ≥ w(g₂) ≥ … ≥ w(g_k)</code>. Because greedy considered every element, <code>G</code> is a basis. Let <code>OPT = {o₁, …, o_k}</code> be a maximum-weight independent set, also a basis (so the same size <code>k</code>, by I3), sorted <code>w(o₁) ≥ … ≥ w(o_k)</code>. The whole proof is one inequality:</p>
+
+      <div class="mathrow">
+        <div class="cap">The staircase: greedy dominates the optimum coordinate-by-coordinate</div>
+        <div class="math-scroll"><math display="block">
+          <mrow>
+            <mi>w</mi><mo>(</mo><msub><mi>g</mi><mi>i</mi></msub><mo>)</mo>
+            <mo>&#x2265;</mo>
+            <mi>w</mi><mo>(</mo><msub><mi>o</mi><mi>i</mi></msub><mo>)</mo>
+            <mspace width="0.6em"/><mtext>for every</mtext><mspace width="0.4em"/><mi>i</mi>
+            <mspace width="1em"/><mo>&#x27F9;</mo><mspace width="1em"/>
+            <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover>
+            <mi>w</mi><mo>(</mo><msub><mi>g</mi><mi>i</mi></msub><mo>)</mo>
+            <mo>&#x2265;</mo>
+            <munderover><mo>&#x2211;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover>
+            <mi>w</mi><mo>(</mo><msub><mi>o</mi><mi>i</mi></msub><mo>)</mo>
+          </mrow>
+        </math></div>
+      </div>
+
+      <p>Suppose the staircase fails. Let <code>i</code> be the <em>first</em> index where <code>w(gᵢ) &lt; w(oᵢ)</code>. Set <code>A = {g₁, …, g_{i−1}}</code> and <code>B = {o₁, …, oᵢ}</code>. Both are independent (heredity), and <code>|A| = i−1 &lt; i = |B|</code>. By the exchange axiom there is an <code>o_t ∈ B∖A</code> with <code>A ∪ {o_t} ∈ I</code>. Since <code>t ≤ i</code> and <code>OPT</code> is sorted, <code>w(o_t) ≥ w(oᵢ) &gt; w(gᵢ)</code>.</p>
+
+      <p>Now replay greedy. Everything greedy chose before <code>gᵢ</code> is heavier than <code>gᵢ</code>, hence heavier than <code>o_t</code>'s lower bound — so at the moment greedy <em>considered</em> <code>o_t</code> (which it did, because <code>w(o_t) &gt; w(gᵢ)</code> places <code>o_t</code> earlier in the sorted order), its set in hand was a subset of <code>A</code>. By heredity that subset together with <code>o_t</code> is independent, so greedy <em>would have taken</em> <code>o_t</code>. Yet <code>o_t ∉ A</code> — contradiction. Hence the staircase holds, <code>w(G) ≥ w(OPT)</code>, and since <code>OPT</code> is optimal, equality: greedy is optimal. <span class="mono">∎</span></p>
+
+      <figure>
+        <svg viewBox="0 0 760 320" role="img" aria-labelledby="f2t f2d">
+          <title id="f2t">Figure 2 — the Rado–Edmonds staircase</title>
+          <desc id="f2d">Paired bars indexed 1 through 5. For each index the red greedy bar is at least as tall as the blue optimum bar, illustrating that the i-th greedy weight dominates the i-th optimum weight. An annotation shows that the first place greedy could fall behind is precisely where the exchange axiom hands it a heavier legal element.</desc>
+          <!-- baseline -->
+          <line x1="60" y1="250" x2="720" y2="250" class="dg-stroke" stroke-width="2"/>
+          <text x="60" y="280" class="dg-lab-sm">i = 1</text>
+          <text x="190" y="280" class="dg-lab-sm">i = 2</text>
+          <text x="320" y="280" class="dg-lab-sm">i = 3</text>
+          <text x="450" y="280" class="dg-lab-sm">i = 4</text>
+          <text x="580" y="280" class="dg-lab-sm">i = 5</text>
+          <!-- legend -->
+          <rect x="520" y="26" width="16" height="16" class="dg-red-f"/><text x="544" y="39" class="dg-lab">w(g&#x1D62;) — greedy</text>
+          <rect x="520" y="48" width="16" height="16" class="dg-blue-f"/><text x="544" y="61" class="dg-lab">w(o&#x1D62;) — optimum</text>
+          <!-- pairs: greedy (red) >= opt (blue) -->
+          <!-- i1 -->
+          <rect x="62"  y="70"  width="40" height="180" class="dg-red-f"/>
+          <rect x="106" y="96"  width="40" height="154" class="dg-blue-f"/>
+          <!-- i2 -->
+          <rect x="192" y="104" width="40" height="146" class="dg-red-f"/>
+          <rect x="236" y="120" width="40" height="130" class="dg-blue-f"/>
+          <!-- i3 -->
+          <rect x="322" y="140" width="40" height="110" class="dg-red-f"/>
+          <rect x="366" y="150" width="40" height="100" class="dg-blue-f"/>
+          <!-- i4 -->
+          <rect x="452" y="178" width="40" height="72"  class="dg-red-f"/>
+          <rect x="496" y="190" width="40" height="60"  class="dg-blue-f"/>
+          <!-- i5 -->
+          <rect x="582" y="206" width="40" height="44"  class="dg-red-f"/>
+          <rect x="626" y="214" width="40" height="36"  class="dg-blue-f"/>
+          <!-- dominance ticks -->
+          <line x1="55" y1="70"  x2="150" y2="70"  class="dg-faint" stroke-dasharray="4 4"/>
+          <text x="150" y="160" class="dg-lab" transform="rotate(-90 150 160)">red &#x2265; blue, always</text>
+          <!-- annotation -->
+          <text x="60" y="306" class="dg-lab-sm">If ever w(g&#x1D62;) &lt; w(o&#x1D62;), axiom I3 yields a heavier legal element greedy skipped &#x2014; impossible. So the staircase cannot break.</text>
+        </svg>
+        <figcaption><span class="fig-num">FIG 2</span> · Greedy's <i>i</i>-th-heaviest pick is never lighter than the optimum's <i>i</i>-th-heaviest. Summing the dominance gives <b>w(G) ≥ w(OPT)</b>. The exchange axiom is the only ingredient — remove it and a counterexample weighting appears, which is the converse.</figcaption>
+      </figure>
+
+      <h3>Direction ⟹ : if greedy is always optimal, M must be a matroid</h3>
+      <details>
+        <summary>The converse — why I3 is necessary, not merely convenient</summary>
+        <div class="inner">
+          <p>Suppose <code>M</code> is downward-closed but <strong>not</strong> a matroid: I3 fails for some independent <code>A, B</code> with <code>|A| &lt; |B|</code> where <em>no</em> element of <code>B∖A</code> can extend <code>A</code>. We build a weighting that fools greedy. Let <code>a = |A|</code>. Choose a small <code>ε &gt; 0</code> and assign:</p>
+          <ul>
+            <li>weight <code>1 + ε</code> to every element of <code>A</code>,</li>
+            <li>weight <code>1</code> to every element of <code>B∖A</code>,</li>
+            <li>weight <code>0</code> to everything else.</li>
+          </ul>
+          <p>Greedy takes all of <code>A</code> first (heaviest), and now — by assumption — <em>nothing in <code>B∖A</code> can be added</em>, so greedy halts with weight <code>a(1+ε)</code>. But <code>B</code> is independent with weight <code>≥ |B| ≥ a+1</code>. For <code>ε</code> small enough, <code>a+1 &gt; a(1+ε)</code>, so <code>B</code> beats greedy. Greedy is not optimal for this weighting. Contrapositive: if greedy is optimal for every weighting, I3 must hold — <code>M</code> is a matroid. <span class="mono">∎</span></p>
+          <p>This is the deep content. For the standard weight-ordered greedy algorithm to work on <em>every non-negative weighting</em> of a downward-closed set system, the exchange axiom is the exact boundary. Outside it, some weighting defeats that algorithm; a particular greedy rule may still be valid for a particular problem.</p>
+        </div>
+      </details>
+
+      <p class="pq">The structure, not the objective, decides whether you may commit.<span class="by">— the lesson of Rado–Edmonds</span></p>
+
+      <h3>The three canonical matroids</h3>
+      <p>You almost never invent a matroid from scratch; you recognise one of three. Learn these and you can pattern-match most "is greedy safe?" questions on sight.</p>
+
+      <div class="tablewrap">
+        <table>
+          <caption>The matroids you will actually meet</caption>
+          <thead>
+            <tr><th scope="col">Matroid</th><th scope="col">Ground set E</th><th scope="col">Independent sets I</th><th scope="col">A basis is…</th><th scope="col">Greedy gives</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Uniform <span class="mono">U(k,n)</span></th><td>n items</td><td>every subset of size ≤ k</td><td>any k items</td><td>the k heaviest items</td></tr>
+            <tr><th scope="row">Partition</th><td>items in groups <span class="mono">B₁…B_m</span></td><td>≤ d&#x1D62; chosen from each group <span class="mono">B&#x1D62;</span></td><td>full quota per group</td><td>max-weight pick under per-group caps</td></tr>
+            <tr><th scope="row">Graphic <span class="mono">M(G)</span></th><td>edges of a graph G</td><td>acyclic edge sets (forests)</td><td>a spanning forest</td><td><b>Kruskal's MST</b> (min) / max-weight forest</td></tr>
+          </tbody>
+          <tfoot><tr><td colspan="5">Uniform = "take the best k." Partition = "best k, but with category quotas." Graphic = "best edges with no cycle." Each is a matroid, so each is solved by one greedy pass — proven, not hoped.</td></tr></tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- 07 TWO STRUCTURES DRAWN -->
+    <section id="concrete" class="reveal">
+      <p class="kicker"><span class="n">07</span> The boundary, made concrete</p>
+      <h2>One structure greedy loves, one it cannot</h2>
+
+      <p>Theory earns its keep when it predicts. Let me take the prerequisite you already trust — Kruskal's MST — and <em>show</em> it is greedy on the graphic matroid; then take the hook — 0/1 knapsack — and <em>show</em> its feasible family fails I3 at a single concrete spot. Same lens, opposite verdict.</p>
+
+      <h3>Kruskal's MST is greedy on the graphic matroid</h3>
+      <p>The forests of a graph form the graphic matroid <code>M(G)</code>. Verify the axioms: the empty edge set is acyclic (I1); any subset of a forest is a forest (I2); and the augmentation — a forest with fewer edges has <em>more</em> components, so a larger forest must contain an edge joining two different components of the smaller one, addable without a cycle (I3). All three hold, so <code>M(G)</code> is a matroid, and greedy on it — sort edges by weight, add each that keeps the set acyclic — is optimal by Rado–Edmonds. That is exactly <a href="dsa-12-minimum-spanning-trees-and-union-find.html">Kruskal</a>. For a <em>maximum</em>-weight forest you sort descending and stop at non-positive edges:</p>
+
+      <pre><code><span class="kw">def</span> <span class="fn">max_weight_forest</span>(n, edges):        <span class="com"># edges: (w, u, v); graph may be disconnected</span>
+    parent = <span class="fn">list</span>(<span class="fn">range</span>(n))
+    <span class="kw">def</span> <span class="fn">find</span>(x):
+        <span class="kw">while</span> parent[x] != x:
+            parent[x] = parent[parent[x]]            <span class="com"># path halving</span>
+            x = parent[x]
+        <span class="kw">return</span> x
+    total, forest = <span class="num">0</span>, []
+    <span class="kw">for</span> w, u, v <span class="kw">in</span> <span class="fn">sorted</span>(edges, reverse=<span class="kw">True</span>):    <span class="com"># heaviest edge first</span>
+        <span class="kw">if</span> w &lt;= <span class="num">0</span>: <span class="kw">break</span>                            <span class="com"># negative edges never help a forest</span>
+        ru, rv = <span class="fn">find</span>(u), <span class="fn">find</span>(v)
+        <span class="kw">if</span> ru != rv:                                <span class="com"># endpoints in different trees -&gt; no cycle</span>
+            parent[ru] = rv
+            total += w; forest.append((u, v))       <span class="com"># COMMIT the edge</span>
+    <span class="kw">return</span> total, forest</code></pre>
+
+      <figure>
+        <svg viewBox="0 0 760 300" role="img" aria-labelledby="f3t f3d">
+          <title id="f3t">Figure 3 — augmentation in the graphic matroid</title>
+          <desc id="f3d">Four vertices labelled 1 to 4. Forest A on the left uses two red edges 1-2 and 3-4, forming two components. Forest B in the middle is a path 1-2-3-4 with three blue edges. Because A is smaller, the axiom guarantees an edge of B — here 3-2 — that bridges A's two components without forming a cycle; it is shown in yellow on the right.</desc>
+          <!-- A -->
+          <text x="60" y="34" class="dg-ttl">forest A &#x2014; 2 edges</text>
+          <text x="60" y="52" class="dg-lab-sm">|A| = 2 · two components</text>
+          <g>
+            <line x1="70"  y1="120" x2="170" y2="120" class="dg-red" stroke-width="4"/>
+            <line x1="70"  y1="210" x2="170" y2="210" class="dg-red" stroke-width="4"/>
+            <circle cx="70"  cy="120" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="70"  y="125" text-anchor="middle" class="dg-val">1</text>
+            <circle cx="170" cy="120" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="170" y="125" text-anchor="middle" class="dg-val">2</text>
+            <circle cx="70"  cy="210" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="70"  y="215" text-anchor="middle" class="dg-val">3</text>
+            <circle cx="170" cy="210" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="170" y="215" text-anchor="middle" class="dg-val">4</text>
+            <path d="M 50 100 H 190 V 140 H 50 Z" class="dg-faint" stroke-dasharray="4 4"/>
+            <path d="M 50 190 H 190 V 230 H 50 Z" class="dg-faint" stroke-dasharray="4 4"/>
+          </g>
+          <!-- B -->
+          <text x="300" y="34" class="dg-ttl">forest B &#x2014; 3 edges</text>
+          <text x="300" y="52" class="dg-lab-sm">|B| = 3 · path 1-2-3-4</text>
+          <g>
+            <line x1="310" y1="120" x2="410" y2="120" class="dg-blue" stroke-width="4"/>
+            <line x1="410" y1="120" x2="310" y2="210" class="dg-blue" stroke-width="4"/>
+            <line x1="310" y1="210" x2="410" y2="210" class="dg-blue" stroke-width="4"/>
+            <circle cx="310" cy="120" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="310" y="125" text-anchor="middle" class="dg-val">1</text>
+            <circle cx="410" cy="120" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="410" y="125" text-anchor="middle" class="dg-val">2</text>
+            <circle cx="310" cy="210" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="310" y="215" text-anchor="middle" class="dg-val">3</text>
+            <circle cx="410" cy="210" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="410" y="215" text-anchor="middle" class="dg-val">4</text>
+          </g>
+          <!-- arrow -->
+          <path d="M 440 165 H 520" class="dg-stroke" stroke-width="2.5" marker-end="url(#ah3)"/>
+          <defs><marker id="ah3" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--bau-ink)"/></marker></defs>
+          <!-- A + augment -->
+          <text x="560" y="34" class="dg-ttl">A &#x222A; {3-2}</text>
+          <text x="560" y="52" class="dg-lab-sm">bridges the cut · still acyclic</text>
+          <g>
+            <line x1="600" y1="120" x2="700" y2="120" class="dg-red" stroke-width="4"/>
+            <line x1="600" y1="210" x2="700" y2="210" class="dg-red" stroke-width="4"/>
+            <line x1="700" y1="120" x2="600" y2="210" class="dg-yel-f" stroke="var(--bau-yellow)" stroke-width="5"/>
+            <circle cx="600" cy="120" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="600" y="125" text-anchor="middle" class="dg-val">1</text>
+            <circle cx="700" cy="120" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="700" y="125" text-anchor="middle" class="dg-val">2</text>
+            <circle cx="600" cy="210" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="600" y="215" text-anchor="middle" class="dg-val">3</text>
+            <circle cx="700" cy="210" r="16" class="dg-white" stroke="var(--bau-ink)" stroke-width="2"/><text x="700" y="215" text-anchor="middle" class="dg-val">4</text>
+          </g>
+          <text x="560" y="262" class="dg-lab-sm">edge 3-2 &#x2208; B joins different A-components</text>
+        </svg>
+        <figcaption><span class="fig-num">FIG 3</span> · The graphic matroid's I3 made visible. Fewer edges ⇒ more components ⇒ the larger forest must cross one of those component boundaries, and that crossing edge augments the smaller forest. This single picture is <i>why</i> Kruskal never has to backtrack.</figcaption>
+      </figure>
+
+      <h3>0/1 knapsack is <em>not</em> a matroid — and you can point to where</h3>
+      <p>Now the hook, dissected. Forget the values for a moment and look only at which item-sets <strong>fit</strong> in the sack. That family — call a set independent if its total weight is within the capacity — is what greedy walks across.</p>
+
+      <div class="mathrow">
+        <div class="cap">The knapsack feasibility system</div>
+        <div class="math-scroll"><math display="block">
+          <mrow>
+            <mi mathvariant="script">I</mi><mo>=</mo>
+            <mo>{</mo><mspace width="0.2em"/>
+            <mi>S</mi><mo>&#x2286;</mo><mi>E</mi>
+            <mspace width="0.4em"/><mo>:</mo><mspace width="0.4em"/>
+            <munder><mo>&#x2211;</mo><mrow><mi>i</mi><mo>&#x2208;</mo><mi>S</mi></mrow></munder>
+            <msub><mi>w</mi><mi>i</mi></msub>
+            <mo>&#x2264;</mo><mi>W</mi>
+            <mspace width="0.2em"/><mo>}</mo>
+          </mrow>
+        </math></div>
+      </div>
+
+      <p>It satisfies I1 (the empty set fits) and I2 (drop an item and it still fits). Does it satisfy I3? Take capacity <code>W = 10</code> and three items of weights <strong>6, 5, 5</strong>. Let <code>A = {6}</code> and <code>B = {5, 5}</code>. Both fit, and <code>|A| = 1 &lt; 2 = |B|</code> — so I3 <em>demands</em> some element of <code>B</code> slot into <code>A</code>. But <code>6 + 5 = 11 &gt; 10</code> for either five. <strong>Nothing in <code>B</code> fits with the 6.</strong> The exchange axiom fails at this exact configuration.</p>
+
+      <figure>
+        <svg viewBox="0 0 760 290" role="img" aria-labelledby="f4t f4d">
+          <title id="f4t">Figure 4 — the broken exchange in 0/1 knapsack</title>
+          <desc id="f4d">A capacity bar of size ten. Set A is a single block of weight six. Set B is two blocks of weight five filling the bar. Adding either five to A overshoots ten, shown as a red overflow region, so no element of the larger set B can augment the smaller set A; the exchange axiom fails.</desc>
+          <text x="40" y="34" class="dg-ttl">A = {6}</text><text x="120" y="34" class="dg-lab-sm">|A| = 1, fits</text>
+          <!-- capacity frame for A -->
+          <rect x="40" y="50" width="300" height="46" rx="3" class="dg-stroke" stroke-width="2"/>
+          <line x1="340" y1="44" x2="340" y2="102" class="dg-stroke" stroke-width="2"/>
+          <text x="346" y="78" class="dg-lab-sm">W = 10</text>
+          <rect x="42" y="52" width="180" height="42" class="dg-red-f"/><text x="132" y="79" text-anchor="middle" class="dg-white" font-family="var(--mono)" font-weight="700" font-size="15">6</text>
+          <!-- B -->
+          <text x="40" y="138" class="dg-ttl">B = {5, 5}</text><text x="150" y="138" class="dg-lab-sm">|B| = 2, fits</text>
+          <rect x="40" y="150" width="300" height="46" rx="3" class="dg-stroke" stroke-width="2"/>
+          <rect x="42" y="152" width="150" height="42" class="dg-blue-f"/><text x="117" y="179" text-anchor="middle" class="dg-white" font-family="var(--mono)" font-weight="700" font-size="15">5</text>
+          <rect x="192" y="152" width="150" height="42" class="dg-blue-f"/><text x="267" y="179" text-anchor="middle" class="dg-white" font-family="var(--mono)" font-weight="700" font-size="15">5</text>
+          <!-- attempt A + 5 -->
+          <text x="430" y="34" class="dg-ttl">A &#x222A; {5} = 11 &gt; 10</text>
+          <rect x="430" y="50" width="300" height="46" rx="3" class="dg-stroke" stroke-width="2"/>
+          <line x1="730" y1="44" x2="730" y2="150" class="dg-red" stroke-width="2" stroke-dasharray="4 4"/>
+          <rect x="432" y="52" width="180" height="42" class="dg-red-f"/><text x="522" y="79" text-anchor="middle" class="dg-white" font-family="var(--mono)" font-weight="700" font-size="15">6</text>
+          <rect x="612" y="52" width="150" height="42" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="687" y="79" text-anchor="middle" class="dg-val">5</text>
+          <!-- overflow hatch beyond 730 -->
+          <path d="M 730 52 L 762 52 L 762 94 L 730 94 Z" fill="color-mix(in oklch, var(--bau-red) 28%, transparent)"/>
+          <text x="430" y="126" class="no" font-family="var(--mono)" font-size="13">overflow &#x2014; the 5 will not fit beside the 6</text>
+          <text x="430" y="170" class="dg-lab">I3 fails: no x &#x2208; B&#x2216;A extends A &#x21D2; not a matroid.</text>
+          <text x="430" y="214" class="dg-lab-sm">A heavy commitment can lock out two lighter</text>
+          <text x="430" y="232" class="dg-lab-sm">ones that together were better &#x2014; greedy cannot</text>
+          <text x="430" y="250" class="dg-lab-sm">foresee it, so it needs DP's table to arbitrate.</text>
+        </svg>
+        <figcaption><span class="fig-num">FIG 4</span> · One picture explains the 27% the hook threw away. Because the feasible family is <b>not</b> a matroid, Rado–Edmonds's converse promises a weighting that defeats greedy — and value <code>(10, 9, 8)</code> on weights <code>(10, 5, 5)</code> is one: greedy grabs the value-10 item and stops at 10, while the optimum takes the two fives for 17. <b>No cycle of cleverness in the sort order saves it; the defect is structural.</b> That is the signal to switch to dynamic programming.</figcaption>
+      </figure>
+
+      <div class="band blue">
+        <p class="bl">The recognition habit</p>
+        <p>When a problem imposes a count cap or forbids cycles, check whether the feasible sets form a matroid. Budgets and compatibility constraints need more care. If a local commitment blocks a better combination, that greedy rule has failed; look for a different proof or model the alternatives with dynamic programming.</p>
+      </div>
+    </section>
+
+    <!-- 08 WHERE IT BREAKS -->
+    <section id="breaks" class="reveal">
+      <p class="kicker"><span class="n">08</span> Where it breaks</p>
+      <h2>Failure modes &amp; common mistakes</h2>
+
+      <p>This section marks the edge of the abstraction, where formal elegance stops describing the world. Memorise these traps; each is a place a confident greedy ships a wrong answer.</p>
+
+      <h4>1 · "It passed my tests" is not a proof</h4>
+      <p>Rado–Edmonds is a statement about <em>every</em> weighting. A non-matroid can let greedy win on a hundred random instances and lose on the hundred-and-first. The value-greedy on knapsack is <em>correct</em> on the famous (60,100,120) instance and <em>wrong</em> on (10,9,8)/weights(10,5,5). Never promote a passing test to a correctness claim — find the exchange proof or find the counterexample.</p>
+
+      <h4>2 · Greedy-by-ratio on 0/1 knapsack</h4>
+      <p>The seductive-but-wrong move from the hook. Density ordering is <em>exactly</em> optimal for <em>fractional</em> knapsack (you can take a sliver of the last item — an exchange argument proves it), and it is the canonical trap for <em>0/1</em>, where indivisibility kills the swap. The fix is the pseudo-polynomial DP <code>K[i][c]</code> from <a href="dsa-15-dynamic-programming-optimal-substructure-over-a-subproblem-dag.html">Lesson 15</a>.</p>
+
+      <h4>3 · Weighted interval scheduling looks like a matroid and is not</h4>
+      <p>Maximising the <em>count</em> of compatible intervals is the earliest-finish greedy we proved. Attach weights and the swap collapses: a single fat interval can outvalue the two it overlaps, so "earliest finish" — or "heaviest first," or any sort — can be beaten. Pairwise-disjoint sets are downward-closed but fail I3. This problem is DP (sort by finish, binary-search the predecessor) — it is Practice Problem 3 below.</p>
+
+      <h4>4 · Non-canonical coin systems</h4>
+      <p>Greedy change-making (take the largest coin ≤ remaining) is optimal for <code>{1, 5, 10, 25}</code> but wrong for <code>{1, 3, 4}</code> making 6: greedy gives <code>4 + 1 + 1</code> = three coins, the optimum is <code>3 + 3</code> = two. Coin sets are not matroids; canonical currencies are a lucky special case, not a law. Arbitrary denominations need DP.</p>
+
+      <h4>5 · Confusing "an optimal solution is greedy" with "greedy is unique"</h4>
+      <p>The exchange argument proves <em>some</em> optimum agrees with the greedy choice, not that the greedy solution is the only optimum. Ties are normal (Fig 3's augmenting edge could have been a different equal-weight edge). The <em>value</em> is unique; the witnessing set need not be.</p>
+
+      <h4>6 · The boundary of greedy itself: matroid <em>intersection</em></h4>
+      <p>Greedy conquers one matroid. The intersection of <em>two</em> matroids — e.g. bipartite matching, which is a partition matroid on the left vertices intersected with one on the right — is generally <strong>not</strong> a matroid, and plain greedy fails on it. Such problems need augmenting-path algorithms (matroid intersection, flows), a genuinely harder regime. Knowing greedy <em>stops</em> here is part of mastering it.</p>
+
+      <div class="band red">
+        <p class="bl">The diagnostic, in one move</p>
+        <p>Ask: <em>can this particular local commitment lock out a better combination?</em> A matroid guarantees the standard weight-ordered rule for every non-negative weighting. Outside that setting, a problem-specific exchange proof may still work, as in unweighted interval scheduling. If a counterexample defeats your rule, revise the rule or consider dynamic programming.</p>
+      </div>
+
+      <figure>
+        <svg viewBox="0 0 760 420" role="img" aria-labelledby="f5t f5d">
+          <title id="f5t">Figure 5 — the decision map: greedy or DP?</title>
+          <desc id="f5d">A flowchart. Start with the feasible family. First decision: is it downward closed? If no, it is not even an independence system. If yes, second decision: does the exchange axiom hold for all pairs? If yes, it is a matroid and greedy is optimal by Rado–Edmonds. If no, third decision: does a swap proof still work for this one objective, such as scheduling? If yes, use greedy with a custom exchange proof. If no, the choices interact, so use dynamic programming.</desc>
+          <defs><marker id="ah5" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--bau-ink)"/></marker></defs>
+          <!-- start -->
+          <rect x="280" y="20" width="200" height="44" rx="3" class="dg-fill-ink"/>
+          <text x="380" y="47" text-anchor="middle" class="dg-white" font-family="var(--geo)" font-weight="800" font-size="14">Feasible family of partial solutions</text>
+          <line x1="380" y1="64" x2="380" y2="92" class="dg-stroke" stroke-width="2" marker-end="url(#ah5)"/>
+          <!-- D1 downward closed -->
+          <polygon points="380,96 520,140 380,184 240,140" class="dg-blue" fill="color-mix(in oklch, var(--bau-blue) 10%, var(--surface))" stroke-width="2"/>
+          <text x="380" y="136" text-anchor="middle" class="dg-lab">downward-closed?</text>
+          <text x="380" y="154" text-anchor="middle" class="dg-lab-sm">(I1, I2)</text>
+          <text x="150" y="135" class="no">no</text>
+          <line x1="240" y1="140" x2="120" y2="140" class="dg-stroke" stroke-width="2" marker-end="url(#ah5)"/>
+          <rect x="20" y="118" width="96" height="44" rx="3" class="dg-stroke" stroke-width="2"/>
+          <text x="68" y="138" text-anchor="middle" class="dg-lab-sm">not an</text>
+          <text x="68" y="154" text-anchor="middle" class="dg-lab-sm">independence sys.</text>
+          <text x="392" y="208" class="yes">yes</text>
+          <line x1="380" y1="184" x2="380" y2="214" class="dg-stroke" stroke-width="2" marker-end="url(#ah5)"/>
+          <!-- D2 exchange axiom -->
+          <polygon points="380,218 540,266 380,314 220,266" class="dg-red" fill="color-mix(in oklch, var(--bau-red) 8%, var(--surface))" stroke-width="2"/>
+          <text x="380" y="262" text-anchor="middle" class="dg-lab">exchange axiom I3</text>
+          <text x="380" y="280" text-anchor="middle" class="dg-lab-sm">for ALL pairs?</text>
+          <text x="560" y="262" class="yes">yes</text>
+          <line x1="540" y1="266" x2="640" y2="266" class="dg-stroke" stroke-width="2" marker-end="url(#ah5)"/>
+          <rect x="642" y="232" width="110" height="68" rx="3" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="2"/>
+          <text x="697" y="258" text-anchor="middle" class="dg-ttl">MATROID</text>
+          <text x="697" y="278" text-anchor="middle" class="dg-lab-sm">greedy optimal</text>
+          <text x="697" y="293" text-anchor="middle" class="dg-lab-sm">(Rado–Edmonds)</text>
+          <text x="392" y="338" class="no">no</text>
+          <line x1="380" y1="314" x2="380" y2="344" class="dg-stroke" stroke-width="2" marker-end="url(#ah5)"/>
+          <!-- D3 custom swap -->
+          <polygon points="380,348 540,392 380,436 220,392" class="dg-blue" fill="color-mix(in oklch, var(--bau-blue) 10%, var(--surface))" stroke-width="2"/>
+          <text x="380" y="388" text-anchor="middle" class="dg-lab">a swap proof for</text>
+          <text x="380" y="406" text-anchor="middle" class="dg-lab-sm">THIS objective?</text>
+          <text x="560" y="388" class="yes">yes</text>
+          <line x1="540" y1="392" x2="640" y2="392" class="dg-stroke" stroke-width="2" marker-end="url(#ah5)"/>
+          <rect x="642" y="368" width="110" height="48" rx="3" class="dg-stroke" stroke-width="2"/>
+          <text x="697" y="389" text-anchor="middle" class="dg-lab-sm">greedy +</text>
+          <text x="697" y="405" text-anchor="middle" class="dg-lab-sm">custom exchange</text>
+          <text x="150" y="388" class="no">no</text>
+          <line x1="220" y1="392" x2="120" y2="392" class="dg-stroke" stroke-width="2" marker-end="url(#ah5)"/>
+          <rect x="20" y="368" width="96" height="48" rx="3" class="dg-red-f"/>
+          <text x="68" y="389" text-anchor="middle" class="dg-white" font-family="var(--geo)" font-weight="800" font-size="13">DYNAMIC</text>
+          <text x="68" y="405" text-anchor="middle" class="dg-white" font-family="var(--geo)" font-weight="800" font-size="13">PROGRAMMING</text>
+        </svg>
+        <figcaption><span class="fig-num">FIG 5</span> · The whole lecture as a decision procedure. Most "should I be greedy?" questions resolve at the I3 diamond: a clean exchange axiom is a green light; a single counterexample sends you down to the custom-proof case or, when choices truly interact, to DP.</figcaption>
+      </figure>
+    </section>
+
+    <!-- 09 PRACTICE -->
+    <section id="practice" class="reveal">
+      <p class="kicker"><span class="n">09</span> Practice</p>
+      <h2>Four problems — prove it, or break it</h2>
+
+      <div class="prob">
+        <div class="head"><span class="pn">P1</span><span class="pt">Job Sequencing with Deadlines</span><span class="lc">scheduling matroid</span></div>
+        <div class="body">
+          <p>You are given <code>n</code> jobs; job <code>i</code> has an integer deadline <code>dᵢ ≥ 1</code> and a profit <code>pᵢ &gt; 0</code>. Each job takes exactly one unit of time and there is a single machine, so at most one job runs per time slot <code>1, 2, 3, …</code>. A job earns its profit only if it is scheduled in some slot <code>≤ dᵢ</code>. Choose a subset and a schedule maximising total profit.</p>
+          <span class="sig">maxProfitJobScheduling(jobs: List[[deadline, profit]]) -> int   # returns max total profit</span>
+          <p class="ex">Example: jobs = [[2,100],[1,19],[2,27],[1,25],[3,15]]
+Answer: 142   (run profit-100 in slot 2, profit-27 in slot 1, profit-15 in slot 3)
+Constraints: 1 &lt;= n &lt;= 1e5 · 1 &lt;= dᵢ &lt;= n · 1 &lt;= pᵢ &lt;= 1e9</p>
+          <p class="note"><span class="tag-pill mat">greedy is provably optimal</span> &nbsp; State the matroid whose independent sets are the schedulable job-subsets, then prove your greedy correct by its exchange axiom.</p>
+        </div>
+      </div>
+
+      <div class="prob">
+        <div class="head"><span class="pn">P2</span><span class="pt">Minimum Maximum Lateness</span><span class="lc">exchange argument</span></div>
+        <div class="body">
+          <p>A single machine must process <code>n</code> jobs, all available at time 0, no preemption. Job <code>i</code> has processing time <code>tᵢ</code> and due date <code>dᵢ</code>. In a chosen order, job <code>i</code> completes at <code>Cᵢ</code> (the running sum of processing times up to and including it) and incurs lateness <code>Lᵢ = Cᵢ − dᵢ</code>. Return the minimum possible value of the maximum lateness <code>max&#x1D62; Lᵢ</code>.</p>
+          <span class="sig">minMaxLateness(jobs: List[[t, d]]) -> int   # minimise the worst lateness</span>
+          <p class="ex">Example: jobs = [[3,6],[2,8],[1,9],[4,9]]
+Answer: 1   (Earliest-Due-Date order; verify the schedule yourself)
+Constraints: 1 &lt;= n &lt;= 1e5 · 1 &lt;= tᵢ, dᵢ &lt;= 1e9 · lateness may be negative</p>
+          <p class="note"><span class="tag-pill mat">greedy is provably optimal</span> &nbsp; Conjecture the ordering, then prove it by the <em>adjacent-inversion</em> exchange: show swapping an out-of-order adjacent pair never raises the maximum lateness.</p>
+        </div>
+      </div>
+
+      <div class="prob">
+        <div class="head"><span class="pn">P3</span><span class="pt">Weighted Interval Scheduling</span><span class="lc">greedy fails → DP</span></div>
+        <div class="body">
+          <p>Given <code>n</code> intervals, interval <code>i</code> is <code>[startᵢ, endᵢ)</code> with weight <code>wᵢ &gt; 0</code>. Choose a subset of pairwise non-overlapping intervals (touching at an endpoint is allowed) maximising the total weight. Return that maximum weight.</p>
+          <span class="sig">maxWeightIntervals(intervals: List[[start, end, weight]]) -> int</span>
+          <p class="ex">Example: intervals = [[1,4,100],[1,2,1],[3,5,1]]
+Answer: 100   (the single fat interval beats the two thin ones — earliest-finish greedy returns 2)
+Constraints: 1 &lt;= n &lt;= 1e5 · coordinates up to 1e9</p>
+          <p class="note"><span class="tag-pill dp">greedy is NOT safe</span> &nbsp; First exhibit an instance where earliest-finish (and heaviest-first) greedy lose, arguing which axiom breaks; then give an <code>O(n log n)</code> DP using sort-by-finish plus a binary-searched predecessor.</p>
+        </div>
+      </div>
+
+      <div class="prob">
+        <div class="head"><span class="pn">P4</span><span class="pt">Maximum-Weight Forest</span><span class="lc">graphic matroid</span></div>
+        <div class="body">
+          <p>An undirected graph has <code>n</code> vertices and edges <code>[u, v, w]</code> with possibly negative weights. Choose a subset of edges containing <strong>no cycle</strong> (a forest — the graph need not stay connected and you are not required to span every vertex) that maximises total weight. Return that maximum weight.</p>
+          <span class="sig">maxWeightForest(n: int, edges: List[[u, v, w]]) -> int</span>
+          <p class="ex">Example: n = 4, edges = [[0,1,5],[1,2,4],[0,3,3],[2,3,-2]]
+Answer: 12   (take the +5, +4, +3 edges as a tree on all four vertices; discard the −2 edge — non-positive and cycle-closing)
+Constraints: 1 &lt;= n &lt;= 1e5 · weights may be negative</p>
+          <p class="note"><span class="tag-pill mat">greedy is provably optimal</span> &nbsp; Name the matroid, verify its three axioms (especially the augmentation that makes I3 hold for forests), and explain why every non-positive edge is safely discarded.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 RECAP + NEXT -->
+    <section id="recap" class="reveal">
+      <p class="kicker"><span class="n">10</span> Recap &amp; next</p>
+      <h2>The one thing to remember</h2>
+
+      <div class="recap">
+        <p style="margin-top:0"><strong>A matroid is the exact condition for weight-ordered greedy to work for every non-negative weighting of a downward-closed set system.</strong> The exchange axiom makes each chosen element safe. Other greedy algorithms can still be optimal for a particular objective when a separate exchange proof applies, as with earliest-finish interval scheduling. A counterexample to your chosen rule is a signal to rethink the rule or use dynamic programming.</p>
+      </div>
+
+      <p>Three reflexes to carry forward. <strong>(1)</strong> Before coding a greedy rule, hunt for a proof of the local choice. <strong>(2)</strong> Test whether a uniform, partition, graphic, or other matroid models the feasible sets; Kruskal is a graphic-matroid example. <strong>(3)</strong> Use a counterexample to discard an unsafe rule, then seek a better rule or a dynamic program.</p>
+
+      <div class="nextcard">
+        <div>
+          <div class="meta">Next in the syllabus · Lecture 17</div>
+          <div class="t">Network Flow: When Greedy Needs to Undo Itself</div>
+        </div>
+        <div class="arrow">→</div>
+      </div>
+      <p class="note">Matroid intersection and bipartite matching ended this lecture as the place plain greedy stops. The repair — letting an algorithm <em>retract</em> a past commitment along an augmenting path — is the idea behind maximum flow, and it is where we go next.</p>
+
+      
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* progressive enhancement only — page is fully readable with JS off */
+document.documentElement.classList.add('js');
+(function(){
+  var rm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = document.querySelectorAll('.reveal');
+  if(rm || !('IntersectionObserver' in window)){
+    els.forEach(function(e){ e.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+  els.forEach(function(e){ io.observe(e); });
+})();
+</script>
+<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-15-dynamic-programming-optimal-substructure-over-a-subproblem-dag.html">← Previous study</a><a href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html">Next study →</a></nav>
+</body>
+</html>

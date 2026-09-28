@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Single-Source Shortest Paths &amp; the Relaxation Paradigm</title>
-<link rel="stylesheet" href="../css/atlas.css?v=2">
+<link rel="stylesheet" href="../css/atlas.css?v=20260928">
 <style>
   :root{
     color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
@@ -350,8 +350,8 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=5">
-</head>
+<link rel="stylesheet" href="studies.css?v=20260928">
+<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
 <body class="study-page">
 <nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">13 / 23</span></nav>
 <div class="progress" aria-hidden="true"></div>
@@ -379,6 +379,11 @@
   <div class="wrap">
     <div class="eyebrow"><span class="n">Lecture 13</span> shortest paths &amp; the relaxation paradigm</div>
     <h1>Single-Source Shortest Paths</h1>
+<div class="study-brief" aria-label="Study at a glance">
+  <div class="study-brief-title"><span>FIELD NOTE / 13</span><strong>Before the long read</strong></div>
+  <div class="study-brief-grid"><p><span>Build on</span>Breadth first search</p><p><span>Core invariant</span>Relaxation improves tentative distances; the weight assumptions decide when a distance becomes final.</p></div>
+  <details class="study-check"><summary>Try this first · Why is Dijkstra unsafe with a negative edge?</summary><p>A later negative edge can improve a vertex already finalized by Dijkstra.</p></details>
+</div>
     <p class="lede col">Ask a maps app for the fastest route across a country and it searches a graph of perhaps <strong>twenty million</strong> road segments. The number of distinct routes is astronomical &mdash; more than atoms in your body &mdash; yet the answer returns in a blink. It does so without ever <em>enumerating</em> a path. It keeps one number per intersection, an over-estimate of the distance, and lowers it by a single rule applied over and over. That rule is <span class="term">relaxation</span>, and it is the whole of this lecture. Dijkstra, Bellman&ndash;Ford, and the linear-time DAG method are not three algorithms. They are one primitive performed in three different <em>orders</em>.</p>
 
     <div class="col" style="margin-top:1.6em">
@@ -814,7 +819,7 @@
               <text x="16" y="106" class="dg-label sm">c was fixed from a's stale value 1</text>
             </g>
           </svg>
-          <figcaption><b>Figure 3 &mdash; one negative edge, one wrong answer.</b> Dijkstra finalises <code class="inl">a</code> at <code class="inl">1</code> and immediately commits <code class="inl">c = a + 1 = 2</code>. The shortcut <code class="inl">b&#8594;a = &minus;2</code> that would make <code class="inl">a = 0</code> (and thus <code class="inl">c = 1</code>) is found only after <code class="inl">a</code> is sealed. The damage has already propagated downstream to <code class="inl">c</code>. This is why a single negative edge mandates Bellman&ndash;Ford.</figcaption>
+          <figcaption><b>Figure 3 &mdash; one negative edge, one wrong answer.</b> Dijkstra finalises <code class="inl">a</code> at <code class="inl">1</code> and immediately commits <code class="inl">c = a + 1 = 2</code>. The shortcut <code class="inl">b&#8594;a = &minus;2</code> that would make <code class="inl">a = 0</code> (and thus <code class="inl">c = 1</code>) is found only after <code class="inl">a</code> is sealed. The damage has already propagated downstream to <code class="inl">c</code>. Standard Dijkstra requires nonnegative weights; Bellman&ndash;Ford handles general edge weights and detects reachable negative cycles.</figcaption>
         </figure>
       </div>
     </section>

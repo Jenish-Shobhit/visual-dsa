@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Fast Fourier Transform</title>
-<link rel="stylesheet" href="../css/atlas.css?v=2">
+<link rel="stylesheet" href="../css/atlas.css?v=20260928">
 <style>
   :root{
     color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
@@ -318,8 +318,8 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=5">
-</head>
+<link rel="stylesheet" href="studies.css?v=20260928">
+<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
 <body class="study-page">
 <nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">04 / 23</span></nav>
 <div class="progress" aria-hidden="true"></div>
@@ -348,13 +348,18 @@
   <div class="wrap">
     <div class="eyebrow"><span class="n">Lecture 04</span> the transform that broke the quadratic wall</div>
     <h1>The Fast Fourier Transform</h1>
-    <p class="lede col">To multiply two polynomials — or two enormous integers — schoolbook arithmetic pairs every digit with every other: <code class="inl">&#x398;(n&#178;)</code>. Lecture&nbsp;03 shaved that to <code class="inl">&#x398;(n<sup>1.585</sup>)</code> with Karatsuba. This lecture does something stranger and far stronger. It does not multiply faster. It <strong>changes what a polynomial <em>is</em></strong> — looks at it from a second representation in which multiplication is nearly free — and pays only a <code class="inl">&#x398;(n&#160;log&#160;n)</code> toll to travel there and back.</p>
+<div class="study-brief" aria-label="Study at a glance">
+  <div class="study-brief-title"><span>FIELD NOTE / 04</span><strong>Before the long read</strong></div>
+  <div class="study-brief-grid"><p><span>Build on</span>Polynomials and divide and conquer</p><p><span>Core invariant</span>Evaluation changes convolution into pointwise multiplication; inverse evaluation restores coefficients.</p></div>
+  <details class="study-check"><summary>Try this first · Two length 5 coefficient lists are multiplied. What is the smallest radix 2 transform length?</summary><p>The result needs 5 + 5 − 1 = 9 coefficients, so pad each list to length 16.</p></details>
+</div>
+    <p class="lede col">To multiply two polynomials — or two enormous integers — schoolbook arithmetic pairs every digit with every other: <code class="inl">&#x398;(n&#178;)</code>. Lecture&nbsp;03 reduced the growth to <code class="inl">&#x398;(n<sup>1.585</sup>)</code> with Karatsuba. This lecture changes representation: evaluate the polynomials at carefully chosen points, multiply the values, then interpolate. The translations cost <code class="inl">&#x398;(n&#160;log&#160;n)</code> overall.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
-        <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Multiply two integers of one million digits each. Schoolbook does about <code class="inl">10&#178; = 10<sup>12</sup></code> &mdash; a trillion &mdash; digit&middot;digit products. Karatsuba needs roughly <code class="inl">(10&#8310;)<sup>1.585</sup>&#8776;3&times;10&#8313;</code>. The FFT route needs about <code class="inl">n&#160;log&#8322;&#160;n &#8776; 2&times;10&#8311;</code>.</p>
-        <p style="margin-bottom:0">That is a <strong>50,000&times;</strong> gap over schoolbook, opened not by a cleverer multiplication but by a change of <em>coordinates</em>. The same transform that powers this is, by line-count, the most-run numerical algorithm on Earth &mdash; inside every audio codec, every JPEG, every radio. And Gauss wrote it down in <strong>1805</strong>, 150 years before there was a computer to run it on.</p>
+        <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Multiply two integers of one million digits each. Schoolbook uses about <code class="inl">(10<sup>6</sup>)<sup>2</sup> = 10<sup>12</sup></code> digit products. Karatsuba's recurrence gives an order of <code class="inl">(10<sup>6</sup>)<sup>1.585</sup> ≈ 3 × 10<sup>9</sup></code> subproblems. An FFT based method needs a transform length at least twice the input length and work proportional to that length times its logarithm.</p>
+        <p style="margin-bottom:0">These counts omit large and different constant factors, carries, and precision management, but the growth gap is real. It comes from a change of <em>coordinates</em>: transform to values, multiply point by point, and transform back.</p>
       </div>
     </div>
   </div>
@@ -392,7 +397,7 @@
       <h2>One object, told in two languages</h2>
       <div class="col">
         <p>Start with a useful separation: there is the <em>operation</em> we wish to perform, and there is the <em>representation</em> in which we perform it. Confuse them and a problem looks hard that is merely badly coordinated. Ada Lovelace described how the Analytical Engine weaves algebraic patterns as the Jacquard loom weaves leaves &mdash; but only once the pattern has been arranged onto cards the loom can read. The art is in the arranging.</p>
-        <p>The Fast Fourier Transform is the purest illustration of that art in all of computing. The operation &mdash; multiply two polynomials &mdash; is genuinely <code class="inl">&#x398;(n&#178;)</code> in the obvious representation, where a polynomial <em>is</em> its list of coefficients. The trick is to notice that a polynomial has a <strong>second, equally faithful representation</strong>, and that in that second language the very same multiplication is almost free. The whole algorithm is the cost of translation: out of coefficient-language, a fast cheap multiply, and back.</p>
+        <p>The Fast Fourier Transform is a clear illustration of that art. Direct coefficient convolution takes <code class="inl">&#x398;(n&#178;)</code> time. A polynomial also has a <strong>second, equally faithful representation</strong> as values at distinct points, where the multiplication step is pointwise. The algorithm pays to translate out of coefficient form and back.</p>
         <p>So this lecture is not really about Fourier, or about signal processing, or even about complex numbers &mdash; those are the <em>engine</em>. It is about a move you will make again and again in this course: when an operation is expensive, do not grind harder at it. Ask whether a change of representation makes it disappear. The FFT is the canonical case where it does.</p>
       </div>
     </section>
@@ -405,7 +410,7 @@
         <ul class="obj">
           <li><strong>Recognise</strong> polynomial (and big-integer) multiplication as a <em>convolution</em> of coefficient vectors, and state why the obvious method is <code class="inl">&#x398;(n&#178;)</code>.</li>
           <li><strong>Move</strong> a polynomial between its <em>coefficient</em> and <em>point&#8209;value</em> representations, and explain why multiplication costs <code class="inl">&#x398;(n)</code> in the second and <code class="inl">&#x398;(n&#178;)</code> in the first.</li>
-          <li><strong>Derive</strong> why the complex <code class="inl">n</code>-th roots of unity are the unique evaluation points that let evaluation split recursively &mdash; the squaring map that halves the problem.</li>
+          <li><strong>Derive</strong> why the complex <code class="inl">n</code>-th roots of unity let evaluation split recursively &mdash; the squaring map halves the problem.</li>
           <li><strong>Build</strong> the FFT from the even/odd identity <code class="inl">A(x)=A<sub>e</sub>(x&#178;)+x&#160;A<sub>o</sub>(x&#178;)</code>, solve its recurrence <code class="inl">T(n)=2T(n/2)+&#x398;(n)</code> to <code class="inl">&#x398;(n&#160;log&#160;n)</code>, and read the butterfly.</li>
           <li><strong>Justify</strong> interpolation as the <em>same</em> transform run with conjugate roots and a <code class="inl">1/n</code> scaling &mdash; via the summation lemma &mdash; and assemble the full <code class="inl">&#x398;(n&#160;log&#160;n)</code> multiply.</li>
           <li><strong>Diagnose</strong> the real failures: too-small transform length (circular wraparound), floating-point round-off, non&#8209;power&#8209;of&#8209;two sizes, and forgotten carries.</li>
@@ -550,7 +555,7 @@
         <p>Look hard at Figure&nbsp;1, because it contains a trap as well as a strategy. We have made the <em>middle</em> step cheap, but we have not yet said what the two blue translations cost. <span class="term">Evaluation</span> &mdash; turning <code class="inl">n</code> coefficients into <code class="inl">n</code> values &mdash; and <span class="term">interpolation</span> &mdash; turning <code class="inl">n</code> values back into <code class="inl">n</code> coefficients &mdash; are where the whole problem now lives.</p>
         <p>And here is the trap: if we choose the evaluation points <em>carelessly</em>, evaluation is itself <code class="inl">&#x398;(n&#178;)</code>. Evaluating one polynomial at one point by Horner's rule is <code class="inl">&#x398;(n)</code>; do that at <code class="inl">n</code> arbitrary points and you are back to <code class="inl">&#x398;(n&#178;)</code>, having gained nothing. The detour would be a scenic route to the same toll.</p>
         <div class="pull">The points are not a detail. <span>Choosing the evaluation points is the entire algorithm.</span></div>
-        <p>So the question sharpens to something precise and answerable: <strong>is there a set of <code class="inl">n</code> points so specially structured that evaluating any polynomial at all of them, together, costs less than doing them one at a time?</strong> We want the <code class="inl">n</code> evaluations to <em>share work</em>. The answer is yes, and it is forced &mdash; almost uniquely &mdash; by a single requirement we will now reverse-engineer. This is the move my method always reaches for: do not optimise the computation as given; find the abstraction (here, the right <em>points</em>) at which the computation reorganises itself.</p>
+        <p>So the question sharpens to something precise and answerable: <strong>is there a set of <code class="inl">n</code> points so specially structured that evaluating any polynomial at all of them, together, costs less than doing them one at a time?</strong> We want the <code class="inl">n</code> evaluations to <em>share work</em>. The answer is yes. We will derive one useful choice from a recursive symmetry requirement. This is the move my method always reaches for: do not optimise the computation as given; find the abstraction (here, the right <em>points</em>) at which the computation reorganises itself.</p>
       </div>
     </section>
 
@@ -594,7 +599,7 @@
           </math></div>
         </div>
         <p>To evaluate <code class="inl">A</code> at our <code class="inl">n</code> points, this identity says we need <code class="inl">A<sub>e</sub></code> and <code class="inl">A<sub>o</sub></code> at the <em>squares</em> of those points. Two subproblems &mdash; good. But each is a polynomial in <code class="inl">x&#178;</code> evaluated over the set <code class="inl">{x&#8320;&#178;,&#8230;,x<sub>n&minus;1</sub>&#178;}</code>, and in general squaring <code class="inl">n</code> distinct numbers gives <code class="inl">n</code> distinct squares. The subproblems would still be size <code class="inl">n</code>, not <code class="inl">n/2</code>. <strong>No saving &mdash; unless the squares collide.</strong></p>
-        <p>So demand it. We want a set of <code class="inl">n</code> points whose squares number only <code class="inl">n/2</code> &mdash; a set that <em>collapses by half</em> under squaring, and keeps collapsing, recursively, all the way down. A set closed under squaring, shrinking by half each time. On the real line no such set of distinct points exists. On the complex plane there is exactly one natural family: the <span class="term">n-th roots of unity</span>, the <code class="inl">n</code> solutions of <code class="inl">z<sup>n</sup>=1</code>.</p>
+        <p>So demand it. We want a set of <code class="inl">n</code> points whose squares number only <code class="inl">n/2</code> &mdash; a set that <em>collapses by half</em> under squaring, and keeps collapsing, recursively, all the way down. The <span class="term">n-th roots of unity</span>, the <code class="inl">n</code> solutions of <code class="inl">z<sup>n</sup>=1</code>, give us exactly this structure and a simple inverse transform.</p>
         <div class="eq">
           <span class="lbl">the n-th roots of unity</span>
           <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -675,7 +680,7 @@
               <marker id="a-sq" markerWidth="11" markerHeight="11" refX="8" refY="5.5" orient="auto"><path d="M0 0 L11 5.5 L0 11 z" fill="var(--bau-blue)"/></marker>
             </defs>
           </svg>
-          <figcaption><b>Figure 2 &mdash; why these points and no others.</b> Each coloured diameter joins an antipodal pair <code class="inl">&#969;<sup>k</sup></code>, <code class="inl">&#969;<sup>k+4</sup>=&minus;&#969;<sup>k</sup></code>. The two ends square to one point, so eight roots collapse to four &mdash; the 4th roots &mdash; which collapse to two, then one. That self-similar halving is precisely the recursive structure divide and conquer needs, and the roots of unity are the only points that have it.</figcaption>
+          <figcaption><b>Figure 2 &mdash; why these points work.</b> Each coloured diameter joins an antipodal pair <code class="inl">&#969;<sup>k</sup></code>, <code class="inl">&#969;<sup>k+4</sup>=&minus;&#969;<sup>k</sup></code>. The two ends square to one point, so eight roots collapse to four &mdash; the 4th roots &mdash; which collapse to two, then one. That self-similar halving gives this FFT its divide-and-conquer structure.</figcaption>
         </figure>
       </div>
     </section>
@@ -941,7 +946,7 @@
             </mrow>
           </math></div>
         </div>
-        <p>When <code class="inl">j=l</code> every term is <code class="inl">&#969;<sub>n</sub><sup>0</sup>=1</code>, summing to <code class="inl">n</code>. When <code class="inl">j&#8800;l</code> it is a geometric series in the ratio <code class="inl">&#969;<sub>n</sub><sup>j&minus;l</sup>&#8800;1</code> whose terms run once around the circle and cancel to <code class="inl">0</code>. This says <code class="inl">V</code> times its own conjugate-transpose is <code class="inl">n</code> times the identity &mdash; so the inverse is just the conjugate, scaled:</p>
+        <p>When <code class="inl">j=l</code> every term is <code class="inl">&#969;<sub>n</sub><sup>0</sup>=1</code>, summing to <code class="inl">n</code>. When <code class="inl">j&#8800;l</code> it is a geometric series in the ratio <code class="inl">&#969;<sub>n</sub><sup>j&minus;l</sup>&#8800;1</code> with ratio <code class="inl">q</code> satisfying <code class="inl">q&#8800;1</code> and <code class="inl">q<sup>n</sup>=1</code>. Its sum is <code class="inl">(1-q<sup>n</sup>)/(1-q)=0</code>. This says <code class="inl">V</code> times its own conjugate-transpose is <code class="inl">n</code> times the identity &mdash; so the inverse is just the conjugate, scaled:</p>
         <div class="eq">
           <span class="lbl">the inverse transform — conjugate the roots, divide by n</span>
           <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -1028,7 +1033,7 @@
             <tfoot><tr><td colspan="4">c = [&#160;3,&#160; 10,&#160; 8,&#160; 0&#160;] &nbsp;&rarr;&nbsp; C(x) = 3 + 10x + 8x&#178;</td></tr></tfoot>
           </table>
         </div>
-        <p>Exactly the schoolbook answer, <code class="inl">3+10x+8x&#178;</code>. Notice three things worth keeping. The imaginary parts <em>cancelled to zero</em> in every coefficient &mdash; they must, because the true answer is real; surviving imaginary dust signals a bug or round-off. The final <code class="inl">c<sub>3</sub>=0</code> is the padding coefficient correctly reporting &ldquo;degree&nbsp;2, nothing here.&rdquo; And every step was <code class="inl">&#x398;(n&#160;log&#160;n)</code> or cheaper &mdash; on four points the constant dwarfs the asymptotics, but at <code class="inl">n=10&#8310;</code> this is the route that wins by <code class="inl">50{,}000&times;</code>.</p>
+        <p>Exactly the schoolbook answer, <code class="inl">3+10x+8x&#178;</code>. Notice three things worth keeping. The imaginary parts <em>cancelled to zero</em> in every coefficient &mdash; they must, because the true answer is real; surviving imaginary dust signals a bug or round-off. The final <code class="inl">c<sub>3</sub>=0</code> is the padding coefficient correctly reporting &ldquo;degree&nbsp;2, nothing here.&rdquo; And every step was <code class="inl">&#x398;(n&#160;log&#160;n)</code> or cheaper &mdash; on four points the constant dwarfs the asymptotics, while at large sizes the slower growth can outweigh those constants; the speedup depends on the implementation and precision requirements.</p>
         <details>
           <summary>show the j = 1 sum in full (where the conjugate roots earn their keep)</summary>
           <div class="body">
@@ -1061,11 +1066,13 @@
   <span class="tok-kw">return</span> conj(<span class="tok-fn">FFT</span>(conj(y))) / length(y)   <span class="tok-com"># conjugate roots, &divide; n</span>
 
 <span class="tok-fn">MULTIPLY</span>(A, B):                    <span class="tok-com"># coefficient vectors</span>
-  N <span class="tok-op">&#8592;</span> next power of two &#8805; len(A) <span class="tok-op">+</span> len(B) &#8722; <span class="tok-num">1</span>
+  L <span class="tok-op">&#8592;</span> len(A) <span class="tok-op">+</span> len(B) &#8722; <span class="tok-num">1</span>        <span class="tok-com"># nonempty integer coefficients</span>
+  N <span class="tok-op">&#8592;</span> next power of two &#8805; L
   pad A, B to length N with zeros
-  C&#770; <span class="tok-op">&#8592;</span> [ <span class="tok-fn">FFT</span>(A)[k] <span class="tok-op">*</span> <span class="tok-fn">FFT</span>(B)[k]  <span class="tok-kw">for</span> k <span class="tok-kw">in</span> <span class="tok-num">0</span>..N&#8722;<span class="tok-num">1</span> ]   <span class="tok-com"># &#x398;(n)</span>
+  FA <span class="tok-op">&#8592;</span> <span class="tok-fn">FFT</span>(A);  FB <span class="tok-op">&#8592;</span> <span class="tok-fn">FFT</span>(B)    <span class="tok-com"># compute each transform once</span>
+  C&#770; <span class="tok-op">&#8592;</span> [ FA[k] <span class="tok-op">*</span> FB[k] <span class="tok-kw">for</span> k <span class="tok-kw">in</span> <span class="tok-num">0</span>..N&#8722;<span class="tok-num">1</span> ]   <span class="tok-com"># &#x398;(n)</span>
   c <span class="tok-op">&#8592;</span> <span class="tok-fn">IFFT</span>(C&#770;)
-  <span class="tok-kw">return</span> [ round(real(c[k])) <span class="tok-kw">for</span> k <span class="tok-kw">in</span> <span class="tok-num">0</span>..N&#8722;<span class="tok-num">1</span> ]    <span class="tok-com"># integer coeffs</span></code></pre>
+  <span class="tok-kw">return</span> [ round(real(c[k])) <span class="tok-kw">for</span> k <span class="tok-kw">in</span> <span class="tok-num">0</span>..L&#8722;<span class="tok-num">1</span> ]    <span class="tok-com"># trim padding; rounding error must be &lt; 0.5</span></code></pre>
 
         <p>Three transforms and a linear pass: <code class="inl">&#x398;(n&#160;log&#160;n)</code> overall. Set against the alternatives we have met, the ledger is decisive.</p>
         <div class="tbl-wrap">
@@ -1099,7 +1106,7 @@
         <p>This is the cardinal sin. If you transform at only <code class="inl">n</code> points when the product has <code class="inl">2n&minus;1</code> coefficients, you do not get the product &mdash; you get its <em>circular</em> convolution, where coefficients past index <code class="inl">n&minus;1</code> wrap around and add back onto the low coefficients, corrupting them. The DFT of length <code class="inl">N</code> computes convolution <em>modulo</em> <code class="inl">x<sup>N</sup>&minus;1</code>. Always pick <code class="inl">N &#8805; deg&#160;A + deg&#160;B + 1</code> (then round up to a power of two). The symptom &mdash; low coefficients too large by exactly a high coefficient &mdash; is unmistakable once you know it.</p>
 
         <h3>2 &middot; Floating-point round-off</h3>
-        <p>The roots of unity are irrational complex numbers; the arithmetic is in <code class="inl">double</code>. Integer answers emerge as <code class="inl">2.9999999998</code> or carry <code class="inl">1.3&times;10<sup>&minus;13</sup>i</code> of imaginary dust, so you must <code class="inl">round</code> the real part. That is safe only while the rounding error stays below <code class="inl">0.5</code>. The error grows with <code class="inl">N</code> and with the coefficient magnitude &mdash; very roughly you are fine while <code class="inl">N&middot;(max|coef|)&#178;</code> sits comfortably under <code class="inl">2<sup>52</sup></code>. Beyond that, split coefficients into smaller limbs, or abandon complex numbers for the <span class="term">Number-Theoretic Transform</span> (NTT): the identical algorithm run in a modular field <code class="inl">&#8484;<sub>p</sub></code> with a primitive root of unity in place of <code class="inl">e<sup>2&#960;i/n</sup></code> &mdash; exact integer arithmetic, zero round-off.</p>
+        <p>Many roots of unity cannot be represented exactly in finite binary floating point; the arithmetic is in <code class="inl">double</code>. Integer answers emerge as <code class="inl">2.9999999998</code> or carry <code class="inl">1.3&times;10<sup>&minus;13</sup>i</code> of imaginary dust, so you must <code class="inl">round</code> the real part. That is safe only while the rounding error stays below <code class="inl">0.5</code>. The accumulated error depends on the transform size, coefficient magnitudes, and implementation. Exact representability of the final integer alone does not guarantee correct rounding: the error in each recovered coefficient must be below <code class="inl">0.5</code>. Split coefficients into smaller limbs with a justified error bound, or use the <span class="term">Number-Theoretic Transform</span> (NTT): the identical algorithm run in a modular field <code class="inl">&#8484;<sub>p</sub></code> with a primitive root of unity in place of <code class="inl">e<sup>2&#960;i/n</sup></code> &mdash; exact modular arithmetic, with no floating-point round-off. Recovering integer coefficients also requires a modulus large enough to avoid modular wraparound, or several suitable primes and reconstruction with the Chinese remainder theorem.</p>
 
         <h3>3 &middot; <code class="inl">N</code> not a power of two</h3>
         <p>The radix-2 split assumes <code class="inl">n</code> halves cleanly to the leaf. Hand it <code class="inl">N=6</code> and the recursion stalls. Pad up to the next power of two (the extra coefficients are zero and harmless). General sizes need mixed-radix or Bluestein's algorithm &mdash; out of scope here; in practice, just pad.</p>
@@ -1168,7 +1175,7 @@
       <div class="col">
         <div class="band flush">
           <div class="accentbar" aria-hidden="true"></div>
-          <p style="margin-bottom:0; font-size:1.12rem"><strong>An operation that is expensive in one representation can be free in another &mdash; so change representation.</strong> Polynomial multiplication is <code class="inl">&#x398;(n&#178;)</code> on coefficients but <code class="inl">&#x398;(n)</code> on point&#8209;values; the FFT pays only <code class="inl">&#x398;(n&#160;log&#160;n)</code> to evaluate and interpolate, because the complex roots of unity are the unique points whose squares halve recursively, giving the divide-and-conquer recurrence <code class="inl">T(n)=2T(n/2)+&#x398;(n)</code>. Interpolation is the same transform with conjugate roots and a <code class="inl">1/n</code> scale. Mind the length (or convolution wraps) and the precision (or rounding lies).</p>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>An operation that is expensive in one representation can be cheap in another &mdash; so change representation.</strong> Direct coefficient convolution takes <code class="inl">&#x398;(n&#178;)</code>, while pointwise multiplication takes <code class="inl">&#x398;(n)</code> once the values are known. The FFT evaluates and interpolates in <code class="inl">&#x398;(n&#160;log&#160;n)</code> by using roots of unity whose squares halve recursively, giving the recurrence <code class="inl">T(n)=2T(n/2)+&#x398;(n)</code>. Interpolation uses conjugate roots and a <code class="inl">1/n</code> scale. Mind the length (or convolution wraps) and the precision (or rounding lies).</p>
         </div>
 
         <div class="next">

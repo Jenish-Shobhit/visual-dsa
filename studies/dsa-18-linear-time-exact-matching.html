@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DSA · Lesson 18 — Algorithms on Text I: Linear-Time Exact Matching</title>
 <meta name="description" content="A visual study of linear-time exact string matching: the Knuth–Morris–Pratt prefix function, the Z-algorithm, and Rabin–Karp rolling-hash fingerprinting — with KMP's O(n) bound proved as a potential (amortized) argument on the failure-link pointer.">
-<link rel="stylesheet" href="../css/atlas.css?v=2">
+<link rel="stylesheet" href="../css/atlas.css?v=20260928">
 <style>
 :root{
   color-scheme: light;                 /* LIGHT ONLY — no dark, no toggle */
@@ -291,8 +291,8 @@ details .inner{padding:0 16px 16px}
 hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:var(--maxw)}
 .note{font-size:14px;color:var(--on-surface-variant)}
 </style>
-<link rel="stylesheet" href="studies.css?v=5">
-</head>
+<link rel="stylesheet" href="studies.css?v=20260928">
+<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
 <body class="study-page">
 <nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">18 / 23</span></nav>
 <div class="scroll-progress" aria-hidden="true"></div>
@@ -335,6 +335,11 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
     <section id="hook" class="hero reveal">
       <p class="eyebrow"><span class="bar"></span>Algorithms on Text · Lecture 18</p>
       <h1>Linear-time exact <span class="em">matching</span></h1>
+<div class="study-brief" aria-label="Study at a glance">
+  <div class="study-brief-title"><span>FIELD NOTE / 18</span><strong>Before the long read</strong></div>
+  <div class="study-brief-grid"><p><span>Build on</span>String matching</p><p><span>Core invariant</span>A failure function reuses what the pattern already tells us after a mismatch.</p></div>
+  <details class="study-check"><summary>Try this first · Why does KMP avoid moving the text pointer backwards?</summary><p>It shifts the pattern state using a precomputed border, so each text character is processed a constant number of times.</p></details>
+</div>
       <p class="standfirst">Search a million-character log for a thousand-character pattern with the loop you wrote by instinct, and on the wrong input it performs <b>a billion</b> character comparisons. The honest answer needs about <b>two million</b> — it reads the text once and never looks back. The whole of this lecture is the single idea that closes that gap: <em class="term">the pattern already knows where it can fail, so precompute that and stop re-reading what you have already understood.</em></p>
 
       <div class="stats" role="group" aria-label="The matching gap">

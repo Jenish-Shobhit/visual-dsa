@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>All-Pairs Shortest Paths: Floyd&ndash;Warshall, Johnson&rsquo;s Reweighting &amp; the O(n&sup3;) Baseline</title>
-<link rel="stylesheet" href="../css/atlas.css?v=2">
+<link rel="stylesheet" href="../css/atlas.css?v=20260928">
 <style>
   :root{
     color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
@@ -343,8 +343,8 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=5">
-</head>
+<link rel="stylesheet" href="studies.css?v=20260928">
+<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
 <body class="study-page">
 <nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">14 / 23</span></nav>
 <div class="progress" aria-hidden="true"></div>
@@ -388,6 +388,11 @@
   <div class="wrap">
     <div class="eyebrow"><span class="n">Lecture 14</span> one source was never the question</div>
     <h1>All-Pairs Shortest Paths</h1>
+<div class="study-brief" aria-label="Study at a glance">
+  <div class="study-brief-title"><span>FIELD NOTE / 14</span><strong>Before the long read</strong></div>
+  <div class="study-brief-grid"><p><span>Build on</span>Single source shortest paths</p><p><span>Core invariant</span>Floyd–Warshall adds allowed intermediate vertices; Johnson reweights edges while preserving path order.</p></div>
+  <details class="study-check"><summary>Try this first · What does a negative diagonal entry after Floyd–Warshall reveal?</summary><p>A negative weight cycle is reachable from that vertex back to itself.</p></details>
+</div>
     <p class="lede col">Last lecture answered one source: stand at a vertex, learn the distance to everyone. But the questions that bite want the whole <em>matrix</em> &mdash; the distance between <em>every</em> ordered pair. The diameter of a network (its longest shortest path). A routing table. The closeness of every node to every other. You can get all of it by running a single-source algorithm <code class="inl">n</code> times &mdash; or you can compute the entire <code class="inl">n &times; n</code> table with <strong>three nested loops and five lines</strong>. This lecture builds that loop from first principles (<strong>Floyd&ndash;Warshall</strong>, <code class="inl">&#x398;(n&sup3;)</code> for <em>any</em> weights), then sharpens it for sparse graphs by <em>reshaping the weights themselves</em> (<strong>Johnson&rsquo;s reweighting</strong>).</p>
 
     <div class="col" style="margin-top:1.6em">

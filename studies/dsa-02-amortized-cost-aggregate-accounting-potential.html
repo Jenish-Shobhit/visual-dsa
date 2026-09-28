@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Amortized Cost: Aggregate, Accounting &amp; Potential</title>
-<link rel="stylesheet" href="../css/atlas.css?v=2">
+<link rel="stylesheet" href="../css/atlas.css?v=20260928">
 <style>
   :root{
     color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
@@ -334,8 +334,8 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=5">
-</head>
+<link rel="stylesheet" href="studies.css?v=20260928">
+<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
 <body class="study-page">
 <nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">02 / 23</span></nav>
 <div class="progress" aria-hidden="true"></div>
@@ -363,12 +363,17 @@
   <div class="wrap">
     <div class="eyebrow"><span class="n">Lecture 02</span> when an expensive step is already paid for</div>
     <h1>Amortized Cost</h1>
+<div class="study-brief" aria-label="Study at a glance">
+  <div class="study-brief-title"><span>FIELD NOTE / 02</span><strong>Before the long read</strong></div>
+  <div class="study-brief-grid"><p><span>Build on</span>Worst case versus a sequence</p><p><span>Core invariant</span>A costly resize is paid for by many cheap appends; distinguish per operation cost from amortized cost.</p></div>
+  <details class="study-check"><summary>Try this first · After 1,000,000 appends with doubling capacity from 1, what is the largest single copy?</summary><p>524,288 elements. The next resize at capacity 1,048,576 has not occurred.</p></details>
+</div>
     <p class="lede col">Lecture 01 left an asterisk on every &ldquo;append is <code class="inl">&#x398;(1)</code>.&rdquo; Here we cash it. A single append to a growing array can copy <em>the entire array</em> — a genuine <code class="inl">&#x398;(n)</code> spike — and yet a run of <code class="inl">n</code> appends costs under <code class="inl">3n</code> steps in total, fewer than three apiece. This lecture explains how an operation that is <em>sometimes</em> linear can be <em>always</em> constant on average, and gives you the three instruments that prove it: the <strong>aggregate</strong>, the <strong>accountant's ledger</strong>, and the <strong>potential</strong>.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
-        <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Append a million items to an initially empty dynamic array. One unlucky append among them copies all <strong>1,000,000</strong> existing elements to a bigger block — a Big-&Theta;(n) operation, plainly not constant. So is the structure &ldquo;<code class="inl">O(1)</code> append&rdquo; a lie?</p>
+        <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Append a million items to an initially empty dynamic array that doubles when full. One unlucky append copies <strong>524,288</strong> existing elements to a bigger block — a Big-&Theta;(n) operation, plainly not constant. So is the structure &ldquo;<code class="inl">O(1)</code> append&rdquo; a lie?</p>
         <p style="margin-bottom:0">No. The million appends together perform fewer than <strong>3,000,000</strong> primitive steps. The spikes are real but rare, and the cheap steps in between have <em>already paid</em> for them. That is not an average over luck — it is a guarantee over <em>every</em> sequence. Learning to see, and to prove, that guarantee is the whole of this lecture.</p>
       </div>
     </div>

@@ -731,7 +731,7 @@
         var rec = S.hls.use('h' + i, buildHl);
         rec.dv = { x: h.x, y: yv };
         colorClass(rec.el, s, s.index);
-        var txt = h.label !== undefined ? String(h.label) : valueText(yv, s);
+        var txt = h.label != null ? String(h.label) : valueText(yv, s);
         vz.text(rec.text, txt);
         var tw = measure(txt, 11.5, 700) + 16;
         vz.set(rec.pill, 'width', N2(tw)); vz.set(rec.pill, 'x', N2(-tw / 2));

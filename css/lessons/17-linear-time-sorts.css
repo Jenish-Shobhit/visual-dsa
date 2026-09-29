@@ -1,0 +1,156 @@
+/* Lesson 17 — Counting, radix & the n log n barrier. Lesson-specific styles only; colours come from tokens (light and dark). */
+
+/* ---------------------------------------------------------------- toolbars and small parts */
+.l17-input { flex: 1 1 520px; min-width: 0; }
+.l17-mode { display: flex; flex-direction: column; gap: 6px; }
+.l17-slider { flex: 1 1 220px; max-width: 360px; min-width: 0; }
+.l17-toolbar-note { margin: 0; align-self: center; font-size: 13px; color: var(--ink-3); }
+.l17-btnbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.l17-h3 { margin: var(--space-5) 0 0; font-size: 1.15rem; color: var(--ink); }
+.fig__caption[data-state="done"] { background: color-mix(in srgb, var(--st-done) 9%, var(--bg-elev)); }
+.fig__caption[data-state="error"] { background: color-mix(in srgb, var(--st-error) 9%, var(--bg-elev)); }
+.fig__caption[data-state="compare"] { background: color-mix(in srgb, var(--st-compare) 11%, var(--bg-elev)); }
+.l17-tree-tools { align-items: center; justify-content: space-between; }
+
+/* the three cards of the decision tree */
+.l17-cards { display: flex; flex-wrap: wrap; gap: 8px; }
+.l17-card {
+  display: inline-flex; align-items: baseline; gap: 2px; padding: 6px 14px; border-radius: var(--r-md);
+  background: var(--bg-elev); border: 1.5px solid var(--line-strong); font: 650 16px var(--font-mono); color: var(--ink);
+  transition: background var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+}
+.l17-card b { color: var(--ink-2); font-weight: 700; }
+.l17-card.is-hot { background: color-mix(in srgb, var(--st-active) 16%, var(--bg-elev)); border-color: var(--st-active); }
+
+/* ---------------------------------------------------------------- decision tree (custom SVG) */
+#fig-tree .fig__stage, #fig-click .fig__stage { display: block; place-items: normal; padding: 6px 4px; }
+.l17-dtree { display: block; width: 100%; min-width: 0; max-width: 940px; margin: 0 auto; }
+.l17-dtree .l17-guide { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 2 6; }
+.l17-dtree .l17-guide-text { fill: var(--ink-3); font: 650 11px var(--font-sans); letter-spacing: .05em; text-transform: uppercase; }
+.l17-edge { stroke: var(--el-edge); stroke-width: 2; stroke-linecap: round; transition: stroke .35s var(--ease-out), stroke-width .35s var(--ease-out); }
+.l17-edge.is-path { stroke: var(--st-path); stroke-width: 4.5; }
+.l17-node .l17-nrect { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 1.75; transition: fill .35s var(--ease-out), stroke .35s var(--ease-out); }
+.l17-node .l17-ntext { fill: var(--el-ink); font: 650 14.5px var(--font-mono); transition: fill .35s var(--ease-out); }
+.l17-node .l17-nsub { fill: var(--ink-2); font: 700 12.5px var(--font-mono); }
+.l17-leaf .l17-nrect { fill: color-mix(in srgb, var(--st-done) 9%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-done) 55%, var(--line-strong)); }
+.l17-node.is-active .l17-nrect { fill: var(--st-active); stroke: var(--st-active); }
+.l17-node.is-active .l17-ntext { fill: var(--on-state); }
+.l17-node.is-visited .l17-nrect { fill: color-mix(in srgb, var(--st-visited) 22%, var(--el-fill)); stroke: var(--st-visited); }
+.l17-node.is-found .l17-nrect { fill: var(--st-done); stroke: var(--st-done); }
+.l17-node.is-found .l17-ntext { fill: color-mix(in srgb, var(--st-done) 20%, black); }
+.l17-leaf.is-seen .l17-nrect { stroke: var(--st-done); stroke-width: 2.5; }
+.l17-leaf.is-out .l17-nrect { fill: var(--bg-sunken); stroke: var(--st-muted); stroke-dasharray: 4 3; stroke-width: 1.25; }
+.l17-leaf.is-out .l17-ntext { fill: var(--ink-3); }
+.l17-node[data-id] { outline: none; }
+.is-pick-right .l17-nrect { fill: var(--st-done); stroke: var(--st-done); }
+.is-pick-wrong .l17-nrect { fill: color-mix(in srgb, var(--st-error) 25%, var(--el-fill)); stroke: var(--st-error); }
+.l17-dtree [data-id]:focus-visible .l17-nrect { stroke: var(--accent); stroke-width: 3.5; }
+.l17-dtree [data-id] { cursor: pointer; }
+
+.l17-chip rect { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1.5; transition: fill .3s var(--ease-out), stroke .3s var(--ease-out); }
+.l17-chip text { fill: var(--ink-3); font: 700 12px var(--font-sans); pointer-events: none; }
+.l17-chip.is-live rect { fill: color-mix(in srgb, var(--st-active) 15%, var(--bg-elev)); stroke: var(--st-active); stroke-width: 2.25; }
+.l17-chip.is-live text { fill: color-mix(in srgb, var(--st-active) 70%, var(--ink)); }
+.l17-chip.is-live { cursor: pointer; outline: none; }
+.l17-chip.is-live:hover rect, .l17-chip.is-live:focus-visible rect { fill: var(--st-active); stroke-width: 3; }
+.l17-chip.is-live:hover text, .l17-chip.is-live:focus-visible text { fill: var(--on-state); }
+.l17-chip.is-chosen rect { fill: var(--st-path); stroke: var(--st-path); }
+.l17-chip.is-chosen text { fill: color-mix(in srgb, var(--st-path) 18%, black); }
+.l17-chip.is-wrong rect { fill: var(--st-error); stroke: var(--st-error); }
+.l17-chip.is-wrong text { fill: var(--on-state); }
+.l17-chip.is-wrong { animation: l17-shake .4s; }
+.l17-chip.is-static rect { fill: var(--bg-sunken); }
+@keyframes l17-shake { 0%, 100% { translate: 0 0; } 25% { translate: -3px 0; } 75% { translate: 3px 0; } }
+.l17-token circle { fill: var(--st-pivot); stroke: var(--bg-elev); stroke-width: 2.5; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .3)); }
+
+/* ---------------------------------------------------------------- halving game */
+#fig-halving .fig__stage { padding: 10px 12px; }
+.l17-halve { display: block; width: 100%; }
+.l17-hcell { transition: fill .45s var(--ease-out), stroke .45s var(--ease-out); }
+.l17-hcell.is-live { fill: var(--st-active); }
+.l17-hcell.is-gone { fill: color-mix(in srgb, var(--st-muted) 24%, var(--bg-elev)); }
+
+/* ---------------------------------------------------------------- bucket view */
+.l17-buckets .l17-head { fill: var(--ink-2); font: 650 12.5px var(--font-sans); }
+.l17-buckets .l17-trough rect { fill: color-mix(in srgb, var(--bg-sunken) 55%, var(--bg-elev)); stroke: var(--line-strong); stroke-width: 1.25; stroke-dasharray: 4 3; transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease); }
+.l17-buckets .l17-trough.is-active rect { fill: color-mix(in srgb, var(--st-active) 8%, var(--bg-elev)); stroke: var(--st-active); stroke-width: 2; stroke-dasharray: none; }
+.l17-buckets .l17-tnum { fill: var(--ink-2); font: 700 14px var(--font-mono); }
+.l17-buckets .l17-trng { fill: var(--ink-3); font: 500 10.5px var(--font-mono); }
+.l17-buckets .l17-trough.is-active .l17-tnum { fill: var(--st-active); }
+.l17-buckets .l17-dhl { fill: color-mix(in srgb, var(--st-pivot) 30%, transparent); stroke: var(--st-pivot); stroke-width: 1; }
+.l17-buckets .l17-dz { fill-opacity: .38; }
+.l17-buckets .l17-bchip .vz-shape { --vz-sw: 1.6px; }
+.l17-buckets .l17-bchip.is-error { --vz-ink: var(--on-state); }
+
+/* ---------------------------------------------------------------- counting view */
+.l17-cview__rows, .l17-cview__chart, .l17-twin > div { width: 100%; min-width: 0; }
+.l17-cview__chart { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--line-strong); }
+#lab-count .fig__stage, #lab-radix .fig__stage { align-content: start; }
+#fig-cs-stable .fig__stage { display: block; place-items: normal; padding: 10px 12px; }
+.l17-twin { padding: 8px 12px 4px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 35%, var(--bg-elev)); }
+.l17-twin + .l17-twin { margin-top: 10px; }
+.l17-twin__title { margin: 0; font-size: 14px; font-weight: 700; }
+.l17-twin.is-good { border-color: color-mix(in srgb, var(--st-done) 50%, var(--line)); }
+.l17-twin.is-good .l17-twin__title { color: color-mix(in srgb, var(--st-done) 65%, var(--ink)); }
+.l17-twin.is-bad { border-color: color-mix(in srgb, var(--st-error) 40%, var(--line)); }
+.l17-twin.is-bad .l17-twin__title { color: color-mix(in srgb, var(--st-error) 70%, var(--ink)); }
+
+/* ---------------------------------------------------------------- grand comparison table */
+.l17-compare-tools { align-items: center; justify-content: space-between; }
+.l17-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.l17-filters::before { content: 'Keep only:'; font-size: 13px; font-weight: 650; color: var(--ink-3); margin-right: 2px; }
+.l17-filter.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.l17-compare-stage { display: block; place-items: normal; padding: 0; }
+.l17-compare-wrap { max-height: none; --table-max: none; margin: 0; border: 0; }
+.l17-compare { width: 100%; min-width: 860px; border-collapse: collapse; }
+.l17-compare th, .l17-compare td { padding-inline: 9px; }
+.l17-compare th, .l17-compare td { vertical-align: middle; white-space: nowrap; }
+.l17-compare .big-o { font-size: 12px; padding-inline: 7px; }
+.l17-compare tbody th { white-space: normal; min-width: 140px; }
+.l17-compare .l17-yn { padding-inline: 5px; }
+.l17-compare tbody th { text-align: left; }
+.l17-rowname { display: block; font-weight: 700; color: var(--ink); }
+.l17-rownote { display: block; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.l17-yn { text-align: center; }
+.l17-yn.is-yes { color: var(--st-done); }
+.l17-yn.is-no { color: var(--ink-3); }
+.l17-row { transition: opacity .3s var(--ease-out); }
+.l17-row.is-dim { opacity: .3; }
+.l17-sparkcell { width: 140px; }
+.l17-sparkcap { display: block; margin-top: 2px; font: 600 11px var(--font-mono); color: var(--ink-3); }
+.l17-spark { display: block; width: 124px; height: 38px; }
+.l17-spark .l17-spark__base { stroke: var(--line-strong); stroke-width: 1; }
+.l17-spark .l17-spark__area { fill: color-mix(in srgb, var(--st-active) 12%, transparent); stroke: none; }
+.l17-spark .l17-spark__line { fill: none; stroke: var(--st-active); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.l17-spark .l17-spark__dot { fill: var(--st-active); }
+[data-row="bubble"] .l17-spark__line, [data-row="selection"] .l17-spark__line, [data-row="insertion"] .l17-spark__line { stroke: var(--st-swap); }
+[data-row="bubble"] .l17-spark__dot, [data-row="selection"] .l17-spark__dot, [data-row="insertion"] .l17-spark__dot { fill: var(--st-swap); }
+[data-row="bubble"] .l17-spark__area, [data-row="selection"] .l17-spark__area, [data-row="insertion"] .l17-spark__area { fill: color-mix(in srgb, var(--st-swap) 12%, transparent); }
+[data-row="counting"] .l17-spark__line, [data-row="radix"] .l17-spark__line, [data-row="bucket"] .l17-spark__line { stroke: var(--st-done); }
+[data-row="counting"] .l17-spark__dot, [data-row="radix"] .l17-spark__dot, [data-row="bucket"] .l17-spark__dot { fill: var(--st-done); }
+[data-row="counting"] .l17-spark__area, [data-row="radix"] .l17-spark__area, [data-row="bucket"] .l17-spark__area { fill: color-mix(in srgb, var(--st-done) 14%, transparent); }
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="reduce"]) .l17-compare-stage .l17-spark__line { animation: l17-draw 4.4s ease-in-out infinite; animation-delay: calc(var(--i, 0) * 110ms); animation-play-state: paused; }
+  :root:not([data-motion="reduce"]) .l17-compare-stage .l17-spark__dot { animation: l17-dot 4.4s ease-in-out infinite; animation-delay: calc(var(--i, 0) * 110ms); animation-play-state: paused; }
+  :root:not([data-motion="reduce"]) .l17-compare-stage.is-live .l17-spark__line, :root:not([data-motion="reduce"]) .l17-compare-stage.is-live .l17-spark__dot { animation-play-state: running; }
+}
+@keyframes l17-draw { 0% { stroke-dashoffset: 1; } 55%, 100% { stroke-dashoffset: 0; } }
+@keyframes l17-dot { 0%, 50% { opacity: 0; } 60%, 100% { opacity: 1; } }
+
+/* ---------------------------------------------------------------- static minis */
+.vz.l17m { margin: 0 auto; }
+.l17m .l17m-tag rect { fill: var(--vz-c); }
+.l17m .l17m-tag text { fill: var(--on-state); font: 700 9.5px var(--font-mono); }
+.l17m .l17m-tag:is(.is-compare, .is-swap, .is-done, .is-found, .is-pivot) text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
+.l17m .l17m-tag.is-pivot text { fill: var(--on-state); }
+.l17m .l17-edge { stroke-width: 1.75; }
+.mini__stage .vz.l17m { max-height: 150px; }
+@media (max-width: 520px) {
+  .l17-compare { min-width: 900px; }
+}
+
+/* lab side counters: two clean columns */
+#lab-count .lab__side .stats, #lab-radix .lab__side .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* the shared `svg.vz.vz { min-width: 0 }` rule would beat the scroll stage's min-width: restore it for our wide figures */
+.fig__stage--scroll > svg.vz.l17-dtree, .fig__stage--scroll > svg.vz.l17-buckets { min-width: var(--stage-min, 620px); }

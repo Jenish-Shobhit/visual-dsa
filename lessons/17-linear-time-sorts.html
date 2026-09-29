@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Counting, radix &amp; the n log n barrier · Visual DSA</title>
+<meta name="description" content="Why no comparison sort can beat n log n, and how counting, radix and bucket sort get past the wall by never comparing two keys. Click through the decision tree, then watch counts, prefix sums and digit buckets sort numbers in linear time.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/17-linear-time-sorts.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/17-linear-time-sorts.js" defer></script>
+<script src="../js/lessons/17-linear-time-sorts-buckets.js" defer></script>
+<script src="../js/lessons/17-linear-time-sorts-tree.js" defer></script>
+<script src="../js/lessons/17-linear-time-sorts-counting.js" defer></script>
+<script src="../js/lessons/17-linear-time-sorts-radix.js" defer></script>
+<script src="../js/lessons/17-linear-time-sorts-cost.js" defer></script>
+<script src="../js/lessons/17-linear-time-sorts.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="17-linear-time-sorts">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Counting, radix &amp; the n log n barrier</h1>
+      <p class="hero__lede">Any sort that works by comparing pairs needs at least n log n comparisons, and a tree of yes/no questions proves it. Then you sort a million integers in linear time anyway, by never comparing two of them.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">18 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: sorting, Big-O</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: six two-digit numbers drop into ten digit buckets by their last digit, then come back out in bucket order. They drop into the buckets again by their first digit and come back out fully sorted."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">Is n log n a law?</h2>
+      <p>Merge sort and quicksort sort <em>n</em> values in about <em>n</em> log₂ <em>n</em> comparisons. A million values take about 20 million. Every clever sort you have met is stuck near that number, so it is natural to ask whether it is the floor.</p>
+      <p>Here is a job that looks easy to do faster. Twelve exam scores, each a whole number from 0 to 9, must be put in order. Give every score its own pocket, deal the cards into the pockets, and read the pockets from 0 upward.</p>
+      <figure class="fig wide" id="fig-pigeon">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Sort twelve scores without comparing any two</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><button type="button" class="btn btn--sm" data-shuffle>New scores</button><p class="l17-toolbar-note">Each score is a pocket number. Nobody asks “is this one bigger than that one?”</p></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 460px"></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: twelve cards in a row are dealt one at a time into ten pockets numbered 0 to 9, by their own value. Then the pockets are emptied in order, 0 first, and the row is sorted. The comparison counter stays at 0.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">The value is the address</p>
+        <p>The pockets never compare two scores. They use a score as a <em>position</em>, the way an array uses an index. That is a different kind of move than “which of these two is bigger?”, and it is what the rest of this lesson builds on.</p>
+      </aside>
+      <p>So is n log n a law or not? Both. It is a law for algorithms that may only ask “is <em>a</em> smaller than <em>b</em>?”. It does not bind an algorithm that looks inside the keys. First you will see why the law holds.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2 data-toc="Twenty questions">Twenty questions, for orderings</h2>
+      <p>Think of the game where a friend picks a number from 1 to 1,000 and you find it with yes/no questions. Ten questions are enough, because each answer can cut the candidates in half, and 2¹⁰ = 1,024.</p>
+      <p>Sorting is the same game. Your friend has secretly shuffled <em>n</em> cards, and you must name the order they came in. There are <em>n</em>! candidate orders, and a comparison of two cards is one yes/no question. Play the odds yourself: the friend always answers so that the <em>bigger</em> half survives.</p>
+      <figure class="fig wide" id="fig-halving">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Each question can at best halve the candidate orderings</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div class="btn-row"><button type="button" class="btn btn--sm btn--primary" data-ask>Ask a question</button><button type="button" class="btn btn--sm" data-auto>Ask until one is left</button><button type="button" class="btn btn--sm btn--ghost" data-reset>Start over</button></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a grid with one square for every possible ordering of n items. Each question removes the smaller half of the remaining squares, until one square is left. The number of questions needed is at least the base-2 logarithm of n factorial, rounded up.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the game is not the algorithm</p>
+        <p>A lucky friend might answer so that you finish early. The bound is about the <em>worst</em> case: for every sorting algorithm, some input makes the answers keep the larger half, so the algorithm cannot finish before ⌈log₂ <em>n</em>!⌉ questions.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE DECISION TREE -->
+    <section id="tree">
+      <h2 data-toc="Decision tree">Every comparison sort is a tree</h2>
+      <p>Draw all the questions an algorithm could ask as a tree. Each inner node is one comparison, its two edges are the answers, and each <dfn>leaf</dfn> is an ordering it can announce. Below is one way to sort three cards a, b and c.</p>
+      <figure class="fig wide" id="fig-tree">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A decision tree for sorting three items</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l17-tree-tools">
+          <div class="l17-cards" data-cards aria-label="The three cards you are sorting"></div>
+          <div class="btn-row"><button type="button" class="btn btn--sm" data-new>New cards</button><button type="button" class="btn btn--sm btn--ghost" data-answer>Answer for me</button></div>
+        </div>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 660px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: the root asks whether a is smaller than b. Each answer leads to another comparison, and after two or three comparisons you reach one of six leaves: abc, acb, cab, bac, bca or cba. The tree has 6 leaves and 3 levels of questions.</figcaption>
+      </figure>
+      <p>Click the <b>yes</b> or <b>no</b> that is true for your cards. Watch the strip of possible orderings: each answer removes the orderings that disagree with it, and you are done when one is left. Try new cards until you have reached all six leaves.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Why a tree fits every comparison sort</p>
+        <p>A comparison sort learns about its input <em>only</em> through answers to “is <em>x</em> &lt; <em>y</em>?”. Whatever it does next depends only on the answers so far, so its whole behaviour is a tree of questions. Bubble sort, insertion sort, merge sort and quicksort all have one, each with a different shape.</p>
+      </aside>
+      <p>The tree must have <strong>at least one leaf per ordering</strong>. Two different inputs that need different rearrangements cannot end at the same leaf, because a leaf announces one fixed rearrangement. For three cards that means at least 6 leaves. The worst input is the deepest leaf, so the number of questions it needs is the tree’s <dfn>height</dfn>.</p>
+    </section>
+
+    <!-- ============================================================ THE BARRIER -->
+    <section id="barrier">
+      <h2 data-toc="The barrier">The barrier: height ≥ log₂(n!)</h2>
+      <p>A binary tree of height <em>h</em> has at most 2<sup><em>h</em></sup> leaves: each level can at most double the count. So if a tree needs <em>n</em>! leaves, then 2<sup><em>h</em></sup> ≥ <em>n</em>!, and taking logarithms gives the bound.</p>
+      <aside class="callout callout--key">
+        <p class="callout__title">The lower bound</p>
+        <p>Every comparison sort needs at least <b>⌈log₂ <em>n</em>!⌉</b> comparisons on some input. Since log₂ <em>n</em>! grows like <em>n</em> log₂ <em>n</em>, that is <span class="big-o" data-o="nlogn">Ω(n log n)</span>.</p>
+      </aside>
+      <p>How big is log₂ <em>n</em>! really? It sits just under <em>n</em> log₂ <em>n</em> and far below <em>n</em>². Drag the slider, and switch to the zoomed view to see how tightly the two n log n curves hug each other, and how the easy lower bound (<em>n</em>/2) log₂(<em>n</em>/2) follows them.</p>
+      <figure class="fig wide" id="fig-bound">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">log₂(n!) against n log₂ n and n²</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="l17-slider"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-readout aria-live="polite"></p>
+        <figcaption class="fig__foot">Hover or focus the chart and use the arrow keys to read exact values. log₂(n!) is computed exactly as log₂ 2 + log₂ 3 + … + log₂ n.</figcaption>
+      </figure>
+      <details class="accordion">
+        <summary>Why is log₂(n!) about n log₂ n?</summary>
+        <div class="accordion__body">
+          <p>Write <em>n</em>! = 1 · 2 · 3 ⋯ <em>n</em>, so log₂ <em>n</em>! = log₂ 1 + log₂ 2 + … + log₂ <em>n</em>. Every term is at most log₂ <em>n</em>, so the sum is at most <em>n</em> log₂ <em>n</em>. The top half of the terms, from <em>n</em>/2 to <em>n</em>, are each at least log₂(<em>n</em>/2), so the sum is at least (<em>n</em>/2) log₂(<em>n</em>/2). Both bounds are proportional to <em>n</em> log <em>n</em>, and that pins log₂ <em>n</em>! between them.</p>
+        </div>
+      </details>
+      <div class="quiz" id="quiz-leaves"></div>
+      <aside class="callout callout--insight">
+        <p class="callout__title">What the wall does and does not cover</p>
+        <p>The tree argument needs two things: the algorithm learns only from comparisons, and the keys could arrive in any of <em>n</em>! orders. Break the first assumption, by looking inside the keys, and there is no tree and no wall. Break neither, and even a perfect algorithm cannot beat <em>n</em> log <em>n</em> on average either: most leaves are deep.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ COUNTING SORT -->
+    <section id="counting">
+      <h2 data-toc="Counting sort">Counting sort: count, add up, place</h2>
+      <p>Counting sort works when every key is a whole number from 0 to <em>k</em>. It never compares two keys. Instead it makes three cheap passes: <strong>count</strong> how many items have each key, turn the counts into <strong>prefix sums</strong> that say where each key’s stretch of the output ends, then <strong>place</strong> every item.</p>
+      <p>Step through the classic example. The letters on repeated keys let you see later which copy is which.</p>
+      <figure class="fig wide" id="fig-cs-steps">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The three passes of counting sort</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: an input row, a row of counters indexed by key, and an output row. Pass 1 adds 1 to a counter for every item. Pass 2 adds each counter to the next one. Pass 3 moves items right to left into the output at the slot the counter names.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">What the prefix sums mean</p>
+        <p>After pass 2, <code>count[v]</code> is the number of items whose key is <em>v</em> or less. So the items with key <em>v</em> must fill the slots just below index <code>count[v]</code>: each key owns a fixed stretch of the output, shaded in the figure, before any item moves.</p>
+      </aside>
+      <h3 class="l17-h3">Why right to left?</h3>
+      <p>Look at the duplicates. Two items with key 3 must land in the same stretch, and a <dfn>stable</dfn> sort keeps them in their input order. Placing from the right end keeps the order; placing from the left reverses it. Both outputs are sorted, and only one is stable.</p>
+      <figure class="fig wide" id="fig-cs-stable">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The same input, placed two ways</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: two output rows are filled from the same counters. The top row places items from the last input item to the first and ends with 0a 0b 2a 2b 3a 3b 3c 5. The bottom row places from the first to the last and ends with 0b 0a 2b 2a 3c 3b 3a 5.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Stability is not a detail</p>
+        <p>Radix sort in a few sections relies on it. If the equal keys of one pass came out shuffled, the work of the previous pass would be lost.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ COUNTING LAB -->
+    <section id="lab">
+      <h2>The counting sort lab</h2>
+      <p>Use your own keys. Count bars fill, the prefix sums sweep left to right, and items are placed from the right into their stretch. Repeated keys carry a, b, c tags so you can check stability. Step with <kbd>←</kbd> and <kbd>→</kbd>, play with <kbd>Space</kbd>. The lab pauses once to ask where an item will land.</p>
+      <figure class="fig fig--lab full" id="lab-count">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace counting sort on your numbers</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l17-input"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the caption explains every step. The code panel highlights the line that runs, the variables panel shows i, key, the count array and the output so far, and the counters show 0 key comparisons throughout.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The logic as a flowchart</h2>
+      <p>The same three loops as a map. Step the lab above and the box that runs lights up here, with a token riding the arrow that was taken.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Counting sort as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 320px"></div>
+        <figcaption class="fig__foot">Text alternative: make k + 1 zero counters. Loop over the input adding 1 to count[a[i]]. Loop v from 1 to k adding count[v − 1] to count[v]. Loop over the input from the last item to the first, decrease count[a[i]] and write a[i] into out at that index. Return out.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ RADIX -->
+    <section id="radix">
+      <h2 data-toc="Radix sort">Radix sort: one digit at a time</h2>
+      <p>Counting sort needs a small key range, and a range of a billion would need a billion counters. <dfn>Radix sort</dfn> fixes that by sorting on one digit at a time, so every pass only needs ten pockets. Start with the <strong>least significant</strong> digit and work left.</p>
+      <p>That order looks backwards, and it works because each pass is <em>stable</em>. Follow the tens pass in the lab: numbers with the same tens digit keep the order the ones pass gave them, which is already the right order for their last digit.</p>
+      <figure class="fig fig--lab full" id="lab-radix">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Radix sort with ten digit buckets</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l17-input"></div><div class="l17-mode"><span class="field-label">Each bucket is a</span><div data-mode></div></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall fig__stage--scroll" data-stage style="--stage-min: 440px"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: numbers sit in a row above ten buckets. In each pass every number moves, in list order, into the bucket named by the digit being read, and the buckets are then emptied in order 0 to 9 back into the row. After the last pass the row is sorted.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Break it on purpose</p>
+        <p>Switch the buckets to <em>stack</em>. A stack hands back its newest item first, which reverses ties. On the classic input the result is not sorted: the earlier passes’ work was undone. Radix sort is only as good as its stable inner sort.</p>
+      </aside>
+      <div class="quiz" id="quiz-stable"></div>
+      <aside class="callout callout--fun">
+        <p class="callout__title">Older than computers</p>
+        <p>Punched-card sorting machines ran this exact algorithm on the 1890 US census: a card dropped into one of ten pockets by the digit in one column, and operators sorted a many-column key by feeding the deck through once per column, right to left.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ BUCKET SORT -->
+    <section id="bucket">
+      <h2 data-toc="Bucket sort">Bucket sort: spread, then tidy</h2>
+      <p>What if the keys are decimals, like measurements between 0 and 1? <dfn>Bucket sort</dfn> cuts the interval into equal ranges, drops each number into its range with one multiplication, sorts each small bucket, and reads the buckets in order. If the data is spread evenly, each bucket holds about one number.</p>
+      <figure class="fig wide" id="fig-bucket">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Bucket sort on numbers between 0 and 1</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l17-input"></div><div data-seg></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 400px"></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: decimal numbers are dealt into five range buckets by multiplying by five and rounding down. Each bucket is then sorted on its own and the buckets are read back in order. Clustered input puts everything in one bucket and makes the sort quadratic.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The catch is the distribution</p>
+        <p>Choose <em>Clustered</em>. Every number lands in the same bucket, and that bucket is sorted with an ordinary comparison sort, so all the work is back. Bucket sort trades a guarantee for a bet on how the data is spread.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What they cost, and when they win</h2>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Sort</th><th scope="col">Time</th><th scope="col">Extra space</th><th scope="col">Stable</th><th scope="col">It needs</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Counting sort</th><td><span class="big-o" data-o="n">O(n + k)</span> for every input</td><td><span class="big-o" data-o="n">O(n + k)</span></td><td>Yes</td><td>whole-number keys in 0…<em>k</em>, with <em>k</em> not much bigger than <em>n</em></td></tr>
+            <tr><th scope="row">Radix sort (LSD)</th><td><span class="big-o" data-o="n">O(d · (n + b))</span> for every input</td><td><span class="big-o" data-o="n">O(n + b)</span></td><td>Yes</td><td><em>d</em> digits in base <em>b</em>, a stable sort for each digit</td></tr>
+            <tr><th scope="row">Bucket sort</th><td><span class="big-o" data-o="n">O(n)</span> average on even data<br><span class="big-o" data-o="n2">O(n²)</span> worst, one crowded bucket</td><td><span class="big-o" data-o="n">O(n + k)</span></td><td>Yes, with a stable inner sort</td><td>numbers spread evenly over a known range</td></tr>
+            <tr><th scope="row">Any comparison sort</th><td><span class="big-o" data-o="nlogn">Ω(n log n)</span> worst case, always</td><td>depends</td><td>depends</td><td>only a way to compare two items</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>“Linear” hides two knobs. Counting sort does about 2<em>n</em> + <em>k</em> steps, so a wide key range is expensive. Slide <em>n</em> and watch where counting sort stops beating an <em>n</em> log₂ <em>n</em> comparison sort.</p>
+      <figure class="fig wide" id="fig-crossover">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Counting sort against a comparison sort as the key range grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="l17-slider"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-readout aria-live="polite"></p>
+        <figcaption class="fig__foot">Both axes are logarithmic. Counting sort is modelled as 2n + k basic steps (n tallies, k prefix additions, n placements) and the comparison sort as n log₂ n comparisons.</figcaption>
+      </figure>
+      <p>Radix sort answers the wide-range problem: split a big key into digits and sort each digit in its own pass. A bigger base means fewer passes but a bigger count array per pass, so there is a best size in between.</p>
+      <figure class="fig wide" id="fig-radixbase">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Choosing the base for a million integers</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-readout aria-live="polite"></p>
+        <figcaption class="fig__foot">Model: d passes of 2n + b steps each, with n = 1,000,000 and d = ⌈bits ÷ log₂ b⌉. Real machines prefer base 256 because a small count array stays in cache.</figcaption>
+      </figure>
+      <div class="split">
+        <aside class="callout callout--warn">
+          <p class="callout__title">When linear sorts lose</p>
+          <ul>
+            <li>The key range <em>k</em> is huge, such as arbitrary 64-bit integers into one counting pass: the count array needs 2⁶⁴ cells.</li>
+            <li>The keys are not integers or digit strings, so “the key is an address” has no meaning. Sorting by a custom comparison forces a comparison sort.</li>
+            <li>Memory is tight. All three need <span class="big-o" data-o="n">O(n)</span> extra space, while heapsort and quicksort work in place.</li>
+          </ul>
+        </aside>
+        <aside class="callout callout--insight">
+          <p class="callout__title">No contradiction</p>
+          <p>Counting sort makes n log n look beatable only because it is <em>allowed to do more</em> than compare: it reads a key as an array index. The lower bound is about a weaker model, and it is still true there.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================================================ COMPARE ALL -->
+    <section id="compare">
+      <h2 data-toc="All the sorts">Every sort in the unit, side by side</h2>
+      <p>Nine sorts, one table. The sparklines are animated curves of the work each one does as <em>n</em> grows, drawn on the <em>same</em> vertical scale so you can see who hugs the floor. Toggle a property to keep only the sorts that have it.</p>
+      <figure class="fig full" id="fig-compare">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Time, space, stability and shape of growth</h3></div>
+        </header>
+        <div class="fig__toolbar l17-compare-tools"><div data-filters class="l17-filters" role="group" aria-label="Keep only sorts that are"></div><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain l17-compare-stage" data-stage></div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Sparklines plot typical operation counts on random data: about n²/2 comparisons for bubble and selection sort, n²/4 for insertion sort, n log₂ n for merge sort, 1.39 n log₂ n for quicksort, 2 n log₂ n for heapsort, 2n + k for counting sort with k = n, three passes of 2n + 10 for radix sort and about 3n for bucket sort. They show shape, not seconds.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ WHICH SORT -->
+    <section id="choose">
+      <h2 data-toc="Which sort?">Which sort should I use?</h2>
+      <p>Answer the questions to walk the diagram. It covers the whole unit, from insertion sort to radix sort. In practice a language’s built-in sort is the right answer nearly always, and this map tells you what is inside it and when to reach past it.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Choosing a sorting algorithm</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <p class="fig__caption" data-answer aria-live="polite"></p>
+        <div class="fig__controls l17-btnbar"><button type="button" class="btn btn--sm" data-restart>Start over</button></div>
+        <figcaption class="fig__foot">Text alternative: tiny or nearly sorted input calls for insertion sort. Small whole-number keys call for counting sort when the range is about n, and radix sort when it is wide. Evenly spread decimals call for bucket sort. Otherwise use merge sort if stability matters, heapsort if worst-case memory or time matters, and quicksort for speed.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>These ideas come back in interviews and in real systems.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="negative">Negative numbers</button>
+          <button data-tab="records">Sorting records by key</button>
+          <button data-tab="strings">Strings and MSD radix</button>
+          <button data-tab="hist">Counting as a histogram</button>
+        </div>
+        <div data-tab-panel="negative"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="negative" role="img" aria-label="Keys −2 to 2 shifted by +2 into slots 0 to 4"></div><figcaption>Shift by the minimum: key −2 uses counter 0.</figcaption></figure><div><p>Counters need non-negative indexes. Subtract the smallest key from every key, count as usual, and add it back on the way out. The key range becomes <code>max − min + 1</code>, so a lone outlier still makes it huge.</p><pre data-code-block="negative"></pre></div></div></div>
+        <div data-tab-panel="records"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="records" role="img" aria-label="Six exam papers with grades sorted by grade, equal grades keeping their order"></div><figcaption>Grades sorted; equal grades keep their original order.</figcaption></figure><div><p>Counting sort moves whole records, not just numbers, and its stability is the whole point: sort students by grade and those with the same grade stay in roll-number order. To sort by two fields, sort by the <em>second</em> field first, then stably by the first.</p><pre data-code-block="records"></pre></div></div></div>
+        <div data-tab-panel="strings"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="strings" role="img" aria-label="Three-letter words sorted by last letter, then middle, then first"></div><figcaption>Words of the same length: one pass per letter, last to first.</figcaption></figure><div><p>Fixed-length strings are numbers in base 26 (or 256), so LSD radix sort applies with a pass per character. Variable-length words use <em>MSD</em> radix sort instead: bucket by the first letter and recurse into each bucket, which is how tries and many library string sorts behave.</p><pre data-code-block="strings"></pre></div></div></div>
+        <div data-tab-panel="hist"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="hist" role="img" aria-label="A histogram of counts for keys 0 to 5"></div><figcaption>The tally pass alone is a histogram.</figcaption></figure><div><p>Often you never need the sorted array, only the counts: the most frequent letter, how many scores fall in each grade, whether two words are anagrams. The first pass of counting sort answers those in <span class="big-o" data-o="n">O(n + k)</span> and skips the rest.</p><pre data-code-block="hist"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-positions"></div>
+        <div class="quiz" id="quiz-bigk"></div>
+        <div class="quiz" id="quiz-model"></div>
+      </div>
+      <figure class="fig wide" id="fig-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Follow the questions for one input</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 660px"></div>
+        <figcaption class="fig__foot">Text alternative: the decision tree for sorting three items with six leaves. For a = 4, b = 9, c = 1: a &lt; b is yes, b &lt; c is no, a &lt; c is no, so the leaf is c, a, b.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Counting, radix &amp; the n log n barrier</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="nlogn">Ω(n log n) comparisons</span><span class="chip chip--sm">Linear: O(n + k)</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1954<small>counting pass on a computer</small></div>
+        <p class="history__people">Herman Hollerith, Harold H. Seward<span>Census tabulator (1890) · MIT thesis R-232 (1954)</span></p>
+        <div class="history__body">
+          <p>Radix sort is older than electronic computers. Punched-card operators sorted a deck on a many-digit key one column at a time, least significant first, as the machine dropped each card into one of ten pockets. In 1954 Harold Seward’s MIT thesis moved the method onto computers and added the counting pass that tells each key exactly where to go.</p>
+          <p>The lower bound has a quieter history. Counting the <em>n</em>! possible orders is enough to see how many comparisons must be spent, and in 1959 Lester Ford Jr. and Selmer Johnson published merge insertion, a sort that comes very close to ⌈log₂ <em>n</em>!⌉ comparisons for small <em>n</em>.</p>
+        </div>
+        <p class="history__source">Sources: H. H. Seward, <em>Information Sorting in the Application of Electronic Digital Computers to Business Operations</em>, MIT Digital Computer Laboratory Report R-232, 1954; L. R. Ford Jr. and S. M. Johnson, “A Tournament Problem”, <em>American Mathematical Monthly</em> 66, 1959; D. E. Knuth, <em>The Art of Computer Programming</em>, Vol. 3, §5.2.5 and §5.3.1.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Sort by frequency</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given a string of lowercase letters, return the letters ordered from most to least frequent, breaking ties alphabetically. Use one counting pass and explain the running time.</p></li>
+        <li><div class="practice__title">Sort colours</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">An array holds only 0s, 1s and 2s. Sort it in place in one pass over the data. How is this related to counting sort, and why can it not reuse the counting sort output array?</p></li>
+        <li><div class="practice__title">Maximum gap</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Given <em>n</em> integers, find the largest difference between neighbours in sorted order in O(n) time. Hint: how many buckets are enough that the answer cannot lie inside a bucket?</p></li>
+        <li><div class="practice__title">Radix on a range</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Sort n integers in the range 0 to n² − 1 in O(n) time. Choose a base and count the passes.</p></li>
+        <li><div class="practice__title">Two tests, two bounds</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">You must find the maximum of n values using comparisons only. Draw the decision tree’s leaf count and show that n − 1 comparisons are necessary. How does this differ from the sorting bound?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-06-sorting-and-the-comparison-barrier.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Sorting and the comparison barrier</span><span class="deeper__text" style="display:block">The full decision-tree proof, the exact conditions under which linear-time sorting is legitimate, and the classic ways sorts fail.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

@@ -3,12 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>DSA · Lesson 15 — Dynamic Programming: Optimal Substructure over a Subproblem DAG</title>
 <meta name="description" content="A visual study of dynamic programming as single-pass relaxation over a directed acyclic graph of subproblems: optimal substructure, overlapping subproblems, edit distance, 0/1 knapsack, the Floyd–Warshall recurrence, and interval DP.">
-<link rel="stylesheet" href="../css/atlas.css?v=book2">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
 <style>
 :root{
-  color-scheme: light;                 /* LIGHT ONLY — no dark, no toggle */
+  
   --h: 27;                             /* Bauhaus red, the binding hue */
   /* ---- M3 tonal roles (light) ---- */
   --primary:              oklch(50% 0.205 var(--h));
@@ -291,25 +296,10 @@ details .inner{padding:0 16px 16px}
 hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:var(--maxw)}
 .note{font-size:14px;color:var(--on-surface-variant)}
 </style>
-<link rel="stylesheet" href="studies.css?v=book3">
-<script src="../js/catalogue.js?v=book2" defer></script><script src="../js/site-shell.js?v=book3" defer></script></head>
-<body class="study-page">
-<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">15 / 23</span></nav>
+<link rel="stylesheet" href="studies.css?v=vdsa1">
+</head>
+<body class="study-page" data-page="study" data-crumb="Deep study 15">
 <div class="scroll-progress" aria-hidden="true"></div>
-
-<header class="masthead">
-  <svg class="sigil" viewBox="0 0 40 40" role="img" aria-label="Bauhaus sigil: blue circle, yellow triangle, red square">
-    <rect x="1" y="1" width="38" height="38" fill="none" stroke="var(--bau-ink)" stroke-width="1.5"/>
-    <circle cx="12" cy="12" r="8" fill="var(--bau-blue)"/>
-    <polygon points="28,4 38,22 18,22" fill="var(--bau-yellow)"/>
-    <rect x="20" y="22" width="16" height="16" fill="var(--bau-red)"/>
-  </svg>
-  <div class="mast-txt">
-    <b>DSA</b><span class="sep">·</span>Visual DSA<span class="sep">·</span>the subproblem DAG
-  </div>
-  <div class="mast-spacer"></div>
-  <div class="mast-lec">LESSON 15</div>
-</header>
 
 <div class="shell">
   <!-- LEFT RAIL -->
@@ -335,6 +325,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
     <section id="hook" class="hero reveal">
       <p class="eyebrow"><span class="bar"></span>Dynamic Programming · Lecture 15</p>
       <h1>Optimal substructure over a <span class="em">subproblem&nbsp;DAG</span></h1>
+<p class="study-related"><span class="study-related__label">Related lessons</span><a href="../lessons/34-dynamic-programming.html">Lesson 34 · Dynamic programming I</a><span class="study-related__soon">Lesson 35 · Dynamic programming II (coming soon)</span></p>
 <div class="study-brief" aria-label="Study at a glance">
   <div class="study-brief-title"><span>FIELD NOTE / 15</span><strong>Before the long read</strong></div>
   <div class="study-brief-grid"><p><span>Build on</span>Recursion and directed acyclic graphs</p><p><span>Core invariant</span>A DP state needs a precise meaning, recurrence, base case, and evaluation order.</p></div>

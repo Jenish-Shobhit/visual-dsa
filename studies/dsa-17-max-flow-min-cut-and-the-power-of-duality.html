@@ -3,11 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>Max-Flow, Min-Cut &amp; the Power of Duality</title>
-<link rel="stylesheet" href="../css/atlas.css?v=book2">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
 <style>
   :root{
-    color-scheme: light;                 /* LIGHT ONLY — never dark, never a toggle */
+    
     --h: 256;                            /* Bauhaus cobalt blue is the primary hue */
     /* M3 tonal roles */
     --primary:              oklch(46% 0.16 var(--h));
@@ -327,25 +332,10 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=book3">
-<script src="../js/catalogue.js?v=book2" defer></script><script src="../js/site-shell.js?v=book3" defer></script></head>
-<body class="study-page">
-<nav class="study-nav" aria-label="Study navigation"><a class="study-brand" href="../index.html">VISUAL DSA</a><a href="index.html">Deep studies</a><span class="study-position">17 / 23</span></nav>
-<div class="progress" aria-hidden="true"></div>
-
-<header class="masthead">
-  <svg class="sigil" width="34" height="34" viewBox="0 0 34 34" role="img" aria-label="Bauhaus sigil: circle, triangle, square">
-    <rect x="1" y="18" width="15" height="15" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
-    <circle cx="9" cy="9" r="8" class="dg-blue-f"/>
-    <path d="M18 1 L33 1 L25.5 14 Z" class="dg-red-f"/>
-  </svg>
-  <div class="crumb">
-    <b>Data Structures &amp; Algorithms</b><span class="sep">/</span>
-    Visual DSA<span class="sep">/</span>
-    Lecture <b>17</b>
-  </div>
-</header>
-
+<link rel="stylesheet" href="studies.css?v=vdsa1">
+</head>
+<body class="study-page" data-page="study" data-crumb="Deep study 17">
+<main id="main">
 <!-- ============ HERO / HOOK ============ -->
 <div class="hero">
   <svg class="shapes" width="210" height="170" viewBox="0 0 210 170" aria-hidden="true">
@@ -359,6 +349,7 @@
   <div class="wrap">
     <div class="eyebrow"><span class="n">Lecture 17</span> max-flow, min-cut &amp; duality</div>
     <h1>Max-Flow, Min-Cut &amp; the Power of Duality</h1>
+<p class="study-related"><span class="study-related__label">Related lesson</span><span class="study-related__soon">Lesson 31 · Max flow &amp; min cut (coming soon)</span></p>
 <div class="study-brief" aria-label="Study at a glance">
   <div class="study-brief-title"><span>FIELD NOTE / 17</span><strong>Before the long read</strong></div>
   <div class="study-brief-grid"><p><span>Build on</span>Directed graphs and residual edges</p><p><span>Core invariant</span>Residual edges let flow algorithms undo earlier choices; a cut certifies the final value.</p></div>
@@ -369,7 +360,7 @@
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
-        <p style="margin-bottom:.5em"><strong>The number that frames the lecture.</strong> The max-flow problem was posed in 1955 by Ford and Fulkerson in a classified RAND report &mdash; the &ldquo;flow&rdquo; was rail tonnage across the Soviet network, and the &ldquo;min cut&rdquo; was the cheapest set of rail links to bomb to sever it. For sixty-six years the best algorithms crept forward: <code class="inl">O(VE&sup2;)</code>, then <code class="inl">O(V&sup2;E)</code>, then a long plateau. Then in <strong>2022</strong>, Chen, Kyng, Liu, Peng, Probst&nbsp;Gutenberg and Sachdeva broke it open with an algorithm running in <strong>m<sup>1+o(1)</sup></strong> time &mdash; <em>almost-linear</em> in the number of edges, essentially as fast as <em>reading the graph</em>.</p>
+        <p style="margin-bottom:.5em"><strong>The number that frames the lecture.</strong> The problem came from a secret 1955 RAND study by Ted Harris and Frank Ross of the Soviet rail network &mdash; the &ldquo;flow&rdquo; was rail tonnage, and the &ldquo;min cut&rdquo; was the cheapest set of links to bomb to sever it &mdash; and Ford and Fulkerson, who had the problem from Harris, proved max-flow = min-cut in 1956. For sixty-six years the best algorithms crept forward: <code class="inl">O(VE&sup2;)</code>, then <code class="inl">O(V&sup2;E)</code>, then a long plateau. Then in <strong>2022</strong>, Chen, Kyng, Liu, Peng, Probst&nbsp;Gutenberg and Sachdeva broke it open with an algorithm running in <strong>m<sup>1+o(1)</sup></strong> time &mdash; <em>almost-linear</em> in the number of edges, essentially as fast as <em>reading the graph</em>.</p>
         <p style="margin-bottom:0">The same theorem that once chose where to cut a railway now finds maximum matchings, segments images, schedules airlines, and selects projects. We build it from the source edge outward &mdash; and end at that 2022 frontier.</p>
       </div>
     </div>
@@ -1103,6 +1094,7 @@
 </div>
 </div>
 
+</main>
 <script>
 (function(){
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;

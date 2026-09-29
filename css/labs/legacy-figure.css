@@ -1,0 +1,27 @@
+/* Step-through figure used by the two older labs (js/figure.js: FigureStepper).
+   Styles the .figure markup with design tokens so it follows the site theme. Used by
+   labs/code-machine.html and labs/graph-explorer.html. New labs use VDSA.player instead. */
+.figure { display: block; margin: 0; }
+.figure-title { margin: 0 0 10px; font: 700 11px/1.5 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.figure-body { min-width: 0; }
+.figure-panel { border: 1px solid var(--line); background: var(--bg-elev); border-radius: var(--r-md); min-height: 200px; padding: clamp(12px, 2vw, 24px); overflow: hidden; }
+.figure svg { display: block; width: 100%; height: auto; overflow: visible; }
+.figure-caption { font-size: 16px; line-height: 1.6; min-height: 3.4em; margin: 16px 0 12px; max-width: 800px; color: var(--ink-2); }
+.figure-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.figure-controls button {
+  min-height: 40px; padding: 0 14px; font-size: 14px; font-weight: 600;
+  border: 1px solid var(--line-strong); border-radius: var(--r-md); background: var(--bg-elev); color: var(--ink);
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+.figure-controls button:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.figure-controls button:disabled { opacity: .45; }
+.figure-controls [data-next] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.figure-controls [data-next]:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
+.figure-controls button:focus-visible, .figure-controls select:focus-visible, .figure-scrub:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.figure-count { margin-left: auto; font: 600 12px var(--font-mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.figure-scrub { flex: 1 1 140px; min-width: 100px; max-width: 260px; accent-color: var(--accent); }
+.figure-speed { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-3); }
+.figure-speed select { min-height: 36px; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--bg-elev); color: var(--ink); font-size: 13px; }
+.figure-hint { margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: var(--ink-3); }
+.figure:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: var(--r-md); }
+@media (max-width: 600px) { .figure-count { flex-basis: 100%; margin-left: 0; } .figure-scrub { order: 5; flex-basis: 100%; max-width: none; } }

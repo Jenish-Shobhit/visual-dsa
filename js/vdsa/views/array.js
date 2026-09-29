@@ -606,6 +606,7 @@
       targets.forEach(function (e) {
         var it = e.it;
         var rec = S.items.use(it.id, buildItem);
+        if (rec.el && rec.el.getAttribute('data-id') !== String(it.id)) { rec.el.setAttribute('data-id', it.id); rec.el.setAttribute('data-label', String(it.value)); }   // lets VDSA.clickQuiz target items
         rec.data = { slot: e.held ? it.over : it.slot, row: e.rg.id, value: it.value, item: it, held: e.held };
         it.held = e.held;
         vz.state(rec.el, it.state);

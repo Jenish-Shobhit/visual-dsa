@@ -155,7 +155,7 @@
     }, draw);
     var ctx = V.ctx, api = V.api, em = V.em, tr = V.tr;
     ctx.layer('tray'); ctx.layer('slots'); ctx.layer('items'); ctx.layer('pointers');
-    var S = { items: new vz.Store(), slots: new vz.Store(), ptrs: new vz.Store() };
+    var S = { items: new vz.Store(true), slots: new vz.Store(), ptrs: new vz.Store() };
     var clickable = !!opts.onItemClick;
     var reserveSlots = opts.reserve || 0, reserveLv = { a: 0, b: 0 };
     var G = null, lastKey = '';
@@ -504,7 +504,7 @@
     }, draw);
     var ctx = V.ctx, api = V.api, em = V.em, tr = V.tr;
     ctx.layer('sectors'); ctx.layer('labels'); ctx.layer('items'); ctx.layer('row'); ctx.layer('pointers');
-    var S = { sectors: new vz.Store(), labels: new vz.Store(), items: new vz.Store(), row: new vz.Store(), ptrs: new vz.Store() };
+    var S = { sectors: new vz.Store(), labels: new vz.Store(), items: new vz.Store(true), row: new vz.Store(), ptrs: new vz.Store() };
     var clickable = !!opts.onItemClick;
     var G = null;
     var center = { el: vz.svg('g', { class: 'vz-ring-center' }, ctx.layers.labels), cur: {}, from: {}, to: {} };

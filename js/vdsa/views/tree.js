@@ -225,7 +225,7 @@
     }, draw);
     var ctx = V.ctx, api = V.api, em = V.em, tr = V.tr;
     ctx.layer('edges'); ctx.layer('nulls'); ctx.layer('nodes'); ctx.layer('pointers');
-    var S = { nodes: new vz.Store(), edges: new vz.Store(), nulls: new vz.Store(), ptrs: new vz.Store() };
+    var S = { nodes: new vz.Store(true), edges: new vz.Store(), nulls: new vz.Store(), ptrs: new vz.Store() };
     var clickable = !!opts.onNodeClick;
     var prepared = { units: 0, dotUnits: 0, depth: 0, ptr: false };
     var maxSeen = { depth: 0 };

@@ -149,7 +149,7 @@
     ['header', 'hashbox', 'buckets', 'decor', 'edges', 'entries', 'badges'].forEach(ctx.layer);
 
     var S = {
-      buckets: new vz.Store(), entries: new vz.Store(), edges: new vz.Store(), decor: new vz.Store(),
+      buckets: new vz.Store(), entries: new vz.Store(true), edges: new vz.Store(), decor: new vz.Store(),
       badges: new vz.Store(), fixed: new vz.Store()
     };
     var reserve = { hash: opts.showHash === true, m: 0, chain: 0, textW: 0, resize: false };

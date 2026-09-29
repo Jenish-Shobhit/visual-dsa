@@ -418,7 +418,7 @@
     }
 
     /* ================================================================ stack/heap mode */
-    var SH = { frames: new vz.Store(), vars: new vz.Store(), objs: new vz.Store(), fields: new vz.Store(), arrows: new vz.Store(), caps: new vz.Store() };
+    var SH = { frames: new vz.Store(true), vars: new vz.Store(), objs: new vz.Store(true), fields: new vz.Store(), arrows: new vz.Store(), caps: new vz.Store() };
     var shReserve = { stackH: 0, heapH: 0 };
     var SG = null;
 

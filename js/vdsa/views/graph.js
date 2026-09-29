@@ -403,7 +403,7 @@
     var ctx = V.ctx, api = V.api, em = V.em, tr = V.tr, svg = ctx.svg;
     ctx.layer('edges'); ctx.layer('weights'); ctx.layer('nodes'); ctx.layer('overlay');
 
-    var S = { nodes: new vz.Store(), edges: new vz.Store() };
+    var S = { nodes: new vz.Store(true), edges: new vz.Store() };
     var F = { k: 1, ox: 0, oy: 0, height: 300 };
     var R = opts.nodeRadius, AS = 9, PIPE = 9, PF = 11;
     var dragged = {};

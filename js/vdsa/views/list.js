@@ -251,7 +251,7 @@
     }, draw);
     var ctx = V.ctx, api = V.api, em = V.em, tr = V.tr;
     ctx.layer('nodes'); ctx.layer('nulls'); ctx.layer('edges'); ctx.layer('pointers');
-    var S = { nodes: new vz.Store(), nulls: new vz.Store(), edges: new vz.Store(), ptrs: new vz.Store() };
+    var S = { nodes: new vz.Store(true), nulls: new vz.Store(), edges: new vz.Store(), ptrs: new vz.Store() };
     var clickable = !!opts.onNodeClick;
     var reserve = Object.assign({ above: 0, below: 0, aboveF: 0, belowF: 0, arcA: 0, arcB: 0, detA: 0, detB: 0, caption: false, nullL: false, nullR: false }, opts.reserve || {});
     var G = null, lastDimKey = '';

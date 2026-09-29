@@ -299,7 +299,8 @@
      Reserved record fields (used by Store / retarget / step / purge — do not reuse them for your own data):
        id, cur, from, to, isNew, exiting, revived, el, nodes, paint, arc, arcX, delay.
      Keep view data under other names (e.g. rec.data, rec.src/rec.dst for edge endpoints). */
-  vz.Store = function () { this.map = new Map(); this.seen = null; };
+  /* new vz.Store(true) tags each record's root element with data-id (so VDSA.clickQuiz and hover code can find it). */
+  vz.Store = function (tagIds) { this.map = new Map(); this.seen = null; this.tagIds = !!tagIds; };
   vz.Store.prototype.begin = function () { this.seen = new Set(); };
   vz.Store.prototype.use = function (id, create) {
     var rec = this.map.get(id);
@@ -307,6 +308,7 @@
     if (rec) { rec.isNew = false; rec.revived = !!rec.exiting; rec.exiting = false; return rec; }
     rec = { id: id, cur: {}, from: {}, to: {}, isNew: true, exiting: false };
     create(rec);
+    if (this.tagIds && rec.el && rec.el.setAttribute && !rec.el.hasAttribute('data-id')) rec.el.setAttribute('data-id', id);
     this.map.set(id, rec);
     return rec;
   };

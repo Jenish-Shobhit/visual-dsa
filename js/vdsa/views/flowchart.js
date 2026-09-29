@@ -489,7 +489,7 @@
       if (token) { token.remove(); token = null; }
     }
 
-    var S = { nodes: new vz.Store(), edges: new vz.Store() };
+    var S = { nodes: new vz.Store(true), edges: new vz.Store() };
     var geo = null, routes = [], builtW = -1, dirty = true;
     var shownActive = null, pending = [], nodeClicks = !!opts.interactive, chooseClicks = !!opts.interactive;
     var measureCache = new Map();

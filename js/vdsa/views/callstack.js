@@ -103,7 +103,7 @@
     }, draw);
     var ctx = V.ctx, api = V.api, em = V.em, tr = V.tr;
     ctx.layer('frames'); ctx.layer('flyers');
-    var S = { frames: new vz.Store(), more: new vz.Store(), flyers: new vz.Store() };
+    var S = { frames: new vz.Store(true), more: new vz.Store(), flyers: new vz.Store() };
     var clickable = !!opts.onFrameClick;
     var prepared = { height: 0 };
     var textCache = new Map();

@@ -251,7 +251,7 @@
     var ctx = V.ctx, api = V.api, em = V.em, tr = V.tr, svg = ctx.svg;
     ['cells', 'texts', 'bands', 'arrows', 'cursor', 'markers', 'headers', 'pointers', 'focus'].forEach(ctx.layer);
 
-    var S = { cells: new vz.Store(), heads: new vz.Store(), bands: new vz.Store(), arrows: new vz.Store(), cursors: new vz.Store(), markers: new vz.Store(), ptrs: new vz.Store() };
+    var S = { cells: new vz.Store(true), heads: new vz.Store(), bands: new vz.Store(), arrows: new vz.Store(), cursors: new vz.Store(), markers: new vz.Store(), ptrs: new vz.Store() };
     var G = null, N = null, lastGeomKey = '', canvasOn = false, clickable = !!opts.onCellClick;
     var reserve = Object.assign({ rowPointers: false, colPointers: false, rowPtrW: 0 }, opts.reserve || {});
     var previewDirty = false, first = true, drawId = 0, lastAnim = [];

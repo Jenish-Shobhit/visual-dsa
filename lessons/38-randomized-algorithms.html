@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Randomized algorithms · Visual DSA</title>
+<meta name="description" content="Coin flips as a tool: throw darts to estimate pi, shuffle fairly, sample a stream, climb a skip list, and check a Bloom filter. Las Vegas versus Monte Carlo, with live animations.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/38-randomized-algorithms.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/16-quick-sort.js" defer></script>
+<script src="../js/algos/38-randomized-algorithms.js" defer></script>
+<script src="../js/lessons/38-randomized-algorithms-views.js" defer></script>
+<script src="../js/lessons/38-randomized-algorithms-labs.js" defer></script>
+<script src="../js/lessons/38-randomized-algorithms.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="38-randomized-algorithms">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ 1. HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Randomized algorithms</h1>
+      <p class="hero__lede">Flip a coin and a slow or fussy algorithm turns fast and simple. The price is a small chance of being slow, or wrong, and you get to set that chance.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">20 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="16-quick-sort.html">Needs: Quick sort</a></li>
+        <li><a class="chip" data-icon="prereq" href="11-hash-tables.html">Hash tables</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: random darts land in a square with a quarter circle drawn inside it. Darts inside the circle are blue, outside are orange. As more darts land, four times the fraction inside settles on 3.14, the value of pi."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ 2. THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem: someone knows your rule</h2>
+      <p>Quick sort picks a pivot, splits the array around it, and recurses. If you always pick the <em>last</em> element, a sorted array is a disaster: the pivot is the biggest value, one side gets everything, and the work adds up to about n²/2 comparisons.</p>
+      <p>You could pick the middle instead. Then the adversary, whoever hands you the input, simply builds an array that defeats <em>that</em> rule. Any fixed rule has a worst input, and a determined adversary can find it.</p>
+      <div class="mini-row wide" id="mini-adversary"></div>
+      <p>The fix is almost embarrassingly simple: choose the pivot with a coin flip. The adversary can read your code but not your dice, so no input is bad in advance. Some runs are lucky, some unlucky, and the <em>average</em> over your own coins is fast for every input.</p>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>A randomized algorithm trades a fixed rule for a random choice. The guarantee is no longer “this input is fast” but “on <em>every</em> input, the odds are on your side”.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 3. INTUITION -->
+    <section id="kinds">
+      <h2>Two ways to gamble</h2>
+      <p>Randomness can spend one of two things: your time or your certainty. Every randomized algorithm picks one.</p>
+      <div class="mini-row wide" id="mini-kinds"></div>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>A <dfn>Las Vegas</dfn> algorithm always returns the right answer, but its running time depends on the coins. A <dfn>Monte Carlo</dfn> algorithm always finishes in a fixed number of steps, but its answer is right only with high probability.</p>
+      </aside>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: the lost key</p>
+        <p>Searching drawers at random until you find your key is Las Vegas: you are always right when you stop, but nobody knows how long it takes. Asking ten friends to look for five minutes each and trusting the “no” is Monte Carlo: bounded time, and a small chance the key was there.</p>
+      </aside>
+      <p>The rest of this lesson meets both kinds: a Monte Carlo estimate of π, a fair shuffle, a stream sampler, a skip list, a Bloom filter, and randomized quick sort. Then one diagram sorts them all.</p>
+    </section>
+
+    <!-- ============================================================ 4. MONTE CARLO PI -->
+    <section id="pi">
+      <h2>Monte Carlo: throwing darts at π</h2>
+      <p>Draw a square of side 1 and a quarter circle of radius 1 inside it. The circle covers π/4 of the square, about 78.5 %. Throw darts that land at uniformly random spots, and the fraction inside estimates π/4.</p>
+      <p>Throw some. Each dart is just two random numbers <code>x</code> and <code>y</code>, and it is inside when <code>x² + y² ≤ 1</code>.</p>
+      <figure class="fig wide" id="fig-pi">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Throw darts, estimate π</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="btn-row" data-throws></div><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain rz-block-stage" data-stage></div>
+        <div class="rz-readbar" data-readbar aria-live="off"></div>
+        <figcaption class="fig__foot">Text alternative: a square with a quarter circle. Blue darts are inside the circle, orange are outside. The left chart shows the estimate wobbling around 3.14159 and settling; the right chart shows the error shrinking roughly like 1 divided by the square root of the number of darts.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">The 1/√n law</p>
+        <p>Random error shrinks slowly: <strong>100 times more darts buys only 10 times more accuracy</strong>. That is poor for π in two dimensions, but the law does not care about dimension, so Monte Carlo wins on huge problems (volumes in 100 dimensions, physics, finance) where nothing else works.</p>
+      </aside>
+      <pre class="code-static" data-code-block="pi"></pre>
+    </section>
+
+    <!-- ============================================================ 5. SHUFFLE -->
+    <section id="shuffle">
+      <h2>A fair shuffle is harder than it looks</h2>
+      <p>To shuffle, for each slot swap it with a random slot. It sounds right, and thousands of programs shipped it. The catch is <em>which</em> slots you may swap with.</p>
+      <p>The <strong>naive</strong> shuffle swaps slot <code>i</code> with any of the n slots. <strong>Fisher–Yates</strong> swaps slot <code>i</code> only with slots 0 to <code>i</code>, walking from the right, so each slot is fixed for good once it is placed. Step through both.</p>
+      <figure class="fig fig--lab wide" id="fig-shuffle">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Two shuffles, step by step</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: an array of letters. A pointer i walks across; a second pointer j marks the random slot chosen; the two letters swap. Captions describe each step.</figcaption>
+      </figure>
+      <p>Both look shuffled. To tell them apart you need statistics: shuffle the same six items 10,000 times and count how often each item lands in each position. A fair shuffle puts every item in every position 1 time in 6 (16.7 %).</p>
+      <figure class="fig wide" id="fig-heat">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">10,000 shuffles, counted</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-toolbar></div>
+        <div class="fig__stage fig__stage--plain rz-block-stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: two grids with items down the side and positions across the top. In the Fisher–Yates grid every cell is close to 16.7 percent. In the naive grid some cells are visibly orange (too likely) and others blue (too rare), for example item B is far more likely to end in position 1 than in position 3.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the naive shuffle cannot be fair</p>
+        <p>With 3 items the naive shuffle makes 3 × 3 × 3 = 27 equally likely sequences of random choices. There are 6 orders, and 27 is not divisible by 6, so some orders must get more sequences than others. Fisher–Yates makes 3 × 2 × 1 = 6 choices, one per order.</p>
+      </aside>
+      <p>Sampling noise blurs the picture a little. Here are the <em>exact</em> odds for the naive shuffle, computed rather than simulated. Find the most over-represented spot.</p>
+      <figure class="fig" id="fig-exact">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Exact odds, naive shuffle of 6 items</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: a 6 by 6 grid of exact probabilities. Item A is uniform at 16.7 percent everywhere. Item B in position 1 and item F in position 5 are the largest at 20.6 percent.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-exact"></div>
+      <div class="quiz" id="quiz-shuffle-why"></div>
+    </section>
+
+    <!-- ============================================================ 6. RESERVOIR LAB -->
+    <section id="reservoir">
+      <h2>Lab: sampling a stream you cannot store</h2>
+      <p>A log file has billions of lines and you want 3 of them, chosen uniformly at random. You do not know how many lines there are until you reach the end, and you cannot read it twice. <strong>Reservoir sampling</strong> keeps a reservoir of <em>k</em> items and updates it as the stream flows past.</p>
+      <p>The rule: the first <em>k</em> items go straight in. Item number <em>i</em> after that is kept with probability <strong>k/i</strong>, replacing a random reservoir item. That makes late items unlikely to enter, and early items unlikely to leave, so the odds balance out.</p>
+      <figure class="fig fig--lab wide" id="lab-res">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Reservoir sampling, one item at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 470px"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask you to predict a replacement. Text alternative: a row of stream items, a strip of numbered die faces, and a row of reservoir slots. Items move from the stream into slots; evicted items return to the stream greyed out.</figcaption>
+      </figure>
+      <p>The same logic as a map of decisions. It is wired to the lab: step the lab and the current box lights up.</p>
+      <figure class="fig wide" id="fig-res-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Reservoir sampling as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <figcaption class="fig__foot">Text alternative: start with an empty reservoir. For each arriving item number i, if i is at most k put it in the next free slot. Otherwise roll j from 1 to i: if j is at most k replace slot j, else drop the item. Repeat while items remain, then return the reservoir.</figcaption>
+      </figure>
+      <p>One run proves little. Run the whole stream 10,000 times and count how often each item ends up in the reservoir. If the sampler is fair, every bar reaches the same height: 10,000 × k / n.</p>
+      <figure class="fig wide" id="fig-res-hist">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Is every item equally likely? Run it 10,000 times</h3></div>
+        </header>
+        <div class="fig__toolbar" data-toolbar></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a bar chart with one bar per stream item. After a run, all bars are close to the same height, the dashed expected value of runs times k divided by n.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-tenth"></div>
+    </section>
+
+    <!-- ============================================================ 7. SKIP LIST LAB -->
+    <section id="skip">
+      <h2>Lab: a skip list, balanced by coin flips</h2>
+      <p>A sorted linked list is easy to insert into but slow to search: you walk every node. A <strong>skip list</strong> adds express lanes. Every key gets a <em>tower</em>; the tower height is decided by flipping a fair coin, one more level for each heads.</p>
+      <p>Half of the keys reach level 2, a quarter reach level 3, an eighth reach level 4. Each lane is about half as crowded as the one below, which is exactly the shape of a balanced binary search tree, built by luck instead of rotations. Grow some towers.</p>
+      <figure class="fig wide" id="fig-towers">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Coin flips build towers</h3></div>
+        </header>
+        <div class="fig__toolbar"><div class="btn-row" data-toolbar></div></div>
+        <div class="fig__stage fig__stage--plain rz-block-stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: a single tower grows one block per heads and stops at the first tails. Beside it, a bar chart compares how often towers of each height appeared with the expected share, 50, 25, 12.5 percent and so on.</figcaption>
+      </figure>
+      <p>To <strong>search</strong>, start at the head on the top lane. Hop right while the next tower is still smaller than your target, and drop down a lane when it would overshoot. To <strong>insert</strong>, search for the spot, flip coins for the height, and splice the tower in with a few pointer changes.</p>
+      <figure class="fig fig--lab wide" id="lab-skip">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Search and insert in a skip list</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 500px"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: towers of different heights stand in a row, linked left to right on every level. The search starts at the head on the top level and moves right or down; its route is shown as an orange dotted line. The bottom level alone is an ordinary linked list.</figcaption>
+      </figure>
+      <p>The bottom level is a plain linked list, so the counter “plain list would need” shows what you saved. That gap grows with size. Average comparisons per search over many random skip lists:</p>
+      <figure class="fig wide" id="fig-skip-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Comparisons per search: skip list vs plain list</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a line chart of average comparisons against the number of keys. The plain list grows in a straight line; the skip list stays low and grows only logarithmically, for example about 23 comparisons at 2,048 keys versus about 1,000 for the plain list.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-height"></div>
+    </section>
+
+    <!-- ============================================================ 8. BLOOM FILTER LAB -->
+    <section id="bloom">
+      <h2>Lab: a Bloom filter, a set that forgets the words</h2>
+      <p>You want to know whether a URL is in a blacklist of a hundred million entries, using almost no memory. A <strong>Bloom filter</strong> keeps only an array of <em>m</em> bits, all 0, and <em>k</em> hash functions.</p>
+      <p>To <strong>add</strong> a word, hash it <em>k</em> times and set those bits to 1. To <strong>check</strong> a word, hash it and look: if any bit is 0 the word was <em>definitely never added</em>. If all bits are 1 the answer is only <em>maybe</em>, because other words may have set them.</p>
+      <figure class="fig fig--lab wide" id="lab-bloom">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Add words, check words, catch a false positive</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 500px"></div>
+            <p class="rz-words" data-words></p>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a row of bits. A word chip sends one arrow per hash function down to a bit. Adding turns those bits to 1. Checking reads them: a 0 means definitely not; all 1s means maybe, and the verdict badge says when the maybe was wrong.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">One-sided error</p>
+        <p>A Bloom filter can say “maybe” for a word that was never added (a <dfn>false positive</dfn>) but it can <em>never</em> say “definitely not” for a word that was added. You also cannot delete: clearing a bit could erase other words.</p>
+      </aside>
+      <p>How often does “maybe” lie? After adding <em>n</em> words, a fraction 1 − e<sup>−kn/m</sup> of the bits are 1, so a stranger passes all <em>k</em> checks with probability <strong>(1 − e<sup>−kn/m</sup>)<sup>k</sup></strong>. The dots below are measured with the real hash function.</p>
+      <figure class="fig wide" id="fig-bloom-fp">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">False-positive rate as the filter fills</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider style="flex: 1 1 220px"></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a line chart of the false-positive probability against the number of words added, for a fixed number of bits. The rate starts at zero, rises slowly, then climbs toward 100 percent. The measured dots sit on the formula curve.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-bloom"></div>
+    </section>
+
+    <!-- ============================================================ 9. QUICKSORT RACE -->
+    <section id="quick">
+      <h2>Race: fixed pivot against random pivot</h2>
+      <p>Back to where we started. Pick a fixed pivot rule and an input, then start the race. Both sides sort the <em>same</em> numbers with the same quick sort; only the pivot choice differs. The bars advance one comparison or move at a time, so the faster side finishes first.</p>
+      <figure class="fig fig--lab wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Fixed pivot vs random pivot</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-toolbar></div>
+        <div class="fig__stage fig__stage--plain rz-block-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: two rows of bars sorting the same input side by side, with live comparison counters. On sorted input the fixed-pivot side needs about n squared over two comparisons while the random-pivot side needs roughly n log n.</figcaption>
+      </figure>
+      <p>The “Adversary’s input” button is not a trick: it hill-climbs, swapping two values whenever the swap makes <em>your chosen rule</em> slower, so every fixed rule, even median-of-three, gets its own nasty input. The random side never notices, because its pivot is chosen after the input is fixed.</p>
+      <figure class="fig wide" id="fig-race-chart">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Comparisons as the array grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a line chart of comparisons against array size. The fixed-pivot line on its bad input curves up like n squared over two. The random-pivot line stays near n log n. It is driven by the same choices as the race above.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 10. FLOWCHART: WHICH KIND -->
+    <section id="decide">
+      <h2>Las Vegas or Monte Carlo?</h2>
+      <p>Two questions sort any randomized algorithm. Pick one and watch the diagram walk to its answer.</p>
+      <figure class="fig wide" id="fig-decide">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which kind of gamble is it?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="rz-choices btn-row" data-choices role="group" aria-label="Pick an algorithm"></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: first ask whether the answer is always correct. If yes, the algorithm is Las Vegas. If no, ask whether the running time is fixed in advance: if yes it is Monte Carlo; if no it is a rarer mix.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">The two kinds convert into each other</p>
+        <p>A Las Vegas algorithm becomes Monte Carlo if you stop it after a time limit and guess. A Monte Carlo algorithm becomes Las Vegas if you can <em>check</em> its answer: run it again until the check passes. Verifying is the whole trick.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 11. COST -->
+    <section id="cost">
+      <h2>What the coins cost</h2>
+      <p>The guarantees are about <em>expectation</em> or <em>probability</em> over your own coin flips, not over the input. Each row names the operation, the case and the size.</p>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Algorithm</th><th scope="col">Operation</th><th scope="col">Expected (over the coins)</th><th scope="col">Worst case</th><th scope="col">Kind</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Randomized quick sort</th><td>Sort n values, any input</td><td><span class="big-o" data-o="nlogn">n log n</span> comparisons</td><td><span class="big-o" data-o="n2">n²</span>, with probability tiny</td><td>Las Vegas</td></tr>
+            <tr><th scope="row">Fisher–Yates</th><td>Shuffle n items</td><td><span class="big-o" data-o="n">n</span> swaps, every order equally likely</td><td><span class="big-o" data-o="n">n</span> (always)</td><td>Exact: always correct, fixed time</td></tr>
+            <tr><th scope="row">Reservoir sampling</th><td>Sample k of a stream of n</td><td><span class="big-o" data-o="n">n</span> time, <span class="big-o" data-o="n">k</span> memory</td><td><span class="big-o" data-o="n">n</span> (always)</td><td>Exact: always correct, fixed time</td></tr>
+            <tr><th scope="row">Skip list</th><td>Search or insert, n keys</td><td><span class="big-o" data-o="logn">log n</span> comparisons</td><td><span class="big-o" data-o="n">n</span>, with probability tiny</td><td>Las Vegas</td></tr>
+            <tr><th scope="row">Bloom filter</th><td>Add or check one word</td><td><span class="big-o" data-o="1">k</span> bit probes</td><td><span class="big-o" data-o="1">k</span> (always)</td><td>Monte Carlo (false positives)</td></tr>
+            <tr><th scope="row">Monte Carlo estimate</th><td>Error after n samples</td><td>error ≈ <span class="big-o" data-o="sqrtn">1/√n</span></td><td>any error, rarely</td><td>Monte Carlo</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Monte Carlo error can be pushed down almost for free by <strong>repeating</strong>. If one run is wrong with probability <em>p</em> and the errors are independent (and one-sided, like “composite” claims in Miller–Rabin), then <em>k</em> runs are all wrong with probability <em>p<sup>k</sup></em>.</p>
+      <figure class="fig wide" id="fig-amp">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Repeat to shrink the error</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider style="flex: 1 1 220px"></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a log-scale chart of the chance that every repetition is wrong against the number of repetitions. Each repetition multiplies the chance by the single-run error, so the line falls in a straight descending line, for example one in four to the power k.</figcaption>
+      </figure>
+      <details class="accordion">
+        <summary>Why is randomized quick sort O(n log n) in expectation?</summary>
+        <div class="accordion__body"><p>Call a pivot <em>good</em> if it lands in the middle half of the range. A random pivot is good with probability 1/2. A good pivot leaves each side at most 3/4 of the size, so after about log<sub>4/3</sub> n good pivots a branch is finished. Half of all pivots are good, so a branch needs about twice that many pivots in expectation, and every level of the recursion costs about n comparisons in total.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why is the expected skip-list height about log₂ n?</summary>
+        <div class="accordion__body"><p>A key reaches level h with probability 2<sup>−(h−1)</sup>. With n keys the expected number reaching level h is n / 2<sup>h−1</sup>, which drops below 1 when h ≈ log₂ n + 1. So the tallest tower is around log₂ n plus a small constant, and a search walks that many levels with about two steps per level.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ 12. VARIATIONS -->
+    <section id="variations">
+      <h2>More places coins help</h2>
+      <p>The same idea shows up all over. Try a small live version of each.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="universal">Universal hashing</button>
+          <button data-tab="mr">Miller–Rabin primality</button>
+          <button data-tab="cms">Count-min sketch</button>
+          <button data-tab="more">Treaps, Karger, HyperLogLog</button>
+        </div>
+        <div data-tab-panel="universal"><div class="split"><div class="rz-block-stage rz-tabstage stage-grid" id="mini-universal"></div><div><p>A fixed hash <code>x mod 7</code> is defeated by keys that are all multiples of 7: they pile into one bucket. <strong>Universal hashing</strong> picks the hash at random from a family, <code>((a·x + b) mod 101) mod 7</code> with random <em>a</em> and <em>b</em>, so no fixed key set is bad in advance.</p><p class="rz-note">Draw new a and b: the load evens out every time.</p></div></div></div>
+        <div data-tab-panel="mr"><div class="split"><div class="rz-block-stage rz-tabstage stage-grid" id="mini-mr"></div><div><p><strong>Miller–Rabin</strong> tests whether a number is prime. A random base <em>a</em> either <em>proves</em> the number composite (a witness) or fails to. At most a quarter of the bases lie, so 20 random bases leave an error below 4<sup>−20</sup>. It is Monte Carlo with one-sided error, and it is how cryptography picks primes.</p></div></div></div>
+        <div data-tab-panel="cms"><div class="split"><div class="rz-block-stage rz-tabstage stage-grid" id="mini-cms"></div><div><p>A <strong>count-min sketch</strong> counts how often each item appeared in a stream using a small grid: each row has its own hash, each item bumps one cell per row, and the estimate is the <em>minimum</em> of its cells. Collisions only add, so it never under-counts. It is a Bloom filter that counts.</p></div></div></div>
+        <div data-tab-panel="more"><div class="split"><div class="rz-block-stage rz-tabstage stage-grid" id="mini-more"></div><div><p>A <strong>treap</strong> is a binary search tree whose shape comes from random priorities: it behaves like randomized quick sort, frozen into a tree. <strong>Karger’s algorithm</strong> finds a minimum cut by contracting random edges. <strong>HyperLogLog</strong> counts distinct items in a stream with a few kilobytes by watching the longest run of leading zeros in random hashes. The study linked at the end goes into each.</p></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 13. CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-adversary"></div>
+        <div class="quiz" id="quiz-kind"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 14. SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Randomized algorithms</p></div>
+          <div class="cluster"><span class="chip chip--sm">Las Vegas: always right</span><span class="chip chip--sm">Monte Carlo: fixed time</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 15. HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1946<small>solitaire</small></div>
+        <p class="history__people">Stanislaw Ulam, John von Neumann, Nicholas Metropolis<span>Los Alamos, ENIAC</span></p>
+        <div class="history__body">
+          <p>Monte Carlo methods began with a card game. In 1946, recovering from an illness, Stanislaw Ulam wondered how often a game of solitaire comes out, and realised that dealing many random games on a computer would answer faster than any formula. Nicholas Metropolis named the method after the casino where Ulam’s uncle liked to gamble, and by 1948 it was running on ENIAC.</p>
+          <p>Burton Bloom published his filter in 1970 for a hyphenation program that could not afford a dictionary in memory. Jeffrey Vitter analysed reservoir sampling in 1985, and William Pugh introduced skip lists in 1989 as a friendlier alternative to balanced trees.</p>
+        </div>
+        <p class="history__source">Sources: Metropolis and Ulam, <em>The Monte Carlo Method</em>, J. American Statistical Association 1949; B. Bloom, CACM 13(7), 1970; J. Vitter, ACM TOMS 11(1), 1985; W. Pugh, CACM 33(6), 1990.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 16. PRACTICE AND GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Shuffle an array</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Implement Fisher–Yates, then prove that a given value ends at position 0 with probability exactly 1/n. Which line of the naive version breaks your proof?</p></li>
+        <li><div class="practice__title">Random node of a linked list</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Return the value of a uniformly random node of a singly linked list of unknown length, in one pass and O(1) memory. Then extend it to k nodes.</p></li>
+        <li><div class="practice__title">Quickselect</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Find the k-th smallest value with a random pivot, recursing into one side only. Show that the expected number of comparisons is O(n), and describe the input that makes a fixed-pivot version quadratic.</p></li>
+        <li><div class="practice__title">Design an approximate set</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">You must remember one million URLs and accept at most a 1 % false-positive rate. Choose m and k using the formula in this lesson, and say what happens to your error if ten million URLs arrive instead.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-22-randomness-as-a-design-tool.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Randomness as a design tool</span><span class="deeper__text" style="display:block">Amplification, treaps, the backward-walk proof for skip lists, the Bloom filter derivation and Karger’s min cut.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+      <a class="deeper" href="../studies/dsa-05-probability-for-algorithms.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Probability for algorithms</span><span class="deeper__text" style="display:block">Expectation, linearity and the tail bounds behind every guarantee above.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+    <!-- ============================================================ 17. FINALE -->
+    <section id="finale" data-toc="You finished">
+      <h2>You finished the course</h2>
+      <div class="rz-finale wide" id="finale-card">
+        <h3>That is all 38 lessons. Thank you for staying to the end.</h3>
+        <p>You began with “what is an algorithm?” and finished with coin flips that beat adversaries. Along the way you have met arrays and hash tables, sorting, trees and graphs, dynamic programming, and the edge of what computers can do at all.</p>
+        <div class="rz-finale__map" id="finale-map" role="img" aria-label="One square per lesson, coloured when completed"></div>
+        <p class="rz-note" id="finale-count"></p>
+        <div class="rz-finale__links">
+          <a href="../labs/sorting-arena.html"><b>Sorting arena</b><span>Race every sorting algorithm on the same input.</span></a>
+          <a href="../labs/pathfinder.html"><b>Pathfinder</b><span>Draw walls, then watch BFS, Dijkstra and A* search.</span></a>
+          <a href="../labs/tree-studio.html"><b>Tree studio</b><span>Insert and delete in BSTs, AVL, red-black trees and heaps.</span></a>
+          <a href="../labs/big-o-explorer.html"><b>Big-O explorer</b><span>Feel what n² really means.</span></a>
+          <a href="../labs/structure-chooser.html"><b>Which structure?</b><span>A flowchart for picking the right data structure.</span></a>
+          <a href="../labs/cheatsheet.html"><b>Complexity cheat sheet</b><span>Every structure and algorithm on one page.</span></a>
+          <a href="../studies/index.html"><b>The deep studies</b><span>Twenty-four long-form notes, from cost models to fine-grained complexity.</span></a>
+          <a href="../studies/dsa-22-randomness-as-a-design-tool.html"><b>Randomness as a design tool</b><span>The study behind this lesson.</span></a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Heaps &amp; priority queues · Visual DSA</title>
+<meta name="description" content="A heap keeps just enough order to hand you the smallest item instantly. Watch values climb and sink through a tree that lives in an array, build a heap in linear time, and sort with it.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/21-heaps.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/21-heaps.js" defer></script>
+<script src="../js/lessons/21-heaps-views.js" defer></script>
+<script src="../js/lessons/21-heaps-labs.js" defer></script>
+<script src="../js/lessons/21-heaps-more.js" defer></script>
+<script src="../js/lessons/21-heaps.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="21-heaps">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Heaps &amp; priority queues</h1>
+      <p class="hero__lede">You rarely need everything in order, only the most urgent item, again and again. A heap keeps just enough order to hand it over instantly and repairs itself in a few swaps, inside a plain array.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">25 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="06-arrays.html">Needs: arrays</a></li>
+        <li><a class="chip" data-icon="prereq" href="14-elementary-sorts.html">Sorting basics</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage l21-hero" id="teaser" role="img" aria-label="Animation: a new value is added at the bottom of a tree of numbers and climbs upward by swapping with larger parents. The array beneath the tree shows the same swaps. Then the smallest value leaves from the top and the last value sinks down to replace it."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">Always the most urgent</h2>
+      <p>An emergency room does not treat patients in the order they arrive. It treats the most urgent one first, and new patients keep arriving. Operating systems pick the next task the same way, and so do route finders, event simulators and data compressors.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">The priority queue</p>
+        <p>A <dfn>priority queue</dfn> stores items with priorities and promises three operations: <code>insert(x)</code>, <code>peek()</code> (look at the most urgent) and <code>extract()</code> (remove it). Here “most urgent” means the <em>smallest</em> key, a <strong>min</strong>-priority queue.</p>
+      </aside>
+      <p>The obvious storage is a plain array. Step through both variants below: an unsorted array and an array kept sorted. Watch what the counter says about each operation.</p>
+      <figure class="fig wide" id="fig-pq">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Two array priority queues, one expensive operation each</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a row of numbers. The unsorted version appends in one step but must scan every cell to find the smallest; the sorted version pops the smallest in one step but must shift cells to insert. Cost counts cells compared or moved.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">The dilemma</p>
+        <p>Either <code>insert</code> is cheap and <code>extract</code> costs about <em>n</em>, or the other way round. Run <em>n</em> of each and you pay about <em>n</em>² either way. A heap makes both cost about log <em>n</em>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2 data-toc="Intuition">Partial order is enough</h2>
+      <p>Sorting pins down the rank of every value. A priority queue only ever asks about the top one. So keep only the order that protects the top: <strong>every parent is at most as large as its children</strong>. Nothing else is promised.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Heap property (min-heap)</p>
+        <p>In a binary tree, every node’s key is <dfn>≤ the keys of its children</dfn>. A max-heap flips the comparison. Siblings and cousins may be in any order.</p>
+      </aside>
+      <p>Follow any path from the root downwards and the keys never decrease. So the root is at most everything below it: it is the minimum. The three trees below hold the same six keys, and all three obey the rule.</p>
+      <div class="mini-row wide" id="mini-partial"></div>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: a company chart</p>
+        <p>Every manager’s salary is at most that of their reports (odd, but it is a min-heap). You can always find the lowest salary at the top, yet two teams under different managers are never compared.</p>
+      </aside>
+      <p>Test your eye. One node in this tree breaks the rule. Find it.</p>
+      <figure class="fig" id="fig-badnode">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A min-heap with one mistake</h3></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: a tree of seven numbers, 3 at the root, 8 and 5 below it, and 9, 4, 7, 6 at the bottom. The 4 sits under 8, the smaller number below the larger.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-badnode"></div>
+    </section>
+
+    <!-- ============================================================ SHAPE -->
+    <section id="shape">
+      <h2 data-toc="Tree in an array">A tree that lives in an array</h2>
+      <p>The rule needs a tree, but a pointer-based tree wastes memory and is slow. Add one more rule instead: fill the tree <strong>level by level, left to right</strong>, with no gaps. Such a <dfn>complete</dfn> tree can be stored in an array, and its shape is fixed by its size alone.</p>
+      <p>Click any node or any array cell. The neighbours follow from arithmetic, with no pointers at all.</p>
+      <figure class="fig wide" id="fig-map">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Index arithmetic: parent and children</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="l21-slider"></div></div>
+        <div class="fig__stage l21-pairstage" data-stage></div>
+        <div class="l21-formula" data-formula aria-live="polite"></div>
+        <div class="fig__controls l21-btnbar"><button type="button" class="btn btn--sm" data-prev>Previous index</button><button type="button" class="btn btn--sm" data-next>Next index</button></div>
+        <figcaption class="fig__foot">Text alternative: a complete binary tree of up to fifteen nodes drawn above the array that stores it. The selected index, its parent and its children are highlighted in both, and the formulas below give their indices.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why complete?</p>
+        <p>With no gaps, a heap of <em>n</em> values is only about log<sub>2</sub> <em>n</em> levels tall (a million values: 20 levels). Every repair below walks one path, so it costs at most that many steps.</p>
+      </aside>
+      <p>Hover a node in the figures from here on: its array cell lights up, and the other way round. The tree is how you think; the array is what is in memory.</p>
+    </section>
+
+    <!-- ============================================================ TWO REPAIRS -->
+    <section id="repairs">
+      <h2 data-toc="Sift up, sift down">Two repairs: climb and sink</h2>
+      <p>Every change to a heap breaks the rule in exactly one place, and one path fixes it. To <strong>insert</strong>, put the new value in the first free slot at the end of the array, then let it <strong>sift up</strong>: while it beats its parent, swap.</p>
+      <figure class="fig wide" id="fig-up">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Insert: the new value climbs</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage l21-pairstage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the caption describes every comparison and swap. The tree and the array show the same swaps at the same moment.</figcaption>
+      </figure>
+      <p>To <strong>extract</strong> the minimum, the root leaves a hole. Fill it with the <em>last</em> value of the array, which keeps the tree complete, and let that value <strong>sift down</strong>: swap it with its smaller child while that child beats it.</p>
+      <figure class="fig wide" id="fig-down">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Extract: the last value sinks</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage l21-pairstage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the smallest value leaves from the root; the last value moves to the root and swaps downward with its smaller child until neither child is smaller.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Why the <em>smaller</em> child?</p>
+        <p>If the larger child moved up, it would sit above its smaller sibling and break the rule. Only the smaller child can safely take the parent’s seat.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Use the heap as a priority queue. Type a number and press <strong>Insert</strong>, press <strong>Extract</strong> to remove the top, or build a heap from any list. Each operation plays as a trace that lights the line of code that runs. The lab pauses twice to ask you what happens next.</p>
+      <figure class="fig fig--lab wide" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Heap lab: insert, extract, peek and build</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l21-toolbar" data-toolbar></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall l21-pairstage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a heap of up to fifteen numbers shown as a tree and as an array. The caption under the figure describes each step. Values run from 0 to 99.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHARTS -->
+    <section id="flowchart">
+      <h2 data-toc="Flowcharts">The two repairs as flowcharts</h2>
+      <p>Both flowcharts are wired to the lab above. Run an insert or an extract there and the current box lights up here.</p>
+      <figure class="fig wide" id="fig-flow-up">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Sift up (used by insert)</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: append the value at the end and set i to its index. While i is above zero and the value beats its parent, swap with the parent and move i up. Otherwise stop: the heap is valid.</figcaption>
+      </figure>
+      <figure class="fig wide" id="fig-flow-down">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Sift down (used by extract, build and heap sort)</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: start at the position to repair. If it has no child, stop. Otherwise pick the smaller child; if that child beats the value, swap and move down; if not, stop.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ BUILD -->
+    <section id="build">
+      <h2 data-toc="Build in O(n)">Building a heap in linear time</h2>
+      <p>You have <em>n</em> loose values. Inserting them one by one costs about <em>n</em> log <em>n</em> swaps in the worst case. Floyd’s trick is faster: put them in the array as they are, then <strong>sift down</strong> every node that has a child, from the last such node back to the root.</p>
+      <p>Half the nodes are leaves, which need nothing. A quarter sit one level above and can sink one level. Only the root can sink all the way. Watch the bars: each height level is allowed <em>nodes × height</em> swaps, and the total stays below <em>n</em>.</p>
+      <figure class="fig full" id="fig-build">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Bottom-up build-heap, with the work per level</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="l21-buildgrid">
+          <div>
+            <div class="fig__stage l21-pairstage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="l21-work" data-work></div>
+        </div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a tree of fifteen values and its array. Beside it, one bar per height: the outline is the most swaps that height could ever need (nodes times height), the fill is the swaps spent so far.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the sum is linear</p>
+        <p>A node at height <em>h</em> sinks at most <em>h</em> levels, and about <em>n</em> / 2<sup><em>h</em>+1</sup> nodes sit at height <em>h</em>. The total is at most <em>n</em> × Σ <em>h</em> / 2<sup><em>h</em>+1</sup> = <em>n</em>. The many cheap nodes at the bottom outweigh the few expensive nodes at the top.</p>
+      </aside>
+      <figure class="fig wide" id="fig-buildchart">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Building a heap: n log n versus the actual work</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-seg2></div><div data-slider class="l21-slider"></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a line chart against n up to 512. Repeated insertion on the worst input follows n log n. Bottom-up build stays below a straight line, at most n swaps and 2n comparisons, even on its worst input.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ HEAP SORT -->
+    <section id="heapsort">
+      <h2 data-toc="Heap sort">Heap sort</h2>
+      <p>Extracting the minimum over and over yields the values in order. Do it inside the array itself and no second array is needed: build a <strong>max</strong>-heap, then repeat: swap the root with the last heap slot, shrink the heap by one, and sift the new root down. The sorted region grows at the right while the tree shrinks.</p>
+      <figure class="fig fig--lab wide" id="sort-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Heap sort lab</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall l21-pairstage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: an array and the tree for its heap. Each round moves the largest remaining value into its final place at the right end, coloured green, and the tree loses one node.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Invariant</p>
+        <p>After <em>k</em> rounds, the last <em>k</em> slots hold the <em>k</em> largest values in their <dfn>final</dfn> places, and the first <em>n − k</em> slots are still a max-heap. Heap sort is in place and always about <em>n</em> log <em>n</em>, but it is <strong>not stable</strong>: long-distance swaps can reorder equal values.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ TWO JOBS -->
+    <section id="jobs">
+      <h2 data-toc="Top-k and merging">Two jobs a small heap does well</h2>
+      <p><strong>Top-k of a stream.</strong> Keep the <em>k</em> largest values seen so far in a <em>min</em>-heap of size <em>k</em>. Its root is the weakest member of the current top <em>k</em>, so a newcomer only has to beat the root. Memory stays at <em>k</em> values however long the stream.</p>
+      <figure class="fig full" id="fig-topk">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The 3 largest of a stream, with a size-3 min-heap</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage l21-topkstage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a row of stream values above a small min-heap. Each new value is compared with the heap’s root; if larger, it replaces the root and sinks; otherwise it is dropped.</figcaption>
+      </figure>
+      <p><strong>Merging k sorted lists.</strong> The next value of the merged output must be the first unused value of some list, so a min-heap of the <em>k</em> list heads always exposes it. Each output value costs one heap repair instead of a scan of all <em>k</em> heads.</p>
+      <figure class="fig full" id="fig-merge">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Merging three sorted lists with a heap of heads</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage l21-mergestage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: three sorted lists, the heap of their current heads drawn as a tree, and the merged output row filling from the left.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2 data-toc="Cost">What it costs</h2>
+      <p>Count comparisons and swaps on a heap of <em>n</em> values. An insert climbs one path, an extract sinks along one path, and both paths are at most ⌊log<sub>2</sub> <em>n</em>⌋ long.</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Operation</th><th scope="col">Unsorted array</th><th scope="col">Sorted array</th><th scope="col">Binary heap</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">peek</th><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td></tr>
+            <tr><th scope="row">insert</th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="logn"></span> worst, O(1) average</td></tr>
+            <tr><th scope="row">extract</th><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="logn"></span></td></tr>
+            <tr><th scope="row">build from n values</th><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="nlogn"></span></td><td><span class="big-o" data-o="n"></span></td></tr>
+            <tr><th scope="row">n inserts + n extracts</th><td><span class="big-o" data-o="n2"></span></td><td><span class="big-o" data-o="n2"></span></td><td><span class="big-o" data-o="nlogn"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Watch the same operations on all three. The cost counts cells compared, moved or written. The heap is never the cheapest at any single operation, but it is never expensive either.</p>
+      <figure class="fig full" id="fig-pqcmp">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Three priority queues, the same operations</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="l21-cmpgrid">
+          <div class="fig__stage l21-cmpstage" data-stage></div>
+          <div class="l21-cost" data-cost></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: three rows of numbers, one per implementation, changing as each operation is applied. Cells that were compared or moved by the last operation are highlighted, and bars show the total cost so far.</figcaption>
+      </figure>
+      <figure class="fig wide" id="fig-pqchart">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Total cost of n inserts followed by n extracts</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="l21-slider"></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a chart against n up to 400. The two array versions grow like n squared; the heap grows like n log n and stays far below them.</figcaption>
+      </figure>
+      <aside class="callout callout--fun">
+        <p class="callout__title">Beyond the binary heap</p>
+        <p>d-ary heaps use wider nodes to shorten the tree, and Fibonacci heaps make <code>decrease-key</code> cost O(1) amortised, which speeds up Dijkstra in theory. On real hardware the humble array heap usually wins, because it is compact and cache-friendly.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2 data-toc="Variations">Variations and pitfalls</h2>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="max">Max-heap</button>
+          <button data-tab="decrease">Decrease-key</button>
+          <button data-tab="lib">In your language</button>
+          <button data-tab="pitfalls">Pitfalls</button>
+        </div>
+        <div data-tab-panel="max">
+          <div class="split">
+            <figure class="mini"><div class="mini__stage" data-mini="max"></div><figcaption>The same keys as a max-heap: every parent is at least its children.</figcaption></figure>
+            <div><p>Flip every comparison and the largest value rises to the top. Heap sort uses a max-heap because the largest value belongs at the <em>end</em> of the array.</p><p>To get a max-priority queue from a min-heap library, store the negated keys.</p></div>
+          </div>
+        </div>
+        <div data-tab-panel="decrease">
+          <div class="l21-decrease" id="fig-decrease">
+            <figure class="fig fig--plain">
+              <div class="fig__stage l21-pairstage" data-stage></div>
+              <p class="fig__caption" data-caption></p>
+              <div class="fig__controls" data-controls></div>
+            </figure>
+            <p>Dijkstra’s algorithm lowers the key of a vertex it already holds. Change the key in place, then sift <em>up</em>: the value only got better, so only its parents can now be wrong.</p>
+          </div>
+        </div>
+        <div data-tab-panel="lib">
+          <div class="l21-libgrid">
+            <div><p class="l21-libtitle">Python <code>heapq</code> (min-heap)</p><pre data-lib="py"></pre></div>
+            <div><p class="l21-libtitle">Java <code>PriorityQueue</code> (min-heap)</p><pre data-lib="java"></pre></div>
+            <div><p class="l21-libtitle">C++ <code>priority_queue</code> (max-heap)</p><pre data-lib="cpp"></pre></div>
+          </div>
+          <p>JavaScript has no built-in heap; the sift functions in the lab are the whole implementation.</p>
+        </div>
+        <div data-tab-panel="pitfalls">
+          <ul class="l21-pitfalls">
+            <li><b>No search.</b> Finding a given value means scanning the array: O(<em>n</em>). Dijkstra implementations keep a map from item to index for <code>decrease-key</code>.</li>
+            <li><b>Not sorted.</b> Reading the array left to right does not give sorted order; only the root is known. The second smallest is one of the root’s two children.</li>
+            <li><b>Not stable.</b> Equal priorities come out in no guaranteed order. Add an insertion counter to the key if arrival order must break ties.</li>
+            <li><b>Off-by-one.</b> With 0-based arrays the children of <code>i</code> are <code>2i + 1</code> and <code>2i + 2</code>. With 1-based arrays they are <code>2i</code> and <code>2i + 1</code>. Mixing the two is the classic bug.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-insert"></div>
+        <div class="quiz" id="quiz-valid"></div>
+        <div class="quiz" id="quiz-build"></div>
+        <div class="quiz" id="quiz-topk"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Heaps &amp; priority queues</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="logn"></span><span class="chip chip--sm">peek O(1)</span><span class="chip chip--sm">build O(n)</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1964<small>heapsort and build-heap</small></div>
+        <p class="history__people">J. W. J. Williams and Robert Floyd<span>Algorithm 232 (June) and Algorithm 245 (December), <em>CACM</em></span></p>
+        <div class="history__body">
+          <p>J. W. J. Williams introduced the binary heap in 1964 as the engine of heapsort, storing a whole tree in an array with no pointers. Six months later Robert Floyd showed how to build a heap in linear time by sifting down from the middle.</p>
+          <p>Priority scheduling had its most famous test in 1969, when Apollo 11’s guidance computer, overloaded during the landing, dropped low-priority jobs and kept the vital ones running.</p>
+        </div>
+        <p class="history__source">Sources: J. W. J. Williams, “Algorithm 232: Heapsort”, <em>CACM</em> 7(6), 1964; R. W. Floyd, “Algorithm 245: Treesort 3”, <em>CACM</em> 7(12), 1964; Fredman and Tarjan on Fibonacci heaps, 1984–87.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Is it a heap?</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given an array, decide whether it is a valid min-heap. Which indices must you test, and why is checking only parent–child pairs enough?</p></li>
+        <li><div class="practice__title">Kth largest element</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Return the k-th largest value of an unsorted array in O(<em>n</em> log <em>k</em>) time and O(<em>k</em>) space. What changes if the values arrive as a stream?</p></li>
+        <li><div class="practice__title">Median of a stream</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Report the running median after each new number. Hint: keep the smaller half in a max-heap and the larger half in a min-heap, and keep their sizes within one.</p></li>
+        <li><div class="practice__title">Merge k sorted lists</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Merge <em>k</em> sorted linked lists holding <em>n</em> values in total in O(<em>n</em> log <em>k</em>) time. Why does a heap of list heads beat comparing all <em>k</em> heads each time?</p></li>
+        <li><div class="practice__title">Heap sort by hand</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Sort <code>[4, 10, 3, 5, 1]</code> with heap sort. Write the array after building the max-heap and after every extraction round.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-09-partial-order-is-enough-heaps-and-priority-queues.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Partial order is enough: heaps and priority queues</span><span class="deeper__text" style="display:block">The full derivation: the priority-queue contract, the proof that build-heap is Θ(n), heap sort, and where heaps break.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,121 @@
+/* Lesson 21 — Heaps & priority queues. Lesson-specific styles only; colours come from tokens. */
+
+/* ---------------------------------------------------------------- linked tree + array pair */
+.l21-pair { width: 100%; display: flex; flex-direction: column; gap: 14px; align-items: stretch; }
+.l21-tree, .l21-array { width: 100%; min-width: 0; }
+.l21-array { border-top: 1px dashed var(--line); padding-top: 12px; position: relative; }
+.l21-array::before, .l21-tree::before {
+  position: absolute; left: 4px; font: 700 10.5px var(--font-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); pointer-events: none;
+}
+.l21-tree { position: relative; }
+.l21-tree::before { content: 'Tree'; top: 0; }
+.l21-array::before { content: 'Array in memory'; top: -1px; background: var(--bg-elev); padding: 0 6px; transform: translateY(-50%); left: 8px; }
+.l21-pairstage { display: block; place-items: normal; padding: 14px 16px 10px; }
+.l21-hero { display: grid; place-items: center; padding: 10px 14px; }
+.l21-hero .l21-array::before, .l21-hero .l21-tree::before, .l21-pair--bare .l21-array::before, .l21-pair--bare .l21-tree::before { display: none; }
+.l21-hero .l21-pair { gap: 8px; }
+.l21-pair .vz-node, .l21-pair .vz-item { cursor: default; }
+
+/* ---------------------------------------------------------------- toolbars */
+.l21-slider { flex: 1 1 240px; max-width: 360px; }
+.l21-btnbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.l21-toolbar { display: grid; gap: 12px; }
+.l21-tbrow { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: end; }
+.l21-tbgroup { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.l21-tbgroup .field-label { margin: 0; }
+.l21-num { width: 76px; }
+.l21-mode { display: block; }
+.l21-mode .seg { flex-wrap: nowrap; white-space: nowrap; }
+.l21-msg { margin: 0; min-height: 1.3em; font-size: 13.5px; color: var(--st-error-ink, var(--ink-2)); }
+.l21-msg:empty { display: none; }
+.l21-op {
+  display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px; font: 700 12px var(--font-sans);
+  background: color-mix(in srgb, var(--unit) 14%, var(--bg-elev)); color: var(--unit-ink);
+}
+
+/* ---------------------------------------------------------------- index explorer */
+.l21-formula { padding: 4px 16px 6px; }
+.l21-formula__row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.l21-formula__cell {
+  display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--line);
+  background: var(--bg-elev); border-left-width: 5px;
+}
+.l21-formula__cell.is-sel { border-left-color: var(--st-key); }
+.l21-formula__cell.is-parent { border-left-color: var(--st-compare); }
+.l21-formula__cell.is-child { border-left-color: var(--st-frontier); }
+.l21-formula__cell.is-none { border-left-color: var(--line-strong); opacity: .8; }
+.l21-formula__k { font: 700 11px var(--font-sans); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+.l21-formula__v { font: 760 24px var(--font-sans); color: var(--ink); line-height: 1.1; }
+.l21-formula__e { font: 500 12.5px var(--font-mono); color: var(--ink-2); }
+.l21-formula__note { margin: 10px 2px 2px !important; font-size: 14px !important; line-height: 1.5 !important; color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- build-heap grid + work bars */
+.l21-buildgrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr); gap: 4px 20px; align-items: start; }
+@container fig (max-width: 860px) { .l21-buildgrid { grid-template-columns: minmax(0, 1fr); } }
+.l21-work { padding: 14px 16px; display: grid; gap: 9px; align-content: start; }
+.l21-work__title { margin: 0 !important; font: 700 12px var(--font-sans) !important; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); line-height: 1.3 !important; }
+.l21-work__row { display: grid; grid-template-columns: 96px minmax(0, 1fr) 76px; align-items: center; gap: 10px; }
+.l21-work__label { display: grid; line-height: 1.2; font-size: 13.5px; color: var(--ink); }
+.l21-work__label small { font-size: 11.5px; color: var(--ink-3); }
+.l21-work__bar { height: 22px; display: block; position: relative; border-radius: 5px; background: color-mix(in srgb, var(--bg-sunken) 60%, transparent); }
+.l21-work__cap { position: absolute; left: 0; top: 0; bottom: 0; display: block; border: 1.5px dashed var(--line-strong); border-radius: 5px; min-width: 6px; }
+.l21-work__fill { position: absolute; left: 0; top: 0; bottom: 0; display: block; width: 0; background: var(--st-swap); border-radius: 4px; transition: width var(--dur-2, 300ms) var(--ease-out, ease); }
+.l21-work__num { font: 600 12px var(--font-mono); color: var(--ink-2); text-align: right; white-space: nowrap; }
+.l21-work__total { margin: 6px 0 0 !important; font-size: 14px !important; line-height: 1.45 !important; color: var(--ink-2); }
+.l21-work__total b { color: var(--ink); }
+
+/* ---------------------------------------------------------------- top-k and merge stages */
+.l21-topkstage, .l21-mergestage { display: block; place-items: normal; padding: 12px 16px 8px; }
+.l21-stage-label { margin: 6px 0 4px !important; font: 700 11px var(--font-sans) !important; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); line-height: 1.3 !important; }
+.l21-stream, .l21-lists { width: 100%; }
+.l21-topk-heap, .l21-merge-heap { width: 100%; }
+
+/* ---------------------------------------------------------------- priority-queue comparison */
+.l21-cmpgrid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(220px, 1fr); gap: 4px 20px; align-items: start; }
+@container fig (max-width: 860px) { .l21-cmpgrid { grid-template-columns: minmax(0, 1fr); } }
+.l21-cmpstage { display: block; place-items: normal; padding: 12px 12px 8px; }
+.l21-cost { padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.l21-cost__title { margin: 0 !important; font: 700 12px var(--font-sans) !important; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); line-height: 1.3 !important; }
+.l21-cost__row { display: grid; grid-template-columns: 110px minmax(0, 1fr) 62px; align-items: center; gap: 10px; }
+.l21-cost__label { font-size: 13.5px; color: var(--ink); line-height: 1.25; }
+.l21-cost__bar { height: 20px; display: block; position: relative; border-radius: 5px; background: color-mix(in srgb, var(--bg-sunken) 60%, transparent); }
+.l21-cost__fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 5px; transition: width var(--dur-3, 500ms) var(--ease-out, ease); }
+.l21-cost__row[data-kind="unsorted"] .l21-cost__fill { background: var(--st-active); }
+.l21-cost__row[data-kind="sorted"] .l21-cost__fill { background: var(--st-compare); }
+.l21-cost__row[data-kind="heap"] .l21-cost__fill { background: var(--st-done); }
+.l21-cost__num { font: 600 14px var(--font-mono); color: var(--ink); text-align: right; white-space: nowrap; }
+.l21-cost__num small { font-size: 11.5px; color: var(--ink-3); }
+
+/* ---------------------------------------------------------------- variations */
+.l21-decrease { display: grid; gap: 10px; }
+.l21-libgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 10px; }
+.l21-libgrid pre { margin: 0; overflow-x: auto; }
+.l21-libtitle { margin: 0 0 6px !important; font: 700 13px var(--font-sans) !important; color: var(--unit-ink); line-height: 1.3 !important; }
+.l21-pitfalls { display: grid; gap: 10px; margin: 0; padding-left: 20px; }
+.l21-pitfalls li { font-size: 16px; line-height: 1.6; }
+.l21-pitfalls b { color: var(--ink); }
+
+/* ---------------------------------------------------------------- static minis (trees and cells) */
+.l21m { display: block; width: 100%; margin: 0 auto; height: auto; }
+.l21-minitree { min-height: 170px; }
+.l21m .l21m-edge { stroke: var(--el-edge); stroke-width: 1.6; stroke-linecap: round; }
+.l21m .l21m-edge.is-swap { stroke: var(--st-swap); stroke-width: 2.6; }
+.l21m .l21m-edge.is-compare { stroke: var(--st-compare); stroke-width: 2.6; }
+.l21m .l21m-node circle, .l21m .l21m-node rect { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 1.6; }
+.l21m .l21m-val { fill: var(--el-ink); font-weight: 680; text-anchor: middle; dominant-baseline: central; font-family: var(--font-sans); }
+.l21m .l21m-idx { fill: var(--ink-3); font: 500 10px var(--font-mono); text-anchor: middle; }
+.l21m .l21m-tag { fill: var(--unit-ink); font: 700 10.5px var(--font-mono); }
+.l21m .l21m-node.is-found circle, .l21m .l21m-node.is-found rect { fill: var(--st-found); stroke: var(--st-found); }
+.l21m .l21m-node.is-key circle, .l21m .l21m-node.is-key rect { fill: var(--st-key); stroke: var(--st-key); }
+.l21m .l21m-node.is-swap circle, .l21m .l21m-node.is-swap rect { fill: var(--st-swap); stroke: var(--st-swap); }
+.l21m .l21m-node.is-done circle, .l21m .l21m-node.is-done rect { fill: var(--st-done); stroke: var(--st-done); }
+.l21m .l21m-node.is-found .l21m-val, .l21m .l21m-node.is-key .l21m-val, .l21m .l21m-node.is-done .l21m-val { fill: var(--on-state); }
+.l21m .l21m-node.is-swap .l21m-val { fill: color-mix(in srgb, var(--st-swap) 20%, black); }
+.l21m .l21m-node.is-compare circle, .l21m .l21m-node.is-compare rect { fill: color-mix(in srgb, var(--st-compare) 22%, var(--el-fill)); stroke: var(--st-compare); stroke-width: 2.4; }
+.l21m .l21m-node.is-frontier circle, .l21m .l21m-node.is-frontier rect { fill: color-mix(in srgb, var(--st-frontier) 22%, var(--el-fill)); stroke: var(--st-frontier); stroke-width: 2.4; }
+[data-id].l21m-node, .l21m [data-id] { cursor: pointer; }
+.l21m [data-id]:hover circle, .l21m [data-id]:focus-visible circle { stroke: var(--accent); stroke-width: 3px; }
+.l21m .l21m-node.is-pick-right circle { fill: color-mix(in srgb, var(--st-done) 30%, var(--el-fill)); stroke: var(--st-done); stroke-width: 3px; }
+.l21m .l21m-node.is-pick-wrong circle { fill: color-mix(in srgb, var(--st-error) 25%, var(--el-fill)); stroke: var(--st-error); stroke-width: 3px; }
+
+.l21-work__note { margin: 4px 0 0 !important; font-size: 13px !important; line-height: 1.5 !important; color: var(--ink-3); }

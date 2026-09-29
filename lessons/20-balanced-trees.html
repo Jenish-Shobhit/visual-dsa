@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Balanced trees: AVL &amp; red-black · Visual DSA</title>
+<meta name="description" content="Watch rotations swing nodes into balance: the four AVL cases, red-black recolouring with a live rule checker, B-tree splits, and a race between a plain tree and two self-balancing ones.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/20-balanced-trees.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/20-balanced-trees.js" defer></script>
+<script src="../js/lessons/20-balanced-trees.js" defer></script>
+<script src="../js/lessons/20-balanced-trees-figs.js" defer></script>
+<script src="../js/lessons/20-balanced-trees-labs.js" defer></script>
+<script src="../js/lessons/20-balanced-trees-more.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="20-balanced-trees">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Balanced trees: AVL &amp; red-black</h1>
+      <p class="hero__lede">A binary search tree is only fast while it stays short. Self-balancing trees fix their own shape after every insert and delete, with a few local rotations, so no input order can make them tall.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">22 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="19-binary-search-trees.html">Needs: binary search trees</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: the keys 10, 20, 30 and so on are inserted in sorted order into a tree. Each time the tree starts to lean into a line, one or two nodes swing around each other in a rotation, and the tree snaps back into a short, bushy shape with small balance-factor badges."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">The problem: a tree that leans</h2>
+      <p>A binary search tree finds a key by walking one path from the root, so a search costs as many comparisons as the tree is tall. That is wonderful when the tree is bushy: 15 keys fit in height 3. It is a disaster when the keys arrive already sorted, because every key then hangs off the end of one long branch.</p>
+      <p>Sorted input is not exotic. Timestamps, auto-numbered ids and the output of an earlier sort all arrive in order. Watch the same 15 keys go into a plain tree and into a tree that repairs itself, then search for the last key in both.</p>
+      <figure class="fig full" id="fig-stick">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Search for 15 in a plain tree and in a self-balancing one</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="bt-pair">
+          <div class="bt-pane">
+            <div class="bt-pane__head"><span class="bt-pane__title">Plain BST</span><span class="bt-pane__sub">keys inserted 1, 2, 3 … 15</span></div>
+            <div class="fig__stage fig__stage--plain" data-stage="a"></div>
+            <div class="fig__stats" data-stats="a"></div>
+          </div>
+          <div class="bt-pane">
+            <div class="bt-pane__head"><span class="bt-pane__title">AVL tree</span><span class="bt-pane__sub">same keys, same order</span></div>
+            <div class="fig__stage fig__stage--plain" data-stage="b"></div>
+            <div class="fig__stats" data-stats="b"></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">One comparison per node on the path. The plain tree is a linked list wearing a tree’s clothes: height 14 for 15 keys. The AVL tree has height 3.</figcaption>
+      </figure>
+      <p>The fix cannot be “rebuild the tree when it gets tall”: that costs O(n) per repair. It has to be a small local change after each update, and it has to keep the sorted order intact. That change is the <em>rotation</em>.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION: ROTATION -->
+    <section id="rotation">
+      <h2 data-toc="Rotations">Build the intuition: a rotation</h2>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: a hanging mobile</p>
+        <p>Add a weight to one arm of a mobile and it tips. You do not rebuild the mobile: you swing two neighbouring arms around each other and re-hang one dangling piece. Everything else keeps hanging exactly as before.</p>
+      </aside>
+      <p>A <dfn>rotation</dfn> does exactly that to two neighbouring nodes. In the picture below, <b>x</b> and <b>y</b> are keys and <b>A</b>, <b>B</b>, <b>C</b> stand for whole subtrees of any size. Press a rotate button, or click <b>x</b> or <b>y</b>.</p>
+      <figure class="fig wide" id="fig-rotate">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Rotate x and y: the in-order strip never changes</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar">
+          <div class="btn-row" data-buttons></div>
+          <div data-toggle></div>
+        </div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <div class="bt-strip" data-strip aria-label="In-order sequence"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Only one subtree, <b>B</b>, changes parent. Columns stay put because the tree is drawn in in-order positions: a rotation only moves nodes up and down.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>A rotation lifts one node and lowers its neighbour, changes the parent of one subtree, and leaves the in-order sequence untouched. So a rotation can never break the binary search tree rule. It can only change the <em>height</em>. It takes O(1) time: three links change.</p>
+      </aside>
+      <p>Now use rotations for real. This tree is a stick of seven keys. Click a node to rotate it up over its parent, and get the height down to 2. The badges are balance factors (you will meet them in a moment).</p>
+      <figure class="fig wide" id="fig-play">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Untangle the stick: click a node to rotate it up</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar">
+          <div class="btn-row"><button type="button" class="btn btn--sm" data-undo>Undo</button><button type="button" class="btn btn--sm" data-reset>Reset</button><button type="button" class="btn btn--sm btn--soft" data-hint>Hint</button></div>
+          <div data-toggle></div>
+        </div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Every click is one rotation, so the in-order sequence 10 … 70 never changes and the tree stays a valid search tree. A stick of seven needs at least four rotations to reach height 2.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ AVL -->
+    <section id="avl">
+      <h2>AVL trees: keep every node within one level</h2>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>The <dfn>height</dfn> of a node is the number of links on its longest path down to a leaf. A leaf has height 0 and an empty subtree has height −1. The <dfn>balance factor</dfn> of a node is <code>height(left) − height(right)</code>. An <dfn>AVL tree</dfn> is a search tree in which every node’s balance factor is −1, 0 or +1.</p>
+      </aside>
+      <p>Click any node. Its left subtree turns cyan and its right subtree amber, and the caption does the subtraction.</p>
+      <figure class="fig wide" id="fig-bf">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Balance factor = left height − right height</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-toggle></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">The badge on each node is its balance factor. A red badge means the AVL rule is broken at that node.</figcaption>
+      </figure>
+      <p>This tree has been given one insert too many on its left. Several nodes on the way up have a balance factor of +2, because a tall spot makes every ancestor tall too. Rebalancing starts at the lowest one.</p>
+      <figure class="fig wide" id="fig-bfq">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">An AVL tree after one insert, before it is repaired</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Every badge is recomputed for the new shape. Red means the balance factor is ±2.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-bf-click"></div>
+    </section>
+
+    <!-- ============================================================ FOUR CASES -->
+    <section id="cases">
+      <h2>Four cases, two kinds of fix</h2>
+      <p>When a node reaches balance factor ±2, look at the path from it toward the heavy side: down one link, then down one more. That path either runs <em>straight</em> or <em>bends</em>. A straight path (left-left or right-right) is cured by one rotation. A bend (left-right or right-left) needs two, because one rotation would only move the bend from one side to the other.</p>
+      <p>Each panel loops: a balanced tree, one insert that unbalances it, the node that flashes with a ±2 badge, and the rotations. The number of the case is the path from the flashing node.</p>
+      <figure class="fig full" id="fig-cases">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The four AVL cases</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="bt-gallery" data-gallery></div>
+        <figcaption class="fig__foot">Each animation pauses when it scrolls out of view. A double rotation ends with the middle key on top; a single rotation ends with the child on top.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ AVL LAB -->
+    <section id="lab">
+      <h2>The AVL lab</h2>
+      <p>Insert and delete keys and watch every step: the walk down, the walk back up refreshing each balance factor, the flashing node, the name of the case, and the rotations. Try <em>Sorted</em> to see the tree refuse to lean, or <em>Force a double rotation</em> to see an LR or RL case. Press <kbd>←</kbd> and <kbd>→</kbd> to step, <kbd>Space</kbd> to play.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">AVL lab: insert and delete with rebalancing</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__toolbar" data-ops></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="bt-case" data-case aria-live="polite"><span class="bt-case__label">Case</span><b class="bt-case__name">none yet</b><span class="bt-case__fix"></span></div>
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Keys are whole numbers from 1 to 99; the lab holds up to 20 of them. It stores a set: inserting a key that is already there changes nothing. Height counts links; an empty subtree is −1. Comparisons count one per node visited on the way down.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2>The repair, as a flowchart</h2>
+      <p>The same logic as a map of decisions. Run the AVL lab or the red-black lab and this chart lights the step you are on. Two questions decide everything for AVL: is the node out of balance, and does the heavy child lean straight or bend?</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-flow-title>AVL rebalance at one node</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 640px"></div>
+        <figcaption class="fig__foot" data-flow-foot></figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ AVL HEIGHT BOUND -->
+    <section id="bound">
+      <h2>Why the height stays logarithmic</h2>
+      <p>How tall can an AVL tree with n keys get? Turn the question around: what is the <em>fewest</em> nodes an AVL tree of height h can have? The thinnest tree lets one side be exactly one level shorter at every node. So it is a root, plus the thinnest tree of height h − 1, plus the thinnest tree of height h − 2.</p>
+      <figure class="fig wide" id="fig-fib">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The thinnest AVL trees, height 0 to 5</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+      </figure>
+      <p>The node counts 1, 2, 4, 7, 12, 20 follow N(h) = N(h − 1) + N(h − 2) + 1, which is a Fibonacci number minus one. Fibonacci numbers grow like φ<sup>h</sup> with φ ≈ 1.618, so n ≥ about φ<sup>h</sup> and the height is at most about 1.44 log₂ n. In the worst case an AVL tree is 44% taller than a perfect one, and no more.</p>
+    </section>
+
+    <!-- ============================================================ RED-BLACK -->
+    <section id="redblack">
+      <h2>Red-black trees: a looser balance, cheaper repairs</h2>
+      <p>AVL trees keep a strict rule and pay for it with more rotations, especially on delete. A <dfn>red-black tree</dfn> allows more slack: it only promises that the longest root-to-leaf path is at most twice the shortest. It gets there by colouring every node red or black and obeying five rules.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">The five rules</p>
+        <ol class="bt-rules">
+          <li>Every node is red or black.</li>
+          <li>The root is black.</li>
+          <li>Every empty child (a <dfn>NIL</dfn> leaf) counts as black.</li>
+          <li>A red node never has a red child.</li>
+          <li>Every path from a node down to a NIL has the same number of black nodes: the node’s <dfn>black height</dfn>.</li>
+        </ol>
+      </aside>
+      <p>Step through every root-to-NIL path of this valid tree. Each one has the same number of black nodes (2), even though the paths differ in length. That is rule 5 made visible, and it is what forces the tree to stay bushy.</p>
+      <figure class="fig wide" id="fig-rbrules">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Count the black nodes on every path</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">The last two steps show the shortest and the longest path of the tree. Red nodes cannot touch, so the longest path can at most alternate red and black: never more than twice the black height.</figcaption>
+      </figure>
+      <details class="accordion">
+        <summary>Why height ≤ 2 log₂(n + 1)?</summary>
+        <div class="accordion__body"><p>Suppose the black height is b. By rule 5 every path has b black nodes, so the top b levels are full: at least 2<sup>b</sup> − 1 nodes. So b ≤ log₂(n + 1). By rule 4 no path can have two reds in a row, so red nodes are at most as many as black ones on any path: the height is at most 2b. Put together: h ≤ 2 log₂(n + 1).</p></div>
+      </details>
+      <p>Now watch the repair. A new node is always <b>red</b>, which cannot change any black count but may put two reds in a row. The rule panel lights the rule that is broken, and the fix is either a recolouring (when the uncle is red) or one or two rotations (when the uncle is black).</p>
+    </section>
+
+    <section id="rblab">
+      <h2>The red-black lab</h2>
+      <figure class="fig fig--lab full" id="rb-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Red-black lab: insert with recolouring and rotations</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__toolbar" data-ops></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="bt-checker" data-checker aria-label="Red-black rule checker"></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Keys are whole numbers from 1 to 99; the lab holds up to 24. The rule checker re-reads the tree on screen at every step, so a red light means the rule is really broken at that moment, not that the trace says so. Black height counts the black nodes on a path from a node down to NIL, including the node itself.</figcaption>
+      </figure>
+      <p>A red-black insert needs at most two rotations, and often none. That is the point of the looser rule: the repair stays cheap, and the worst-case height, 2 log₂(n + 1), is still logarithmic.</p>
+      <p>Now the reverse job. One node in this tree breaks a rule. Find it.</p>
+      <figure class="fig" id="fig-rbq">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Is this a valid red-black tree?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Check every rule, not just the colours near the top.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-rb-click"></div>
+    </section>
+
+    <!-- ============================================================ B-TREES -->
+    <section id="btree">
+      <h2>Wide nodes for disks: 2-3 trees and B-trees</h2>
+      <p>A binary tree with a million keys is about 20 levels tall, and on a disk each level can cost a slow read. A <dfn>B-tree</dfn> packs many keys into one node, so it is far shorter. A node holding k keys has k + 1 children, and all leaves stay at the same depth.</p>
+      <p>It stays balanced without rotations. A key goes into a leaf. If the leaf overflows, it <dfn>splits</dfn> around its middle key, and that key is promoted into the parent. Only when the root splits does the tree grow taller, and it grows at the top. Switch between a 2-3 tree (at most 2 keys per node) and a wider B-tree (at most 3).</p>
+      <figure class="fig wide" id="fig-btree">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Insert into a B-tree: overflow, split, promote</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__stage fig__stage--tall fig__stage--scroll" data-stage style="--stage-min: 620px"></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Keys keep their identity when promoted, so you can follow one key upward. Real database nodes hold hundreds of keys: three levels then reach hundreds of millions of rows.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ RACE -->
+    <section id="race">
+      <h2>Same keys, three trees</h2>
+      <p>Put it all together. The same keys go into a plain tree, an AVL tree and a red-black tree, one at a time. Watch the heights: the plain tree leans further with every sorted key, while the other two keep rotating and stay short.</p>
+      <figure class="fig full" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Insert 1 … 15 into three trees</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="bt-trio">
+          <div class="bt-pane" data-pane="bst"><div class="bt-pane__head"><span class="bt-pane__title">Plain BST</span><span class="bt-meter" data-meter="bst"><span>height</span><span class="bt-meter__bar"><i></i></span><b data-h>0</b></span></div><div class="fig__stage fig__stage--plain" data-stage="bst"></div></div>
+          <div class="bt-pane" data-pane="avl"><div class="bt-pane__head"><span class="bt-pane__title">AVL</span><span class="bt-meter" data-meter="avl"><span>height</span><span class="bt-meter__bar"><i></i></span><b data-h>0</b></span></div><div class="fig__stage fig__stage--plain" data-stage="avl"></div></div>
+          <div class="bt-pane" data-pane="rb"><div class="bt-pane__head"><span class="bt-pane__title">Red-black</span><span class="bt-meter" data-meter="rb"><span>height</span><span class="bt-meter__bar"><i></i></span><b data-h>0</b></span></div><div class="fig__stage fig__stage--plain" data-stage="rb"></div></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Height counts links. The bars fill toward the worst possible height for 15 keys, 14. On sorted input the red-black tree is a little taller than the AVL tree: it is allowed to be.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Every search, insert and delete walks one path from the root, so it costs O(height). What balancing buys is a guarantee about that height. The chart draws the real height of each tree after each insert, from an empty tree up to 100 keys.</p>
+      <figure class="fig wide" id="fig-heights">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Height after n inserts</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-toggle></div><div data-toggle2></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Random order: the mean of 8 seeded shuffles per point, so the curves are smooth. Sorted order: one run. The dashed guarantees are h ≤ 1.44 log₂(n + 2) − 1.33 for AVL and h + 1 ≤ 2 log₂(n + 1) for red-black, with height counted in links.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Operation (n keys)</th><th scope="col" class="num">Plain BST, worst case</th><th scope="col" class="num">AVL</th><th scope="col" class="num">Red-black</th><th scope="col" class="num">B-tree (b keys per node)</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Search</th><td class="num"><span class="big-o" data-o="n"></span><div class="bt-note">sorted input: a stick</div></td><td class="num"><span class="big-o" data-o="logn"></span><div class="bt-note">height ≤ 1.44 log₂ n</div></td><td class="num"><span class="big-o" data-o="logn"></span><div class="bt-note">height ≤ 2 log₂ n</div></td><td class="num"><span class="big-o" data-o="logn"></span><div class="bt-note">log<sub>b</sub> n node reads</div></td></tr>
+            <tr><th scope="row">Insert</th><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="logn"></span><div class="bt-note">at most 2 rotations</div></td><td class="num"><span class="big-o" data-o="logn"></span><div class="bt-note">at most 2 rotations</div></td><td class="num"><span class="big-o" data-o="logn"></span><div class="bt-note">splits up the path</div></td></tr>
+            <tr><th scope="row">Delete</th><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="logn"></span><div class="bt-note">up to log n rotations</div></td><td class="num"><span class="big-o" data-o="logn"></span><div class="bt-note">at most 3 rotations</div></td><td class="num"><span class="big-o" data-o="logn"></span><div class="bt-note">merges up the path</div></td></tr>
+            <tr><th scope="row">Extra data per node</th><td class="num">none</td><td class="num">a height or 2-bit balance</td><td class="num">1 colour bit</td><td class="num">a key count</td></tr>
+            <tr><th scope="row">Space</th><td class="num" colspan="4"><span class="big-o" data-o="n"></span> <span class="bt-note">for all four: one entry per key</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <details class="accordion">
+        <summary>Why can a delete need many rotations in an AVL tree?</summary>
+        <div class="accordion__body"><p>A rotation after an insert always restores the subtree to the height it had before, so nothing above it changes and one repair is enough. After a delete, the rotation can leave the subtree one level <em>shorter</em> than it was, which may unbalance the parent, and so on up to the root. That is up to log n rotations, each O(1), so a delete is still O(log n) overall. Red-black deletes use a smarter fix-up that stops after at most three rotations.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>So which one should I use?</summary>
+        <div class="accordion__body"><p>If lookups dominate, AVL wins slightly: it is shorter (at most 1.44 log₂ n against 2 log₂ n). If inserts and deletes are frequent, red-black wins slightly: fewer rotations. Both are O(log n) for everything, and in practice the difference is small. Libraries pick red-black more often, and databases and file systems pick B-trees.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and where you meet them</h2>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="who">Who uses what</button>
+          <button data-tab="two34">Red-black is a 2-3-4 tree</button>
+          <button data-tab="others">Other ways to balance</button>
+        </div>
+        <div data-tab-panel="who">
+          <div class="table-wrap">
+            <table class="table table--compact">
+              <thead><tr><th scope="col">Structure</th><th scope="col">Where</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Red-black tree</th><td>Java <code>TreeMap</code> and <code>TreeSet</code>, C++ <code>std::map</code> and <code>std::set</code> in the common implementations, and the Linux kernel’s completely fair scheduler.</td></tr>
+                <tr><th scope="row">AVL tree</th><td>In-memory indexes that are read far more than written, and teaching code: its strict balance gives the shortest trees.</td></tr>
+                <tr><th scope="row">B-tree and B+ tree</th><td>Database indexes, and file systems such as NTFS, ext4 and APFS: wide nodes match the size of a disk block.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div data-tab-panel="two34">
+          <div class="split"><figure class="mini"><div class="mini__stage bt-mini-stage" data-mini="two34"></div><figcaption>A black node with red children is one wide node: red links glue keys into a 3-node or a 4-node.</figcaption></figure>
+          <div><p>Pull every red node up to sit beside its black parent and a red-black tree turns into a 2-3-4 tree: nodes with 1, 2 or 3 keys, all leaves at the same depth. Rule 5 (equal black height) says exactly that all leaves are at the same depth. A recolouring is a node split, and the “uncle is red” case is the 2-3-4 tree promoting a key. That is why the two are taught together.</p></div></div>
+        </div>
+        <div data-tab-panel="others">
+          <p>Rotations are one way to stay balanced; there are others. <b>Treaps</b> give each key a random priority and rotate to keep priorities in heap order, so the shape is random and balanced in expectation. <b>Splay trees</b> rotate every accessed node to the root, so recently used keys stay near the top: balanced only on average, but wonderful for skewed access. <b>Skip lists</b> replace the tree with layers of linked lists. <b>Weight-balanced trees</b> balance subtree sizes instead of heights.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <p>Use this tree for the first two questions. Its balance factors are hidden on purpose.</p>
+      <figure class="fig wide" id="fig-q">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A tree just after inserting 25</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+      </figure>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-bf"></div>
+        <div class="quiz" id="quiz-fix"></div>
+        <div class="quiz" id="quiz-cost"></div>
+        <div class="quiz" id="quiz-btree"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Balanced trees</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="logn">O(log n)</span><span class="chip chip--sm">AVL: h ≤ 1.44 log₂ n</span><span class="chip chip--sm">red-black: h ≤ 2 log₂ n</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1962<small>the first self-balancing tree</small></div>
+        <p class="history__people">Georgy Adelson-Velsky and Evgenii Landis<span>Moscow, 1962; red-black trees in 1978</span></p>
+        <div class="history__body">
+          <p>The first self-balancing tree came from Moscow in 1962. Georgy Adelson-Velsky and Evgenii Landis kept every node’s two subtrees within one level of each other, and published the idea in <em>Doklady Akademii Nauk SSSR</em>. Their initials name the AVL tree.</p>
+          <p>Rudolf Bayer and Edward McCreight invented B-trees at Boeing in 1970; Bayer also described “symmetric binary B-trees” in 1972. Leonidas Guibas and Robert Sedgewick reworked that idea into red-black trees in 1978. Red was reportedly the colour that looked best on their Xerox PARC laser printer.</p>
+        </div>
+        <p class="history__source">Sources: G. M. Adelson-Velsky and E. M. Landis, “An algorithm for the organization of information”, <em>Doklady Akademii Nauk SSSR</em> 146, 1962; R. Bayer and E. McCreight, “Organization and maintenance of large ordered indices”, <em>Acta Informatica</em> 1, 1972; L. J. Guibas and R. Sedgewick, “A dichromatic framework for balanced trees”, FOCS 1978.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice" class="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Balance factors after a rotation</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Insert 30, 20, 10 into an empty AVL tree. Write the balance factor of every node before and after the rotation, and say which case it was.</p></li>
+        <li><div class="practice__title">Is it an AVL tree?</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given the root of a binary tree, return whether it is height-balanced (every node’s subtrees differ in height by at most 1) in O(n) time. Then explain why computing the height of both subtrees at every node separately would be O(n²) on a stick.</p></li>
+        <li><div class="practice__title">Sorted array to balanced tree</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Build a height-balanced binary search tree from a sorted array in O(n). Which element goes at the root, and why does the recursion keep the tree balanced without any rotation?</p></li>
+        <li><div class="practice__title">The fewest nodes</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Use the recurrence N(h) = N(h − 1) + N(h − 2) + 1 to find the smallest AVL tree of height 7, and the tallest AVL tree that can hold 100 nodes. Check your answer against 1.44 log₂ n.</p></li>
+        <li><div class="practice__title">Red-black by hand</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Insert 1 through 7 in order into an empty red-black tree. For each insert say whether the fix-up was a recolouring or a rotation, and draw the final tree with its colours. What is its black height?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-07-balanced-search-trees.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Balanced search trees and the logarithmic ideal</span><span class="deeper__text" style="display:block">The dictionary problem, height bounds with proofs, rotations, AVL and red-black trees, and B-trees for disks.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

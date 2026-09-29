@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Hash tables · Visual DSA</title>
+<meta name="description" content="Turn a key into an address. Type into a hash-function machine, watch collisions form chains and probe sequences, see why deleted slots need tombstones, and measure how the load factor decides speed.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/11-hash-tables.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/hash.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/11-hash-tables.js" defer></script>
+<script src="../js/lessons/11-hash-tables-figs.js" defer></script>
+<script src="../js/lessons/11-hash-tables-more.js" defer></script>
+<script src="../js/lessons/11-hash-tables-labs.js" defer></script>
+<script src="../js/lessons/11-hash-tables.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="11-hash-tables">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Hash tables</h1>
+      <p class="hero__lede">Turn a key into an array index and look it up in one step. Collisions are certain, so the whole craft is what to do when two keys want the same slot.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">20 min</li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li><a class="chip" data-icon="prereq" href="06-arrays.html">Needs: arrays</a></li>
+        <li><a class="chip" data-icon="prereq" href="08-linked-lists.html">Linked lists</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: numbers drop into a function box that prints a bucket number, then fly into that bucket of a table. When two numbers get the same bucket, the second joins a chain behind the first."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">Finding things without searching</h2>
+      <p>An array finds the item at index 7 instantly, because the index <em>is</em> the address. But you rarely know an index. You know a name, a username, an order number. Searching a list for one takes n looks, and even a sorted list needs about log n.</p>
+      <p>Wouldn’t it be lovely if the key told you where it lives? For small whole-number keys it can. Store the value for key <em>k</em> in slot <em>k</em>. That is called <strong>direct addressing</strong>.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>hash table</dfn> stores keys in an array, and a <dfn>hash function</dfn> <code>h(k)</code> turns any key into the index where it should live. Lookup is: compute <code>h(k)</code>, go there, look.</p>
+      </aside>
+      <p>Direct addressing breaks the moment the keys are big. Six keys out of the numbers 0 to 99 need a 100-slot array, and 94 slots stay empty. For 10-digit phone numbers you would need ten billion slots. Press the button to fold the key space onto ten buckets.</p>
+      <figure class="fig wide" id="fig-fold">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Direct addressing, then folding with <code>k mod 10</code></h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a 10 by 10 grid holds six stored keys (12, 27, 42, 65, 83, 98). In hashing mode each key slides to bucket key mod 10, so 12 and 42 both land in bucket 2 and share it.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Pay for a table the size of the keys you <em>store</em>, not the keys that <em>could</em> exist. The price: many possible keys now share each slot, so two stored keys can land in the same one. That clash is a <strong>collision</strong>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE HASH FUNCTION -->
+    <section id="hash-function">
+      <h2 data-toc="Hash functions">The hash function</h2>
+      <p>Integers are easy: <code>k mod m</code> is always between 0 and m − 1. Words need one extra step first, turning the text into a number. Each character already has a numeric code, so the question is only how to combine them. Type any word below and watch the machine work.</p>
+      <figure class="fig fig--lab wide" id="fig-machine">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The hash-function machine</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l11-input"></div><div class="l11-toolgroup"><span class="field-label">Function</span><div data-seg></div></div><div class="l11-slider" data-slider></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: each letter of the typed word becomes a numeric code, the codes are combined into one number, and that number modulo the number of buckets gives the bucket, shown as a highlighted slot in a row of buckets.</figcaption>
+      </figure>
+      <p>Try <strong>cat</strong>, <strong>act</strong> and <strong>tac</strong> with <em>sum of codes</em>: the same three letters give the same number, so all three land in one bucket. Switch to <em>polynomial</em> and each position gets its own weight (multiply by 31, then add), so the three words scatter.</p>
+      <aside class="callout callout--insight">
+        <p class="callout__title">What a good hash function does</p>
+        <p><strong>Deterministic:</strong> the same key always gives the same bucket, or you could never find it again. <strong>Uniform:</strong> keys spread evenly, whatever pattern they follow. <strong>Fast:</strong> it runs on every single operation.</p>
+      </aside>
+      <p>Uniformity is what the next figure measures. Thirty-odd keys are dropped into 13 buckets by each function. Change the function and every key glides to its new bucket.</p>
+      <figure class="fig wide" id="fig-spread">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Bad hash, good hash: where do the keys land?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="l11-toolgroup"><span class="field-label">Keys</span><div data-keys></div></div><div class="l11-toolgroup"><span class="field-label">Function</span><div data-fn></div></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a histogram with 13 columns. Each key is a small tile stacked in its bucket. With the first-letter function, all usernames pile into one column; with the polynomial function they spread almost evenly.</figcaption>
+      </figure>
+        <p>Now compute one yourself. The table has 7 buckets and <code>h(k) = k mod 7</code>. Which bucket holds key 38?</p>
+        <figure class="fig" id="fig-bucketclick">
+          <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Seven buckets</h3></div></header>
+          <div class="fig__stage fig__stage--plain" data-stage></div>
+        </figure>
+        <div class="quiz" id="quiz-click"></div>
+    </section>
+
+    <!-- ============================================================ COLLISIONS -->
+    <section id="collisions">
+      <h2 data-toc="Collisions">Collisions are certain</h2>
+      <p>There are more possible keys than buckets, so by the <strong>pigeonhole principle</strong> some keys must share a bucket. But collisions come far earlier than you would guess. Throw random keys into 365 empty slots, one at a time, and stop at the first clash.</p>
+      <figure class="fig wide" id="fig-birthday">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The birthday paradox, in a hash table</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="l11-toolgroup"><span class="field-label">Slots m</span><div data-seg></div></div><div class="btn-row" data-btns></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a grid of empty slots. Each thrown key fills a slot; the first throw that lands on a filled slot flashes red and stops the run. With 365 slots that usually happens after about 24 keys.</figcaption>
+      </figure>
+      <p>With 365 slots the first collision usually arrives after about 24 keys: a table only 6% full. The chart shows why. The chance that <em>no</em> pair collides shrinks fast, because n keys make n(n − 1)/2 pairs, and each pair is a chance to clash.</p>
+      <figure class="fig wide" id="fig-birthday-chart">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Chance of at least one collision after n keys</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="l11-toolgroup"><span class="field-label">Slots m</span><div data-seg></div></div><div class="btn-row" data-btns></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 460px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a curve rising from 0 to 1 as the number of keys grows. For 365 slots it crosses 50% at 23 keys and 99% at 57 keys. Dots show the measured fraction of simulated runs that had collided by then.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">So what</p>
+        <p>You cannot design collisions away with a bigger table or a cleverer function. Every hash table needs a plan for what happens when two keys want the same slot. There are two famous plans.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CHAINING -->
+    <section id="chaining">
+      <h2 data-toc="Chaining">Plan A: chaining</h2>
+      <p>Make every bucket the start of a linked list. A new key goes on the end of its bucket’s chain, so collisions cost nothing except a slightly longer list. To search, hash the key, then walk <em>only that one chain</em>.</p>
+      <p>Insert, search and delete your own keys below (whole numbers or short words). The load factor meter shows <span class="l11-alpha">α = n / m</span>, the average chain length. The lab pauses once to ask you a question.</p>
+      <figure class="fig fig--lab full" id="lab-chain">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Chaining lab: insert, search, delete, grow</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l11-opbar">
+          <div class="l11-opform"><label class="field-label" for="chain-key">Key</label><input class="field" id="chain-key" data-key type="text" inputmode="text" autocomplete="off" spellcheck="false" maxlength="8" placeholder="42 or cat" aria-describedby="chain-hint"><div class="btn-row"><button type="button" class="btn btn--sm btn--primary" data-op="insert">Insert</button><button type="button" class="btn btn--sm" data-op="search">Search</button><button type="button" class="btn btn--sm" data-op="delete">Delete</button><button type="button" class="btn btn--sm btn--soft" data-op="resize">Grow table</button></div></div>
+          <div class="l11-toolgroup"><span class="field-label">Buckets m</span><div data-m></div></div>
+          <div class="l11-toolgroup"><span class="field-label">Hash function</span><div data-fn></div></div>
+          <div class="l11-toolgroup"><span class="field-label">Auto-grow above α = 0.75</span><div data-auto></div></div>
+        </div>
+        <div class="fig__toolbar l11-scriptbar"><div class="l11-presets" data-presets></div><p class="l11-hint" id="chain-hint" data-hint>Keys: a whole number 0 to 99999, or a word of up to 8 letters.</p></div>
+        <div class="l11-script" data-script aria-label="Operations so far"></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage" data-stage></div>
+            <p class="fig__caption" data-caption aria-live="polite"></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a column of buckets, each followed by a chain of boxes for the keys stored there. The caption under the figure explains every step, the code panel highlights the line that runs, and the counters show keys, buckets, load factor, comparisons and collisions.</figcaption>
+      </figure>
+      <p>Try the <em>All in one bucket</em> preset. Every key is a multiple of 7, so <code>k mod 7</code> sends them all to bucket 0. The table has become one long linked list, and searching for an absent key walks all of it. That is the <strong>worst case: O(n)</strong>.</p>
+      <aside class="callout callout--key">
+        <p class="callout__title">Why the average case is still O(1)</p>
+        <p>If the hash function spreads keys evenly, the n keys share m chains, so a chain has about <strong>α = n / m</strong> entries. A successful search compares about 1 + α/2 keys and an unsuccessful one about α. Keep α below a constant and every operation costs O(1) on average.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ OPEN ADDRESSING -->
+    <section id="open">
+      <h2 data-toc="Open addressing">Plan B: open addressing</h2>
+      <p>No lists, no pointers: every key lives <em>in the array itself</em>. If the home slot is taken, try another slot, then another, following a fixed <strong>probe sequence</strong>. Lookup follows the same sequence, so it finds the key or reaches an empty slot, which proves the key is absent.</p>
+      <p>The three classic sequences differ only in how far each hop goes. Switch tabs and run the same keys: <code>22, 33, 44</code> share home slot 0 in a table of 11.</p>
+      <figure class="fig fig--lab full" id="lab-open">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Open-addressing lab: linear, quadratic and double hashing</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="tabs l11-labtabs" id="open-tabs">
+          <div class="tabs__list">
+            <button data-tab="linear">Linear<span class="l11-wide-only"> probing</span></button>
+            <button data-tab="quadratic">Quadratic<span class="l11-wide-only"> probing</span></button>
+            <button data-tab="double">Double<span class="l11-wide-only"> hashing</span></button>
+          </div>
+          <div data-tab-panel="linear"><p class="l11-invariant"><b>Probe i:</b> <code>(h + i) mod m</code>. One slot at a time. Simple and cache friendly, but filled slots clump into <b>clusters</b> that keep growing.</p></div>
+          <div data-tab-panel="quadratic"><p class="l11-invariant"><b>Probe i:</b> <code>(h + i²) mod m</code>. Hops of 1, 3, 5, …: keys that share a home spread apart. May miss free slots when the table is more than half full.</p></div>
+          <div data-tab-panel="double"><p class="l11-invariant"><b>Probe i:</b> <code>(h + i·h₂) mod m</code>, with <code>h₂ = 1 + k mod (m − 1)</code>. The hop size depends on the key, so keys with the same home also take different paths.</p></div>
+        </div>
+        <div class="fig__toolbar l11-opbar">
+          <div class="l11-opform"><label class="field-label" for="open-key">Key</label><input class="field" id="open-key" data-key type="text" inputmode="text" autocomplete="off" spellcheck="false" maxlength="8" placeholder="42 or cat" aria-describedby="open-hint"><div class="btn-row"><button type="button" class="btn btn--sm btn--primary" data-op="insert">Insert</button><button type="button" class="btn btn--sm" data-op="search">Search</button><button type="button" class="btn btn--sm" data-op="delete">Delete</button><button type="button" class="btn btn--sm btn--soft" data-op="resize">Grow table</button></div></div>
+          <div class="l11-toolgroup"><span class="field-label">Slots m</span><div data-m></div></div>
+          <div class="l11-toolgroup"><span class="field-label">Auto-grow above α = 0.7</span><div data-auto></div></div>
+          <div class="l11-toolgroup"><span class="field-label">Show clusters</span><div data-clusters></div></div>
+        </div>
+        <div class="fig__toolbar l11-scriptbar"><div class="l11-presets" data-presets></div><p class="l11-hint" id="open-hint" data-hint>Keys: a whole number 0 to 99999, or a word of up to 8 letters.</p></div>
+        <div class="l11-script" data-script aria-label="Operations so far"></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage" data-stage></div>
+            <p class="fig__caption" data-caption aria-live="polite"></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a column of slots, one key per slot. Numbered badges show the probe sequence for the current key and arcs show each hop; a dagger marks a tombstone. The caption explains every probe.</figcaption>
+      </figure>
+      <p>Watch <em>α</em> as you insert. Above about 0.7 the probe sequences get long, so the table grows: a bigger array, and every key is <strong>rehashed</strong> from scratch, because <code>h(k) = k mod m</code> depends on m.</p>
+      <p>The three probe rules also behave differently side by side. Same keys, three tables:</p>
+      <figure class="fig wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Clustering race: the same keys, three probe rules</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="l11-toolgroup"><span class="field-label">Keys</span><div data-seg></div></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: three rows of 23 slots, one per probe rule. Each step inserts the next key into all three rows. Linear probing builds one long solid run of filled slots; quadratic and double hashing scatter the keys.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Primary clustering</p>
+        <p>In linear probing a key that lands next to a filled run makes the run longer, and longer runs catch more keys. So the runs grow faster than the keys do. Quadratic and double hashing break the pattern up.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ DELETION -->
+    <section id="tombstones">
+      <h2 data-toc="Deleting">Deleting in open addressing</h2>
+      <p>Deleting a key means emptying its slot, right? Not quite. Other keys may have been placed <em>past</em> that slot while it was full. Lookups rely on empty slots meaning “nothing further along”. Empty a slot in the middle of a probe path and you cut that path.</p>
+      <p>Three keys share home slot 3 and sit at slots 3, 4 and 5. Delete the first one, then search for the last. Try both ways of deleting.</p>
+      <figure class="fig wide" id="fig-tomb">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The tombstone: failure, then fix</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="l11-toolgroup"><span class="field-label">Delete method</span><div data-seg></div></div></div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a table with 7 slots. Keys 10, 17 and 24 are inserted at slots 3, 4 and 5. Key 10 is deleted. With naive deletion slot 3 becomes empty and the search for 24 stops there, wrongly reporting that 24 is absent. With a tombstone the search continues past slot 3 and finds 24 in slot 5.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">The rule</p>
+        <p>A <strong>tombstone</strong> marks “a key was here”. Searches probe past it. Inserts may reuse it. Tombstones count toward the load, and a resize throws them away.</p>
+      </aside>
+      <div class="quiz" id="quiz-tomb"></div>
+      <p>The flowchart below is the search rule as a map of decisions. It is wired to the open-addressing lab: run a <em>Search</em> there and watch the boxes light up.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Search with open addressing, as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 460px"></div>
+        <figcaption class="fig__foot">Text alternative: hash the key and start at probe 0. Look at the slot: if it is empty, return false. If it holds the key, return true. Otherwise (another key or a tombstone) add 1 to i and, while i is less than m, probe again; after m probes return false.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ LOAD FACTOR AND RESIZING -->
+    <section id="load">
+      <h2 data-toc="Load and resizing">Load factor and resizing</h2>
+      <p>Everything above depends on one number, the <strong>load factor α = n / m</strong>: keys divided by slots. Low α means short chains and short probe sequences. High α means the opposite. Chaining degrades gently. Linear probing falls off a cliff as α nears 1.</p>
+      <figure class="fig wide" id="fig-probes">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Expected probes against load factor</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="l11-toolgroup"><span class="field-label">Search for a key that is</span><div data-seg></div></div><div class="btn-row" data-btns></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 480px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: three curves. Chaining rises slowly and straight; double hashing bends upward near α = 1; linear probing shoots up steeply. Dots are averages measured on a real simulated table of 997 slots filled with random keys.</figcaption>
+      </figure>
+      <p>So every real table grows before α gets high: Java’s <code>HashMap</code> at 0.75, Python’s dict at about 0.67. Growing means allocating a bigger array and rehashing every key, which costs O(n) once. Doing it by <strong>doubling</strong> makes it rare enough that the average insert is still O(1).</p>
+      <figure class="fig wide" id="fig-amortized">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Cost of each insert as the table grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="l11-toolgroup"><span class="field-label">When full, grow by</span><div data-seg></div></div><div class="l11-slider" data-slider></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 480px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a spiky chart. Each spike is an insert that triggered a resize and had to move every key. With doubling the spikes get taller but rarer, and the running average stays below 3. Adding a fixed amount makes the spikes frequent and the average climbs.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Amortized O(1)</p>
+        <p>With doubling, a resize at size n moves n keys, but the next resize is n inserts away. Spread the n moves over those n inserts and each insert pays for about one extra move. Adding a constant instead means a resize every few inserts, and the average insert costs O(n).</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2 data-toc="What it costs">What it costs</h2>
+      <p>The average cost of search, insert and delete is <span class="big-o" data-o="1"></span> when α stays bounded and the hash function spreads keys well. The worst case is <span class="big-o" data-o="n"></span>: every key in one bucket. Compare with the structures you already know:</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Structure</th><th scope="col">Search a key</th><th scope="col">Insert</th><th scope="col">Delete</th><th scope="col">Keeps order?</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Hash table (average)</th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1">O(1) amortized</span></td><td><span class="big-o" data-o="1"></span></td><td>No</td></tr>
+            <tr><th scope="row">Hash table (worst case)</th><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="n"></span></td><td>No</td></tr>
+            <tr><th scope="row">Unsorted array</th><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="1">O(1) append</span></td><td><span class="big-o" data-o="n"></span></td><td>By position</td></tr>
+            <tr><th scope="row">Sorted array</th><td><span class="big-o" data-o="logn"></span></td><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="n"></span></td><td>Yes</td></tr>
+            <tr><th scope="row">Balanced search tree</th><td><span class="big-o" data-o="logn"></span></td><td><span class="big-o" data-o="logn"></span></td><td><span class="big-o" data-o="logn"></span></td><td>Yes</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>How many slots or keys does one search look at? These are the textbook averages for a random hash function, the numbers the chart plots. Both search cases are measured in keys or slots examined.</p>
+      <div class="table-wrap wide">
+        <table class="table table--compact l11-probetable">
+          <thead><tr><th scope="col">Load α</th><th scope="col" class="num">Chaining: found</th><th scope="col" class="num">Chaining: absent</th><th scope="col" class="num">Linear: found</th><th scope="col" class="num">Linear: absent</th><th scope="col" class="num">Double: found</th><th scope="col" class="num">Double: absent</th></tr></thead>
+          <tbody id="probe-table"></tbody>
+        </table>
+      </div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Hash flooding</p>
+        <p>The O(1) average assumes keys do not conspire against the function. An attacker who knows it can send keys that all share a bucket, turning every lookup into a scan. Real languages hash with a random secret chosen at startup, so nobody can predict the buckets.</p>
+      </aside>
+      <details class="accordion">
+        <summary>Where do 1 + α/2 and 1 / (1 − α) come from?</summary>
+        <div class="accordion__body"><p>Chaining: a key that is stored sits after the keys inserted before it in its chain. Each of the other n − 1 keys shares its bucket with probability 1/m, and about half of those come earlier, so about 1 + α/2 keys are examined. For uniform probing, each probe finds an empty slot with probability 1 − α, so the expected number of probes until success is 1 / (1 − α). Linear probing is worse than that because clusters break the independence.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ IN PRACTICE -->
+    <section id="practice-in-code">
+      <h2 data-toc="Sets and maps">Sets, maps and the worst case</h2>
+      <p>A <strong>hash set</strong> stores keys only and answers “is x in it?”. A <strong>hash map</strong> (dictionary) stores a value beside each key. Same table, one extra field per entry. Pick a tab and step through each one.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="set">Set: remove duplicates</button>
+          <button data-tab="map">Map: count words</button>
+          <button data-tab="worst">Worst case: everything collides</button>
+        </div>
+        <div data-tab-panel="set"><div class="split l11-split"><figure class="fig fig--plain" id="fig-set"><div class="fig__stage fig__stage--plain" data-stage></div><p class="fig__caption" data-caption aria-live="polite"></p><div class="fig__controls" data-controls></div></figure><div><p>Insert each word of “to be or not to be”. The second <code>to</code> hashes to the bucket where the first one already sits, the comparison says “same key”, and nothing is stored.</p><pre data-code-block="set"></pre></div></div></div>
+        <div data-tab-panel="map"><div class="split l11-split"><figure class="fig fig--plain" id="fig-map"><div class="fig__stage fig__stage--plain" data-stage></div><p class="fig__caption" data-caption aria-live="polite"></p><div class="fig__controls" data-controls></div></figure><div><p>Count words in “the cat and the hat and the bat”. Each word is a key and its value is its count. Finding an existing key overwrites its value in place.</p><pre data-code-block="map"></pre></div></div></div>
+        <div data-tab-panel="worst"><div class="split l11-split"><figure class="fig fig--plain" id="fig-worst"><div class="fig__stage fig__stage--plain" data-stage></div><p class="fig__caption" data-caption aria-live="polite"></p><div class="fig__controls" data-controls></div></figure><div><p>Keys 7, 14, 21, 28 and 35 all have <code>k mod 7 = 0</code>. Searching for 42 walks the whole chain: the table has degraded into a linked list and each search costs O(n).</p><pre data-code-block="worst"></pre></div></div></div>
+      </div>
+      <aside class="callout callout--fun">
+        <p class="callout__title">Order in real languages</p>
+        <p>A plain hash table has no useful order, since keys are scattered by the hash. Python’s <code>dict</code> keeps insertion order by storing entries in a separate list and letting the table hold only indexes into it. Sorted order still needs a tree.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ DECISION -->
+    <section id="choose">
+      <h2 data-toc="Which structure?">Set, map, sorted structure, or array?</h2>
+      <p>Hash tables are wonderful and not universal. Walk the flowchart with a real problem in mind by clicking the answers. Each path ends at a structure and the reason.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which structure should I use?</h3></div>
+          <div class="btn-row"><button type="button" class="btn btn--sm" data-reset>Start over</button></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <p class="fig__caption l11-answer" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a decision tree. Look up by a key? If not, use an array or list. If keys are small whole numbers, index an array directly. If you need sorted order, ranges or nearest keys, use a sorted structure. Otherwise use a hash map when each key has a value, and a hash set when it does not.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-choose"></div>
+    </section>
+
+    <!-- ============================================================ CHECK -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-alpha"></div>
+        <div class="quiz" id="quiz-birthday"></div>
+        <div class="quiz" id="quiz-good"></div>
+        <div class="quiz" id="quiz-linear"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Hash tables</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="1">O(1) average</span><span class="chip chip--sm">worst case O(n)</span><span class="chip chip--sm">keep α &lt; 0.75</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1953<small>first memo</small></div>
+        <p class="history__people">Hans Peter Luhn<span>IBM internal memo, January 1953</span></p>
+        <div class="history__body">
+          <p>In January 1953 Luhn at IBM suggested turning a key into a bucket number and chaining the items that collide. About a year later another IBM group, writing an assembler for the IBM 701, hit on open addressing: if the slot is taken, try the next one. Programmers said “hash” for years afterwards, but Knuth found that nobody dared print such an undignified word until 1967.</p>
+        </div>
+        <p class="history__source">Source: D. E. Knuth, <em>The Art of Computer Programming</em>, Vol. 3, §6.4, historical notes; R. Morris, “Scatter storage techniques”, <em>CACM</em> 11(1), 1968.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Two sum</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given numbers and a target, find two that add up to it in one pass. What do you store in the hash map, and what do you look up?</p></li>
+        <li><div class="practice__title">First non-repeating character</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Return the index of the first character in a string that appears exactly once. Count with a map, then scan the string.</p></li>
+        <li><div class="practice__title">Group anagrams</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Group words that are anagrams of each other. Choose a key that is identical for all anagrams and different otherwise. Why does the sum of character codes fail?</p></li>
+        <li><div class="practice__title">Longest consecutive run</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given unsorted integers, find the length of the longest run of consecutive values (like 4, 5, 6, 7) in O(n) expected time without sorting. Start a run only at values whose predecessor is missing.</p></li>
+        <li><div class="practice__title">Hash set with deletion</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Implement a hash set with linear probing that supports add, contains and remove. After many adds and removes the table fills with tombstones and searches slow down even though few keys are stored. How do you fix that?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-08-hashing-and-expected-constant-access.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Hashing and expected-constant access</span><span class="deeper__text" style="display:block">Proofs of the expected costs, universal hashing that defeats an adversary, and perfect hashing with the birthday bound.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

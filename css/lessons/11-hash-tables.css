@@ -1,0 +1,142 @@
+/* Lesson 11 — Hash tables. Lesson-specific styles only; every colour comes from tokens so both themes work. */
+
+/* ---------------------------------------------------------------- shared SVG figures */
+.l11-svg { display: block; width: 100%; height: auto; margin-inline: auto; font-family: var(--font-sans); overflow: visible; }
+.l11-svg text { fill: var(--el-ink); }
+.l11-note { font-size: 12px; font-weight: 600; fill: var(--ink-3) !important; }
+.l11-big { font-size: 20px; font-weight: 760; }
+
+/* ---------------------------------------------------------------- fold figure */
+.l11-cell rect { fill: var(--el-fill); stroke: color-mix(in srgb, var(--el-edge) 65%, transparent); stroke-width: 1; }
+.l11-cell text { font: 500 8.5px var(--font-mono); text-anchor: middle; fill: var(--ink-3) !important; opacity: .75; }
+.l11-cell.is-used rect { stroke: var(--st-key); stroke-width: 1.6; fill: color-mix(in srgb, var(--st-key) 8%, var(--el-fill)); }
+.l11-chip rect { fill: var(--st-key); stroke: color-mix(in srgb, var(--st-key) 70%, black); stroke-width: 1; transition: fill 400ms var(--ease-out, ease), stroke 400ms; }
+.l11-chip text { font: 700 11px var(--font-mono); fill: var(--on-state) !important; }
+.l11-chip.is-hash rect { width: 34px; }
+.l11-chip.is-hash text { transform: translateX(5px); }
+.l11-chip.is-collide rect { fill: var(--st-error); stroke: color-mix(in srgb, var(--st-error) 70%, black); }
+.l11-fnpill rect { fill: color-mix(in srgb, var(--st-active) 14%, var(--el-fill)); stroke: var(--st-active); stroke-width: 1.5; }
+.l11-fnpill text { font: 700 14px var(--font-mono); }
+.l11-bucket rect { fill: var(--bg-sunken); stroke: var(--el-edge); stroke-width: 1.2; transition: fill 300ms, stroke 300ms; }
+.l11-bucket text { font: 700 12px var(--font-mono); fill: var(--ink-3) !important; }
+.l11-bucket.is-hit rect { fill: var(--st-found); stroke: var(--st-found); }
+.l11-bucket.is-hit text { fill: var(--on-state) !important; }
+.l11-collide { fill: color-mix(in srgb, var(--st-error) 78%, var(--ink)) !important; font-weight: 700; }
+
+/* ---------------------------------------------------------------- hash-function machine */
+.l11-tile rect { fill: var(--el-fill); stroke: var(--el-edge-strong); stroke-width: 1.5; transition: fill var(--t, 300ms), stroke var(--t, 300ms); }
+.l11-tile .l11-ch { font: 700 24px var(--font-mono); }
+.l11-tile .l11-code { font: 600 12px var(--font-mono); fill: var(--ink-3) !important; }
+.l11-tile.is-active rect { fill: color-mix(in srgb, var(--st-active) 18%, var(--el-fill)); stroke: var(--st-active); stroke-width: 2.5; }
+.l11-tile.is-done rect { fill: color-mix(in srgb, var(--st-visited) 12%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-visited) 65%, var(--el-fill)); }
+.l11-tile.is-ignored { opacity: .4; }
+.l11-machine rect { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1.5; }
+.l11-num { font: 760 34px var(--font-mono); fill: var(--st-active) !important; fill: color-mix(in srgb, var(--st-active) 82%, var(--ink)) !important; }
+.l11-formula { font: 600 14px var(--font-mono); fill: var(--ink-2) !important; }
+.l11-modbox rect { fill: color-mix(in srgb, var(--st-found) 14%, var(--el-fill)); stroke: var(--st-found); stroke-width: 1.8; }
+.l11-modbox text { font: 700 17px var(--font-mono); }
+.l11-ptr { fill: var(--st-found); }
+#fig-machine .l11-bucket rect { fill: var(--el-fill); }
+
+/* ---------------------------------------------------------------- spread histogram */
+.l11-axis { stroke: var(--line-strong); stroke-width: 1.5; }
+.l11-idx { font: 600 11px var(--font-mono); fill: var(--ink-3) !important; }
+.l11-count { font: 700 12px var(--font-mono); }
+.l11-ideal { stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 5 5; }
+.l11-keytile rect { fill: color-mix(in srgb, var(--st-active) 75%, var(--el-fill)); stroke: var(--el-fill); stroke-width: 1; transition: fill 400ms; }
+.l11-keytile.is-hot rect { fill: var(--st-error); }
+
+/* ---------------------------------------------------------------- click-the-bucket */
+.l11-pick rect { fill: var(--el-fill); stroke: var(--el-edge-strong); stroke-width: 1.5; }
+.l11-pick .l11-bidx { font: 700 12px var(--font-mono); fill: var(--ink-3) !important; }
+.l11-pick .l11-bval { font: 700 14px var(--font-mono); }
+.l11-pick { cursor: pointer; outline: none; }
+.l11-pick:hover rect { fill: color-mix(in srgb, var(--st-active) 10%, var(--el-fill)); }
+.l11-pick:focus-visible rect { stroke: var(--st-active); stroke-width: 3; }
+.l11-pick.is-pick-right rect { fill: color-mix(in srgb, var(--st-found) 22%, var(--el-fill)); stroke: var(--st-found); stroke-width: 3; }
+.l11-pick.is-pick-wrong rect { fill: color-mix(in srgb, var(--st-error) 16%, var(--el-fill)); stroke: var(--st-error); stroke-width: 3; }
+
+/* ---------------------------------------------------------------- birthday grid */
+.l11-bslot { fill: var(--el-fill); stroke: color-mix(in srgb, var(--el-edge) 70%, transparent); stroke-width: 1; }
+.l11-bslot.is-used { fill: color-mix(in srgb, var(--st-active) 70%, var(--el-fill)); stroke: var(--st-active); }
+.l11-bslot.is-new { animation: l11-pop 500ms var(--ease-out, ease); }
+.l11-bslot.is-first { fill: var(--st-compare); stroke: var(--st-compare); }
+.l11-bslot.is-hit { fill: var(--st-error); stroke: var(--st-error); stroke-width: 3; animation: l11-flash 700ms ease 2; }
+.l11-throw { fill: var(--st-key); stroke: var(--bg-elev); stroke-width: 2; }
+@keyframes l11-pop { 0% { opacity: .2; } 100% { opacity: 1; } }
+@keyframes l11-flash { 50% { opacity: .35; } }
+
+/* ---------------------------------------------------------------- clustering race */
+.l11-rowname { font: 750 14px var(--font-sans); }
+.l11-rslot rect { fill: var(--el-fill); stroke: color-mix(in srgb, var(--el-edge) 70%, transparent); stroke-width: 1; transition: fill var(--t, 300ms), stroke var(--t, 300ms); }
+.l11-rslot .l11-rkey { font: 700 9.5px var(--font-mono); fill: var(--el-ink) !important; }
+.l11-rslot.is-filled rect { fill: color-mix(in srgb, var(--st-visited) 14%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-visited) 60%, var(--el-fill)); }
+.l11-rslot.is-probe rect { fill: color-mix(in srgb, var(--st-compare) 30%, var(--el-fill)); stroke: var(--st-compare); stroke-width: 2; }
+.l11-rslot.is-new rect { fill: var(--st-active); stroke: var(--st-active); }
+.l11-rslot.is-new .l11-rkey { fill: var(--on-state) !important; }
+.l11-rbadge { font: 700 9.5px var(--font-mono); fill: color-mix(in srgb, var(--st-compare) 75%, var(--ink)) !important; }
+
+/* ---------------------------------------------------------------- summary tiles */
+.l11-mini { max-width: 168px; }
+.l11-mbox rect { fill: var(--el-fill); stroke: var(--el-edge-strong); stroke-width: 1.3; }
+.l11-mbox text { font: 700 11px var(--font-mono); }
+.l11-mbox.is-key rect { fill: color-mix(in srgb, var(--st-key) 14%, var(--el-fill)); stroke: var(--st-key); }
+.l11-mbox.is-fn rect { fill: color-mix(in srgb, var(--st-active) 14%, var(--el-fill)); stroke: var(--st-active); }
+.l11-mbox.is-active rect { fill: var(--st-active); stroke: var(--st-active); }
+.l11-mbox.is-active text { fill: var(--on-state); }
+.l11-mbox.is-bad rect { fill: color-mix(in srgb, var(--st-error) 22%, var(--el-fill)); stroke: var(--st-error); }
+.l11-marrow { fill: none; stroke: var(--el-edge-strong); stroke-width: 1.6; stroke-linecap: round; }
+.l11-marrow.is-bad { stroke: var(--st-error); }
+.l11-marrow.is-hop { stroke: var(--st-compare); stroke-width: 2; }
+.l11-meter { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1.2; }
+.l11-meterfill { fill: var(--st-found); }
+.l11-tick { stroke: var(--st-error); stroke-width: 2.4; stroke-dasharray: 3 3; }
+
+/* ---------------------------------------------------------------- toolbars */
+.l11-input { flex: 1 1 420px; min-width: 0; }
+.l11-toolgroup { display: flex; flex-direction: column; gap: 6px; }
+.l11-slider { flex: 1 1 200px; max-width: 300px; }
+.l11-opbar { align-items: flex-end; }
+.l11-opform { display: flex; flex-direction: column; gap: 6px; flex: 1 1 380px; min-width: 0; }
+.l11-opform .field { max-width: 180px; }
+.l11-opform .btn-row { flex-wrap: wrap; }
+.l11-scriptbar { align-items: center; padding-top: 0; }
+.l11-presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.l11-hint { margin: 0; flex: 1 1 260px; font-size: 13px; color: var(--ink-3); }
+.l11-hint.is-bad { color: color-mix(in srgb, var(--st-error) 80%, var(--ink)); font-weight: 650; }
+.l11-script { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 0 18px 12px; }
+.l11-script__label { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin-right: 4px; }
+.l11-script__none { font-size: 13px; color: var(--ink-3); font-style: italic; }
+.l11-script__btns { margin-left: auto; display: inline-flex; gap: 4px; }
+.l11-op { font: 650 12.5px var(--font-mono); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--bg-elev); color: var(--ink); cursor: pointer; }
+.l11-op:hover { border-color: var(--st-active); }
+.l11-op:focus-visible { outline: 2px solid var(--st-active); outline-offset: 2px; }
+.l11-op--insert { border-color: color-mix(in srgb, var(--st-active) 55%, var(--line-strong)); }
+.l11-op--search { border-color: color-mix(in srgb, var(--st-compare) 65%, var(--line-strong)); }
+.l11-op--delete { border-color: color-mix(in srgb, var(--st-error) 60%, var(--line-strong)); }
+.l11-op--resize { border-color: color-mix(in srgb, var(--st-done) 60%, var(--line-strong)); }
+
+/* ---------------------------------------------------------------- lab tabs + invariant line */
+.l11-labtabs { padding: 4px 18px 0; border-bottom: 1px solid var(--line); }
+.l11-labtabs .tabs__list { border-bottom: 0; }
+.l11-labtabs .tabs__tab { font-weight: 650; }
+.l11-labtabs .tabs__panel { padding: 8px 0 12px; }
+.l11-invariant { margin: 0; font-size: 14.5px !important; line-height: 1.5 !important; color: var(--ink-2); }
+.l11-invariant b { color: var(--ink); font-weight: 650; }
+.l11-alpha { font-weight: 700; white-space: nowrap; }
+
+/* ---------------------------------------------------------------- misc */
+.l11-split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@container (max-width: 700px) { .l11-split { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .l11-split { grid-template-columns: 1fr; gap: 12px; } }
+.l11-split pre { margin: 0; }
+.fig__caption.l11-answer { min-height: 3.2em; }
+td.l11-hot { color: color-mix(in srgb, var(--st-error) 75%, var(--ink)); font-weight: 700; }
+.l11-svg .vz-hash-note { fill: var(--ink-3); }
+#fig-machine .l11-bucket.is-hit rect { fill: var(--st-found); stroke: var(--st-found); }
+.l11-probetable th, .l11-probetable td { white-space: nowrap; }
+@media (min-width: 900px) { #summary-card .summary__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.l11-split > * { min-width: 0; }
+.l11-split pre { overflow-x: auto; max-width: 100%; }
+@media (max-width: 900px) { #teaser.hero__stage { aspect-ratio: 1 / 1.02; } }
+@media (max-width: 520px) { .l11-wide-only { display: none; } }

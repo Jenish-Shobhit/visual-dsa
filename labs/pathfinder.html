@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Pathfinder · Visual DSA</title>
+<meta name="description" content="Draw walls and mud on a big grid, then watch BFS, DFS, Dijkstra, A* and greedy best-first search it. Generate mazes, compare every algorithm on the same map, and race them side by side.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/labs/pathfinder.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/algos/26-bfs-and-dfs.js" defer></script>
+<script src="../js/algos/28-dijkstra-and-a-star.js" defer></script>
+<script src="../js/labs/pathfinder-model.js" defer></script>
+<script src="../js/labs/pathfinder-overlay.js" defer></script>
+<script src="../js/labs/pathfinder-race.js" defer></script>
+<script src="../js/labs/pathfinder.js" defer></script>
+</head>
+<body data-page="lab" data-crumb="Pathfinder">
+<main id="main" class="pf">
+
+  <header class="pf-head pf-wrap">
+    <p class="hero__eyebrow"><span class="hero__num">Lab</span><span>Graphs and grids</span></p>
+    <h1 class="pf-title">Pathfinder</h1>
+    <p class="pf-lede">Paint walls and mud, drag <b>S</b> and <b>T</b> anywhere, pick a search and watch it think. Then compare all five on the same map.</p>
+  </header>
+
+  <div class="pf-wrap">
+
+    <section class="pf-panel" aria-label="Search and map controls">
+      <div class="pf-row">
+        <div class="pf-ctl">
+          <span class="field-label" id="pf-algo-l">Search</span>
+          <div data-algo aria-labelledby="pf-algo-l"></div>
+        </div>
+        <div class="pf-ctl pf-ctl--astar" data-astar-ctl>
+          <label class="field-label" for="pf-heur">Guess of distance left</label>
+          <select class="field pf-select" id="pf-heur" data-heur>
+            <option value="manhattan">Manhattan (|Δrow| + |Δcol|)</option>
+            <option value="euclid">Euclid (straight line)</option>
+          </select>
+        </div>
+        <div class="pf-ctl pf-ctl--grow" data-weight-ctl><div data-weight></div></div>
+        <div class="pf-ctl pf-ctl--grow"><div data-mudcost></div></div>
+      </div>
+      <p class="pf-note" data-note aria-live="polite"></p>
+
+      <div class="pf-row pf-row--map">
+        <div class="pf-ctl">
+          <span class="field-label" id="pf-brush-l">Paint with</span>
+          <div data-brush aria-labelledby="pf-brush-l"></div>
+        </div>
+        <div class="pf-ctl">
+          <span class="field-label" id="pf-size-l">Grid size</span>
+          <div data-size aria-labelledby="pf-size-l"></div>
+        </div>
+        <div class="pf-ctl pf-ctl--grow">
+          <span class="field-label">Start from</span>
+          <div class="pf-chips" data-presets role="group" aria-label="Preset maps"></div>
+        </div>
+      </div>
+
+      <div class="pf-row pf-row--maze">
+        <div class="pf-ctl pf-ctl--grow">
+          <span class="field-label">Generate</span>
+          <div class="pf-chips" role="group" aria-label="Generators">
+            <button class="btn btn--sm" type="button" data-gen="backtracker" title="Recursive backtracker: long winding corridors">Maze: backtracker</button>
+            <button class="btn btn--sm" type="button" data-gen="division" title="Recursive division: rooms with doorways">Maze: rooms</button>
+            <button class="btn btn--sm" type="button" data-gen="random" title="Random walls at the chosen density; a path is always kept open">Random walls</button>
+            <button class="btn btn--sm" type="button" data-gen="mud" title="Add patches of mud on top of the walls">Add mud</button>
+          </div>
+        </div>
+        <div class="pf-ctl pf-ctl--grow"><div data-density></div></div>
+        <div class="pf-ctl pf-ctl--grow"><div data-loops></div></div>
+        <div class="pf-ctl pf-chips pf-chips--end">
+          <button class="btn btn--sm btn--ghost" type="button" data-clear="path" title="Clear the search and keep the map (R)">Clear path</button>
+          <button class="btn btn--sm btn--ghost" type="button" data-clear="walls" title="Remove every wall and all mud (W)">Clear walls</button>
+        </div>
+      </div>
+    </section>
+
+    <figure class="fig pf-fig" id="stage-fig" aria-labelledby="pf-fig-title">
+      <header class="fig__head">
+        <div class="fig__titles"><h2 class="fig__title" id="pf-fig-title" data-title>A* on a 25 × 45 grid</h2></div>
+        <div data-legend></div>
+      </header>
+      <div class="pf-bar" role="group" aria-label="Playback">
+        <div class="pf-transport">
+          <button class="player__btn" type="button" data-act="restart" aria-label="Restart (R)" title="Restart (R)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h2.4v14H6zM20 5.5v13L9.5 12z" fill="currentColor"/></svg></button>
+          <button class="player__btn" type="button" data-act="back" aria-label="Step back (←)" title="Step back (←)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5.5v13L5 12z" fill="currentColor"/></svg></button>
+          <button class="player__btn player__play" type="button" data-act="play" aria-label="Run (Space)" title="Run or pause (Space)">
+            <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>
+            <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>
+          </button>
+          <button class="player__btn" type="button" data-act="fwd" aria-label="Step forward (→)" title="Step forward (→)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5v13L19 12z" fill="currentColor"/></svg></button>
+          <button class="player__btn" type="button" data-act="end" aria-label="Jump to the result (End)" title="Jump to the result (End)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.6 5H18v14h-2.4zM4 5.5v13L14.5 12z" fill="currentColor"/></svg></button>
+        </div>
+        <div class="pf-speed" data-speed></div>
+        <div data-turbo class="pf-turbo"></div>
+        <label class="pf-scrub">
+          <span class="pf-scrub__label">Step <output data-stepnum>0 / 0</output></span>
+          <input class="range" type="range" min="0" max="0" step="1" value="0" data-scrub aria-label="Step of the search">
+        </label>
+        <div data-heat class="pf-turbo"></div>
+      </div>
+      <div class="fig__stage pf-stage" data-stage></div>
+      <div class="pf-stats" data-stats></div>
+      <p class="fig__caption pf-caption" data-caption aria-live="polite"></p>
+      <figcaption class="fig__foot">
+        <span class="pf-foot__l"><a data-learn href="#">Learn how it works</a></span>
+        <span class="pf-foot__r">Drag on the grid to paint (touch works too). Drag <b>S</b> and <b>T</b> to move them. Keys: <kbd>Space</kbd> run, <kbd>←</kbd> <kbd>→</kbd> step, <kbd>End</kbd> result, <kbd>R</kbd> restart, <kbd>1</kbd>–<kbd>5</kbd> pick a search, <kbd>C</kbd> compare, <kbd>W</kbd> clear walls. <button class="pf-linkbtn" type="button" data-share>Copy link to this map</button> <span data-share-msg aria-live="polite"></span></span>
+      </figcaption>
+    </figure>
+
+    <section class="pf-group" aria-labelledby="cmp-h">
+      <div class="pf-group__head">
+        <h2 class="pf-h" id="cmp-h">Compare all five</h2>
+        <div class="pf-chips">
+          <button class="btn btn--primary btn--sm" type="button" data-compare aria-expanded="false" aria-controls="cmp-body">Compare on this map</button>
+          <button class="btn btn--secondary btn--sm" type="button" data-race hidden>Race them</button>
+        </div>
+      </div>
+      <div id="cmp-body" data-cmp-body hidden>
+        <div class="table-wrap pf-table">
+          <table class="table table--compact pf-cmp" data-table>
+            <caption class="sr-only">Every search on the current map</caption>
+            <thead><tr>
+              <th scope="col">Search</th>
+              <th scope="col">Cells expanded</th>
+              <th scope="col" class="num">Route length</th>
+              <th scope="col">Route cost</th>
+              <th scope="col">Cheapest?</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="pf-cmp__note" data-cmp-note aria-live="polite"></p>
+        <div class="pf-race" data-race-box hidden>
+          <div class="pf-race__bar" role="group" aria-label="Race controls">
+            <button class="btn btn--primary btn--sm" type="button" data-race-go>Start race</button>
+            <button class="btn btn--sm" type="button" data-race-reset>Reset</button>
+            <span class="pf-race__hint">Every lane takes one expansion per tick, so the first to finish expanded the fewest cells.</span>
+          </div>
+          <div class="pf-lanes" data-lanes></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pf-group pf-tips" aria-labelledby="tips-h">
+      <h2 class="pf-h" id="tips-h">Try this</h2>
+      <ul class="pf-tips__list">
+        <li>Load <b>Muddy shortcut</b> and compare: BFS counts steps, so it wades through mud that Dijkstra and A* walk around.</li>
+        <li>Load <b>Cup trap</b> and run <b>Greedy</b>: it charges into the cup and has to back out. A* barely notices.</li>
+        <li>Raise A*'s weight above 1: fewer cells expanded, but the route stops being the cheapest.</li>
+        <li>A perfect maze has one route, so every search finds it. Turn up <b>loops</b> and the searches start to disagree.</li>
+        <li>On an open field, watch BFS make a diamond, Dijkstra the same with mud dents, and A* a narrow beam.</li>
+      </ul>
+      <div class="pf-lessons" data-lessons></div>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

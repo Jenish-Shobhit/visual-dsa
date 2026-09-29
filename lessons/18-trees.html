@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Trees &amp; traversals · Visual DSA</title>
+<meta name="description" content="One root, no loops, four ways to visit every node. Watch a token walk the Euler tour around a tree, step through preorder, inorder, postorder and level order with the call stack or queue beside it, and see why each order fits a different job.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/18-trees.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/stack.js" defer></script>
+<script src="../js/vdsa/views/callstack.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/18-trees.js" defer></script>
+<script src="../js/lessons/18-trees-tour.js" defer></script>
+<script src="../js/lessons/18-trees.js" defer></script>
+<script src="../js/lessons/18-trees-lab.js" defer></script>
+<script src="../js/lessons/18-trees-figs.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="18-trees">
+<main id="main" class="lesson">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Trees &amp; traversals</h1>
+      <p class="hero__lede">A tree is a hierarchy with one root and no loops. Four different walks visit every node, and each one is the right tool for a different job.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">22 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: recursion, stacks, queues</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: a tree grows one node at a time. Then a glowing token walks around it, keeping the tree on its left, and each node turns green as the token first touches it: a preorder walk."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem: real data nests</h2>
+      <p>An array or a linked list is a line: every item has one item before it and one after. But a lot of real information is not a line. A project has folders inside folders. A company has managers with teams, and those teams have leads with teams of their own. A web page has tags inside tags.</p>
+      <p>Pick one of the three below, then click any node that has something under it. It folds away, and a badge tells you how much is hidden.</p>
+      <figure class="fig wide" id="fig-real">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Three trees you already use</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot" data-foot></figcaption>
+      </figure>
+      <p>All three have the same shape: one item at the top, every other item hangs under exactly one parent, and following parents upward always ends at the top. Nothing ever loops back. That shape is a <em>tree</em>, and it is the most common structure in computing after the array.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition: a list that may branch</h2>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: a linked list with more than one “next”</p>
+        <p>In a linked list, each node points to one next node. In a tree, each node may point to several. You can also think of a family tree turned upside down: one ancestor at the top, each person under their one parent line.</p>
+      </aside>
+      <p>Grow one below. Each new node joins under exactly one existing node, and that costs exactly one new edge. Watch the two counters.</p>
+      <figure class="fig wide" id="fig-grow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A tree grows one node and one edge at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>tree</dfn> is a set of nodes joined by edges so that there is exactly one path between any two nodes. Equivalently: one chosen <em>root</em>, every other node has exactly one parent, and there are no loops. A tree with n nodes has exactly <b>n − 1 edges</b>.</p>
+      </aside>
+      <div class="quiz" id="quiz-tree-or-not"></div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Upside down</p>
+        <p>Computer scientists draw trees with the root at the top and the leaves at the bottom. It reads like an org chart and like a page of text: start at the top, go down.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ VOCABULARY -->
+    <section id="vocabulary">
+      <h2>The words, on a tree you can click</h2>
+      <p>Trees come with a small vocabulary. Each term below is easier to see than to define, so click nodes in the figure and switch the highlight.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Family words</p>
+        <p>The <dfn>root</dfn> is the top node. Every other node has one <dfn>parent</dfn> (the node directly above it) and any number of <dfn>children</dfn> (directly below). Nodes with the same parent are <dfn>siblings</dfn>. A node with no children is a <dfn>leaf</dfn>. The <dfn>ancestors</dfn> of a node are its parent, its parent’s parent, and so on up to the root; its <dfn>descendants</dfn> are everything below it.</p>
+      </aside>
+      <aside class="callout callout--def">
+        <p class="callout__title">Number words</p>
+        <p>The <dfn>subtree</dfn> of a node is that node with all its descendants: a smaller tree of its own. The <dfn>depth</dfn> of a node is the number of edges from the root down to it. Its <dfn>height</dfn> is the number of edges on the longest path down to a leaf. A <dfn>level</dfn> is all the nodes at the same depth. The height of the whole tree is the height of its root.</p>
+      </aside>
+      <figure class="fig wide" id="fig-vocab">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Click a node to see its family, depth and height</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <dl class="tr-facts" data-facts></dl>
+        <figcaption class="fig__foot">A leaf has height 0 and an empty tree has height −1, so a single node also has height 0. Depth and height look in opposite directions: depth up to the root, height down to the deepest leaf.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-vocab"></div>
+    </section>
+
+    <!-- ============================================================ SHAPES -->
+    <section id="shapes">
+      <h2>Shapes, and the numbers that go with them</h2>
+      <p>Most trees in this lesson are <dfn>binary</dfn>: each node has at most two children, a <em>left</em> and a <em>right</em>. Four shapes come up all the time, because they set how tall the tree is for a given number of nodes.</p>
+      <figure class="fig wide" id="fig-shapes">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Perfect, complete, full and degenerate</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="mini-row tr-shapes">
+          <figure class="mini"><div class="mini__stage" data-mini="perfect"></div><figcaption><b class="tr-shape__name">Perfect</b><span data-cap="perfect" class="tr-shape__cap"></span></figcaption></figure>
+          <figure class="mini"><div class="mini__stage" data-mini="complete"></div><figcaption><b class="tr-shape__name">Complete</b><span data-cap="complete" class="tr-shape__cap"></span></figcaption></figure>
+          <figure class="mini"><div class="mini__stage" data-mini="full"></div><figcaption><b class="tr-shape__name">Full, not complete</b><span data-cap="full" class="tr-shape__cap"></span></figcaption></figure>
+          <figure class="mini"><div class="mini__stage" data-mini="degenerate"></div><figcaption><b class="tr-shape__name">Degenerate</b><span data-cap="degenerate" class="tr-shape__cap"></span></figcaption></figure>
+        </div>
+        <figcaption class="fig__foot">Height counts edges on the longest root-to-leaf path. The chips list every word that applies: a perfect tree is also full and complete.</figcaption>
+      </figure>
+      <p>The shape decides the height. Level 0 holds one node, level 1 at most two, level 2 at most four, level d at most 2<sup>d</sup>. So a tree of height h holds at most 2<sup>h+1</sup> − 1 nodes, and n nodes need a height of at least ⌊log₂ n⌋. At the other extreme, one node per level gives height n − 1.</p>
+      <div class="quiz" id="quiz-height20"></div>
+    </section>
+
+    <!-- ============================================================ STORAGE -->
+    <section id="storage">
+      <h2>Two ways to store a tree</h2>
+      <p>The usual way is a node object with a value and links to its children. A complete tree has a second, pointer-free option: number the nodes level by level, left to right, and store them in an array in that order.</p>
+      <pre data-code-block="node" class="tr-node-code"></pre>
+      <p>Because a complete tree has no gaps, the position in the array tells you the family. The children of index i sit at 2i + 1 and 2i + 2, and the parent sits at ⌊(i − 1) / 2⌋. Drag the slider to add nodes and click any node or cell.</p>
+      <figure class="fig wide" id="fig-array">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A complete tree is an array in disguise</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 260px"></div></div>
+        <div class="fig__stage" data-tree></div>
+        <div class="fig__stage fig__stage--plain tr-arr-stage" data-arr></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Growing the array by one slot adds the next node at the first free place, level by level. This is the layout a heap uses.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-array"></div>
+    </section>
+
+    <!-- ============================================================ EULER TOUR -->
+    <section id="euler">
+      <h2>One walk around the tree, three orders</h2>
+      <p>To <dfn>traverse</dfn> a tree is to visit every node exactly once. Depth-first means going all the way down one branch before starting the next. There are three depth-first orders, and they all come from one idea: walk around the outside of the tree, keeping it on your left.</p>
+      <p>On that walk you touch every node three times: on the way <em>down</em> into it (left dot), when you come back <em>up</em> from its left side (bottom dot), and when you <em>leave</em> it for good (right dot). Press play and watch the three rows fill.</p>
+      <figure class="fig wide" id="fig-euler">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The Euler tour: three dots per node</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <div class="fig__stage fig__stage--plain tr-rows-stage" data-rows></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">The token walks the dashed path. Each dot writes its node into a row when the token reaches it. Left dots build preorder, bottom dots build inorder, right dots build postorder.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p><b>Preorder</b> counts a node at its left dot: node, then left, then right. <b>Inorder</b> counts it at the bottom dot: left, then node, then right. <b>Postorder</b> counts it at the right dot: left, then right, then node. Same walk, three different moments.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Type your own tree level by level (a <code>#</code> is an empty place), or use a preset. Choose an order, and for the depth-first ones choose recursion or an explicit stack. With recursion, the token walks the Euler tour and the call stack grows and shrinks beside the tree. Press <kbd>←</kbd> and <kbd>→</kbd> to step and <kbd>Space</kbd> to play.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Traversal lab: four orders, two ways to run three of them</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__toolbar tr-ops" data-ops><div data-seg-order></div><div data-seg-method></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="tr-pane tr-pane--tree">
+              <div class="tr-pane__head"><span class="tr-pane__title">Tree</span></div>
+              <div class="fig__stage fig__stage--plain fig__stage--tall" data-tree></div>
+            </div>
+            <div class="tr-pane tr-pane--out">
+              <div class="tr-pane__head"><span class="tr-pane__title">Output: nodes in the order they were visited</span></div>
+              <div class="fig__stage fig__stage--plain" data-out></div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div class="tr-pane tr-pane--struct" data-struct="callstack">
+              <div class="tr-pane__head"><span class="tr-pane__title" data-struct-title>Call stack</span></div>
+              <div class="fig__stage fig__stage--plain tr-struct-stage">
+                <div data-host="callstack"></div><div data-host="stack" hidden></div><div data-host="queue" hidden></div>
+              </div>
+            </div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Up to 15 nodes; values of up to 3 characters. Values are only labels: two nodes may share one, and the walk still tells them apart. Peak is the most items the call stack, stack or queue held at any moment so far.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2>The same logic, as a flowchart</h2>
+      <p>Every depth-first order is one recursive function with three places to do work: before the children, between them, after them. Choose an order in the lab and only the box that says <b>VISIT</b> moves. Run the lab in recursion mode, or in level order, and this chart lights up in step.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Where each order does its work</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 440px"></div>
+        <figcaption class="fig__foot" data-flow-foot>Run the lab to light up the chart.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ EXPRESSION TREES -->
+    <section id="expression">
+      <h2>Expression trees: the shape is the meaning</h2>
+      <p>A tree can hold arithmetic. Leaves are numbers, and every other node is an operator that combines its two children. Brackets disappear: the shape says what happens first. To get the value, each operator has to wait for both of its operands, which is a postorder walk.</p>
+      <p>Step through it. Then compare the three ways of reading the same tree out loud: prefix, infix and postfix are just preorder, inorder and postorder. Try the second and third expressions: the same digits and signs with different trees give different answers.</p>
+      <figure class="fig fig--lab wide" id="fig-expr">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Evaluate an expression tree from the bottom up</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="tr-two">
+              <div class="fig__stage fig__stage--plain" data-tree></div>
+              <div class="fig__stage fig__stage--plain tr-stack-stage" data-stack></div>
+            </div>
+            <div class="tr-tokens" data-tokens></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The tokens light up in postfix order as their values become known. Infix needs brackets to say what groups with what; prefix and postfix never do.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ POSTORDER COMPUTATIONS -->
+    <section id="bottom-up">
+      <h2>Answers that flow upward</h2>
+      <p>The same pattern computes a lot of things. Ask every node a question about its subtree. Each node asks its children first and combines their answers. The height of a node is 1 plus the taller child. The size of a subtree is 1 plus the sizes of its children. The size of a folder is its files plus its subfolders.</p>
+      <p>Switch between the three and watch the chips fill from the leaves upward. The call stack on the right always holds one path from the root down to the node being asked.</p>
+      <figure class="fig fig--lab wide" id="fig-compute">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Postorder: every node waits for its children</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="tr-two">
+              <div class="fig__stage fig__stage--plain" data-tree></div>
+              <div class="fig__stage fig__stage--plain tr-stack-stage" data-stack></div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">An empty side counts as −1 for height and 0 for a count, which is why a leaf has height 0 and count 1. The folder tree has any number of children per node: postorder works for those too.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Children before parent</p>
+        <p>Whenever a node’s answer depends on its children’s answers, you need <em>postorder</em>. Whenever a node has to hand something down to its children first (a path so far, a copy of itself), you need <em>preorder</em>. This one question decides most tree code you will write.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ WHICH TRAVERSAL -->
+    <section id="which">
+      <h2>Which traversal do I need?</h2>
+      <p>Answer the questions by clicking yes or no, or pick a job and watch the diagram answer for you.</p>
+      <figure class="fig wide" id="fig-decide">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A decision diagram for tree walks</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar tr-scenarios" data-scenarios></div>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 400px"></div>
+        <p class="fig__caption tr-answer" data-answer aria-live="polite"></p>
+      </figure>
+      <div class="quiz" id="quiz-which"></div>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Every traversal visits each node once and walks each edge twice, once down and once back up. That is 2(n − 1) edge walks and 3n dots on the Euler tour, so the time is <b>O(n)</b> for all four orders, whatever the shape.</p>
+      <p>The shape decides the <em>memory</em>. Depth-first holds one path at a time, so its stack is as deep as the tree is tall. Level order holds a whole frontier, so its queue is as long as the tree is wide. First the height, for the three shapes from earlier:</p>
+      <figure class="fig wide" id="fig-height-chart">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Height against number of nodes</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg-range></div><div data-seg-axis></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <figcaption class="fig__foot">Random shape: the mean height over many trees built by inserting shuffled keys into a binary search tree (60 trees per point up to n = 64, fewer for larger n). Height counts edges.</figcaption>
+      </figure>
+      <p>Now the memory a traversal needs at its peak, on the same three shapes:</p>
+      <figure class="fig wide" id="fig-space-chart">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Peak memory: call stack against queue</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <figcaption class="fig__foot">Measured by running each traversal. The random shape is one tree built from a shuffled insertion order.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Work (n nodes, height h, widest level w)</th><th scope="col" class="num">Time</th><th scope="col" class="num">Extra memory</th><th scope="col">Note</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Preorder, inorder or postorder, recursive</th><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="logn">O(h)</span></td><td>h from about log₂ n (complete tree) to n − 1 (chain)</td></tr>
+            <tr><th scope="row">The same, with an explicit stack</th><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="logn">O(h)</span></td><td>lives on the heap, so a deep tree cannot overflow the call stack</td></tr>
+            <tr><th scope="row">Level order</th><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="n">O(w)</span></td><td>about n / 2 on a perfect tree, 1 on a chain</td></tr>
+            <tr><th scope="row">Height, size, folder sizes, expression value</th><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="logn">O(h)</span></td><td>one postorder pass</td></tr>
+            <tr><th scope="row">Find a value in a tree with no ordering</th><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="logn">O(h)</span></td><td>nothing tells you where to look, so you may visit every node</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <details class="accordion">
+        <summary>Why exactly n and not n log n?</summary>
+        <div class="accordion__body"><p>Each node is entered once and left once, and the work in between is a fixed amount: a couple of comparisons and one write. Every edge is used twice (down, then up). Add it up: about 3n small steps. Nothing is ever visited a second time, so no branch of the tree is re-explored.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why is O(h) “good” or “bad”?</summary>
+        <div class="accordion__body"><p>It depends on the tree. A complete tree of a million nodes has height 19, so the stack never holds more than 20 frames. A chain of a million nodes has height 999,999, and a recursive walk needs a million frames. That is why balanced trees, the topic of the next lessons, matter so much.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The same walks answer many different questions. Each tab shows one common pattern.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="levels">Level by level</button>
+          <button data-tab="serialise">Save and restore</button>
+          <button data-tab="rebuild">Rebuild from two orders</button>
+          <button data-tab="deep">Deep trees</button>
+        </div>
+        <div data-tab-panel="levels"><div class="split"><figure class="mini"><div class="mini__stage tr-var-stage" data-mini="levels"></div><figcaption>Each colour is one level: three queue rounds for this tree.</figcaption></figure><div><p>To print a tree row by row, use level order with one change. At the start of each round, note how many nodes are in the queue: exactly that many belong to the current level. Process just those, and their children form the next round.</p><pre data-code-block="levels"></pre></div></div></div>
+        <div data-tab-panel="serialise"><div class="split"><figure class="mini"><div class="mini__stage tr-var-stage" data-mini="serialise"></div><figcaption>Every empty place is drawn as a small box: each is a # in the text.</figcaption></figure><div><p>To save a tree as text, write a preorder walk and put a <code>#</code> for every empty child. For this tree the text is <code data-serial></code>. The markers make the text unambiguous: reading it back with the same recursion rebuilds exactly the same tree.</p><pre data-code-block="serialise"></pre></div></div></div>
+        <div data-tab-panel="rebuild"><div class="split"><figure class="mini"><div class="mini__stage tr-var-stage" data-mini="rebuild"></div><figcaption>The first item of the preorder is the root; where it sits in the inorder splits left from right.</figcaption></figure><div><p>One order alone does not pin down a tree, but preorder plus inorder does (when values are distinct). Preorder starts with the root. In the inorder, everything before the root is the left subtree, everything after is the right. Recurse on each half.</p><div class="tr-tokens" data-rebuild></div><pre data-code-block="rebuild"></pre></div></div></div>
+        <div data-tab-panel="deep"><div class="split"><figure class="mini"><div class="mini__stage tr-var-stage" data-mini="deep"></div><figcaption>A chain of 7 nodes: a recursive walk holds all 7 frames at once.</figcaption></figure><div><p>Recursive depth equals the height plus one. For a bushy tree that is tiny, but for a chain of a million nodes it is a million frames, and Python (by default about a thousand frames) or a JavaScript engine (roughly ten thousand) will stop you long before.</p><p>The explicit-stack version keeps the same list of unfinished work on the heap, where a million entries are fine. The lab’s “Explicit stack” mode shows exactly that: same output, no recursion.</p></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <figure class="fig" id="fig-check">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The tree for the next two questions</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Level order: A B C D E # F # # G. The # marks an empty place.</figcaption>
+      </figure>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-click"></div>
+        <div class="quiz" id="quiz-post"></div>
+        <div class="quiz" id="quiz-deep"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Trees &amp; traversals</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="n">O(n) time</span><span class="chip chip--sm">n nodes, n − 1 edges</span><span class="chip chip--sm">memory: O(h) depth-first, O(w) level order</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1857<small>trees named</small></div>
+        <p class="history__people">Arthur Cayley; Gustav Kirchhoff<span>Kirchhoff, 1847; Cayley, 1857</span></p>
+        <div class="history__body">
+          <p>Arthur Cayley named “trees” in 1857, while working on a problem about differential operators, and later counted how many labelled trees exist on n points: n<sup>n−2</sup>. Ten years earlier, Gustav Kirchhoff had already used spanning trees to analyse electrical circuits.</p>
+          <p>Chemists used trees to count possible molecules long before programmers held data in them. In computing, trees arrived in the 1950s: in code trees such as Huffman’s (1952) and in the first search trees. Donald Knuth’s <em>Fundamental Algorithms</em> (1968) made tree traversal and representation standard textbook material.</p>
+        </div>
+        <p class="history__source">Sources: A. Cayley, “On the theory of the analytical forms called trees”, <em>Philosophical Magazine</em> 13 (1857); G. Kirchhoff, 1847; D. E. Knuth, <em>The Art of Computer Programming</em>, Vol. 1, §2.3.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice" class="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Maximum depth</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given the root of a binary tree, return its height. Do it recursively, then again with a queue, one level at a time. State what you return for an empty tree, and why.</p></li>
+        <li><div class="practice__title">Invert a binary tree</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Swap the left and right child of every node, so the tree becomes its mirror image. Which of the four orders can you use? Does it matter whether you swap before or after visiting the children?</p></li>
+        <li><div class="practice__title">Level order, row by row</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Return the values level by level as a list of lists. Then change it so alternate rows are read right to left (a zigzag).</p></li>
+        <li><div class="practice__title">Build a tree from two orders</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given the preorder and inorder of a binary tree with distinct values, rebuild the tree. Why does preorder alone fail, and why does the inorder let you split the problem? Aim for O(n) using a hash map from value to inorder index.</p></li>
+        <li><div class="practice__title">Diameter of a tree</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">The diameter is the number of edges on the longest path between any two nodes (it need not pass through the root). Compute it in one postorder pass by returning the height of each subtree while updating a best-so-far.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-07-balanced-search-trees.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Balanced search trees and the logarithmic ideal</span><span class="deeper__text" style="display:block">Trees, height bounds with proofs, binary search trees, rotations, AVL and red-black trees, and B-trees for disks.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

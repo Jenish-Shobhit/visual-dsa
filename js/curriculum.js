@@ -95,7 +95,7 @@
   };
 
   // Lessons that are published. Keep in sync with lessons/*.html (tests/site_integrity.py checks this).
-  api.markLive(['01-algorithms', '02-bits-and-memory', '03-control-flow', '04-functions-and-the-stack', '05-big-o', '06-arrays', '07-strings-and-two-pointers', '08-linked-lists', '09-stacks', '10-queues', '11-hash-tables', '12-recursion', '13-binary-search', '14-elementary-sorts', '15-merge-sort', '16-quick-sort', '19-binary-search-trees', '21-heaps', '26-bfs-and-dfs', '34-dynamic-programming']);
+  api.markLive(['01-algorithms', '02-bits-and-memory', '03-control-flow', '04-functions-and-the-stack', '05-big-o', '06-arrays', '07-strings-and-two-pointers', '08-linked-lists', '09-stacks', '10-queues', '11-hash-tables', '12-recursion', '13-binary-search', '14-elementary-sorts', '15-merge-sort', '16-quick-sort', '18-trees', '19-binary-search-trees', '21-heaps', '26-bfs-and-dfs', '34-dynamic-programming']);
 
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.VDSA_CURRICULUM = api;

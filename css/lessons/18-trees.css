@@ -1,0 +1,102 @@
+/* Lesson 18 · Trees & traversals — styles for the Euler-tour layer and a few layout helpers.
+   Colours come only from tokens (--st-*, --ink*, --line*, --bg*), so both themes work. */
+
+/* ------------------------------------------------------------ Euler tour layer (js/lessons/18-trees-tour.js) */
+.tr-tour .tr-seg { fill: none; stroke: var(--line-strong); stroke-width: 1.6px; stroke-dasharray: 4 4; stroke-linecap: round; }
+.tr-tour .tr-seg.is-walked { stroke: var(--st-key); stroke-dasharray: none; stroke-width: 2.6px; stroke-opacity: .85; }
+.tr-tour .tr-seg--live { stroke: var(--st-key); stroke-width: 2.6px; stroke-opacity: .85; stroke-dasharray: none; }
+
+.tr-tour-top { pointer-events: none; }
+.tr-dot { --dc: var(--ink-3); fill: var(--bg-elev); stroke: var(--dc); stroke-width: 1.8px; transition: fill .22s, opacity .22s, stroke .22s; }
+.tr-dot--pre { --dc: var(--st-active); }
+.tr-dot--in { --dc: var(--st-compare); }
+.tr-dot--post { --dc: var(--st-done); }
+.tr-dot.is-reached { fill: var(--dc); }
+.tr-tour-top.is-dim-pre .tr-dot--pre,
+.tr-tour-top.is-dim-in .tr-dot--in,
+.tr-tour-top.is-dim-post .tr-dot--post { opacity: .16; }
+.tr-token__halo { fill: color-mix(in srgb, var(--st-key) 26%, transparent); }
+.tr-token__core { fill: var(--st-key); stroke: var(--bg-elev); stroke-width: 2px; }
+.tr-token { filter: drop-shadow(0 1px 3px color-mix(in srgb, var(--st-key) 45%, transparent)); }
+
+/* click-quiz hit circles over a tree view */
+.tr-hits .tr-hit { fill: transparent; stroke: transparent; stroke-width: 2px; cursor: pointer; pointer-events: all; transition: stroke .15s, fill .15s; }
+.tr-hits .tr-hit:hover { stroke: var(--accent); }
+.tr-hits .tr-hit:focus { outline: none; }
+.tr-hits .tr-hit:focus-visible { stroke: var(--accent); stroke-width: 3px; }
+.tr-hits .tr-hit.is-pick-right { stroke: var(--st-done); stroke-width: 3.5px; fill: color-mix(in srgb, var(--st-done) 20%, transparent); }
+.tr-hits .tr-hit.is-pick-wrong { stroke: var(--st-swap); stroke-width: 3.5px; fill: color-mix(in srgb, var(--st-swap) 16%, transparent); }
+
+/* ------------------------------------------------------------ figure layout helpers */
+.lesson-body .fig__toolbar .seg { flex-wrap: wrap; overflow: visible; }
+
+/* vocabulary explorer: fact cards under the tree */
+.tr-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); margin: 0; border-top: 1px solid var(--line); }
+.tr-fact { padding: 10px 14px 11px; min-width: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.tr-fact dt { margin: 0 0 3px; font: 650 11.5px var(--font-sans); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+.tr-fact dd { margin: 0; font-size: 14.5px; line-height: 1.4; color: var(--ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* shape gallery */
+.tr-shapes { padding: 12px 16px 16px; gap: 14px; }
+.tr-shapes .mini__stage { min-height: 250px; }
+.tr-shape__name { display: block; margin-bottom: 4px; color: var(--ink); }
+.tr-shape__cap { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
+.tr-shape__nh { font: 650 12.5px var(--font-mono); color: var(--ink); }
+.tr-shape__tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tr-shape__tags:empty { display: none; }
+
+.tr-arr-stage { min-height: 100px; border-top: 1px solid var(--line); }
+.tr-rows-stage { min-height: 150px; border-top: 1px solid var(--line); }
+.tr-node-code { margin: 0; }
+
+/* two stages side by side: the tree and a call stack */
+.tr-two { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(200px, 1fr); }
+.tr-two > * { min-width: 0; }
+.tr-two > * + * { border-left: 1px solid var(--line); }
+.tr-stack-stage { align-items: start; place-items: start center; }
+@container fig (max-width: 900px) {
+  .tr-two { grid-template-columns: minmax(0, 1fr); }
+  .tr-two > * + * { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+/* the traversal lab */
+.tr-ops { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.tr-ops [hidden] { display: none; }
+.tr-pane { min-width: 0; display: flex; flex-direction: column; }
+.lab__main > .tr-pane + .tr-pane { border-top: 1px solid var(--line); }
+.tr-pane__head { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 8px 16px; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 650; color: var(--ink-2); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); }
+.tr-pane__title { color: var(--ink); }
+.tr-pane .fig__stage { flex: 1; }
+.lab__side .tr-pane { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: var(--bg-elev); }
+.tr-struct-stage { min-height: 200px; align-items: start; place-items: start center; }
+.tr-struct-stage > [data-host] { width: 100%; }
+.tr-struct-stage > [hidden] { display: none; }
+
+/* expression tokens (prefix / infix / postfix) and the rebuild chips */
+.tr-tokens { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); }
+.split .tr-tokens { padding: 0; border: 0; margin: 0 0 14px; }
+.tr-tokrow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+.tr-tokrow__label { flex: 0 0 176px; font: 600 12px var(--font-sans); letter-spacing: .02em; color: var(--ink-3); }
+.tr-tokrow__chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.tr-tok { min-width: 30px; height: 30px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid var(--line-strong); border-radius: 8px; background: var(--bg-elev); color: var(--ink); font: 700 14px var(--font-mono); transition: background .3s, border-color .3s, color .3s; }
+.tr-tok--paren { min-width: 16px; padding: 0 3px; border-style: dashed; color: var(--ink-3); font-weight: 500; }
+.tr-tok.is-done { background: color-mix(in srgb, var(--st-done) 20%, var(--bg-elev)); border-color: var(--st-done); }
+.tr-tok.is-now { background: var(--st-active); border-color: var(--st-active); color: var(--on-state); }
+.tr-tok.is-pivot { background: color-mix(in srgb, var(--st-pivot) 22%, var(--bg-elev)); border-color: var(--st-pivot); }
+.tr-tok.is-active { background: color-mix(in srgb, var(--st-active) 18%, var(--bg-elev)); border-color: var(--st-active); }
+.tr-tok.is-compare { background: color-mix(in srgb, var(--st-compare) 20%, var(--bg-elev)); border-color: var(--st-compare); }
+@container fig (max-width: 640px) { .tr-tokrow__label { flex-basis: 100%; } }
+
+/* decision diagram */
+.tr-scenarios { display: flex; flex-wrap: wrap; gap: 6px; }
+.tr-answer { min-height: 4.6em; }
+
+/* variations */
+.tr-var-stage { min-height: 150px; }
+.tr-var-stage .vz { max-width: 340px; }
+[data-serial] { font-weight: 700; white-space: normal; }
+
+/* summary tiles */
+#summary-card .summary__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+#summary-card .summary__viz { height: 170px; }
+#summary-card .summary__viz > svg { width: auto; height: 100%; max-width: 100%; }

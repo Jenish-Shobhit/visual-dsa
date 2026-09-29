@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Graphs &amp; representations · Visual DSA</title>
+<meta name="description" content="Vertices and edges, directed and weighted, degree, paths and cycles. Draw a graph and watch its adjacency matrix and adjacency list update live, then race the two on real operations.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/25-graphs.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/graph.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/25-graphs.js" defer></script>
+<script src="../js/lessons/25-graphs.js" defer></script>
+<script src="../js/lessons/25-graphs-builder.js" defer></script>
+<script src="../js/lessons/25-graphs-more.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="25-graphs">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ 1. HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Graphs &amp; representations</h1>
+      <p class="hero__lede">Dots and lines describe maps, friendships and dependencies. How you store them, as a table or as short lists, decides which questions are fast.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">16 min</li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li class="chip" data-icon="prereq">Needs arrays and linked lists</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: eleven dots float gently and are joined by lines. Small messages travel along the lines, and now and then a new line appears."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ 2. THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem: seven bridges">The problem: seven bridges</h2>
+      <p>In the 1730s the people of Königsberg liked to ask a puzzle over Sunday walks: can you cross each of the city’s seven bridges exactly once? Nobody found a route. Nobody could prove there was none, either.</p>
+      <p>Step through the figure. Watch what happens to the map when only the <em>connections</em> are kept.</p>
+      <figure class="fig wide" id="fig-konig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">From a map to a graph</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: a map of four land masses joined by seven bridges becomes four vertices joined by seven edges. The island has degree 5 and the other three land masses have degree 3, so four vertices have odd degree and no walk can use every bridge exactly once.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>A <strong>graph</strong> keeps only <em>what is connected to what</em>. Shapes, sizes and distances are thrown away. That is why one idea covers road maps, friendships, the web and course prerequisites.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 3. WHAT A GRAPH IS -->
+    <section id="graph">
+      <h2 data-toc="Vertices and edges">Vertices and edges</h2>
+      <p>A graph has two ingredients. The <strong>vertices</strong> (or nodes) are the things. The <strong>edges</strong> are the links between pairs of things.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>graph</dfn> is <em>G = (V, E)</em>: a set <em>V</em> of vertices and a set <em>E</em> of edges, each edge joining two vertices. We write <em>V</em> for the number of vertices and <em>E</em> for the number of edges.</p>
+      </aside>
+      <p>Switch the costume below. The dots and lines stay the same kind of object, but the meaning changes, and so do the details: whether an edge has a direction, and whether it carries a number.</p>
+      <figure class="fig wide" id="fig-costumes">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">One structure, three costumes</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-blurb></p>
+        <div class="g25-chips" data-meaning></div>
+        <figcaption class="fig__foot">Text alternative: the same six-vertex drawing is relabelled as towns joined by weighted roads, as people joined by friendships, and as courses joined by one-way prerequisite arrows.</figcaption>
+      </figure>
+      <p>Two properties describe every edge. It is <strong>undirected</strong> if it works both ways (a friendship) or <strong>directed</strong> if it has a from and a to (a prerequisite). It is <strong>weighted</strong> if it carries a number such as a distance or a cost.</p>
+      <div class="mini-row wide" id="mini-kinds"></div>
+    </section>
+
+    <!-- ============================================================ 4. VOCABULARY -->
+    <section id="vocab">
+      <h2 data-toc="Words for graphs">Words for graphs</h2>
+      <p>Four words carry most of graph theory. The <strong>degree</strong> of a vertex is how many edges touch it; its <strong>neighbours</strong> are the vertices at the other ends. A <strong>path</strong> is a chain of edges from one vertex to another. A <strong>cycle</strong> is a path that ends where it started.</p>
+      <p>Try each one on the graph below. On a directed graph you count arrows in and arrows out separately, and a path may only follow arrows forwards.</p>
+      <figure class="fig wide" id="fig-explorer">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Vocabulary explorer</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar g25-toolbar"><div data-mode></div><div data-directed></div><div data-showdeg></div></div>
+        <div class="g25-split">
+          <div class="fig__stage" data-stage></div>
+          <div class="g25-panel" data-panel aria-live="polite"></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a graph with nine vertices A to I in two pieces. Selecting a vertex lists its degree and neighbours; selecting two vertices shows the fewest-edge path or says there is none; a cycle button highlights each cycle in turn.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">The handshake lemma</p>
+        <p>Add up the degrees of every vertex and you always get <strong>2E</strong>: each edge has two ends, and each end adds one to some vertex. So the sum is even, which means <em>a graph never has an odd number of odd-degree vertices</em>. That is exactly the fact Euler used in Königsberg.</p>
+      </aside>
+      <p>A <strong>connected component</strong> is a piece of the graph in which every vertex can reach every other. The graph above has two. A graph that is one single component is <strong>connected</strong>.</p>
+    </section>
+
+    <!-- ============================================================ 5. REPRESENTATIONS: THE BUILDER -->
+    <section id="represent">
+      <h2 data-toc="Storing a graph">Storing a graph in memory</h2>
+      <p>A computer cannot look at a drawing. It needs numbers in memory. There are three classic ways, and you can see all of them grow as you draw.</p>
+      <p>The <strong>adjacency matrix</strong> is a V × V table: cell (u, v) holds 1 if there is an edge from u to v. The <strong>adjacency list</strong> keeps, for each vertex, a short list of its neighbours. The <strong>edge list</strong> is just the pairs.</p>
+      <p>Draw your own graph: click empty space to add a vertex, drag from one vertex to another to add an edge. Click an edge or a vertex to see where it lives in each structure.</p>
+      <figure class="fig fig--lab wide" id="fig-builder">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Graph builder: three encodings, live</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar g25-toolbar"><div data-t-directed></div><div data-t-weighted></div><div class="btn-row" data-presets></div></div>
+        <div class="g25-builder">
+          <div class="g25-builder__edit"><div class="fig__stage fig__stage--tall fig__stage--plain" data-editor></div></div>
+          <div class="g25-builder__views">
+            <div class="g25-pane"><p class="g25-pane__title">Adjacency matrix</p><div class="g25-matrixhost" data-matrix></div></div>
+            <div class="g25-pane"><p class="g25-pane__title">Adjacency list</p><div class="g25-lgrid" data-list data-empty="(no vertices yet)"></div></div>
+            <div class="g25-pane"><p class="g25-pane__title">Edge list</p><div class="g25-elist" data-elist data-empty="(no edges yet)"></div></div>
+          </div>
+        </div>
+        <p class="g25-msg" data-msg role="status"></p>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: an editable graph on the left. On the right, the same graph as a square table of zeros and ones, as one row of neighbours per vertex, and as a list of vertex pairs. Selecting an edge highlights its cells and entries.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Undirected means stored twice</p>
+        <p>Select an edge and two matrix cells light up, and the edge appears in two lists. The table mirrors itself across its diagonal. Switch on <strong>Directed</strong> and each edge fills just one cell, so the mirror disappears.</p>
+      </aside>
+      <p>Notice the counters below the figure. The matrix always needs <em>V²</em> cells, even when you draw nothing. The list needs V heads plus one entry per edge end. Hold that thought: it decides everything that follows.</p>
+    </section>
+
+    <!-- ============================================================ 6. THE LAB -->
+    <section id="lab">
+      <h2>The lab: matrix versus list</h2>
+      <p>Ask the same question of both structures and count what each one has to read. Pick a graph (the dense one has nearly every edge), choose a question, and press play. The blue ring is the matrix cell being read; the amber chips are list entries.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Same question, two structures</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__toolbar g25-ops-bar">
+          <div data-op></div>
+          <label class="g25-sel" data-u-wrap>u <select class="field" data-u aria-label="Vertex u"></select></label>
+          <label class="g25-sel" data-v-wrap>v <select class="field" data-v aria-label="Vertex v"></select></label>
+          <div data-t-dir></div>
+          <span class="g25-density" data-density></span>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask you to predict a cost. Text alternative: the caption under the figure states every read in words, and the two counters give the totals for the matrix and for the list.</figcaption>
+      </figure>
+      <p>Try the <strong>Dense</strong> preset and ask <em>List u’s neighbours</em>, then the <strong>Sparse</strong> preset. On the sparse graph the matrix reads mostly zeros; on the dense one it wastes almost nothing. Then ask <em>Is u–v an edge?</em> and compare: the matrix always answers in one read.</p>
+    </section>
+
+    <!-- ============================================================ 7. COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>The lab already hints at the trade-off. Memory shows it most clearly. A matrix stores every possible pair: <strong>V²</strong> cells. A list stores only real edges: about <strong>V + E</strong> cells.</p>
+      <p>Drag the sliders. With a few friends per vertex the list stays tiny while the matrix explodes. Only when nearly every pair is linked do the two curves meet.</p>
+      <figure class="fig wide" id="fig-memory">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Memory as the graph grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar g25-toolbar"><div data-slider-d style="flex: 1 1 240px"></div><div data-slider-n style="flex: 1 1 240px"></div><div data-log></div></div>
+        <div class="fig__stage fig__stage--scroll" data-chart style="--stage-min: 520px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a line chart of memory cells against the number of vertices. The matrix curve rises as V squared. The list curve for a graph where each vertex has a few friends rises almost in a straight line, far below it. The list curve for a dense graph lies on top of the matrix curve.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Why this decides real systems</p>
+        <p>A network of a billion people with 150 friends each needs about 1.5 × 10¹¹ list entries. As a matrix it would need 10¹⁸ cells. One of those fits on a cluster; the other fits nowhere.</p>
+      </aside>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Operation</th><th scope="col" class="num">Adjacency matrix</th><th scope="col" class="num">Adjacency list</th><th scope="col" class="num">Edge list</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Memory</th><td class="num"><span class="big-o" data-o="n2">V²</span></td><td class="num"><span class="big-o" data-o="n">V + E</span></td><td class="num"><span class="big-o" data-o="n">E</span></td></tr>
+            <tr><th scope="row">Is u–v an edge? (worst case)</th><td class="num"><span class="big-o" data-o="1">1</span></td><td class="num"><span class="big-o" data-o="n">deg(u)</span></td><td class="num"><span class="big-o" data-o="n">E</span></td></tr>
+            <tr><th scope="row">List the neighbours of u</th><td class="num"><span class="big-o" data-o="n">V</span></td><td class="num"><span class="big-o" data-o="n">deg(u)</span></td><td class="num"><span class="big-o" data-o="n">E</span></td></tr>
+            <tr><th scope="row">Add an edge</th><td class="num"><span class="big-o" data-o="1">1</span></td><td class="num"><span class="big-o" data-o="1">1</span></td><td class="num"><span class="big-o" data-o="1">1</span></td></tr>
+            <tr><th scope="row">Remove an edge</th><td class="num"><span class="big-o" data-o="1">1</span></td><td class="num"><span class="big-o" data-o="n">deg(u)</span></td><td class="num"><span class="big-o" data-o="n">E</span></td></tr>
+            <tr><th scope="row">Visit every edge</th><td class="num"><span class="big-o" data-o="n2">V²</span></td><td class="num"><span class="big-o" data-o="n">V + E</span></td><td class="num"><span class="big-o" data-o="n">E</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Here <em>deg(u)</em> is the degree of the vertex you ask about, at most V − 1. “Worst case” means the entry is last in its list or absent. In a sparse graph, where E is about V, the list wins on memory and on “visit every edge”. The matrix wins on “is u–v an edge?”.</p>
+      <details class="accordion">
+        <summary>Why V + E, and not just E?</summary>
+        <div class="accordion__body"><p>Every vertex needs a list head, even a vertex with no edges, so that adds V. Every undirected edge appears in two lists, so the entries add up to 2E. In big-O terms both are the same as V + E, but drawing them shows why an undirected graph with 5 edges has 10 entries.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why is a dense graph no worse in a matrix?</summary>
+        <div class="accordion__body"><p>A graph with E close to V² fills most of the table, so the matrix wastes little. The list then holds about V² entries too, plus pointer overhead. With V small you also get the one-read edge check, so the matrix can be the better choice.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ 8. DECISION DIAGRAM -->
+    <section id="choose">
+      <h2 data-toc="Matrix or list?">Matrix or list? A decision diagram</h2>
+      <p>You now have enough to choose. Answer the questions yourself, or press a scenario and watch the diagram decide.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which representation should I use?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="btn-row" data-scenarios></div><button type="button" class="btn btn--ghost btn--sm" data-reset>Start over</button></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <p class="fig__caption" data-result aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a decision tree. If the graph is too big or regular to store, use an implicit graph. If you only scan all edges, use an edge list. If it is dense and small, use a matrix. If you mostly ask whether two given vertices are linked, use a matrix or hash set. Otherwise use an adjacency list.</figcaption>
+      </figure>
+      <p>Most of the time you land on the last box. Adjacency lists are the default for BFS, DFS and shortest paths, which walk a vertex’s neighbours over and over. The next lessons all assume them.</p>
+    </section>
+
+    <!-- ============================================================ 9. IMPLICIT GRAPHS -->
+    <section id="implicit">
+      <h2 data-toc="Graphs you never store">Graphs you never store</h2>
+      <p>Some graphs are too big, or too regular, to write down. A maze on a grid has thousands of cells, yet you never need a list of edges. A cell’s neighbours are the four cells around it, unless there is a wall.</p>
+      <p>Click a cell to ask for its neighbours, or press <em>Wander</em> and watch a walker move from vertex to vertex. Paint walls and the graph changes, but nothing is stored: one small function <em>is</em> the graph.</p>
+      <figure class="fig wide" id="fig-implicit">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A grid is a graph in disguise</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar g25-toolbar"><div data-mode></div><div data-diag></div><div class="btn-row" data-presets></div><button type="button" class="btn btn--soft btn--sm" data-wander aria-pressed="false">Wander</button></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a maze drawn as a grid. Selecting a cell lights its open neighbours and draws an arrow to each. The counters show how many vertices and edges the maze defines and that zero edges are stored.</figcaption>
+      </figure>
+      <pre class="g25-code" data-code-block-host id="code-implicit"></pre>
+      <p>The same trick describes puzzle games and chess: each <em>position</em> is a vertex, each legal move an edge, and the graph is far too big to build. Algorithms only ever ask “what are the neighbours of this one?”, which is why every graph algorithm is written against that single question.</p>
+    </section>
+
+    <!-- ============================================================ 10. SPECIAL GRAPHS -->
+    <section id="special">
+      <h2 data-toc="Special graphs">A gallery of special graphs</h2>
+      <p>Some shapes turn up so often that they have names. Pick one: the same six vertices glide into a new arrangement, and the chips below count vertices, edges, density and cycles.</p>
+      <figure class="fig wide" id="fig-gallery">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Six vertices, five shapes</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="g25-chips" data-facts></div>
+        <figcaption class="fig__foot">Text alternative: six labelled vertices rearranged as a tree with five edges, a ring, a complete graph with fifteen edges, a directed acyclic graph, and a bipartite graph with two columns.</figcaption>
+      </figure>
+      <p>How do you <em>test</em> whether a graph is bipartite? Give every vertex one of two colours so that no edge joins two vertices of the same colour. A queue does it: colour the start, then give each neighbour the opposite colour. If you ever meet an edge whose ends match, there is an odd cycle, and no two-colouring exists.</p>
+      <figure class="fig fig--lab wide" id="fig-bicolor">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Two-colouring with a queue</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage" data-stage></div>
+            <div class="g25-queue"><span class="g25-queue__label">Queue</span><div class="g25-queue__chips" data-queue data-empty="empty"></div></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a ring of six vertices is coloured blue and orange alternately, and slides into two columns. With an extra edge that makes a triangle, the colouring fails when two neighbours turn out to have the same colour.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Odd cycles are the only obstacle</p>
+        <p>A graph is bipartite exactly when it has no cycle of odd length. Even rings alternate colours perfectly; a triangle cannot, because the third vertex is a neighbour of both colours. Trees never have cycles, so every tree is bipartite.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 11. VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The same two structures stretch to cover every kind of edge. Change what a matrix cell holds, and the picture changes with it.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="w">Weighted</button>
+          <button data-tab="d">Directed</button>
+          <button data-tab="m">Parallel edges and loops</button>
+          <button data-tab="s">Hash-set neighbours</button>
+        </div>
+        <div data-tab-panel="w"><div class="split"><div class="g25-minipair"><figure class="mini"><div class="mini__stage" data-mini="w-g"></div><figcaption>Edges carry numbers.</figcaption></figure><figure class="mini"><div class="mini__stage" data-mini="w-m"></div><figcaption>Cells hold the weight; ∞ means no edge.</figcaption></figure></div><div><p>Store the weight instead of a 1. Pick a marker for “no edge” that no real weight can equal: infinity works for distances, and <code>null</code> works when weights can be zero or negative. In a list each entry becomes a pair (neighbour, weight).</p><pre data-code-block="w"></pre></div></div></div>
+        <div data-tab-panel="d"><div class="split"><div class="g25-minipair"><figure class="mini"><div class="mini__stage" data-mini="d-g"></div><figcaption>Arrows go one way.</figcaption></figure><figure class="mini"><div class="mini__stage" data-mini="d-m"></div><figcaption>Not symmetric: rows are out-edges.</figcaption></figure></div><div><p>A directed edge fills one cell only, so <code>M[u][v]</code> and <code>M[v][u]</code> are independent. Row u lists where u points; column u lists who points at u. A list stores out-neighbours, and finding in-neighbours means scanning everything, or keeping a second list.</p><pre data-code-block="d"></pre></div></div></div>
+        <div data-tab-panel="m"><div class="split"><div class="g25-minipair"><figure class="mini"><div class="mini__stage" data-mini="m-g"></div><figcaption>Two bridges between A and B.</figcaption></figure><figure class="mini"><div class="mini__stage" data-mini="m-m"></div><figcaption>The cell counts them: 2.</figcaption></figure></div><div><p>Königsberg had parallel edges: two bridges joined the same pair of banks. A matrix stores a <em>count</em>; a list repeats the neighbour. A self-loop is an edge from a vertex to itself: cell <code>M[v][v]</code>, and it adds 2 to that vertex’s degree.</p><pre data-code-block="m"></pre></div></div></div>
+        <div data-tab-panel="s"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="s-l"></div><figcaption>Each row can be a set instead of a list.</figcaption></figure><div><p>Replace every neighbour list by a hash set. Now “is u–v an edge?” is expected constant time, like the matrix, while memory stays V + E. The price is a little overhead per entry and no guaranteed order. This is the usual choice when both questions matter.</p><pre data-code-block="s"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 12. CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <figure class="fig" id="fig-quizdeg">
+        <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Find the busiest vertex</h3></div></header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: a graph with six vertices A to F and seven edges. D touches four edges, B, C and E touch three, A and F touch one.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-degree"></div>
+      <figure class="fig wide" id="fig-quizrow">
+        <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Fill in row B</h3></div></header>
+        <div class="g25-builder g25-builder--quiz">
+          <div class="g25-builder__edit"><div class="fig__stage fig__stage--plain" data-stage></div></div>
+          <div class="g25-builder__views"><div class="g25-pane"><p class="g25-pane__title">Adjacency matrix (row B hidden)</p><div class="g25-matrixhost" data-matrix></div></div></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a graph with edges A–B, A–C, B–C, B–E, C–D and D–E next to its adjacency matrix, whose row B is hidden.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-row"></div>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-social"></div>
+        <div class="quiz" id="quiz-handshake"></div>
+        <div class="quiz" id="quiz-symmetric"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 13. SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Graphs &amp; representations</p></div>
+          <div class="cluster"><span class="chip chip--sm">G = (V, E)</span><span class="chip chip--sm">Σ degrees = 2E</span><span class="big-o big-o--lg" data-o="n">V + E</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 14. HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1735<small>presented</small></div>
+        <p class="history__people">Leonhard Euler<span>St Petersburg Academy</span></p>
+        <div class="history__body">
+          <p>Graph theory began with a walking puzzle. On 26 August 1735 Euler showed the St Petersburg Academy that no stroll through Königsberg crosses each of its seven bridges exactly once. He reduced the city to four land masses and the bridges between them, and noticed that a walk using every bridge once needs zero or two land masses touching an odd number of bridges. In Königsberg all four did.</p>
+          <p>The word “graph” for these diagrams came much later, from J. J. Sylvester in 1878, and the first textbook, by Dénes Kőnig, appeared in 1936.</p>
+        </div>
+        <p class="history__source">Source: L. Euler, “Solutio problematis ad geometriam situs pertinentis”, <em>Commentarii Academiae Scientiarum Petropolitanae</em> 8 (printed 1741).</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 15. PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Busiest vertex from a matrix</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given the adjacency matrix of an undirected graph, return the vertex of largest degree. How many cells do you read, and could an adjacency list do it faster?</p></li>
+        <li><div class="practice__title">Reverse a directed graph</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given adjacency lists for a directed graph, build the lists for the graph with every edge reversed, in O(V + E) time.</p></li>
+        <li><div class="practice__title">Is it a tree?</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">An undirected graph is a tree when it is connected and has no cycle. Show that it is enough to check that it is connected and that E = V − 1.</p></li>
+        <li><div class="practice__title">Find the celebrity</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">In a directed graph on n vertices, a celebrity is known by everyone (in-degree n − 1) and knows nobody (out-degree 0). With the adjacency matrix, find the celebrity, or report none, reading only O(n) cells.</p></li>
+        <li><div class="practice__title">Edges of a grid</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">An open R × C grid has moves up, down, left and right. How many edges does its graph have? Then add diagonals and count again. Would you store either as an adjacency list?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-11-graphs-and-their-traversals.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Graphs and their traversals</span><span class="deeper__text" style="display:block">The long-form study: representations, traversal invariants, proofs and edge cases.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

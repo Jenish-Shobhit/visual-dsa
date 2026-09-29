@@ -551,10 +551,10 @@
       var enterCount = 0;
       list.forEach(function (x) {
         var e = x.e, t;
-        if (x.incoming && e.stage === 'input') t = { x: G.input.x + G.input.w / 2, y: G.input.y + G.input.h / 2 + 6, w: G.entryW, h: G.boxH };
+        if (x.incoming && !G.showHash && e.stage !== 'bucket') t = { x: G.entryX(0, 0), y: G.bucketsTop - 14, w: G.entryW, h: G.boxH };
+        else if (x.incoming && e.stage === 'input') t = { x: G.input.x + G.input.w / 2, y: G.input.y + G.input.h / 2 + 6, w: G.entryW, h: G.boxH };
         else if (x.incoming && e.stage === 'hash') t = { x: G.hash.x + G.hash.w / 2, y: G.hash.y + G.hash.h / 2 + 1, w: G.entryW, h: G.boxH };
         else t = { x: G.entryX(e.bucket, e.pos), y: G.rowY(e.bucket), w: G.entryW, h: G.boxH };
-        if (x.incoming && !G.showHash && e.stage !== 'bucket') t = { x: G.entryX(0, 0), y: G.bucketsTop - 14, w: G.entryW, h: G.boxH };
         t.o = 1; t.s = 1;
         var rec = S.entries.use(e.id, buildEntry);
         var wasHashing = !rec.isNew && rec.data && rec.data.incoming && rec.data.stage === 'hash';

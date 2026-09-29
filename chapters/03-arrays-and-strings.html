@@ -6,7 +6,7 @@
   <meta name="description" content="Understand arrays and strings from indices and memory layout to UTF-16, with a custom-input trace.">
   <meta name="theme-color" content="#132235">
   <title>Arrays and strings · Visual DSA</title>
-  <link rel="stylesheet" href="../css/atlas.css?v=20260928">
+  <link rel="stylesheet" href="../css/atlas.css?v=book2">
   <style>
     .array-modes,.array-inputs{display:flex;gap:.55rem;flex-wrap:wrap;align-items:end;margin:0 0 1rem}
     .array-modes button,.array-inputs button{min-height:2.5rem;padding:.5rem .85rem;border:1px solid #172a2a;background:transparent;color:#172a2a;cursor:pointer}
@@ -41,24 +41,30 @@
     .array-flow{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:1rem 0}
     .array-flow span{border:1px solid #a9b9b4;padding:.4rem .65rem;font:700 .84rem ui-monospace,SFMono-Regular,Consolas,monospace}
     .array-flow b{color:#e86a33}
+    .prediction-options{display:flex;gap:.5rem;flex-wrap:wrap;margin:.7rem 0}
+    .prediction button{min-height:2.5rem;padding:.5rem .8rem;border:1px solid #172a2a;background:transparent;color:#172a2a;cursor:pointer}
+    .prediction button:hover{background:#172a2a;color:#fff}
+    .prediction-feedback{min-height:1.8rem;font-weight:700}
     @media(max-width:700px){.array-stage{grid-template-columns:1fr}.array-code{font-size:.8rem}.array-cell{min-width:2.8rem;flex-basis:2.8rem}.array-stat strong{font-size:1.1rem}}
   </style>
-<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
+<script src="../js/catalogue.js?v=book2" defer></script><script src="../js/site-shell.js?v=book2" defer></script></head>
 <body>
   <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Foundations / Sequences</span></div></header>
   <main class="site">
     <section class="chapter-hero grid">
       <p class="eyebrow">The next idea · After references</p>
       <h1>Arrays<br>and strings.</h1>
-      <p class="lede">One name can lead to many values. An index says which position you mean.</p>
-      <p class="read-time">About 11 minutes · Edit the array or text in the figure</p>
+      <p class="lede">A machine cannot hold “the scores” as a thought. Give it an ordered row and a precise place to look.</p>
+      <p class="read-time">About 11 minutes · Predict, then edit the array or text in the figure</p>
     </section>
 
+    <section class="prediction" aria-labelledby="array-first-prediction"><div class="section-head grid"><span class="number">PREDICT / 01</span><h2 id="array-first-prediction">Which box does this name?</h2></div><div class="grid"><div class="prose"><p>For <code>scores = [4, 7, 2]</code>, what should <code>scores[2]</code> produce? Make a commitment, then test it in the figure below.</p><div class="prediction-options" role="group" aria-label="Predict the value at index 2"><button type="button" data-array-predict="4">4</button><button type="button" data-array-predict="7">7</button><button type="button" data-array-predict="2">2</button></div><p class="prediction-feedback" data-array-feedback aria-live="polite"></p></div></div></section>
+
     <div class="grid"><article class="prose">
-      <p>Suppose you have three scores: 4, 7, and 2. Three separate names can hold them, but a program that must visit <em>every</em> score would need to know every name. Put them into one ordered collection instead:</p>
+      <p>People invent representations when a repeated job becomes unmanageable with a separate name for every detail. Suppose you have three scores: 4, 7, and 2. Three separate names can hold them, but a program that must visit <em>every</em> score would need to know every name. Put them into one ordered collection instead:</p>
       <div class="example"><pre>let scores = [4, 7, 2];
 show(scores[1]);  // 7</pre></div>
-      <p>The collection is an <em>array</em>. Its positions are numbered <code>0, 1, 2</code>, so <code>scores[1]</code> means the value in its second position. The number in brackets is an <em>index</em>. Think of it as an offset: index 0 is zero steps from the beginning, index 1 is one step, and index 2 is two steps. That is why counting starts at zero.</p>
+      <p>The collection is an <em>array</em>. Its positions are numbered <code>0, 1, 2</code>, so <code>scores[1]</code> means the value in its second position. The number in brackets is an <em>index</em>. Think of it as instructions to move from the beginning: index 0 means take zero steps, index 1 means take one step, and index 2 means take two steps. That is why counting starts at zero.</p>
       <p>There are three items, so <code>scores.length</code> is 3. The last valid index is <code>length - 1</code>, which is 2 here. In JavaScript, reading <code>scores[3]</code> gives <code>undefined</code>; it does not wrap back to the start. Other languages may reject an out-of-range read instead. Either way, position 3 is not a fourth item.</p>
       <p>From the last lesson, <code>scores</code> holds a reference to the collection. The collection has its own identity. Assigning <code>scores[1] = 9</code> changes one position in that shared collection. The reference in <code>scores</code> still leads to the same array, now <code>[4, 9, 2]</code>.</p>
 
@@ -78,7 +84,7 @@ show(scores[1]);  // 7</pre></div>
         <div class="figure-panel"><div class="array-stage"><div><h3>Instructions</h3><ol class="array-code" data-code aria-label="Sequence scan program"></ol></div><div class="array-memory"><h3 data-memory-heading>Positions in the model</h3><div class="array-cells" data-cells aria-label="Indexed positions"></div><div class="array-stats"><div class="array-stat"><small>Index i</small><strong data-index>0</strong></div><div class="array-stat"><small data-primary-name>Running total</small><strong data-primary>0</strong></div><div class="array-stat"><small data-secondary-name>Address</small><strong data-secondary>—</strong></div></div><p class="array-model-note" data-model-note>Addresses use an illustrative 4-byte cell model; JavaScript does not expose these addresses.</p></div></div></div>
         <p class="figure-caption" data-caption aria-live="polite"></p>
         <div class="figure-controls"><button type="button" data-prev>← Previous</button><button type="button" data-next>Next →</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div>
-        <p class="figure-hint">Change the input, then trace each read. Use arrow keys while the figure is active.</p>
+        <p class="figure-hint">Experiment: enter <code>4, 7, 2</code>, advance until index 2 is read, then test index 3. Use arrow keys while the figure is active.</p>
       </div>
     </section>
 
@@ -208,6 +214,7 @@ show(total);  // 13</pre></div>
       });});
       document.getElementById('sequence-apply').addEventListener('click',apply);
       [arrayInput,textInput].forEach(function(input){input.addEventListener('keydown',function(event){if(event.key==='Enter'){event.preventDefault();apply();}});input.addEventListener('input',function(){error.textContent='';});});
+      document.querySelectorAll('[data-array-predict]').forEach(function(button){button.addEventListener('click',function(){document.querySelector('[data-array-feedback]').textContent=button.dataset.arrayPredict==='2'?'Yes. Index 2 means two steps from the first position: the third box contains 2.':'Start at index 0, then count steps: index 2 lands on the third box, whose value is 2.';});});
     }());
   </script>
 </body>

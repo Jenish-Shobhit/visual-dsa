@@ -6,7 +6,7 @@
   <meta name="description" content="Learn how a program chooses a path, repeats work, and knows when to stop.">
   <meta name="theme-color" content="#132235">
   <title>Decisions and loops · Visual DSA</title>
-  <link rel="stylesheet" href="../css/atlas.css?v=20260928">
+  <link rel="stylesheet" href="../css/atlas.css?v=book2">
   <style>
     .control-lab{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem;align-items:start}
     .control-lab>div{min-width:0}
@@ -34,7 +34,7 @@
     .prediction-feedback{min-height:1.8rem;font-weight:700}.trace-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem;margin:1rem 0 1.4rem}.trace-strip div{border:1px solid #bcc8c4;padding:.55rem;background:#fff;font:.78rem/1.4 ui-monospace,SFMono-Regular,Consolas,monospace}.trace-strip b{display:block;color:#637174;font:700 .65rem/1.3 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}.control-check{border-left:4px solid var(--green);padding:14px 17px;background:#eff8f2;margin:1.4rem 0}.answer{grid-column:4/span 7;margin:14px 0;padding:12px 15px;border:1px solid var(--line);background:var(--white)}.answer summary{cursor:pointer;font-weight:800}.answer p{margin:.7rem 0 .1rem}
     @media(max-width:700px){.control-lab{grid-template-columns:1fr}.control-code{font-size:.8rem}.answer{grid-column:1/-1}.trace-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
   </style>
-<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
+<script src="../js/catalogue.js?v=book2" defer></script><script src="../js/site-shell.js?v=book2" defer></script></head>
 <body>
   <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Foundations / 04</span></div></header>
   <main class="site">
@@ -46,13 +46,13 @@
     </section>
 
     <div class="grid"><article class="prose">
-      <p>Suppose you have three tickets to hand out. You can write an instruction to hand out one ticket. But how should a program repeat that action exactly three times, then stop? The answer needs only two new tools: a <em>condition</em> that can be true or false, and a way to revisit an instruction.</p>
+      <p>Suppose you have three tickets to hand out. You want a program to show each ticket count as you hand one out, then show <code>0</code> when none remain. Before reading the code, predict the output if you begin with <em>zero</em> tickets: does the program hand one out, or go straight to the final <code>0</code>? Keep that prediction in mind while you trace the instructions.</p>
       <div class="example"><pre>let tickets = 3;
 if (tickets &gt; 0) {
   show(tickets);
 }</pre></div>
       <p>Read the condition aloud: “Is the current value of <code>tickets</code> greater than zero?” With three tickets it is true, so the instruction inside the braces runs and shows <code>3</code>. With zero tickets it is false, so that instruction is skipped. The braces mark the instructions controlled by the decision. We use <code>show</code> as the same simple output command from the first lesson; in JavaScript you would usually use <code>console.log</code>.</p>
-      <p>An <code>if</code> makes a choice <em>once</em>. It does not wait for <code>tickets</code> to change, and it does not return to check again. An <code>else</code> can provide a different path when the condition is false, but exactly one of the two paths runs.</p>
+      <p>An <code>if</code> makes a choice <em>once</em>. It does not wait for <code>tickets</code> to change, and it does not return to check again. An <code>else</code> can provide a different path when the condition is false, but exactly one of the two paths runs. That is enough for one ticket decision; it cannot handle a changing count on its own.</p>
 
       <h2>Let the decision repeat.</h2>
       <p>A <code>while</code> loop returns to its condition after running the body. As long as the condition is true, it enters the body again. Here is the complete ticket program:</p>
@@ -62,7 +62,7 @@ while (tickets &gt; 0) {
   tickets = tickets - 1;
 }
 show(tickets);</pre></div>
-      <p>Before its first test, <code>tickets</code> is 3. The test succeeds, so the program shows 3 and stores 2. Then it goes <em>back</em> to the test. It shows 2, then 1. After subtracting from 1, it stores 0. The next test fails, so it skips the loop body and reaches the final <code>show</code>. The complete output is <code>3, 2, 1, 0</code>.</p>
+      <p>Do the first trip by hand: the test reads <code>3 &gt; 0</code>, so the body shows 3 and changes the stored count to 2. Now pause. The next thing the program does is test <code>2 &gt; 0</code>, not show 2 automatically. Continue the same steps and predict where it exits before opening the figure.</p>
       <p>Notice the order. The loop tests <em>before</em> every trip through the body, including the first. The subtraction changes the value used by the next test. Without it, a start of 3 would leave the condition true forever: an infinite loop. The loop does not “know” that three trips were intended. It simply follows the condition and updates you wrote.</p>
       <div class="trace-strip" aria-label="Condensed trace for a start of three"><div><b>Test</b>3 &gt; 0 → true</div><div><b>Body</b>show 3; store 2</div><div><b>Next trip</b>2 &gt; 0 → true</div><div><b>Exit</b>0 &gt; 0 → false</div></div>
     </article></div>
@@ -86,20 +86,20 @@ show(tickets);</pre></div>
         </div>
         <p class="figure-caption" data-caption aria-live="polite"></p>
         <div class="figure-controls"><button type="button" data-prev>← Previous</button><button type="button" data-next>Next →</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div>
-        <p class="figure-hint">Change the start, then step through the test, body, and exit. Arrows work while this figure is active.</p>
+        <p class="figure-hint">First predict what happens with 0 tickets. Set the start to 0, step through, then try 1 and 3. Watch the active instruction, stored count, and output separately. Arrows work while this figure is active.</p>
       </div>
     </section>
 
     <div class="grid"><article class="prose">
       <h2>What changes, and what stays true?</h2>
-      <p>At the top of each loop trip, the current ticket count is a nonnegative whole number. Each completed trip makes it smaller by exactly one. That gives us two useful facts: the output counts down without skipping a number, and the loop must eventually reach zero. This repeated truth is an early example of a <em>loop invariant</em>. We will learn to use invariants to explain why algorithms work, not merely to watch them work.</p>
-      <p>Try a start of 0 in the figure. The body runs zero times because the first test is already false; the final instruction still shows 0. Try 1 and compare. A boundary input often reveals what the code really says more clearly than an ordinary input does.</p>
+      <p>The figure shows <code>3, 2, 1, 0</code> when you start at 3: three visits to the body, followed by the instruction after the loop. The final 0 is shown <em>outside</em> the loop. At the top of each trip, the count is a positive whole number. Each trip reduces it by one, so it cannot keep passing the test forever. The count stays a nonnegative whole number throughout; that repeated truth is a simple <em>loop invariant</em>.</p>
+      <p>If you tried 0, the first test was false and the body ran zero times. The final instruction still showed 0. Compare that with a start of 1. Changing only the starting value reveals exactly where the loop begins and ends.</p>
       <p>A loop can also count upward. If you start at <code>i = 0</code>, test <code>i &lt; 4</code>, and add one each trip, the body sees <code>0, 1, 2, 3</code>. It never sees 4: the condition is false when <code>i</code> reaches 4. That “one past the last position” boundary will matter when we visit every position in an array.</p>
       <div class="control-check"><strong>Misconception check:</strong> A <code>while</code> condition is not a background monitor. The program reaches the test at a specific point, computes true or false from the state at that moment, and either enters or exits. Any update made in the body is only considered at the next visit to the test.</div>
       <p><strong>Keep the mental picture:</strong> condition → perhaps enter → do one body → update state → return to condition. The condition controls whether another trip begins; it is not an instruction that runs only at the start.</p>
     </article></div>
 
-    <section class="prediction" aria-labelledby="ticket-prediction-title"><div class="section-head grid"><span class="number">PREDICT</span><h2 id="ticket-prediction-title">Test the boundary</h2></div><div class="grid"><div class="prose"><p>If <code>tickets</code> starts at 0, how many times does the <code>while</code> body run?</p><div class="prediction-options" role="group" aria-label="Choose the number of loop trips"><button type="button" data-predict="0">Zero</button><button type="button" data-predict="1">Once</button><button type="button" data-predict="forever">Forever</button></div><p class="prediction-feedback" id="ticket-feedback" aria-live="polite"></p></div></div></section>
+    <section class="prediction" aria-labelledby="ticket-prediction-title"><div class="section-head grid"><span class="number">CHECK</span><h2 id="ticket-prediction-title">Test a new boundary</h2></div><div class="grid"><div class="prose"><p>If the program starts with <code>tickets = 1</code>, what is shown <em>inside</em> the loop, before the final instruction?</p><div class="prediction-options" role="group" aria-label="Choose the output inside the loop"><button type="button" data-predict="1">1</button><button type="button" data-predict="0">0</button><button type="button" data-predict="both">1, then 0</button></div><p class="prediction-feedback" id="ticket-feedback" aria-live="polite"></p></div></div></section>
 
     <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice on paper</h2></div><ol class="grid"><li>Start with <code>n = 4</code>. Trace the output of <code>while (n &gt; 1) { show(n); n = n - 2; }</code>. What is <code>n</code> when the loop ends?</li><li>A loop starts at <code>i = 0</code> and adds 1 each trip. Write a condition that lets the body run exactly five times. List the values of <code>i</code> the body sees.</li><li>The ticket loop accidentally says <code>tickets = tickets + 1</code>. For a start of 2, explain why it does not stop. Give one change that repairs it.</li></ol><div class="grid"><details class="answer"><summary>Reveal worked answers</summary><p><strong>1.</strong> The body sees 4, then 2. It stores 2, then 0; <code>0 &gt; 1</code> is false, so the final <code>n</code> is 0.</p><p><strong>2.</strong> Use <code>i &lt; 5</code>. The five body values are 0, 1, 2, 3, and 4.</p><p><strong>3.</strong> Starting at 2, each trip makes <code>tickets</code> larger, so <code>tickets &gt; 0</code> remains true. Change <code>+</code> to <code>-</code>, or change the loop’s intended state and condition together.</p></details></div></section>
   </main>
@@ -151,8 +151,8 @@ show(tickets);</pre></div>
       });
       input.addEventListener('input',function(){input.setCustomValidity('');});
       document.querySelectorAll('[data-predict]').forEach(function(button){button.addEventListener('click',function(){
-        var right=button.dataset.predict==='0';
-        document.getElementById('ticket-feedback').textContent=right?'Yes. The condition fails before the first trip, so the body is skipped. The final show still runs.':'Try the first condition: is 0 greater than 0? The loop tests before entering.';
+        var right=button.dataset.predict==='1';
+        document.getElementById('ticket-feedback').textContent=right?'Yes. The body shows 1, then stores 0. The next test fails; the 0 comes from the instruction after the loop.':'Trace the active instruction: the body shows the count before subtracting. Where is the instruction that shows 0?';
       });});
     }());
   </script>

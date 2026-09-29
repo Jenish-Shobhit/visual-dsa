@@ -6,10 +6,10 @@
   <meta name="description" content="See what happens when a function is called, returns, and receives a reference to a shared collection.">
   <meta name="theme-color" content="#132235">
   <title>Functions and references · Visual DSA</title>
-  <link rel="stylesheet" href="../css/atlas.css?v=20260928">
+  <link rel="stylesheet" href="../css/atlas.css?v=book2">
   <style>
     .function-modes,.function-inputs{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1rem;align-items:end}
-    .function-modes button,.function-inputs button,.prediction button{min-height:2.5rem;padding:.5rem .8rem;border:1px solid #172a2a;background:transparent;color:#172a2a;cursor:pointer}
+    .function-modes button,.function-inputs button,.function-predict button{min-height:2.5rem;padding:.5rem .8rem;border:1px solid #172a2a;background:transparent;color:#172a2a;cursor:pointer}
     .function-modes button[aria-pressed="true"]{background:#172a2a;color:#fff}
     .function-inputs label{font-size:.8rem;font-weight:700}
     .function-inputs input{display:block;width:5rem;margin-top:.25rem;padding:.5rem;border:1px solid #84938d;background:#fff;color:#172a2a}
@@ -33,32 +33,27 @@
     .heap-object[data-unreachable="true"]{opacity:.45}
     .function-note{font-size:.8rem;color:#637174;margin:.2rem 0 0}
     .prediction-options{display:flex;gap:.5rem;flex-wrap:wrap;margin:.7rem 0}
-    .prediction-feedback{min-height:1.8rem;font-weight:700}.call-trace{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem;margin:1rem 0 1.35rem}.call-trace div{border:1px solid #bcc8c4;padding:.58rem;background:#fff;font:.78rem/1.45 ui-monospace,SFMono-Regular,Consolas,monospace}.call-trace b{display:block;color:#637174;font:700 .65rem/1.3 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}.function-check{border-left:4px solid var(--green);padding:14px 17px;background:#eff8f2;margin:1.4rem 0}.answer{grid-column:4/span 7;margin:14px 0;padding:12px 15px;border:1px solid var(--line);background:var(--white)}.answer summary{cursor:pointer;font-weight:800}.answer p{margin:.7rem 0 .1rem}
+    .prediction-feedback{min-height:1.4rem;margin:.65rem 0 0;color:var(--muted);font-size:.9rem}.function-predict{border:1px solid var(--line);background:var(--white);padding:1rem 1.2rem;margin:1.4rem 0}.function-predict p{margin:.35rem 0 .65rem}.function-predict button[aria-pressed="true"]{background:var(--ink);color:white}.call-trace{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem;margin:1rem 0 1.35rem}.call-trace div{border:1px solid #bcc8c4;padding:.58rem;background:#fff;font:.78rem/1.45 ui-monospace,SFMono-Regular,Consolas,monospace}.call-trace b{display:block;color:#637174;font:700 .65rem/1.3 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}.function-check{border-left:4px solid var(--green);padding:14px 17px;background:#eff8f2;margin:1.4rem 0}.answer{grid-column:4/span 7;margin:14px 0;padding:12px 15px;border:1px solid var(--line);background:var(--white)}.answer summary{cursor:pointer;font-weight:800}.answer p{margin:.7rem 0 .1rem}
     @media(max-width:700px){.function-stage{grid-template-columns:1fr}.function-code ol{font-size:.8rem}.answer{grid-column:1/-1}.call-trace{grid-template-columns:repeat(2,minmax(0,1fr))}}
   </style>
-<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
+<script src="../js/catalogue.js?v=book2" defer></script><script src="../js/site-shell.js?v=book2" defer></script></head>
 <body>
   <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Foundations / 05</span></div></header>
   <main class="site">
     <section class="chapter-hero grid"><p class="eyebrow">The next idea · After loops</p><h1>Functions<br>and references.</h1><p class="lede">A call pauses one task to do another. What travels into that task matters.</p><p class="read-time">About 10 minutes · Two connected experiments</p></section>
 
     <div class="grid"><article class="prose">
-      <p>The ticket program repeats one action. What if you need the same calculation in several places? Give that task a name. A <em>function</em> is a reusable group of instructions; calling it runs those instructions and then returns to where the call was made.</p>
+      <p>Suppose a ticket desk must double a price for several orders. We could repeat the multiplication wherever we need it, but giving that small job a name lets us call it again. In this example, <code>show</code> displays values:</p>
       <div class="example"><pre>function double(n) {
   return n * 2;
 }
 
 let price = 4;
 let total = double(price);
-show(price);  // 4
-show(total);  // 8</pre></div>
-      <p>Defining <code>double</code> does not run its body. The run begins at <code>double(price)</code>. The expression in parentheses supplies an <em>argument</em>, the current value of <code>price</code>. The function creates a local name, the <em>parameter</em> <code>n</code>, and gives it that value: 4. Inside the function, <code>return n * 2</code> sends 8 back to the waiting call. The caller stores 8 in <code>total</code>.</p>
-      <p>Imagine two work surfaces. The caller has <code>price</code> and <code>total</code>. While the call runs, a fresh surface holds <code>n</code>. The caller pauses; the function uses its own local names. When it returns, that temporary surface disappears and the caller continues. This is a <em>call frame</em>. Later, when functions call themselves, many frames can wait at once.</p>
-      <p>Changing local <code>n</code> does not rewrite <code>price</code>. The argument's numeric value was copied into a new local name. If <code>double</code> omitted <code>return</code>, the call would finish without producing the number 8; in JavaScript its result would be <code>undefined</code>.</p>
-      <div class="call-trace" aria-label="Condensed call trace for double with price four"><div><b>Caller</b>price = 4</div><div><b>Bind</b>n = 4</div><div><b>Return</b>n × 2 = 8</div><div><b>Resume</b>total = 8</div></div>
-
-      <h2>Now share a collection.</h2>
-      <p>A number like 4 fits in a name's value. A collection has its own place in memory. We will study indexed collections fully in the next chapter; for now, read <code>[4, 7]</code> as a two-slot collection and <code>[0]</code> as its first slot. A name can hold a <em>reference</em> that locates that collection. Copying the reference gives another name a route to the <em>same</em> collection.</p>
+show(price, total);</pre></div>
+      <div class="function-predict" data-correct="4, 8"><strong>Predict before tracing</strong><p>After the call, which pair will <code>show</code> display? Choose, then step through the number experiment below.</p><div class="prediction-options" role="group" aria-label="Predict caller values"><button type="button" data-predict="4, 8" aria-pressed="false">4, 8</button><button type="button" data-predict="8, 8" aria-pressed="false">8, 8</button><button type="button" data-predict="4, 4" aria-pressed="false">4, 4</button></div><p class="prediction-feedback" data-feedback aria-live="polite"></p></div>
+      <p>A <em>call</em> pauses the caller at <code>double(price)</code>. The value of <code>price</code> is read, and a new local name <code>n</code> receives that value. <code>return</code> sends a result to the waiting caller, which stores it in <code>total</code>. The caller then continues at <code>show</code>. That is the whole trip to watch in the trace.</p>
+      <p>Now use the same call idea with a collection. Read <code>[4, 7]</code> as a two-item array and <code>[0]</code> as its first item:</p>
       <div class="example"><pre>function touch(items) {
   items[0] = 9;
   items = [1, 2];
@@ -66,8 +61,8 @@ show(total);  // 8</pre></div>
 
 let first = [4, 7];
 touch(first);
-show(first[0]);  // 9</pre></div>
-      <p>The call copies the reference in <code>first</code> into local <code>items</code>. Both names now locate one collection, shown as A1 in the figure. <code>items[0] = 9</code> changes A1 itself, so the caller can see the change through <code>first</code>. Then <code>items = [1, 2]</code> makes a <em>new</em> collection, A2, and changes only the local name to point there. It does not undo the edit to A1, and it does not change where <code>first</code> points.</p>
+show(first[0]);</pre></div>
+      <div class="function-predict" data-correct="9"><strong>Predict before tracing</strong><p>What appears after <code>touch</code> returns? Decide whether each line changes an array or changes a local name.</p><div class="prediction-options" role="group" aria-label="Predict the first item"><button type="button" data-predict="4" aria-pressed="false">4</button><button type="button" data-predict="9" aria-pressed="false">9</button><button type="button" data-predict="1" aria-pressed="false">1</button></div><p class="prediction-feedback" data-feedback aria-live="polite"></p></div>
     </article></div>
 
     <section class="figure grid" id="function-figure" aria-label="Compare a number passed to a function with a shared collection reference">
@@ -86,17 +81,16 @@ show(first[0]);  // 9</pre></div>
     </section>
 
     <div class="grid"><article class="prose">
-      <h2>The distinction that prevents many bugs.</h2>
-      <p>There are two different actions here. <em>Mutating</em> a collection changes the thing at the end of a reference; every name that still reaches it sees the change. <em>Rebinding</em> a name changes which thing that one name reaches. The second action does not move every other name. In JavaScript, arguments are passed as values. For a collection, the value being copied is a reference. Saying “the whole collection was copied” would predict the wrong result.</p>
-      <div class="function-check"><strong>Misconception check:</strong> “JavaScript passes objects by reference.” The precise rule is pass-by-value: the value in this case is a reference. That is why a function can mutate the shared object, yet cannot make the caller’s variable point at a new object by rebinding only its parameter.</div>
-      <p>This memory picture is deliberately simple. A real engine manages objects, addresses, and storage in more complicated ways. A local frame is a language-level account of a call, not a promise that a particular engine uses one physical stack slot for every source variable; optimization can change the layout. The useful contract for ordinary JavaScript code is stable: two names may refer to one mutable object, and assigning a new object to one name does not retarget the other.</p>
-      <p>Try changing <code>First slot</code> and <code>Replace it with</code> in the lab. The exact numbers change, but the relationship does not. The caller's <code>first</code> still points to A1 after <code>touch</code> returns. A2 was created during the call and no surviving name points to it in this example. It becomes eligible for garbage collection, but the language does not promise the exact instant storage is reclaimed.</p>
-      <p>Functions make a program easier to reason about when each has a clear promise: what inputs it reads, what value it returns, and what shared objects it may change. A function like <code>double</code> only returns a value. A function like <code>touch</code> also changes an input object. When you read a call, ask which kind of effect to expect.</p>
+      <h2>Follow the return trip.</h2>
+      <p>Defining <code>double</code> does not run it. At the call, the caller has <code>price = 4</code> and waits for <code>total</code>. The value 4 is copied into local <code>n</code>. The function calculates 8 and <code>return</code> sends it back. The local name is finished; the caller saves 8 in <code>total</code> and continues. That explains the displayed pair: 4, 8.</p>
+      <div class="call-trace" aria-label="Call trace for doubling the price"><div><b>Caller pauses</b>price = 4</div><div><b>Local name</b>n = 4</div><div><b>Return</b>8</div><div><b>Caller resumes</b>total = 8</div></div>
+      <p>In the second call, <code>first</code> contains a reference to array A1. The argument value copied into local <code>items</code> is that reference, so both names reach A1. <code>items[0] = 9</code> edits A1. Then <code>items = [1, 2]</code> creates A2 and makes only the local name reach it. The caller still reaches A1, now <code>[9, 7]</code>, and displays 9.</p>
+      <p>That second line in <code>touch</code> cannot undo the earlier edit. When the function returns, its local name goes away. A2 has no surviving reference in this example and can be reclaimed later; JavaScript does not promise exactly when.</p>
+      <div class="function-check"><strong>Where this model stops.</strong> The caller and local cards describe which names are usable during a call. A JavaScript engine can store or optimize them in different physical places. JavaScript passes argument <em>values</em>; for an array, that value is a reference. This is why the function can edit a shared array but assigning a new array to <code>items</code> does not change the caller's <code>first</code>.</div>
+      <p>A useful function promise says what it reads, what it returns, and what it may change. <code>double</code> returns a new number. <code>touch</code> also changes an array that its caller can see. Later, an algorithm that calls a helper must account for both kinds of effect.</p>
     </article></div>
 
-    <section class="prediction" aria-labelledby="function-prediction-title"><div class="section-head grid"><span class="number">PREDICT</span><h2 id="function-prediction-title">Follow the original reference</h2></div><div class="grid"><div class="prose"><p>For the printed <code>touch</code> program above, what does <code>show(first[0])</code> display after the function returns?</p><div class="prediction-options" role="group" aria-label="Choose the displayed value"><button type="button" data-predict="4">4</button><button type="button" data-predict="9">9</button><button type="button" data-predict="1">1</button></div><p class="prediction-feedback" id="function-feedback" aria-live="polite"></p></div></div></section>
-
-    <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice on paper</h2></div><ol class="grid"><li>Write a function <code>triple(n)</code> that returns three times its input. Trace <code>let x = 2; let y = triple(x);</code>. What does each name hold afterward?</li><li>Suppose <code>a = [2, 5]</code> and <code>b = a</code>. After <code>b[1] = 8</code>, draw the two names and the collection. What is <code>a[1]</code>?</li><li>In <code>touch</code>, move <code>items = [1, 2]</code> before <code>items[0] = 9</code>. Which collection changes now? What will <code>first[0]</code> be?</li></ol><div class="grid"><details class="answer"><summary>Reveal worked answers</summary><p><strong>1.</strong> <code>triple</code> can return <code>n * 3</code>. The call binds local <code>n</code> to 2, returns 6, and leaves the caller with <code>x = 2</code> and <code>y = 6</code>.</p><p><strong>2.</strong> Both names reach the same collection, now <code>[2, 8]</code>, so <code>a[1]</code> is 8.</p><p><strong>3.</strong> The rebinding first makes <code>items</code> reach the new collection. The following write changes that new collection, so the original collection reached by <code>first</code> is still <code>[4, 7]</code>; <code>first[0]</code> is 4.</p></details></div></section>
+    <section class="problems"><div class="section-head grid"><span class="number">TRY</span><h2>Change one step</h2></div><ol class="grid"><li>Call <code>double</code> twice: <code>let x = double(3); let y = double(x);</code>. At the second call, what is the argument? What are <code>x</code> and <code>y</code> afterward?</li><li>In <code>touch</code>, move <code>items = [1, 2]</code> before <code>items[0] = 9</code>. Predict <code>first[0]</code> before revealing the answer. Which array receives the edit?</li><li>Suppose <code>function change(n) { n = 9; return n; }</code> and <code>let x = 4; let y = change(x);</code>. Draw the caller and local names. What do they hold after return?</li></ol><div class="grid"><details class="answer"><summary>Reveal worked answers</summary><p><strong>1.</strong> The first call returns 6, so the second call receives 6 and returns 12. The caller has <code>x = 6</code> and <code>y = 12</code>.</p><p><strong>2.</strong> The local name first switches to new array A2, then edits A2. <code>first</code> still reaches A1, whose first item remains 4.</p><p><strong>3.</strong> The local <code>n</code> starts at 4, changes to 9, and returns 9. The caller's <code>x</code> remains 4; <code>y</code> receives 9.</p></details></div></section>
   </main>
   <footer class="chapter-footer"><div class="site grid"><a class="prev" href="04-decisions-and-loops.html"><small>Previous · Decisions and loops</small>← Choose and repeat</a><a class="next" href="03-arrays-and-strings.html"><small>Next · Arrays and strings</small>Explore the collection →</a></div></footer>
   <script src="../js/figure.js?v=20260928"></script>
@@ -145,7 +139,7 @@ show(first[0]);  // 9</pre></div>
       root.querySelectorAll('[data-mode]').forEach(function(button){button.addEventListener('click',function(){mode=button.dataset.mode;root.querySelectorAll('[data-mode]').forEach(function(b){b.setAttribute('aria-pressed',String(b===button));});root.querySelectorAll('[data-number-input]').forEach(function(el){el.hidden=mode!=='number';});root.querySelectorAll('[data-reference-input]').forEach(function(el){el.hidden=mode!=='reference';});refresh();});});
       document.getElementById('function-apply').addEventListener('click',refresh);
       root.querySelectorAll('input').forEach(function(input){input.addEventListener('input',function(){input.setCustomValidity('');});});
-      document.querySelectorAll('[data-predict]').forEach(function(button){button.addEventListener('click',function(){document.getElementById('function-feedback').textContent=button.dataset.predict==='9'?'Yes. The mutation to A1 remains visible through first; rebinding items later only changes the local name.':'Follow first → A1. A1 was edited to [9, 7]; the later new collection A2 belongs only to local items.';});});
+      document.querySelectorAll('.function-predict').forEach(function(question){question.querySelectorAll('[data-predict]').forEach(function(button){button.addEventListener('click',function(){question.querySelectorAll('[data-predict]').forEach(function(choice){choice.setAttribute('aria-pressed',String(choice===button));});question.querySelector('[data-feedback]').textContent='You chose '+button.dataset.predict+'. Step through the '+(question.dataset.correct==='9'?'shared collection':'number')+' experiment to check it.';});});});
     }());
   </script>
 </body>

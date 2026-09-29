@@ -6,7 +6,7 @@
   <meta name="description" content="Learn to explain why an algorithm is correct and how its work grows, using the largest value in an array.">
   <meta name="theme-color" content="#132235">
   <title>How to reason about an algorithm · Visual DSA</title>
-  <link rel="stylesheet" href="../css/atlas.css?v=20260928">
+  <link rel="stylesheet" href="../css/atlas.css?v=book2">
   <style>
     .reason-inputs{display:flex;align-items:end;gap:.65rem;flex-wrap:wrap;margin:0 0 1rem}
     .reason-inputs label{font-size:.8rem;font-weight:700;min-width:min(100%,18rem)}
@@ -36,14 +36,16 @@
     .prediction-feedback{min-height:1.8rem;font-weight:700}
     @media(max-width:700px){.reason-stage{grid-template-columns:1fr}.reason-code{font-size:.76rem}.reason-cell{min-width:2.35rem}}
   </style>
-<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
+<script src="../js/catalogue.js?v=book2" defer></script><script src="../js/site-shell.js?v=book2" defer></script></head>
 <body>
   <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Foundations / 06</span></div></header>
   <main class="site">
-    <section class="chapter-hero grid"><p class="eyebrow">The next idea · After arrays</p><h1>How to reason<br>about an algorithm.</h1><p class="lede">Watching one run shows what happened. A useful explanation says why it works for every valid input.</p><p class="read-time">About 10 minutes · Test negative and empty inputs</p></section>
+    <section class="chapter-hero grid"><p class="eyebrow">The next idea · After arrays</p><h1>How to reason<br>about an algorithm.</h1><p class="lede">A trace says what happened once. A program needs a small promise that remains true on every step.</p><p class="read-time">About 10 minutes · Predict, experiment, explain, then transfer</p></section>
+
+    <section class="prediction" aria-labelledby="reason-first-prediction"><div class="section-head grid"><span class="number">PREDICT / 01</span><h2 id="reason-first-prediction">What does <code>best</code> mean after two reads?</h2></div><div class="grid"><div class="prose"><p>A scan starts with <code>[3, 8, 5, 9, 4]</code>. It has read 3 and then 8. Before seeing the 5, what must its remembered <code>best</code> be?</p><div class="prediction-options" role="group" aria-label="Predict the best value after two reads"><button type="button" data-predict="3">3</button><button type="button" data-predict="8">8</button><button type="button" data-predict="9">9</button></div><p class="prediction-feedback" aria-live="polite"></p></div></div></section>
 
     <div class="grid"><article class="prose">
-      <p>You have a row of numbers and want the largest. For <code>[3, 8, 5, 9, 4]</code>, your eyes see 9. A program cannot take in the whole row at once. It can inspect one position, remember the best value found so far, and update that memory when it discovers something larger.</p>
+      <p>Control structures were invented because a program needs a way to make the same reliable decision many times without losing its place. You have a row of numbers and want the largest. For <code>[3, 8, 5, 9, 4]</code>, your eyes see 9. A program can inspect one position, remember the best value found so far, and update that memory when it discovers something larger.</p>
       <div class="example"><pre>function largest(values) {
   if (values.length === 0) return undefined;
   let best = values[0];
@@ -55,7 +57,7 @@
   return best;
 }</pre></div>
       <p>There are two boundary choices before the main loop. An empty collection has no largest element, so this function returns <code>undefined</code>. For a nonempty collection, it starts <code>best</code> at the first actual value. The index <code>i</code> begins at 1 because position 0 is already included. At each later position, the program asks whether that value is larger than <code>best</code>, replaces <code>best</code> if needed, and moves to the next index.</p>
-      <p>Trace the sample: start at 3; compare 8 and keep 8; compare 5 and keep 8; compare 9 and keep 9; compare 4 and keep 9. The trace is helpful, but it only checks one row. How can we trust the function on a row we have never seen?</p>
+      <p>Now run the figure as an experiment. Start with the sample, then replace it with <code>-6, -2, -9</code> and then <code>5, 8, 8, 2</code>. Predict the remembered value before advancing a step. The trace helps, but it checks only one row. What lets the same explanation transfer to a row we have never seen?</p>
 
       <h2>A promise that survives every step.</h2>
       <p>Before each comparison, <code>best</code> is the largest value among all positions already visited. This is the <em>loop invariant</em>: a statement that remains true as the loop runs. It is strong enough to explain the result and small enough to check at each step.</p>
@@ -135,7 +137,7 @@
       function apply(){var source=input.value.trim();var values=[];if(source){var tokens=source.split(',');if(tokens.length>8){error.textContent='Use at most eight values so every step stays readable.';return;}for(var i=0;i<tokens.length;i++){var token=tokens[i].trim();if(!/^-?\d+$/.test(token)){error.textContent='Enter whole numbers separated by commas, or leave the field blank.';return;}var value=Number(token);if(value< -20||value>20){error.textContent='Keep each value between −20 and 20.';return;}values.push(value);}}error.textContent='';stepper.setFrames(framesFor(values));}
       document.getElementById('reason-apply').addEventListener('click',apply);
       input.addEventListener('keydown',function(event){if(event.key==='Enter'){event.preventDefault();apply();}});
-      document.querySelectorAll('[data-predict]').forEach(function(button){button.addEventListener('click',function(){document.getElementById('reason-feedback').textContent=button.dataset.predict==='0'?'Yes. Every value is below 0, so the buggy best never changes. It returns a value absent from the row.':'The buggy best starts at 0. No negative input can replace it because none is greater than 0.';});});
+      document.querySelectorAll('[data-predict]').forEach(function(button){button.addEventListener('click',function(){var feedback=button.closest('.prediction').querySelector('.prediction-feedback');if(button.closest('.prediction').getAttribute('aria-labelledby')==='reason-first-prediction'){feedback.textContent=button.dataset.predict==='8'?'Yes. After reading 3 and 8, 8 is the largest value in the visited prefix.':'The scan has only read 3 and 8. Its promise is to remember the largest of those values: 8.';}else{feedback.textContent=button.dataset.predict==='0'?'Yes. Every value is below 0, so the buggy best never changes. It returns a value absent from the row.':'The buggy best starts at 0. No negative input can replace it because none is greater than 0.';}});});
     }());
   </script>
 </body>

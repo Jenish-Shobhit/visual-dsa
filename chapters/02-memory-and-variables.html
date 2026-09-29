@@ -1,27 +1,128 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="See the difference between copying a value and sharing a reference."><meta name="theme-color" content="#132235"><title>Memory and variables · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css?v=20260928"><style>
-.mode-switch{display:flex;gap:7px;margin:0 0 16px}.mode-switch button{padding:9px 14px;border:1px solid var(--ink);border-radius:7px;background:var(--white);font-size:13px;font-weight:800}.mode-switch button[aria-pressed="true"]{background:var(--ink);color:white}.figure-panel svg{min-height:210px}.trace-table{width:100%;border-collapse:collapse;font-size:15px;margin:24px 0}.trace-table th,.trace-table td{text-align:left;padding:10px;border-bottom:1px solid var(--line)}.trace-table th{font-size:12px;text-transform:uppercase;color:var(--muted)}.memory-test{padding:15px 18px;border:1px solid var(--line);border-left:4px solid var(--green);background:#eff8f2;margin:24px 0}.memory-test p{margin:.35rem 0}.answer{grid-column:4/span 7;margin:14px 0;padding:12px 15px;border:1px solid var(--line);background:var(--white)}.answer summary{cursor:pointer;font-weight:800}.answer p{margin:.7rem 0 .1rem}@media(max-width:700px){.answer{grid-column:1/-1}}
-</style><script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head><body>
-<header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">The path / 02 of 17</span></div></header>
-<main class="site"><section class="chapter-hero grid"><p class="eyebrow">02 · After instructions</p><h1>Memory and variables.</h1><p class="lede">A name lets one instruction find a value left by another. What gets copied depends on what the value is.</p><p class="read-time">9 minute lesson · Two memory models to compare</p></section>
-<div class="grid"><div class="prose"><p>Suppose you counted two tickets. You will need that count again later, so you give it a name:</p><div class="example"><pre>tickets = 2
-spare = tickets
-tickets = tickets + 1</pre></div><p>After the first line, <code>tickets</code> holds 2. The second line reads that value and stores it under <code>spare</code>. The third replaces the value under <code>tickets</code> with 3. The final state is <code>tickets = 3</code> and <code>spare = 2</code>.</p><p>A good trace treats each line as a small transaction: <strong>read the right side from the current state, calculate, then write the left side.</strong> Do not mentally change <code>tickets</code> while you are still reading the right side.</p><table class="trace-table"><thead><tr><th>After line</th><th>tickets</th><th>spare</th></tr></thead><tbody><tr><td>Before running</td><td>unset</td><td>unset</td></tr><tr><td><code>tickets = 2</code></td><td>2</td><td>unset</td></tr><tr><td><code>spare = tickets</code></td><td>2</td><td>2</td></tr><tr><td><code>tickets = tickets + 1</code></td><td>3</td><td>2</td></tr></tbody></table><p>Here, copying a number copies its current value. It does not create a permanent connection between the two names.</p><h2>But some values lead somewhere else.</h2><p>Now imagine a list of ticket prices. Two names can refer to the <em>same</em> list. A change made through either name is visible through the other:</p><div class="example"><pre>prices = [4, 7]
-alsoPrices = prices
-alsoPrices[0] = 9
-show(prices[0])  // 9</pre></div><p>The assignment to <code>alsoPrices</code> copies a reference to the list, not a fresh list of numbers. The names are separate; the object they lead to is shared. Changing <code>alsoPrices[0]</code> changes that shared object. But <code>alsoPrices = [1, 2]</code> would give only that name a new list; it would not replace the object that <code>prices</code> still refers to.</p><p>This is the distinction between <em>rebinding a name</em> and <em>mutating an object</em>. It explains many “why did that change too?” bugs. Step through both modes in the figure; notice whether the arrows end at separate values or the same object.</p></div></div>
-<section class="figure grid" id="memory-figure" aria-label="Compare copying a number with sharing a list"><h2 class="figure-title">Figure 02 / Copy or share?</h2><div class="figure-body"><div class="mode-switch" role="group" aria-label="Memory example"><button type="button" id="numbers" aria-pressed="true">Copy a number</button><button type="button" id="objects" aria-pressed="false">Share a list</button></div><div class="figure-panel"><svg id="memory-svg" viewBox="0 0 560 275" role="img" aria-label="Two variable names and their current values or references"></svg></div><p class="figure-caption" data-caption aria-live="polite"></p><div class="figure-controls"><button type="button" data-prev>← Prev</button><button type="button" data-next>Next →</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div><p class="figure-hint">Switch modes, then use arrows to trace each assignment. The arrows in the diagram mean “refers to.”</p></div></section>
-<div class="grid"><div class="prose"><h2>Are variables boxes in real memory?</h2><p>The boxes in the figure are a teaching model. A real machine stores bits at addressed locations, while an operating system normally gives a running program a private <em>virtual</em> address space. Hardware and the operating system translate that view to physical memory when needed. A programming language then maps names and values onto that machine in its own way; an optimizer may keep a value in a register or remove a name entirely.</p><p>That does not weaken the arrow diagram. It answers a different question. For program behavior, draw names separately from objects. For resource use, remember that the process owns address-space mappings, stacks, code, and runtime data as well as the objects your source code names.</p><p>In JavaScript, numbers behave like the first mode: assigning a number to another variable copies that number. Arrays and ordinary objects behave like the second mode: an assignment copies a reference value. Languages differ in syntax and memory management, but the question is portable: <strong>is this a new value, a new reference to one object, or a mutation of an existing object?</strong></p><div class="memory-test"><p><strong>Misconception check:</strong> “A reference is the object’s permanent street address.”</p><p>Not as a portable programming rule. It is a value the language runtime uses to locate an object; a moving garbage collector may relocate that object and update references. Follow the language-level relationship, not an imagined numeric address.</p></div><div class="insight"><strong>The reusable idea:</strong> Draw names separately from objects. For each assignment, decide whether it replaces a name’s value or changes an object that several names may share.</div><h2>Why this matters for algorithms.</h2><p>An algorithm may promise to leave its input unchanged. If it receives a reference to an array and swaps elements in that array, the caller sees the swaps. If it creates a separate copy first, it uses extra time and memory. Later, when we compare “in-place” sorting with sorting that needs a second array, this distinction will be part of the cost.</p><p>Before moving on, try to explain the result of <code>a = [1]</code>, <code>b = a</code>, <code>b = [2]</code>, <code>show(a[0])</code>. The important question is whether the third line changes the old list or points <code>b</code> at a new one. Then compare it with <code>b[0] = 2</code>.</p></div></div>
-<section class="problems"><div class="section-head grid"><span class="number">Try / 03</span><h2>Practice without peeking</h2></div><ol class="grid"><li>Trace <code>a = 5</code>, <code>b = a</code>, <code>a = 9</code>. Write the values of both names after every line and explain why <code>b</code> ends at 5.</li><li>Start with <code>left = 1</code> and <code>right = 2</code>. Write assignments using a third name <code>temp</code> to swap their values. Draw the state after each assignment.</li><li>Trace <code>x = [3]</code>, <code>y = x</code>, <code>y[0] = 8</code>, <code>y = [4]</code>. What does <code>x[0]</code> show after the third and fourth lines? Draw names and objects.</li></ol><div class="grid"><details class="answer"><summary>Reveal worked answers</summary><p><strong>1.</strong> After the copy, both names read 5. Rebinding <code>a</code> to 9 leaves <code>b</code> holding its independent copied number, 5.</p><p><strong>2.</strong> <code>temp = left</code>; <code>left = right</code>; <code>right = temp</code>. The temporary preserves 1 before <code>left</code> is overwritten.</p><p><strong>3.</strong> After <code>y[0] = 8</code>, <code>x[0]</code> is 8 because both names reach the same list. After <code>y = [4]</code>, <code>x[0]</code> remains 8 because only <code>y</code> was rebound.</p></details></div></section>
-</main><footer class="chapter-footer"><div class="site grid"><a class="prev" href="01-what-is-code.html"><small>Previous / 01</small>← What is code?</a><a class="next" href="04-decisions-and-loops.html"><small>Next / 03</small>Decisions and loops →</a></div></footer>
-<script src="../js/figure.js?v=20260928"></script><script>
-(function(){
-  var svg=document.getElementById('memory-svg');
-  var cases={numbers:[{code:'Before running',a:'—',b:'—',caption:'Neither name has a value yet.'},{code:'tickets = 2',a:'2',b:'—',caption:'tickets now has its own number value: 2.'},{code:'spare = tickets',a:'2',b:'2',caption:'Read tickets and copy the number 2 to spare. There are two independent values.'},{code:'tickets = tickets + 1',a:'3',b:'2',caption:'Replace the value named tickets with 3. Spare remains 2.'}],objects:[{code:'Before running',a:'—',b:'—',value:'—',caption:'No list exists yet.'},{code:'prices = [4, 7]',a:'list',b:'—',value:'[4, 7]',caption:'Create one list object. prices refers to it.'},{code:'alsoPrices = prices',a:'list',b:'list',value:'[4, 7]',caption:'Copy the reference. Both names now lead to the same list.'},{code:'alsoPrices[0] = 9',a:'list',b:'list',value:'[9, 7]',caption:'Mutate the shared list through alsoPrices. Reading prices[0] now gives 9.'}]};
-  var mode='numbers';
-  function draw(f){var objects=mode==='objects',labels=objects?['prices','alsoPrices']:['tickets','spare'];var header='<text x="15" y="25" font-size="14" font-weight="700" fill="#172a2a">'+f.code.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</text>';var names=labels.map(function(label,i){var x=15+i*185;return '<rect x="'+x+'" y="65" width="165" height="88" rx="8" fill="#edf1eb" stroke="#c9d2cc"/><text x="'+(x+14)+'" y="91" font-size="13" fill="#647373">'+label+'</text><text x="'+(x+14)+'" y="137" font-size="30" font-weight="700" fill="#2563a6">'+(objects?(f[['a','b'][i]]==='list'?'↘':'—'):f[['a','b'][i]])+'</text>';}).join('');var common=objects?'<path d="M110 150 L230 190 M295 150 L280 190" fill="none" stroke="#e86a33" stroke-width="3"/><rect x="182" y="190" width="192" height="62" rx="8" fill="#e5f1eb" stroke="#27836d"/><text x="200" y="213" font-size="11" fill="#27836d">ONE SHARED LIST</text><text x="200" y="241" font-size="23" font-weight="700">'+f.value+'</text>':'<text x="15" y="210" font-size="15" fill="#647373">The names have separate number values.</text>';if(objects&&f.a==='—')common='<text x="15" y="210" font-size="15" fill="#647373">No object to refer to yet.</text>';if(objects&&f.b==='—'&&f.a==='list')common='<path d="M110 150 L230 190" fill="none" stroke="#e86a33" stroke-width="3"/><rect x="182" y="190" width="192" height="62" rx="8" fill="#e5f1eb" stroke="#27836d"/><text x="200" y="213" font-size="11" fill="#27836d">ONE LIST</text><text x="200" y="241" font-size="23" font-weight="700">'+f.value+'</text>';svg.innerHTML=header+names+common}
-  var player=FigureStepper({root:'#memory-figure',frames:cases.numbers,draw:draw});
-  function change(next){mode=next;document.getElementById('numbers').setAttribute('aria-pressed',String(next==='numbers'));document.getElementById('objects').setAttribute('aria-pressed',String(next==='objects'));player.setFrames(cases[next])}
-  document.getElementById('numbers').addEventListener('click',function(){change('numbers')});document.getElementById('objects').addEventListener('click',function(){change('objects')});
-}());
-</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Predict, trace, and explain how a program keeps values and shares objects.">
+  <meta name="theme-color" content="#132235">
+  <title>Memory and variables · Visual DSA</title>
+  <link rel="stylesheet" href="../css/atlas.css?v=book2">
+  <style>
+    .memory-predict{margin:1.4rem 0;padding:1rem 1.2rem;border:1px solid var(--line);background:var(--white)}
+    .memory-predict p{margin:.35rem 0 .75rem}.memory-predict strong{display:block}
+    .memory-choices,.mode-switch{display:flex;gap:.5rem;flex-wrap:wrap}
+    .memory-choices button,.mode-switch button{padding:.55rem .85rem;border:1px solid var(--ink);background:var(--white);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+    .memory-choices button[aria-pressed="true"],.mode-switch button[aria-pressed="true"]{background:var(--ink);color:white}
+    .memory-predict [data-feedback]{min-height:1.4em;margin:.7rem 0 0;color:var(--muted);font-size:.9rem}
+    .mode-switch{margin-bottom:1rem}.figure-panel svg{min-height:210px}
+    .trace-table{width:100%;border-collapse:collapse;font-size:.94rem;margin:1.4rem 0}
+    .trace-table th,.trace-table td{text-align:left;padding:.65rem;border-bottom:1px solid var(--line)}
+    .trace-table th{font-size:.72rem;text-transform:uppercase;color:var(--muted)}
+    .memory-boundary{border-left:4px solid var(--green);background:#eff8f2;padding:1rem 1.2rem;margin:1.6rem 0}
+    .memory-boundary p{margin:.35rem 0}.answer{grid-column:4/span 7;margin:1rem 0;padding:1rem;border:1px solid var(--line);background:var(--white)}
+    .answer summary{cursor:pointer;font-weight:800}.answer p{margin:.7rem 0 .1rem}
+    @media(max-width:700px){.answer{grid-column:1/-1}}
+  </style>
+  <script src="../js/catalogue.js?v=book2" defer></script>
+  <script src="../js/site-shell.js?v=book2" defer></script>
+</head>
+<body>
+  <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">The path / 02 of 17</span></div></header>
+  <main class="site">
+    <section class="chapter-hero grid">
+      <p class="eyebrow">02 · Keep a result for later</p>
+      <h1>Memory and variables.</h1>
+      <p class="lede">A program needs to remember what happened earlier. Watch what survives when one instruction gives a value to another name.</p>
+      <p class="read-time">About 9 minutes · Predict, then trace two small programs</p>
+    </section>
+
+    <div class="grid"><article class="prose">
+      <p>Imagine counting tickets at a door. You have 2 now, but a later instruction will need that count. A <em>variable</em> gives the current value a name so the program can find it again. In this little program, <code>show</code> displays values:</p>
+      <div class="example"><pre>let tickets = 2;
+let spare = tickets;
+tickets = tickets + 1;
+show(tickets, spare);</pre></div>
+      <div class="memory-predict" data-question="number">
+        <strong>Before tracing: what will appear?</strong>
+        <p>Choose a pair. Think about what the second line saves before the third line runs.</p>
+        <div class="memory-choices" role="group" aria-label="Predict the two numbers"><button type="button" data-choice="3, 2" aria-pressed="false">3, 2</button><button type="button" data-choice="3, 3" aria-pressed="false">3, 3</button><button type="button" data-choice="2, 2" aria-pressed="false">2, 2</button></div>
+        <p data-feedback aria-live="polite"></p>
+      </div>
+      <p>Keep that choice in mind. To trace an assignment, <strong>read the right side using the state you have now, calculate its value, then write that value under the name on the left.</strong> The third line reads 2 before writing 3.</p>
+      <p>Now the count is a collection of two prices. In JavaScript, square brackets create an array, and <code>[0]</code> selects its first item:</p>
+      <div class="example"><pre>let prices = [4, 7];
+let alsoPrices = prices;
+alsoPrices[0] = 9;
+show(prices[0]);</pre></div>
+      <div class="memory-predict" data-question="list">
+        <strong>Before tracing: what will appear?</strong>
+        <p>Does the second line make another array, or another way to reach one array?</p>
+        <div class="memory-choices" role="group" aria-label="Predict the first price"><button type="button" data-choice="4" aria-pressed="false">4</button><button type="button" data-choice="9" aria-pressed="false">9</button><button type="button" data-choice="7" aria-pressed="false">7</button></div>
+        <p data-feedback aria-live="polite"></p>
+      </div>
+    </article></div>
+
+    <section class="figure grid" id="memory-figure" aria-label="Trace the state after each instruction">
+      <h2 class="figure-title">Trace / One line at a time</h2>
+      <div class="figure-body">
+        <div class="mode-switch" role="group" aria-label="Choose a program"><button type="button" id="numbers" aria-pressed="true">Ticket count</button><button type="button" id="objects" aria-pressed="false">Shared prices</button></div>
+        <div class="figure-panel"><svg id="memory-svg" viewBox="0 0 560 275" role="img" aria-label="Variable names and their values, or arrows to a shared array"></svg></div>
+        <p class="figure-caption" data-caption aria-live="polite"></p>
+        <div class="figure-controls"><button type="button" data-prev>← Previous</button><button type="button" data-next>Next →</button><button type="button" data-reset>Reset</button><span class="figure-count" data-count></span></div>
+        <p class="figure-hint">Use Next through each program. Pause after line two: which value, or which object, did it copy?</p>
+      </div>
+    </section>
+
+    <div class="grid"><article class="prose">
+      <h2>What changed?</h2>
+      <p>For the ticket count, the second line copies the number 2. After the last assignment, <code>tickets</code> holds 3 and <code>spare</code> still holds 2. The names do not stay linked. This table is the same trace without pictures:</p>
+      <table class="trace-table"><thead><tr><th>After</th><th>tickets</th><th>spare</th></tr></thead><tbody><tr><td>Start</td><td>unset</td><td>unset</td></tr><tr><td><code>tickets = 2</code></td><td>2</td><td>unset</td></tr><tr><td><code>spare = tickets</code></td><td>2</td><td>2</td></tr><tr><td><code>tickets = tickets + 1</code></td><td>3</td><td>2</td></tr></tbody></table>
+      <p>The price program has a different result because the value copied on line two is a <em>reference</em> to one array. Both names reach that array. <code>alsoPrices[0] = 9</code> changes its first item, so <code>prices[0]</code> is 9 too. No second array was created by <code>alsoPrices = prices</code>.</p>
+      <p>Try changing only the third line to <code>alsoPrices = [9, 7]</code>. Now a new array is created and only <code>alsoPrices</code> is made to reach it. The old array still starts with 4. This is the difference between <em>changing an object</em> and <em>changing what one name refers to</em>.</p>
+      <div class="memory-boundary"><strong>Where the drawing stops.</strong><p>The boxes and arrows describe JavaScript behavior, not literal boxes in a RAM chip. Real memory stores bits at addresses. A JavaScript engine decides how to represent values, may keep some in registers, and may move objects. The rule you can rely on here is that numbers are copied as numbers, while assigning an array copies a reference to the same mutable array.</p></div>
+      <p>This matters when an algorithm says it leaves an input array alone. Editing an array through a second name still changes the caller's array. Making a separate copy first prevents that shared edit, but costs extra memory and work.</p>
+    </article></div>
+
+    <section class="problems"><div class="section-head grid"><span class="number">TRY</span><h2>Transfer the rule</h2></div>
+      <ol class="grid"><li>Trace <code>let a = [1]; let b = a; b = [2]; show(a[0]);</code>. Which array does <code>a</code> still reach?</li><li>Change only <code>b = [2]</code> to <code>b[0] = 2</code>. Predict the new output, then draw the names and arrays.</li><li>Starting with <code>left = 1</code> and <code>right = 2</code>, use a third name <code>temp</code> to swap their values. What would be lost if you wrote <code>left = right</code> first?</li></ol>
+      <div class="grid"><details class="answer"><summary>Reveal worked answers</summary><p><strong>1.</strong> The third line creates a new array and changes only <code>b</code>. <code>a</code> still reaches the original <code>[1]</code>, so the output is 1.</p><p><strong>2.</strong> The new third line edits the one shared array. Both names still reach it, so the output is 2.</p><p><strong>3.</strong> <code>temp = left; left = right; right = temp;</code>. Copying 1 into <code>temp</code> first preserves it before <code>left</code> is overwritten.</p></details></div>
+    </section>
+  </main>
+  <footer class="chapter-footer"><div class="site grid"><a class="prev" href="01-what-is-code.html"><small>Previous / 01</small>← What is code?</a><a class="next" href="04-decisions-and-loops.html"><small>Next / 03</small>Decisions and loops →</a></div></footer>
+  <script src="../js/figure.js?v=20260928"></script>
+  <script>
+    (function(){
+      'use strict';
+      var svg=document.getElementById('memory-svg');
+      var cases={numbers:[
+        {code:'Before running',a:'—',b:'—',caption:'No value has been saved under either name yet.'},
+        {code:'tickets = 2',a:'2',b:'—',caption:'The first instruction saves the number 2 under tickets.'},
+        {code:'spare = tickets',a:'2',b:'2',caption:'Read tickets, then copy its current number into spare. The two names hold independent number values.'},
+        {code:'tickets = tickets + 1',a:'3',b:'2',caption:'Read 2 from tickets, add 1, then replace tickets with 3. Spare still holds 2.'}
+      ],objects:[
+        {code:'Before running',a:'—',b:'—',value:'—',caption:'No array has been created yet.'},
+        {code:'prices = [4, 7]',a:'list',b:'—',value:'[4, 7]',caption:'Create one array, A1. The name prices holds a reference to A1.'},
+        {code:'alsoPrices = prices',a:'list',b:'list',value:'[4, 7]',caption:'Copy the reference into alsoPrices. Both names now reach A1; there is still only one array.'},
+        {code:'alsoPrices[0] = 9',a:'list',b:'list',value:'[9, 7]',caption:'Follow alsoPrices to A1 and change its first item. prices also reaches A1, so prices[0] is 9.'}
+      ]};
+      var mode='numbers';
+      function safe(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+      function draw(f){
+        var objects=mode==='objects',labels=objects?['prices','alsoPrices']:['tickets','spare'];
+        var header='<text x="15" y="25" font-size="14" font-weight="700" fill="#172a2a">'+safe(f.code)+'</text>';
+        var names=labels.map(function(label,i){var x=15+i*185,val=f[i===0?'a':'b'];return '<rect x="'+x+'" y="65" width="165" height="88" rx="8" fill="#edf1eb" stroke="#c9d2cc"/><text x="'+(x+14)+'" y="91" font-size="13" fill="#647373">'+label+'</text><text x="'+(x+14)+'" y="137" font-size="30" font-weight="700" fill="#2563a6">'+(objects?(val==='list'?'↘':'—'):safe(val))+'</text>';}).join('');
+        var array='';
+        if(objects&&f.a==='list'){
+          array='<path d="M110 150 L230 190" fill="none" stroke="#e86a33" stroke-width="3"/>'+(f.b==='list'?'<path d="M295 150 L280 190" fill="none" stroke="#e86a33" stroke-width="3"/>':'')+'<rect x="182" y="190" width="192" height="62" rx="8" fill="#fff3e9" stroke="#e86a33"/><text x="200" y="213" font-size="11" fill="#884019">ONE ARRAY · A1</text><text x="200" y="241" font-size="23" font-weight="700">'+safe(f.value)+'</text>';
+        } else if(!objects){array='<text x="15" y="210" font-size="15" fill="#647373">Each name keeps its own number value.</text>';}
+        svg.innerHTML=header+names+array;
+      }
+      var player=FigureStepper({root:'#memory-figure',frames:cases.numbers,draw:draw});
+      function change(next){mode=next;document.getElementById('numbers').setAttribute('aria-pressed',String(next==='numbers'));document.getElementById('objects').setAttribute('aria-pressed',String(next==='objects'));player.setFrames(cases[next]);}
+      document.getElementById('numbers').addEventListener('click',function(){change('numbers');});
+      document.getElementById('objects').addEventListener('click',function(){change('objects');});
+      document.querySelectorAll('.memory-predict').forEach(function(question){question.querySelectorAll('[data-choice]').forEach(function(button){button.addEventListener('click',function(){question.querySelectorAll('[data-choice]').forEach(function(choice){choice.setAttribute('aria-pressed',String(choice===button));});question.querySelector('[data-feedback]').textContent='You chose '+button.dataset.choice+'. Step through the '+(question.dataset.question==='number'?'ticket count':'shared prices')+' trace to check it.';});});});
+    }());
+  </script>
+</body>
+</html>

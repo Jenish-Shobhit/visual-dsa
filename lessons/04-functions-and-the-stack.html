@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Functions &amp; the call stack · Visual DSA</title>
+<meta name="description" content="What happens when a function is called: frames pushed and popped, return values flying back, and references from variables to objects on the heap, all animated and steppable.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/04-functions-and-the-stack.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/memory.js" defer></script>
+<script src="../js/vdsa/views/callstack.js" defer></script>
+<script src="../js/vdsa/views/stack.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/04-functions-and-the-stack.js" defer></script>
+<script src="../js/lessons/04-functions-and-the-stack-figs.js" defer></script>
+<script src="../js/lessons/04-functions-and-the-stack.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="04-functions-and-the-stack">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Functions &amp; the call stack</h1>
+      <p class="hero__lede">A call pauses the caller, piles a new frame on the stack, and sends one value back. Watch frames come and go, and arrows from variables find their objects on the heap.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">18 min</li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li class="chip" data-icon="prereq">Needs lesson 02: bits and memory</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: a call stack of frames for main, area and multiply grows and shrinks. Return values fly back to the caller, and arrows from variables point at an array on the heap; one arrow swings to a new array and the old one fades."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem: one recipe, many callers</h2>
+      <p>You need the area of a kitchen, then of a hall. Writing <code>w * h</code> twice is easy. Writing it a thousand times is not, so you name the recipe once, as a <strong>function</strong>, and run it wherever you need it.</p>
+      <p>That creates a puzzle. The function is written in one place, but it is used from many. When it finishes, how does it know which line to go back to? Step through the figure and watch the jump.</p>
+      <figure class="fig wide" id="fig-jumps">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">One function, two callers, one note per call</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: a program with function <code>area</code> on lines 1 to 3 and three lines that use it. Line 5 calls area(3, 4); a note “return to line 5” is written and control jumps to line 1. The function computes 12 and jumps back to line 5. Line 6 does the same for area(2, 5), with a note “return to line 6”, and gets 10. Line 7 adds the two results to make 22.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-jump"></div>
+      <p>The destination is not written inside <code>area</code>. Each call leaves a note saying where it came from, and <code>return</code> reads that note. The rest of this lesson is about where those notes live, and what else travels with them.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>You are reading a book on page 42 when the phone rings. Before you answer, you write “page 42” on a note. Halfway through the call, the doorbell rings, so you write “mid-sentence” on a second note and put it on top of the first.</p>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: interruptions and a pile of notes</p>
+        <p>You always finish the <em>newest</em> interruption first, and the note on top tells you where to go back to. Only when the pile is empty are you back to the book.</p>
+      </aside>
+      <figure class="fig" id="fig-notes">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Interruptions pile up; the top note is used first</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: a pile of notes beside what you are doing. Reading (page 42), then a phone call (note “page 42”), then a doorbell (second note “mid-sentence” above the first). The doorbell finishes, the top note is used and removed; the call finishes, the last note is used; you are back at the book.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>Your notes are only a bookmark. A function’s note travels with more: its own private variables. Two calls to the same function each get their own copy, and that copy vanishes when the call ends.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ ANATOMY OF A CALL -->
+    <section id="anatomy">
+      <h2>A call, piece by piece</h2>
+      <p>Four words do most of the work. Pin each to the picture below.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>A <dfn>function definition</dfn> writes the recipe. Nothing runs yet. Its <dfn>parameters</dfn> (<code>w</code>, <code>h</code>) are empty slots. A <dfn>call</dfn> runs it, supplying <dfn>arguments</dfn> (<code>3</code>, <code>4</code>): the actual values. The <dfn>return value</dfn> is what comes back and replaces the call.</p>
+      </aside>
+      <figure class="fig wide" id="fig-args">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Arguments go in, one value comes out</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: the definition <code>function area(w, h) { return w × h; }</code> above the call <code>kitchen = area(3, 4)</code>. The arguments 3 and 4 are copied into the parameter slots w and h by position. The body computes 3 × 4 = 12, and 12 replaces the call, so the line becomes <code>kitchen = 12</code>.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Arguments are <em>copied</em> into parameters. The function works on its own copies, and only the return value comes back out.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE CALL STACK -->
+    <section id="stack">
+      <h2>The call stack remembers who is waiting</h2>
+      <p>The pile of notes in the last figure is the <strong>call stack</strong>, and each note is really a whole <strong>frame</strong>: the call’s parameters, its local variables, and the place to resume.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>A <dfn>frame</dfn> is the private workspace of one call: its parameters, its <dfn>local variables</dfn>, and a <dfn>return address</dfn>. The <dfn>call stack</dfn> is the pile of frames for calls that have started but not finished. Only the top frame runs.</p>
+      </aside>
+      <p>Here <code>main</code> calls <code>hyp2</code>, which calls <code>square</code> twice. Step through and count the frames. The strip on the right is a timeline: every call’s bar sits <em>inside</em> the bar of the call that made it.</p>
+      <figure class="fig fig--lab wide" id="fig-nested">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">main → hyp2 → square, twice</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain" data-stage>
+              <div class="fn-duo fn-duo--nested">
+                <div><p class="fn-panel-label">Call stack · newest on top</p><div data-cs></div></div>
+                <div><p class="fn-panel-label">Timeline · one bar per call</p><div data-timeline></div></div>
+              </div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side"><div data-code></div></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: main’s frame is pushed, then hyp2(3, 4), then square(3), which returns 9 and pops. Then square(4) is pushed and returns 16. hyp2 returns 25 to main, which prints 25. The deepest the stack gets is 3 frames.</figcaption>
+      </figure>
+      <p>Each <code>square</code> call has its own <code>x</code>. The second one reuses the stack space the first one left, but it is a fresh frame with a fresh variable. Calls end in the reverse order they began: last in, first out, exactly the stack of lesson 09.</p>
+    </section>
+
+    <!-- ============================================================ SCOPE -->
+    <section id="scope">
+      <h2>Local scope: who can see what</h2>
+      <p>A frame’s variables are <strong>local</strong>: only code running in that call can read them. Variables written outside every function are <strong>global</strong> and every call can read them. The region where a name works is its <dfn>scope</dfn>.</p>
+      <figure class="fig wide" id="fig-scope">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Scope bubbles: names visible from the running code</h3></div>
+          <div class="fn-legend-note"><span class="fn-key fn-key--yes">visible</span><span class="fn-key fn-key--no">not visible</span></div>
+        </header>
+        <div class="fig__toolbar"><div class="fn-scope__seg"><span class="field-label">Code running in</span><div data-seg></div></div></div>
+        <div class="fig__stage fig__stage--plain fn-scope-stage">
+          <div class="fn-scope">
+            <pre class="fn-scope__src" data-src aria-label="The program"></pre>
+            <div class="fn-scope__world" data-world></div>
+          </div>
+        </div>
+        <p class="fig__caption fn-scope__out" data-out aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a global bubble holds <code>rate</code>, <code>double</code> and <code>main</code>. Inside it, <code>main</code>’s bubble holds <code>x</code> and <code>y</code>, and <code>double</code>’s bubble holds <code>n</code> and <code>result</code>. Code in a function can read its own names and the global names, but not the names inside a sibling function’s bubble, even when that function called it.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the seal is a good thing</p>
+        <p><code>main</code> called <code>double</code>, yet <code>double</code> cannot read <code>main</code>’s <code>x</code>. That is why you can rename a local variable, or reuse <code>n</code> in a hundred functions, without one call disturbing another.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ HEAP + REFERENCES -->
+    <section id="heap">
+      <h2>Numbers in the box, objects on the heap</h2>
+      <p>A number fits inside a variable’s box in the frame. An array can be any length, so it is built in a separate region called the <strong>heap</strong>, and the variable holds only a <strong>reference</strong>: an arrow to it.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>The <dfn>heap</dfn> is memory for objects that outlive the call that made them. A <dfn>reference</dfn> is a value that says <em>where</em> an object is; it is drawn as a dot in the variable and an arrow to the object.</p>
+      </aside>
+      <p>Two tiny programs make the same moves: store, copy, change, print. Predict what the right-hand one prints, then step.</p>
+      <figure class="fig full" id="fig-vvr">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Copy a number, copy a reference</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fn-vvr">
+          <div class="fn-vvr__side">
+            <p class="fn-panel-label">Numbers</p>
+            <div data-code-left></div>
+            <div class="fig__stage fig__stage--plain" data-left></div>
+            <div class="fn-console is-empty" data-out-left><span class="fn-console__label">prints</span><pre class="fn-console__out"></pre></div>
+          </div>
+          <div class="fn-vvr__side">
+            <p class="fn-panel-label">Arrays</p>
+            <div data-code-right></div>
+            <div class="fig__stage fig__stage--plain" data-right></div>
+            <div class="fn-console is-empty" data-out-right><span class="fn-console__label">prints</span><pre class="fn-console__out"></pre></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: on the left, a = 5, then b = a gives a second box holding 5, and b = b + 1 changes only b: a stays 5 and b is 6. On the right, xs = [1, 2] makes one array on the heap; ys = xs makes a second arrow to the same array; ys.push(3) changes the array, and both xs and ys then show [1, 2, 3].</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Assignment always copies what is in the box. For a number, that is the number. For an array, that is the arrow: you get a second name for the <em>same</em> array, which is called <dfn>aliasing</dfn>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ PASSING -->
+    <section id="passing">
+      <h2>What a function can change</h2>
+      <p>A call copies its arguments into parameters, the same way assignment does. So what a function can affect depends on what is in the box it was handed.</p>
+      <figure class="fig fig--lab wide" id="fig-pass">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-title>Pass a number</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div class="fn-console is-empty" data-console><span class="fn-console__label">prints</span><pre class="fn-console__out"></pre></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: three cases. A number is copied, so the function changes only its own copy. An array reference is copied, so pushing through it changes the caller’s array. Rebinding the parameter to a new array moves only the local arrow and leaves the caller’s array alone.</figcaption>
+      </figure>
+      <p>Three rules cover almost every case. A function <strong>cannot</strong> rebind its caller’s variables. It <strong>can</strong> change an object it was handed a reference to. And the only value that always comes back is the one it <strong>returns</strong>.</p>
+      <aside class="callout callout--warn">
+        <p class="callout__title">“Pass by value” or “pass by reference”?</p>
+        <p>JavaScript and Python always pass a <em>copy of the box’s contents</em>. When that content is a reference, the copy still leads to the same object. That is why mutation is visible, yet reassignment is not.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab: trace a whole program</h2>
+      <p>Pick a program and an input, then step through it. Frames push and pop on the left, arrows run from variables to heap objects, and every return value flies back to the variable waiting for it. The code, the variables and the flowchart below follow along.</p>
+      <p>Press <kbd>←</kbd> and <kbd>→</kbd> to step, <kbd>Space</kbd> to play, and <kbd>?</kbd> for all shortcuts. The lab stops to ask you what will happen before it shows you.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Call stack lab: frames, arrows and return values</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar fn-labbar">
+          <div class="fn-labbar__kind"><span class="field-label" id="lab-kind-label">Program</span><div data-kind aria-labelledby="lab-kind-label"></div></div>
+          <div class="fn-labbar__input" data-input></div>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain fig__stage--tall" data-stage></div>
+            <div class="fn-console is-empty fn-console--bar" data-console><span class="fn-console__label">prints</span><pre class="fn-console__out"></pre></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the caption under the figure describes every step in words. Frames appear on the left, newest at the bottom, each with its parameters and locals. Arrays sit on the right with arrows from the variables that refer to them. An array no variable refers to is drawn faded and dashed.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2>What happens on a call, as a flowchart</h2>
+      <p>Every call in the lab followed the same seven moves. This map is wired to the lab above: step the lab and the current box lights up here. A body that reaches another call loops back to the top, which is why calls nest.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The life of one call</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 700px"></div>
+        <figcaption class="fig__foot">Text alternative: a call is reached. 1, evaluate the arguments. 2, push a frame and note where to return. 3, copy the arguments into parameters. 4, run the body. If the next line is another call, go back to step 1 for it. Otherwise, 5, reach return with the value ready; 6, pop the frame so its locals vanish; 7, resume the caller with the value replacing the call. The caller then carries on with its own body.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ WHERE FRAMES LIVE / OVERFLOW -->
+    <section id="memory">
+      <h2>Where frames live, and what happens when they run out</h2>
+      <p>A running program gets a block of address space. The code sits at the bottom, then the globals. The <strong>heap</strong> starts above them and grows <em>up</em>; the <strong>stack</strong> starts at the top and grows <em>down</em>. Between them is free space.</p>
+      <figure class="fig wide" id="fig-layout">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A program’s address space</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar fn-sliders"><div data-preset></div><div data-frames style="flex: 1 1 200px"></div><div data-objs style="flex: 1 1 200px"></div></div>
+        <div class="fn-layout-wrap">
+          <div class="fig__stage fig__stage--plain" data-stage></div>
+          <div class="fn-layout-info" data-info aria-live="polite"></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: from high addresses to low, the stack (growing downward), free space, the heap (growing upward), the globals and the code. Adding calls grows the stack toward the free space; adding objects grows the heap toward it. If the two meet, the stack has overflowed.</figcaption>
+      </figure>
+      <p>The stack’s size is fixed before the program starts. Each call needs a frame, so a function that keeps calling itself uses up the stack. Watch a countdown with and without the line that tells it to stop.</p>
+      <figure class="fig fig--lab wide" id="fig-overflow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Stack overflow: a stack with room for 8 frames</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div class="fn-measure"><button class="btn btn--sm btn--soft" type="button" data-measure>Measure this browser’s limit</button><span data-measure-out aria-live="polite"></span></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div class="fn-console is-empty" data-console><span class="fn-console__label">prints</span><pre class="fn-console__out"></pre></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: <code>countdown(3)</code> with a base case peaks at 4 frames and then unwinds. Without the base case, frames keep piling up: each call prints its n (3, 2, 1, 0, −1 …) and calls again, until the ninth frame does not fit in the eight-frame stack and the program crashes.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Preview of recursion</p>
+        <p>A function that calls itself is <strong>recursion</strong>. It is safe when a <em>base case</em> stops the chain before the stack fills, which is the subject of lesson 12.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>A call is cheap: pushing and popping a frame takes a fixed number of machine steps, whatever the function does. What grows is the <strong>space</strong> the frames occupy, because every call in progress holds one.</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Operation</th><th scope="col">Time</th><th scope="col">Extra space</th><th scope="col">Why</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Make one call and return</th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1">1 frame</span></td><td>Push a frame, bind parameters, pop it. The count does not depend on the data.</td></tr>
+            <tr><th scope="row">Pass a number or a reference</th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td><td>One value is copied, even when it leads to a million-item array.</td></tr>
+            <tr><th scope="row">Copy a whole array of <em>n</em> items</th><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="n"></span></td><td>Every item is copied into a new array on the heap.</td></tr>
+            <tr><th scope="row">Nested calls, <em>d</em> deep</th><td><span class="big-o" data-o="n">O(d) calls</span></td><td><span class="big-o" data-o="n">O(d) frames</span></td><td>Each call in progress keeps its frame until it returns.</td></tr>
+            <tr><th scope="row">A loop counting to <em>n</em></th><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="1"></span></td><td>One frame, reused. The same work as recursion but no stack growth.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Two pictures make the space cost concrete. First, how many frames a chain of nested calls needs, against the roughly ten thousand a stack typically holds. Second, why handing a function a reference beats handing it a copy.</p>
+      <figure class="fig wide" id="fig-cost-depth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Frames needed for n nested calls</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: a line chart. A recursive countdown of n needs n + 1 frames, crossing a typical stack limit of about ten thousand near n = 10,000. A loop needs one frame however large n is. Limits vary by language, machine and frame size.</figcaption>
+      </figure>
+      <figure class="fig wide" id="fig-cost-copy">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Values copied per call: reference or full copy</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 280px"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a line chart of values copied when an array of n items is passed to a function. Copying the whole array costs n; copying a reference costs 1, for every n.</figcaption>
+      </figure>
+      <aside class="callout callout--fun">
+        <p class="callout__title">Fun fact</p>
+        <p>The stack size is a setting, not a law. The main thread of a typical desktop program gets a few megabytes, and a few dozen bytes per frame is enough to fit tens of thousands of frames. Deep recursion on huge inputs is where programs hit the wall.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Everything above adds up to a design habit. A <dfn>pure function</dfn> depends only on its arguments and changes nothing outside itself, so the same call always gives the same answer. A <dfn>side effect</dfn> is any change that outlives the call: mutating an argument, changing a global, printing.</p>
+      <p>Pick a function below and step through it. Watch which arrows and boxes change, and where.</p>
+      <figure class="fig fig--lab wide" id="fig-variants">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-title>Pure</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div class="fn-console is-empty" data-console><span class="fn-console__label">prints</span><pre class="fn-console__out"></pre></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: five small programs. A pure function returns a new array and leaves the caller’s alone. An impure function changes a global, so two identical calls return different values. A defensive copy changes a copy instead of the original. A swap of two numbers does nothing because the parameters are copies. A swap of two array slots works because it changes the shared array.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Rule of thumb</p>
+        <p>Prefer returning a new value. When you must change something a caller handed you, say so in the function’s name and comment. Copy first when the caller’s data must stay safe.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-print"></div>
+        <div class="quiz" id="quiz-depth"></div>
+        <div class="quiz" id="quiz-survive"></div>
+      </div>
+      <figure class="fig wide" id="fig-check-timeline">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The calls of the earlier program, on a timeline</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: four bars. main spans the whole timeline. hyp2(3, 4) sits inside it. Two shorter bars, square(3) and then square(4), sit inside hyp2’s bar one after the other.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-timeline"></div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Functions &amp; the call stack</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="1">O(1) per call</span><span class="chip chip--sm">O(depth) stack space</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1945<small>the stack proposed</small></div>
+        <p class="history__people">Alan Turing<span>ACE report, National Physical Laboratory</span></p>
+        <div class="history__body">
+          <p>Early machines had no call instruction. On Cambridge’s EDSAC, David Wheeler’s trick was for a subroutine to rewrite its own last jump so it returned to whoever called it, which breaks the moment a routine calls itself. Alan Turing had already proposed the fix in 1945: file return addresses in a last-in, first-out list, using routines he named BURY and UNBURY.</p>
+          <p>In 1957 Friedrich Bauer and Klaus Samelson patented the same idea as the <em>Kellerprinzip</em> (“cellar principle”), and by 1960 ALGOL put every call’s local variables in a stack frame.</p>
+        </div>
+        <p class="history__source">Sources: Turing’s ACE report (1945–46); Wilkes, Wheeler and Gill, <em>The Preparation of Programs for an Electronic Digital Computer</em> (1951); Bauer and Samelson’s patent application (30 March 1957); Dijkstra, “Recursive Programming”, <em>Numerische Mathematik</em> 2 (1960).</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Trace by hand</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Draw the stack, frame by frame, for <code>f(2)</code> where <code>f(x) = g(x) + g(x + 1)</code> and <code>g(y) = y * y</code>. What is the deepest the stack gets, and what does <code>f(2)</code> return?</p></li>
+        <li><div class="practice__title">Two names, one array</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given <code>a = [1, 2]; b = a; b = b + [3]</code> in Python, and <code>a = [1, 2]; b = a; b.push(3)</code> in JavaScript, what is <code>a</code> in each case? Draw the arrows to explain the difference.</p></li>
+        <li><div class="practice__title">A swap that works</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Write <code>swap(a, i, j)</code> that exchanges two slots of an array. Then explain, using frames, why <code>swap(x, y)</code> on two numbers cannot work in JavaScript or Python.</p></li>
+        <li><div class="practice__title">How deep can you go?</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">A stack is 8 MB and each frame of your function takes 64 bytes. About how many nested calls fit? Rewrite a function that recurses <em>n</em> times so it uses a loop and needs only one frame.</p></li>
+        <li><div class="practice__title">Deep copy</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Write a function that copies a nested array such as <code>[1, [2, 3], [4, [5]]]</code> so that changing any level of the copy never affects the original. Why does <code>slice()</code> alone not do it?</p></li>
+      </ol>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

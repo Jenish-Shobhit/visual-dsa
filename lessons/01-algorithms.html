@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>What is an algorithm? · Visual DSA</title>
+<meta name="description" content="Be the computer: turn over cards to find the largest, then watch the same precise steps as English, a flowchart and real code. Correctness, termination, and why halving beats counting.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/01-algorithms.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/algos/01-algorithms.js" defer></script>
+<script src="../js/lessons/01-algorithms-views.js" defer></script>
+<script src="../js/lessons/01-algorithms.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="01-algorithms">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ 1. HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">What is an algorithm?</h1>
+      <p class="hero__lede">A list of steps so exact that a machine which understands nothing can follow it, and get the right answer every time.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock" data-fill="minutes"></li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li class="chip" data-icon="prereq">No prerequisites</li>
+      </ul>
+    </div>
+    <div class="hero__stage c1-hero" id="teaser" role="img" aria-label="Animation: seven face-down cards are turned over one at a time, left to right. A best marker hops onto every card that beats all the cards before it, and the largest card glows green at the end."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ 2. THE PROBLEM: BE THE COMPUTER -->
+    <section id="be-the-computer">
+      <h2>Be the computer</h2>
+      <p>Seven cards lie face down. Each hides a number. Your job: find the largest one. Click a card to turn it over.</p>
+      <figure class="fig wide" id="fig-play">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Find the largest card</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar c1-play__bar">
+          <div class="c1-readout" aria-live="polite">
+            <div class="c1-readout__box"><span class="c1-readout__label">Largest so far</span><span class="c1-readout__value" data-best>–</span></div>
+            <div class="c1-readout__box"><span class="c1-readout__label">Cards turned over</span><span class="c1-readout__value" data-flips>0</span></div>
+          </div>
+          <div class="btn-row c1-play__actions">
+            <button type="button" class="btn btn--primary" data-claim disabled>That’s the largest!</button>
+            <button type="button" class="btn btn--soft" data-machine>Let the machine try</button>
+            <button type="button" class="btn btn--ghost" data-deal>Deal new cards</button>
+          </div>
+        </div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption>Click any card. Turn over as few or as many as you like, then press <b>That’s the largest!</b></p>
+        <div class="fig__controls" data-controls hidden></div>
+        <div class="fig__stats c1-compare" data-compare hidden></div>
+        <figcaption class="fig__foot">Cards are buttons: Tab to one and press Enter to turn it over. “Let the machine try” replays the same cards with the machine’s fixed steps, using the player controls.</figcaption>
+      </figure>
+      <p>Did you turn over every card? You had to. A card still face down might hide something bigger, so there is no safe shortcut.</p>
+      <p>Look at what you did. You kept one number in mind, the largest so far. You compared each new card with it. You swapped only when the new card was bigger. That habit is precise enough for a machine to follow.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>An <dfn>algorithm</dfn> is a finite list of precise steps that turns an <em>input</em> (here, seven cards) into an <em>output</em> (the largest number). Anyone, or anything, that follows the steps exactly gets the same answer.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 3. INTUITION: RECIPE VS ALGORITHM -->
+    <section id="precise">
+      <h2 data-toc="Precise steps">Precise enough for a machine</h2>
+      <p>A recipe looks like an algorithm: steps, in order. But a recipe is written for a cook, who fills every gap with experience. A machine has no experience, so every step must say exactly what to do.</p>
+      <p>Press play and watch a robot cook read two versions of the same recipe.</p>
+      <figure class="fig wide" id="fig-recipe">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A robot cook reads a recipe, word for word</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain c1-recipe-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: the vague recipe says “some flour”, “a pinch of salt”, “stir for a while”, “a hot pan” and “cook until done”; the robot asks how much, how long or how hot at each one. The exact recipe gives grams, millilitres, counts, a heat setting and seconds, and the robot finishes.</figcaption>
+      </figure>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: a recipe for someone who knows nothing</p>
+        <p>Write each step so that a stranger who has never cooked, and who takes every word literally, still gets pancakes. That stranger is a computer.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>Even the exact recipe depends on the world: flour and pans vary. Algorithms work on symbols such as numbers, where “exactly” is truly possible: 9 &gt; 5 is true every single time.</p>
+      </aside>
+      <p>Your turn. Here are the card steps from the first figure, in plain English. One step would leave a machine stuck.</p>
+      <div class="c1-steps-quiz" id="ambiguous-steps">
+        <ol class="c1-steplist">
+          <li data-id="s1" data-label="Step 1: Turn over the first card and hold it.">Turn over the first card and hold it.</li>
+          <li data-id="s2" data-label="Step 2: Turn over the next card.">Turn over the next card.</li>
+          <li data-id="s3" data-label="Step 3: If it is bigger than the card you hold, hold it instead.">If it is bigger than the card you hold, hold it instead.</li>
+          <li data-id="s4" data-label="Step 4: Keep going for a while.">Keep going for a while.</li>
+          <li data-id="s5" data-label="Step 5: Say the number on the card you hold.">Say the number on the card you hold.</li>
+        </ol>
+      </div>
+      <div class="quiz" id="quiz-ambiguous"></div>
+    </section>
+
+    <!-- ============================================================ 4. MECHANISM: INPUT → STEPS → OUTPUT -->
+    <section id="input-output">
+      <h2 data-toc="Input and output">Input, steps, output</h2>
+      <p>Every algorithm has the same shape. An <strong>input</strong> goes in, the steps run, an <strong>output</strong> comes out. The steps never change. The input does.</p>
+      <p>Pick an input and watch it go through the machine. Try the negative numbers, and the single card.</p>
+      <figure class="fig wide" id="fig-pipeline">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">One algorithm, many inputs</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="btn-row" data-inputs role="group" aria-label="Choose an input"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="c1-io-log" data-log aria-label="Inputs tried and their outputs"></div>
+        <figcaption class="fig__foot">Text alternative: numbers leave the input tray one at a time and enter a machine labelled “find the largest”. Its window shows the best number so far. At the end the largest number comes out of the output slot.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>An algorithm solves a whole <em>problem</em>, not one example. The problem is “given any list of at least one number, say the largest”. Each list you feed it is one input. The algorithm must work for all of them.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 5. MECHANISM: STATE AND THE NEXT-STEP POINTER -->
+    <section id="state">
+      <h2 data-toc="State">State: where you are, what you know</h2>
+      <p>While an algorithm runs, two things change: <em>which step comes next</em>, and <em>what you know so far</em>. Together they are the <strong>state</strong>.</p>
+      <p>On the left are the six steps. The arrow is the <strong>next-step pointer</strong>: it marks the step running now. On the right is everything else you are keeping track of. Step through with <kbd>→</kbd> and watch one thing change at a time.</p>
+      <figure class="fig wide" id="fig-state">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The state, one step at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain c1-state-stage" data-stage>
+          <ol class="c1-program" data-program aria-label="The six steps"></ol>
+          <div class="c1-state-right">
+            <div class="c1-state-cards" data-cards></div>
+            <dl class="c1-state-box" data-statebox aria-label="Current state"></dl>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">The figure pauses once to ask which step runs next. Text alternative: the caption describes each step in words.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>The <dfn>state</dfn> is everything you would need to write down to pause and carry on later: which step is next, which card you are on, and the best card so far.</p>
+      </aside>
+      <p>That is all “running an algorithm” means: a state, changing one step at a time, until a step says stop. A computer does exactly this, billions of times a second.</p>
+    </section>
+
+    <!-- ============================================================ 6. MECHANISM: THREE BUILDING BLOCKS -->
+    <section id="building-blocks">
+      <h2 data-toc="Building blocks">Three building blocks</h2>
+      <p>Look again at the six steps. Some simply follow each other. Some ask a question and pick a path. One sends you back to repeat. Those three moves are all you need.</p>
+      <div class="mini-row wide c1-blocks" id="blocks">
+        <figure class="mini" data-block="sequence">
+          <div class="mini__stage" role="img" aria-label="Sequence: three boxes in a column, turn over a card, read its number, put it down; a token moves down through them in order."></div>
+          <figcaption><b>Sequence.</b> Do one step, then the next, in order.</figcaption>
+        </figure>
+        <figure class="mini" data-block="choice">
+          <div class="mini__stage" role="img" aria-label="Choice: a diamond asks if the card is bigger than best; the token takes the yes branch to hold it, or the no branch to skip it."></div>
+          <figcaption><b>Choice.</b> Ask a yes-or-no question; take one path. <span class="c1-chip" data-choice-note></span></figcaption>
+        </figure>
+        <figure class="mini" data-block="loop">
+          <div class="mini__stage" role="img" aria-label="Repetition: a diamond asks if cards are left; while yes, the token turns one over and loops back; when none are left, it goes to stop."></div>
+          <figcaption><b>Repetition.</b> Go back and do it again, until a question says stop. <span class="c1-chip" data-loop-note></span></figcaption>
+        </figure>
+      </div>
+      <div class="c1-mini-legend wide" data-legend-for="blocks"></div>
+      <p>Find the largest card uses all three. Click a building block to light up where it appears.</p>
+      <figure class="fig" id="fig-blocks-map">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The six steps, by building block</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain c1-map-stage" data-stage></div>
+        <figcaption class="fig__foot">Steps 1 and 6 run once each, in sequence. Steps 3 and 4 ask questions (choice). Step 2 decides whether to go round again, and step 5 sends you back to it (repetition).</figcaption>
+      </figure>
+      <aside class="callout callout--fun">
+        <p class="callout__title">Only three</p>
+        <p>In 1966 Corrado Böhm and Giuseppe Jacopini proved that sequence, choice and repetition are enough to write any algorithm at all. Any program can be rewritten using only these three moves.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 7. THE LAB -->
+    <section id="lab">
+      <h2 data-toc="The lab">The lab: the same steps in code</h2>
+      <p>Here is the same algorithm in real code. Type your own cards or pick a preset, then press play. The highlighted line is the one running, and the caption says why.</p>
+      <p>Try the edge cases: one card, all equal, all negative. Press <kbd>←</kbd> and <kbd>→</kbd> to step, <kbd>Space</kbd> to play, and <kbd>?</kbd> for every shortcut.</p>
+      <figure class="fig fig--lab wide" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace find-the-largest on your own cards</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses twice to ask you to predict what happens. Text alternative: the caption under the cards describes every step in words.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 8. FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The same steps as a flowchart</h2>
+      <p>A <strong>flowchart</strong> draws the steps as boxes and the order as arrows. A diamond asks a yes-or-no question and has two ways out. Follow the glowing token: it always travels to the step that runs next.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Find the largest, as a map of decisions</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain c1-flow-stage" data-stage>
+          <div class="c1-flow-cards" data-cards></div>
+          <div class="c1-flow-chart" data-chart></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: start; turn over the first card and call it best; if cards are left, turn over the next one; if it is bigger than best, it becomes best; move to the next card and ask again; when no cards are left, say best.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 9. CORRECTNESS AND TERMINATION -->
+    <section id="correct">
+      <h2 data-toc="Correct and finite">Right every time, and it stops</h2>
+      <p>An algorithm must give the right output for <em>every</em> valid input, not only the ones you tried. And it must finish. One wrong answer, or one run that never ends, and it is not a correct algorithm.</p>
+      <p>This test bench runs a version of find-the-largest on six tricky inputs. Switch to a buggy version and see which tests catch it.</p>
+      <figure class="fig wide" id="fig-bench">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A test bench for six inputs</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <pre class="c1-bench__code" data-code-diff></pre>
+        <div class="fig__stage fig__stage--plain c1-bench-stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Each row runs the chosen version on one input and compares its answer with the true largest number. “Never stops” means the loop was still running after 1,000 trips.</figcaption>
+      </figure>
+      <p>The “stops too early” bug passes five of six tests. Tests can prove an algorithm wrong, but never right. To know it is right, you need a reason that covers every input.</p>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the correct version is right</p>
+        <p>After every step, this stays true: <em>best is the largest of the cards turned over so far</em>. It is true after the first card, and each comparison keeps it true. When no cards are left, “so far” means “all of them”.</p>
+      </aside>
+      <p>Why it stops: each trip around the loop turns over one more card, so the count of face-down cards goes down by one every time. Seven cards mean at most six more trips. A loop that forgets to move on never runs out of work.</p>
+      <div class="mini-row wide c1-stops" id="stops">
+        <figure class="mini" data-stop="correct">
+          <div class="mini__stage" role="img" aria-label="Correct version: the pointer moves right one card per trip, the cards-left meter drops from 6 to 0, and the loop stops."></div>
+          <figcaption><b>Makes progress.</b> Cards left: <span class="c1-num" data-left>6</span>. Every trip turns over one more card.</figcaption>
+        </figure>
+        <figure class="mini" data-stop="stuck">
+          <div class="mini__stage" role="img" aria-label="Buggy version: the pointer stays on the same card, four cards stay face down, and the trip counter climbs without end."></div>
+          <figcaption><b>Forgets to move on.</b> Trips: <span class="c1-num" data-trips>0</span>. The pointer never moves, so four cards stay face down forever.</figcaption>
+        </figure>
+      </div>
+      <div class="c1-mini-legend wide" data-legend-for="stops"></div>
+      <div class="quiz" id="quiz-zero-bug"></div>
+    </section>
+
+    <!-- ============================================================ 10. COST: SAME ANSWER, DIFFERENT WORK -->
+    <section id="cost">
+      <h2 data-toc="Different work">Same answer, different work</h2>
+      <p>Two correct algorithms can do very different amounts of work. Play a game: a secret number hides somewhere from 1 to 100. After each guess you hear “higher”, “lower” or “got it”.</p>
+      <p>Player one counts up: 1, 2, 3 and so on. Player two always guesses the middle of what is left, so every answer throws away half. Choose a secret and race them.</p>
+      <figure class="fig wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Guess my number: count up vs halve the range</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="c1-grow"></div><button type="button" class="btn btn--sm" data-random>Random secret</button></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">The race pauses once to ask for halving’s next guess. Text alternative: each lane is a strip of 100 numbers; guessed or ruled-out numbers fade, and the caption reads out both guesses at every step.</figcaption>
+      </figure>
+      <p>One race can be lucky. This chart plays every secret from 1 to 100. Counting up needs as many guesses as the secret itself. Halving never needs more than 7. Click a column to race that secret.</p>
+      <figure class="fig wide" id="fig-bars">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Guesses needed for every secret from 1 to 100</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Averages over all 100 secrets: count-up 50.5 guesses, halving <span data-avg-half>5.8</span>. Keyboard: focus the chart and use <kbd>←</kbd> <kbd>→</kbd> to pick a secret.</figcaption>
+      </figure>
+      <p>Now let the range grow. Halving needs at most 10 guesses for 1 to 1,000 and at most 20 for a million. Counting up can need as many guesses as there are numbers.</p>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Worst-case guesses as the range grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Hover or focus the chart and use the arrow keys to read exact values. The halving line is a staircase: one more guess every time the range doubles.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="table c1-cost-table">
+          <thead><tr><th scope="col">Algorithm</th><th scope="col">What we count</th><th scope="col">Worst case, <em>n</em> items</th><th scope="col">Growth</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Find the largest card</th><td>comparisons</td><td class="num">n − 1 (always)</td><td><span class="big-o" data-o="n"></span></td></tr>
+            <tr><th scope="row">Guess by counting up</th><td>guesses</td><td class="num">n</td><td><span class="big-o" data-o="n"></span></td></tr>
+            <tr><th scope="row">Guess by halving</th><td>guesses</td><td class="num">⌈log₂(n + 1)⌉</td><td><span class="big-o" data-o="logn"></span></td></tr>
+            <tr><th scope="row">Euclid, one square per cut</th><td>cuts</td><td class="num">max(w, h) − 1, for w × 1</td><td><span class="big-o" data-o="n">O(n)</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Lesson 5 turns this habit into a tool called Big-O. For now, the question to ask of any algorithm is: how many steps does it take, and how does that number grow when the input grows?</p>
+      <div class="quiz" id="quiz-halving"></div>
+    </section>
+
+    <!-- ============================================================ 11. EUCLID -->
+    <section id="euclid">
+      <h2 data-toc="Euclid’s algorithm">A 2,300-year-old algorithm</h2>
+      <p>Algorithms are far older than computers. Around 300 BCE, Euclid described one for the <strong>greatest common divisor</strong> (GCD) of two numbers: the largest number that divides both exactly. The GCD of 21 and 12 is 3.</p>
+      <p>It has a picture. Take a <em>w</em> × <em>h</em> rectangle and cut off the biggest square you can. Do it again to the piece that is left. When the leftover piece is itself a square, its side is the GCD.</p>
+      <figure class="fig fig--lab wide" id="fig-euclid">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Euclid’s GCD: cut off squares until a square is left</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Squares of the same size share a colour. At the end, a grid of GCD-sized squares appears over the whole rectangle. The figure pauses once to ask for the next square’s size.</figcaption>
+      </figure>
+      <p>Why does it work? A square tiles a <em>w</em> × <em>h</em> rectangle exactly when its side divides both <em>w</em> and <em>h</em>. Cutting an <em>h</em> × <em>h</em> square off leaves a (<em>w</em> − <em>h</em>) × <em>h</em> piece, and the same squares tile it. So the answer never changes while the rectangle shrinks, and the rectangle cannot shrink forever.</p>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Faster Euclid</p>
+        <p>Try 17 × 1: sixteen thin cuts. Cutting all the same-size squares at once is the same as taking a remainder (17 mod 1 = 0), and that version never needs more than five steps per digit of the smaller number.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 12. VARIATIONS AND PATTERNS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Change what you hold in your hand, and the same left-to-right scan answers new questions. “One pass, one thing in hand” is among the most common patterns in all of programming.</p>
+      <div class="c1-mini-legend wide" data-legend-for="variants"></div>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="min">Smallest card</button>
+          <button data-tab="sum">Total of all cards</button>
+          <button data-tab="count">Count the 7s</button>
+        </div>
+        <div data-tab-panel="min"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="min" role="img" aria-label="Cards scanned left to right; a smallest marker hops to each card smaller than all before it."></div><figcaption>Hold the smallest so far. Flip <code>&gt;</code> to <code>&lt;</code>.</figcaption></figure><div><p>Same scan, one symbol changed. You still compare each card once, so 8 cards take 7 comparisons.</p><pre data-code-block="min"></pre></div></div></div>
+        <div data-tab-panel="sum"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="sum" role="img" aria-label="Cards scanned left to right while a running total grows."></div><figcaption>Hold a running total instead of a card.</figcaption></figure><div><p>Start the total at 0, add each card as you pass it. The total is always the sum of the cards scanned so far, the same kind of promise as “best so far”.</p><pre data-code-block="sum"></pre></div></div></div>
+        <div data-tab-panel="count"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="count" role="img" aria-label="Cards scanned left to right; every 7 lights up and a counter goes up by one."></div><figcaption>Hold a counter; add 1 for every match.</figcaption></figure><div><p>A choice inside the loop decides whether the counter changes. Sequence, choice and repetition, again.</p><pre data-code-block="count"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 13. CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="c1-predict-row" id="predict-row" aria-label="The row of cards for the first question"></div>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-predict"></div>
+        <div class="quiz" id="quiz-which"></div>
+        <div class="quiz" id="quiz-count"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 14. SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">What is an algorithm?</p></div>
+          <div class="cluster"><span class="chip chip--sm">precise</span><span class="chip chip--sm">correct for every input</span><span class="chip chip--sm">always stops</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 15. HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">c. 825<small>the word</small></div>
+        <p class="history__people">Muhammad ibn Musa al-Khwarizmi<span>Baghdad, on calculating with Hindu numerals</span></p>
+        <div class="history__body">
+          <p>The word “algorithm” comes from al-Khwarizmi. His book taught arithmetic with Hindu numerals as step-by-step recipes anyone could follow, and its Latin translation opens “Dixit Algorizmi”: thus spoke al-Khwarizmi.</p>
+          <p>The oldest algorithm still in daily use is older still: Euclid’s, from about 300 BCE. In 1843 Ada Lovelace published a table of steps for Charles Babbage’s unbuilt Analytical Engine. In operation 4 two numbers were swapped: the first known bug.</p>
+          <div class="c1-timeline" id="timeline" role="img" aria-label="Timeline: about 300 BCE, Euclid's GCD; about 825, al-Khwarizmi; 1843, Lovelace's Note G; 1936, Turing makes the idea of an algorithm precise."></div>
+        </div>
+        <p class="history__source">Sources: Euclid, <em>Elements</em>, Book VII, Propositions 1–2; D. E. Knuth, <em>The Art of Computer Programming</em>, Vol. 2, §4.5.2; R. C. Martin, <em>We, Programmers</em> (2025), ch. 2–3; A. Lovelace, Note G (1843).</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 16. PRACTICE AND GO DEEPER -->
+    <section id="practice" class="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Smallest and largest together</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Write steps, in English or code, that find both the smallest and the largest card in one left-to-right pass. How many comparisons do your steps make for 8 cards?</p></li>
+        <li><div class="practice__title">Instructions for a literal robot</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Write exact steps for making a cup of tea. Mark every step as sequence, choice or repetition, and underline any word a robot could not act on.</p></li>
+        <li><div class="practice__title">Halving a bigger range</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">A secret lies between 1 and 10,000. What is the most guesses halving could ever need? Explain why without trying every secret.</p></li>
+        <li><div class="practice__title">When does the early-stop bug get lucky?</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">The buggy version returns the first card bigger than the first card. Describe exactly which inputs it still answers correctly.</p></li>
+        <li><div class="practice__title">Euclid by hand</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Run the rectangle method on 1071 × 462. Count the cuts. Then redo it cutting all same-size squares at once, and compare the number of steps.</p></li>
+      </ol>
+      <a class="deeper" href="../labs/code-machine.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper · See a real CPU do this</span><span class="deeper__title" style="display:block">The code machine</span><span class="deeper__text" style="display:block">Watch a tiny computer run a program one instruction at a time. Its program counter is the next-step pointer; its memory is the state.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

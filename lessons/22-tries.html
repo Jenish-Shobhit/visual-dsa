@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Tries · Visual DSA</title>
+<meta name="description" content="Store words letter by letter along shared paths: watch inserts, searches and deletes light up character by character, autocomplete a prefix live, compress a trie, and route packets by longest prefix.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/22-tries.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/22-tries.js" defer></script>
+<script src="../js/lessons/22-tries.js" defer></script>
+<script src="../js/lessons/22-tries-lab.js" defer></script>
+<script src="../js/lessons/22-tries-figs.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="22-tries">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ 1. HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Tries</h1>
+      <p class="hero__lede">Spell every word along a path of letters and let words that start alike share the start of their path. A lookup then costs one hop per letter, however many words you keep, and every word with a given prefix hangs below one node.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">16 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: trees and hash tables</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: five words, tea, team, ten, tap and to, are inserted into a trie one letter at a time. Each letter either follows an existing node or grows a new one, so words that start alike share their first nodes, and end-of-word nodes get a green check."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ 2. THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem: a search box that must not scan</h2>
+      <p>You type <code>ca</code> into a search box and it suggests <em>car</em>, <em>cat</em> and <em>cap</em> before you finish the word. The list behind it holds every word people search for. It might be a million entries.</p>
+      <p>A hash set answers “is <code>car</code> in here?” instantly, but it scatters words on purpose, so it knows nothing about <em>prefixes</em>. To find everything starting with <code>ca</code> you must look at every word. Type a prefix and watch the scan.</p>
+      <figure class="fig wide" id="fig-problem">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which words start with your prefix? A set has to ask every word.</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: twenty words in a grid; a scan lights them one by one and marks the ones that start with the typed prefix. The scan always looks at all twenty.</figcaption>
+      </figure>
+      <p>Twenty words, twenty checks, on every keystroke. Scale that to a million words and the search box freezes. We need a structure where the <em>prefix itself</em> is the address.</p>
+    </section>
+
+    <!-- ============================================================ 3. INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition: share the start of the path</h2>
+      <p>Look at the words <em>car</em>, <em>card</em>, <em>care</em> and <em>cat</em>. Written out, they repeat the same letters over and over. Step through the figure to merge everything that starts the same way.</p>
+      <figure class="fig wide" id="fig-merge">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Merge the shared starts of five words</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: five words written as rows of letter tiles, seventeen tiles in all. Tiles whose prefix is shared with another word are tinted, then they slide together into a tree where c, a and r appear once and the tree forks where the words differ, leaving nine nodes.</figcaption>
+      </figure>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: the paper dictionary</p>
+        <p>To find <em>candle</em> you do not read from A. You jump to the C thumb tab, then to <em>ca</em>, then <em>can</em>. Each letter narrows the pages you still need. A trie is those thumb tabs, nested all the way down.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>A printed dictionary is sorted and fixed. A trie is not read by flipping, it is <em>walked</em>: you can add and remove words at any time, and no sorting ever happens. The order comes from the letters themselves.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 4. ANATOMY -->
+    <section id="anatomy">
+      <h2>What a node holds</h2>
+      <p>A <strong>trie</strong> (say “try”, from re<em>trie</em>val) is a tree where every edge is a letter and every path from the root spells a string. Each node keeps two things: its children, one per next letter, and a flag saying whether the path ending here is a stored word.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>The <dfn>root</dfn> spells the empty string. A <dfn>prefix</dfn> is the start of a word: <code>ca</code> is a prefix of <code>car</code>. The <dfn>end-of-word flag</dfn> (<code>isEnd</code>, drawn as a green check) marks a node whose path is a word in its own right.</p>
+      </aside>
+      <p>Flip the flag on the left and watch what changes. Nothing moves: <code>ca</code> is on the path either way. Only whether it counts as a <em>word</em> changes. Then compare three ways a node can store its children.</p>
+      <figure class="fig wide" id="fig-anatomy">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">One node: a flag and a table of children</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="tr-anatomy">
+          <div class="tr-anatomy__left">
+            <div class="fig__stage fig__stage--plain" data-stage></div>
+            <div data-toggle></div>
+          </div>
+          <div class="tr-anatomy__right">
+            <div data-seg></div>
+            <div class="tr-store" data-store></div>
+            <div class="fig__stats" data-stats></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a small trie of the words car and cat with a switch that flags the node ca as a word; beside it, the children of node ca stored as an array of 26 slots, a hash map, or a sorted list, with the memory each one uses.</figcaption>
+      </figure>
+      <p>The flag matters because a word can also be a prefix. In the trie of <em>car</em>, <em>card</em>, <em>care</em>, <em>cat</em> and <em>dog</em>, the node for <code>car</code> is a word <em>and</em> has children. Try it.</p>
+      <figure class="fig" id="fig-wp">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Words and prefixes: five words, nine letter nodes</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: the trie of car, card, care, cat and dog. The nodes car, card, care, cat and dog carry a green ring because they end a word. The nodes c, ca, d and do are only prefixes.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-wp"></div>
+    </section>
+
+    <!-- ============================================================ 5. THE LAB -->
+    <section id="lab">
+      <h2>The lab: insert, search, starts-with, delete</h2>
+      <p>Type your own words, choose an operation and press <strong>Run</strong>. The path lights up letter by letter, new nodes grow out of their parent, and every step lights the line of code that runs. The trie keeps its state between operations, so you can build it up, query it, then take it apart.</p>
+      <figure class="fig fig--lab wide" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace a trie on your own words</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar tr-toolbar">
+          <div class="tr-toolbar__words" data-words></div>
+          <div class="tr-toolbar__op">
+            <div class="tr-op" data-op></div>
+            <div data-word></div>
+            <div class="tr-quick" data-quick></div>
+          </div>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall fig__stage--scroll" data-stage style="--stage-min: 540px"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div data-predict></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses to ask you to predict a step. Counters: <em>letter nodes</em> excludes the root; <em>visited</em> counts nodes this operation stepped onto. Text alternative: the caption under the figure describes every step in words.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Every operation walks the letters of the <em>query</em>. The number of words stored never appears in the walk, so the cost is <span class="big-o" data-o="n">O(L)</span> for a word of length L.</p>
+      </aside>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why delete climbs back up</p>
+        <p>Unflagging a word is not enough: its last letters may now hang in the air with no word below them. Delete walks back up and cuts nodes until it meets one that still ends a word or still has children. Deleting <code>card</code> leaves <code>car</code> and <code>care</code> untouched.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 6. FLOWCHART -->
+    <section id="flowchart">
+      <h2>The logic, as a flowchart</h2>
+      <p>The same operations as a map of decisions. Run the lab and the current box lights up here; switch the tab to see how the four operations share one walk and differ only at the ends.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-flow-title>Insert as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <figcaption class="fig__foot" data-flow-foot>Text alternative.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 7. AUTOCOMPLETE -->
+    <section id="autocomplete">
+      <h2>Autocomplete: everything below the prefix</h2>
+      <p>To list every word that starts with <code>ca</code>, walk to the node for <code>ca</code> and read the whole subtree under it with a depth-first search. Nothing outside that subtree can match, so it is never touched.</p>
+      <p>Type in the box. The path to your prefix lights up, the subtree below it tints, and the words it holds are listed, ranked by how popular they are.</p>
+      <figure class="fig wide" id="fig-ac">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Live autocomplete on a trie of fifteen words</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar tr-ac__toolbar">
+          <div class="tr-search"><label class="field-label" for="ac-input">Search box</label><input id="ac-input" class="field tr-search__input" type="text" inputmode="text" autocomplete="off" spellcheck="false" maxlength="8" placeholder="try: ca" aria-describedby="ac-status"></div>
+          <div class="tr-ac__chips" data-chips role="group" aria-label="Example prefixes"></div>
+          <div data-seg></div>
+        </div>
+        <div class="tr-ac">
+          <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+          <div class="tr-ac__side">
+            <p class="tr-ac__head">Suggestions <span data-ac-count></span></p>
+            <ol class="tr-results" data-results aria-label="Suggestions"></ol>
+            <p class="tr-ac__note" data-note></p>
+          </div>
+        </div>
+        <p class="fig__caption" id="ac-status" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Badges show each word's popularity score. Text alternative: the suggestions list and the caption say how many letters were walked, how many nodes were read below the prefix, and which words were returned.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Two costs, kept apart</p>
+        <p>Finding the prefix node costs <span class="big-o" data-o="n">O(L)</span> for a prefix of length L. Listing the results costs time proportional to the size of the subtree you read. Real search boxes stop early or store the top few suggestions inside each node, so a keystroke stays cheap.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 8. COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Count <strong>node hops</strong>: one per letter of the word or prefix you are handling. Let <em>L</em> be that length and <em>n</em> the number of stored words. Insert, search and starts-with take <span class="big-o" data-o="n">O(L)</span> hops. They never depend on <em>n</em>.</p>
+      <p>Now the question a hash set could not answer: <em>how many words start with this prefix?</em> Give every node a counter of the words that pass through it, and the answer sits one node away. The race below counts keys examined against nodes visited.</p>
+      <figure class="fig wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Count the words starting with a prefix: hash set vs trie</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="tr-race">
+          <div class="tr-race__side">
+            <p class="tr-race__title">Hash set <span class="tr-race__sub">tests every key</span></p>
+            <div class="tr-chips tr-chips--race" data-keys></div>
+            <p class="tr-race__result" data-hash-result></p>
+          </div>
+          <div class="tr-race__side">
+            <p class="tr-race__title">Trie <span class="tr-race__sub">walks the prefix, reads a stored count</span></p>
+            <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 400px"></div>
+            <p class="tr-race__result" data-trie-result></p>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Badges on the trie are the stored counts: how many words pass through each node. Text alternative: the caption reports, step by step, which key the hash set tested and which letter the trie stepped onto, and the final counts.</figcaption>
+      </figure>
+      <p>Sharing prefixes also saves memory. Insert words and count the nodes you have to create: each word costs only the letters that are <em>new</em>. Drag the slider to insert more words.</p>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Letter nodes created as words are inserted</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 320px"></div></div>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a line chart of nodes against words inserted. Letters typed grows steepest; a trie of English words grows slower because words share prefixes; random strings share almost nothing so they stay close to the letters line; a compressed trie needs the fewest nodes.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Operation</th><th scope="col">Trie (word of length L, n words)</th><th scope="col">Hash set</th><th scope="col">Sorted array</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Insert a word</th><td class="num"><span class="big-o" data-o="n">O(L)</span></td><td class="num"><span class="big-o" data-o="n">O(L) avg</span></td><td class="num"><span class="big-o" data-o="n">O(n) shift</span></td></tr>
+            <tr><th scope="row">Search a word</th><td class="num"><span class="big-o" data-o="n">O(L)</span></td><td class="num"><span class="big-o" data-o="n">O(L) avg</span></td><td class="num"><span class="big-o" data-o="nlogn">O(L log n)</span></td></tr>
+            <tr><th scope="row">Any word with this prefix?</th><td class="num"><span class="big-o" data-o="n">O(L)</span></td><td class="num"><span class="big-o" data-o="n2">O(n·L) scan</span></td><td class="num"><span class="big-o" data-o="nlogn">O(L log n)</span></td></tr>
+            <tr><th scope="row">List all words with the prefix</th><td class="num"><span class="big-o" data-o="n">O(L + size of subtree)</span></td><td class="num"><span class="big-o" data-o="n2">O(n·L) scan</span></td><td class="num"><span class="big-o" data-o="nlogn">O(L log n + k)</span></td></tr>
+            <tr><th scope="row">Memory</th><td class="num"><span class="big-o" data-o="n">O(total letters), worst case</span></td><td class="num"><span class="big-o" data-o="n">O(total letters)</span></td><td class="num"><span class="big-o" data-o="n">O(total letters)</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The trie's catch is its constant: every letter costs a whole node with a table of children, which is far more than one byte. With hash-map children, hashing a letter is O(1) on average. With an array of 26 slots, it is one indexed read, but the array is mostly empty.</p>
+      <details class="accordion">
+        <summary>Why is the hash-set scan O(n·L) and not O(n)?</summary>
+        <div class="accordion__body"><p>Testing “does this key start with the prefix?” compares up to L letters per key, and there are n keys. A hash set has no structure that lets it skip any of them, because a hash function scrambles words that start alike.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>When is a trie worse than a hash set?</summary>
+        <div class="accordion__body"><p>When you only ask exact questions. A hash set answers those in O(L) on average with far less memory and far better cache behaviour: one array lookup instead of L pointer hops through scattered nodes. A trie earns its memory only when prefixes matter.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ 9. COMPRESSION -->
+    <section id="radix">
+      <h2>Compress the chains: the radix tree</h2>
+      <p>Many trie nodes are just a single child after a single child, with no fork and no word ending between them. Those chains cost a node per letter and give nothing back. A <strong>radix tree</strong> (also called a compressed trie or Patricia tree) folds each chain into one node whose label is a whole string.</p>
+      <p>Pick a word set, or type your own, and step through the folding. Watch the node count fall while every letter stays.</p>
+      <figure class="fig wide" id="fig-radix">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Fold single-child chains into labelled nodes</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a plain trie whose one-child chains are merged one at a time into nodes labelled with several letters; the counters show the node count falling while the number of stored letters stays the same.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">The rule</p>
+        <p>After compression every node except the root is a <em>word end</em> or a <em>fork</em> (two or more children). A radix tree with <em>n</em> words therefore has fewer than 2n nodes, no matter how long the words are. Routing tables and the Linux kernel use it for exactly this reason.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 10. ROUTING -->
+    <section id="routing">
+      <h2>Longest-prefix match: routing packets</h2>
+      <p>A router holds a table of address <em>prefixes</em>, each with a next hop, and a packet matches every prefix its address starts with. The rule: use the <strong>longest</strong> one. A trie over the address bits finds it in one walk.</p>
+      <p>Here the alphabet is just <code>0</code> and <code>1</code>, so each node has at most two children. Type an address, or pick one, and follow the bits. The walk remembers the last node that held a route.</p>
+      <figure class="fig fig--lab wide" id="fig-lpm">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Longest-prefix match on a binary trie</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall fig__stage--scroll" data-stage style="--stage-min: 460px"></div>
+            <div class="tr-bits" data-bits></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div data-predict></div>
+          </div>
+          <div class="lab__side">
+            <div class="tr-routes" data-routes></div>
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Badges are next hops (letters A to G); a route with an empty prefix is the default route. Real IPv4 addresses have 32 bits and IPv6 has 128, but the walk is the same. Text alternative: the caption states each bit read, each route found and the final next hop.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 11. VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Most trie problems are one of these four ideas. The nodes are the same; only what you store in them, and what you do while walking, changes.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="count">Count by prefix</button>
+          <button data-tab="dfs">Autocomplete = DFS</button>
+          <button data-tab="grid">Word search (Boggle)</button>
+          <button data-tab="root">Shortest root</button>
+        </div>
+        <div data-tab-panel="count"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="count"></div><figcaption>Store a counter in every node: how many words pass through.</figcaption></figure><div><p>Increase <code>count</code> on every node you step through while inserting. The number of words that start with a prefix is the counter of its node, read in O(L).</p><pre data-code-block="count"></pre></div></div></div>
+        <div data-tab-panel="dfs"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="dfs"></div><figcaption>Walk to the prefix node, then read its subtree.</figcaption></figure><div><p>Walk to the node for the prefix, then depth-first search below it, carrying the letters so far. Each time you pass a flagged node, you have found a word.</p><pre data-code-block="dfs"></pre></div></div></div>
+        <div data-tab-panel="grid"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="grid"></div><figcaption>A path that no word starts with is abandoned at once.</figcaption></figure><div><p>In a letter grid, extend a path one neighbouring letter at a time while following the trie in step. When the trie has no child for the next letter, no word can continue this path: stop. That prune is what makes word search fast.</p><pre data-code-block="grid"></pre></div></div></div>
+        <div data-tab-panel="root"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="root"></div><figcaption>Walk a word; the first flagged node is its shortest root.</figcaption></figure><div><p>Given a dictionary of roots, replace each word by its shortest root. Walk the word through a trie of the roots and stop at the first flagged node. If the walk falls off the trie first, keep the word.</p><pre data-code-block="root"></pre></div></div></div>
+      </div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Pitfall: array-of-26 children on a big alphabet</p>
+        <p>An array of 26 child pointers per node is fast but wasteful: most slots stay empty. For Unicode text it would be millions of slots per node. Use a hash map (or a sorted small list) for the children whenever the alphabet is large or the trie is sparse.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 12. DECISION -->
+    <section id="decide">
+      <h2>Trie, hash map or sorted array?</h2>
+      <p>Choose by the <em>questions</em> you will ask, not by the data. Answer the questions below, by clicking the answers on the arrows, to see which structure fits.</p>
+      <figure class="fig wide" id="fig-decide">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which structure for a set of strings?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 860px"></div>
+        <div class="tr-verdict" data-verdict aria-live="polite"></div>
+        <div class="btn-row" style="padding: 0 18px 14px"><button type="button" class="btn btn--sm" data-restart>Start over</button></div>
+        <figcaption class="fig__foot">Text alternative: a decision tree. Prefix queries and a fixed set lead to a sorted array; prefix queries on changing data lead to a trie, or a radix tree when memory is tight; no prefix queries with order or range needs lead to a sorted array or balanced tree; otherwise a hash map.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 13. CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-nodes"></div>
+        <div class="quiz" id="quiz-ac"></div>
+        <div class="quiz" id="quiz-cost"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 14. SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Tries</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="n">O(L)</span><span class="chip chip--sm">per word or prefix</span><span class="chip chip--sm">independent of n</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 15. HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1960<small>named</small></div>
+        <p class="history__people">Edward Fredkin<span>“Trie Memory”, Communications of the ACM</span></p>
+        <div class="history__body">
+          <p>René de la Briandais described tries in 1959, and Edward Fredkin named them in 1960 after the middle of the word “retrieval”. Fredkin said it like “tree”; many people now say “try” to avoid the confusion. In 1975 Alfred Aho and Margaret Corasick added failure links to a trie of search words, and their algorithm became the Unix tool fgrep.</p>
+        </div>
+        <p class="history__source">Sources: R. de la Briandais, “File Searching Using Variable Length Keys” (1959); E. Fredkin, “Trie Memory”, <em>CACM</em> 3(9), 1960; A. Aho and M. Corasick, <em>CACM</em> 18(6), 1975.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 16. PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Implement a trie</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Build <code>insert</code>, <code>search</code> and <code>startsWith</code> from scratch. What should <code>search("")</code> and <code>startsWith("")</code> return on an empty trie?</p></li>
+        <li><div class="practice__title">Longest common prefix</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given a list of strings, return their longest common prefix by walking a trie. Where does the walk stop, and how can you tell from the nodes alone?</p></li>
+        <li><div class="practice__title">Replace words</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">A dictionary lists roots such as <code>cat</code> and <code>bat</code>. Replace every word in a sentence by its shortest root, if one exists. Why does the first flagged node give the shortest root?</p></li>
+        <li><div class="practice__title">Maximum XOR of two numbers</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Store every number in an array as a path of bits in a binary trie. For each number, walk the trie preferring the opposite bit at each level. Why is greedy correct here?</p></li>
+        <li><div class="practice__title">Word search II</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Find every dictionary word that can be traced through adjacent cells of a letter grid. Build a trie of the words and prune the search the moment a path is not a prefix. What extra pruning removes a word once it has been found?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-19-tries-and-suffix-structures.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Algorithms on Text II: Tries and Suffix Structures</span><span class="deeper__text" style="display:block">From tries to suffix trees and suffix arrays with LCP: turning a whole string into a searchable index.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,173 @@
+/* Lesson 22 · Tries — lesson-specific styles. Colours come only from tokens (--st-*, --el-*, --ink-*, --bg-*), so both
+   themes work. Prefix tr- for everything here. */
+
+/* ------------------------------------------------------------ word chips (problem scan, race keys) */
+.tr-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; width: 100%; max-width: 760px; }
+.tr-chip {
+  display: block; text-align: center; padding: 8px 6px; border-radius: var(--r-md);
+  font: 600 14px var(--font-mono); color: var(--el-ink);
+  background: var(--el-fill); border: 1.5px solid color-mix(in srgb, var(--el-stroke) 40%, var(--el-fill));
+  transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms, transform 160ms var(--ease-out);
+}
+.tr-chip--sm { padding: 5px 4px; font-size: 12.5px; border-radius: var(--r-sm); }
+.tr-chip.is-compare { background: var(--st-compare); border-color: var(--st-compare); color: color-mix(in srgb, var(--st-compare) 20%, black); transform: translateY(-2px) scale(1.05); }
+.tr-chip.is-found { background: color-mix(in srgb, var(--st-found) 22%, var(--el-fill)); border-color: var(--st-found); font-weight: 750; }
+.tr-chip.is-visited { color: var(--ink-3); background: var(--bg-sunken); border-color: var(--line); }
+@media (prefers-reduced-motion: reduce) { .tr-chip { transition: none; transform: none !important; } }
+
+/* ------------------------------------------------------------ mini tries (static SVG) */
+.tr-mini { display: block; max-width: 100%; height: auto; margin: 0 auto; overflow: visible; font-family: var(--font-sans); }
+.tr-edge { stroke: var(--el-edge); stroke-width: 1.6; stroke-linecap: round; transition: stroke .3s; }
+.tr-edge.is-path { stroke: var(--st-path); stroke-width: 2.6; }
+.tr-node .tr-c { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 1.5; transition: fill .3s, stroke .3s; }
+.tr-node .tr-t { fill: var(--el-ink); font: 700 14px var(--font-mono); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.tr-node .tr-t--root { font-size: 9px; font-family: var(--font-sans); font-weight: 650; fill: var(--ink-3); }
+.tr-node .tr-t--sm { font-size: 11px; }
+.tr-node .tr-ring { fill: none; stroke: var(--st-found); stroke-width: 2.5; opacity: 0; transition: opacity .35s var(--ease-out); }
+.tr-node.is-end .tr-ring { opacity: 1; }
+.tr-node.is-root .tr-c { stroke-dasharray: 3 3; stroke: var(--ink-3); }
+.tr-node.is-path .tr-c { fill: color-mix(in srgb, var(--st-path) 30%, var(--el-fill)); stroke: var(--st-path); stroke-width: 2.5; }
+.tr-node.is-active .tr-c { fill: var(--st-active); stroke: var(--st-active); }
+.tr-node.is-active .tr-t { fill: var(--on-state); }
+.tr-node.is-visited .tr-c { fill: color-mix(in srgb, var(--st-visited) 20%, var(--el-fill)); stroke: var(--st-visited); }
+.tr-node.is-found .tr-c { fill: var(--st-found); stroke: var(--st-found); }
+.tr-node.is-found .tr-t { fill: var(--on-state); }
+.tr-node.is-error .tr-c { fill: color-mix(in srgb, var(--st-error) 25%, var(--el-fill)); stroke: var(--st-error); stroke-width: 2.5; }
+.tr-node[data-id] { cursor: pointer; }
+.tr-node[data-id]:hover .tr-c { stroke: var(--accent); stroke-width: 2.5; }
+.tr-node[data-id]:focus-visible { outline: none; }
+.tr-node[data-id]:focus-visible .tr-c { stroke: var(--accent); stroke-width: 3; }
+.tr-node.is-pick-right .tr-c { stroke: var(--st-done); stroke-width: 3.5; fill: color-mix(in srgb, var(--st-done) 22%, var(--el-fill)); }
+.tr-node.is-pick-wrong .tr-c { stroke: var(--st-swap); stroke-width: 3.5; fill: color-mix(in srgb, var(--st-swap) 16%, var(--el-fill)); }
+.tr-badge rect { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1; }
+.tr-badge text { fill: var(--ink-2); font: 650 10px var(--font-mono); text-anchor: middle; dominant-baseline: central; }
+.tr-arrow { color: var(--ink-3); flex: none; }
+.tr-pill { fill: color-mix(in srgb, var(--st-frontier) 16%, var(--el-fill)); stroke: var(--st-frontier); stroke-width: 1.5; }
+.tr-t--pill { fill: var(--el-ink); font: 700 12px var(--font-mono); text-anchor: middle; dominant-baseline: central; }
+
+/* letter grid mini (Boggle) */
+.tr-grid__path { fill: none; stroke: var(--st-path); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; opacity: .55; }
+.tr-grid__cut { stroke: var(--st-error); stroke-width: 2.5; stroke-dasharray: 4 3; }
+
+/* ------------------------------------------------------------ merge morph figure */
+.tr-fig { display: block; width: 100%; height: auto; font-family: var(--font-sans); overflow: visible; }
+.tr-fig .tr-edge { stroke-width: 2; }
+.tr-tile__box { fill: var(--el-fill); stroke: color-mix(in srgb, var(--el-stroke) 55%, var(--el-fill)); stroke-width: 1.5; transition: fill .4s, stroke .4s; }
+.tr-tile__t { fill: var(--el-ink); font: 700 17px var(--font-mono); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.tr-tile__t--sm { font-size: 11px; font-family: var(--font-sans); fill: var(--ink-3); }
+.tr-tile__ring { fill: none; stroke: var(--st-found); stroke-width: 3; opacity: 0; transition: opacity .4s; }
+.tr-tile.is-shared .tr-tile__box { fill: color-mix(in srgb, var(--st-visited) 22%, var(--el-fill)); stroke: var(--st-visited); }
+.tr-tile.is-node .tr-tile__box { fill: color-mix(in srgb, var(--st-path) 12%, var(--el-fill)); stroke: var(--st-path); stroke-width: 2; }
+.tr-tile.is-end .tr-tile__ring { opacity: 1; }
+.tr-tile--root .tr-tile__box { stroke-dasharray: 3 3; }
+.tr-merge__count { fill: var(--unit-ink, var(--accent)); font: 750 17px var(--font-sans); }
+
+/* ------------------------------------------------------------ anatomy figure */
+.tr-anatomy { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.tr-anatomy__left, .tr-anatomy__right { min-width: 0; }
+.tr-anatomy__left { display: flex; flex-direction: column; }
+.tr-anatomy__left .fig__stage { flex: 1; min-height: 210px; }
+.tr-anatomy__left [data-toggle] { padding: 12px 18px; border-top: 1px solid var(--line); }
+.tr-anatomy__right { padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--line); }
+@container fig (min-width: 760px) {
+  .tr-anatomy { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); }
+  .tr-anatomy__right { border-top: 0; border-left: 1px solid var(--line); }
+}
+.tr-store__card { background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px; box-shadow: var(--shadow-1); }
+.tr-store__head { margin: 0 0 10px; font: 650 13px var(--font-sans); color: var(--ink-2); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.tr-store__flag { font-family: var(--font-mono); font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--bg-sunken); color: var(--ink-3); border: 1px solid var(--line); transition: background .3s, color .3s, border-color .3s; }
+.tr-store__flag.is-on { background: color-mix(in srgb, var(--st-found) 18%, var(--bg-elev)); border-color: var(--st-found); color: color-mix(in srgb, var(--st-found) 75%, var(--ink)); }
+.tr-slots { display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 4px; animation: tr-in .35s var(--ease-out); }
+.tr-slot { position: relative; aspect-ratio: 1; display: grid; place-items: center; border: 1.5px dashed var(--line-strong); border-radius: 5px; background: var(--bg-sunken); }
+.tr-slot i { position: absolute; top: 1px; left: 3px; font: 600 9px var(--font-mono); font-style: normal; color: var(--ink-3); }
+.tr-slot b { font-size: 13px; color: var(--st-path); line-height: 1; }
+.tr-slot.is-used { border-style: solid; border-color: var(--st-path); background: color-mix(in srgb, var(--st-path) 14%, var(--bg-elev)); }
+.tr-slot.is-used i { color: color-mix(in srgb, var(--st-path) 70%, var(--ink)); }
+.tr-map, .tr-list { display: flex; flex-direction: column; gap: 6px; animation: tr-in .35s var(--ease-out); }
+.tr-map__row { display: grid; grid-template-columns: 34px 24px 1fr; align-items: center; padding: 6px 8px; border-radius: 8px; background: var(--bg-sunken); border: 1px solid var(--line); font-family: var(--font-mono); font-size: 13.5px; }
+.tr-map__k { font-weight: 750; color: var(--ink); }
+.tr-map__a { color: var(--ink-3); }
+.tr-list { flex-direction: row; flex-wrap: wrap; }
+.tr-list__item { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; background: var(--bg-sunken); border: 1px solid var(--line); font-family: var(--font-mono); font-size: 13.5px; }
+.tr-list__item i { font-style: normal; font-size: 10px; color: var(--ink-3); }
+.tr-list__item b { color: var(--ink); }
+@keyframes tr-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tr-slots, .tr-map, .tr-list, .tr-result { animation: none !important; } }
+
+/* ------------------------------------------------------------ lab toolbar */
+.tr-toolbar { align-items: flex-start; }
+.tr-toolbar__words { flex: 1 1 420px; min-width: 0; }
+.tr-toolbar__op { flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.tr-op { align-self: flex-start; }
+.tr-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tr-quick__label { font-size: 13px; font-weight: 650; color: var(--ink-3); margin-right: 2px; }
+
+/* ------------------------------------------------------------ autocomplete */
+.tr-ac__toolbar { align-items: flex-end; }
+.tr-search { flex: 1 1 220px; min-width: 0; max-width: 340px; }
+.tr-search__input { width: 100%; font: 600 20px var(--font-mono); letter-spacing: .04em; padding-block: 10px; }
+.tr-ac__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tr-ac { display: grid; grid-template-columns: minmax(0, 1fr); }
+.tr-ac__side { padding: 14px 18px; border-top: 1px solid var(--line); min-width: 0; }
+@container fig (min-width: 860px) {
+  .tr-ac { grid-template-columns: minmax(0, 1fr) 280px; }
+  .tr-ac__side { border-top: 0; border-left: 1px solid var(--line); }
+}
+.tr-ac__head { margin: 0 0 8px; font: 700 13px var(--font-sans); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.tr-ac__head span { text-transform: none; letter-spacing: 0; font-weight: 600; }
+.tr-ac__note { margin: 10px 0 0; font-size: 13px; color: var(--ink-3); min-height: 1.4em; }
+.tr-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; min-height: 5 * 38px; }
+.tr-result {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) 46px 34px; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: var(--r-md); background: var(--bg-elev); border: 1px solid var(--line);
+  border-left: 3px solid var(--st-found);
+  animation: tr-in .3s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 45ms);
+}
+.tr-result__rank { font: 700 11px var(--font-mono); color: var(--ink-3); }
+.tr-result__word { font: 500 16px var(--font-mono); color: var(--ink-2); overflow-wrap: anywhere; }
+.tr-result__word b { color: var(--ink); font-weight: 800; }
+.tr-result__bar { height: 6px; border-radius: 3px; background: var(--bg-sunken); overflow: hidden; }
+.tr-result__bar i { display: block; height: 100%; width: var(--w); background: var(--st-found); border-radius: 3px; }
+.tr-result__n { font: 650 12px var(--font-mono); color: var(--ink-3); text-align: right; }
+
+/* ------------------------------------------------------------ race */
+.tr-race { display: grid; grid-template-columns: minmax(0, 1fr); }
+.tr-race__side { min-width: 0; padding: 12px 18px 6px; }
+.tr-race__side + .tr-race__side { border-top: 1px solid var(--line); }
+@container fig (min-width: 820px) {
+  .tr-race { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+  .tr-race__side + .tr-race__side { border-top: 0; border-left: 1px solid var(--line); }
+}
+.tr-race__title { margin: 0 0 10px; font: 750 15px var(--font-sans); color: var(--ink); }
+.tr-race__sub { font-weight: 500; font-size: 13px; color: var(--ink-3); margin-left: 6px; }
+.tr-race__result { margin: 10px 0 8px; font-size: 14px; color: var(--ink-2); min-height: 1.5em; }
+.tr-race__result b { color: var(--ink); }
+.tr-big { font-size: 22px; font-weight: 800; }
+.tr-chips--race { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 6px; }
+.tr-race .fig__stage { min-height: 150px; padding: 8px; background-image: none; }
+
+/* ------------------------------------------------------------ routing */
+.tr-bits { padding: 4px 12px 0; }
+.tr-routes { margin-bottom: 4px; }
+.tr-routes__table td:first-child { width: 60%; }
+.tr-routes__table tr.is-best td { background: color-mix(in srgb, var(--st-found) 18%, var(--bg-elev)); font-weight: 750; }
+
+/* ------------------------------------------------------------ decision */
+.tr-verdict { margin: 4px 18px 12px; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--bg-sunken); font-size: 15px; line-height: 1.5; min-height: 4.4em; }
+.tr-verdict p { margin: 0 0 4px; }
+.tr-verdict__title { font-size: 17px; color: var(--ink); }
+.tr-verdict__title b { color: color-mix(in srgb, var(--st-found) 75%, var(--ink)); }
+.tr-verdict__hint { color: var(--ink-3); }
+
+/* the vz tree inside these figures keeps its own scale; make wide stages scroll instead of squeezing */
+#lab-fig .fig__stage, #fig-radix .fig__stage, #fig-ac .fig__stage { padding-inline: 10px; }
+#fig-wp .fig__stage, #fig-anatomy .fig__stage { padding-block: 22px; }
+#fig-wp .tr-mini { width: min(100%, 420px); height: auto; }
+#fig-anatomy .tr-mini { width: min(100%, 260px); height: auto; }
+
+/* views normally fill the container (svg.vz.vz { min-width: 0 }); inside a scrolling stage keep a readable width instead */
+.fig__stage--scroll > svg.vz.vz { min-width: var(--stage-min, 620px); }
+.mini__stage > svg.tr-mini { width: auto; max-width: 100%; height: auto; }
+#summary-card .summary__viz { height: 132px; }
+#summary-card .summary__viz > svg.tr-mini { width: auto; height: 100%; max-width: 100% !important; }
+#fig-merge .tr-fig { max-width: 540px; }

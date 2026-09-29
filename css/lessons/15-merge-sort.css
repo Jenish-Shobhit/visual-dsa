@@ -1,0 +1,133 @@
+/* Lesson 15 — Merge sort & divide and conquer. Lesson-specific styles only; colours come from tokens. */
+
+/* ---------------------------------------------------------------- toolbars and small helpers */
+.l15-slider { flex: 1 1 260px; max-width: 420px; min-width: 0; }
+.l15-input { flex: 1 1 520px; min-width: 0; }
+.l15-mode { display: flex; flex-direction: column; gap: 6px; }
+.l15-btnbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.l15-h3 { margin: var(--space-6, 32px) 0 0; font-size: 1.15rem; font-family: var(--font-display, inherit); }
+.fig__caption.l15-msg, .fig__caption.l15-verdict { min-height: calc(1.55em * 3 + 26px); }
+.fig__caption.l15-msg[data-state="done"], .fig__caption.l15-verdict[data-state="done"] { background: color-mix(in srgb, var(--st-done) 9%, var(--bg-elev)); }
+.fig__caption.l15-msg[data-state="error"], .fig__caption.l15-verdict[data-state="error"] { background: color-mix(in srgb, var(--st-error) 8%, var(--bg-elev)); }
+.fig__caption.l15-verdict[data-state="compare"], #fig-master .fig__caption[data-state="compare"] { background: color-mix(in srgb, var(--st-compare) 10%, var(--bg-elev)); }
+#fig-master .fig__caption[data-state="done"] { background: color-mix(in srgb, var(--st-done) 9%, var(--bg-elev)); }
+.fig__caption.l15-readout { font-size: 14.5px; color: var(--ink-2); }
+#fig-growth .fig__caption { font-size: 14.5px; color: var(--ink-2); }
+#fig-choose .fig__caption { min-height: calc(1.55em * 3 + 26px); }
+.l15-code { margin: var(--space-4, 20px) 0; }
+.l15-master-ctl { gap: 18px 32px; }
+.l15-master-ctl > * { flex: 1 1 260px; max-width: 420px; min-width: 0; }
+
+/* ---------------------------------------------------------------- the problem: two bars on one scale */
+.l15-scale { width: 100%; display: grid; gap: 18px; align-content: center; place-items: stretch; padding: 18px 18px 20px; }
+.l15-scale__row { display: grid; grid-template-columns: 170px minmax(0, 1fr) 210px; align-items: center; gap: 8px 16px; }
+.l15-scale__name { margin: 0; font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.3; }
+.l15-scale__name span { display: block; font-size: 12.5px; font-weight: 550; color: var(--ink-3); font-family: var(--font-mono); }
+.l15-scale__track { height: 34px; border-radius: 9px; background: var(--bg-sunken); border: 1px solid var(--line); overflow: hidden; }
+.l15-scale__bar { height: 100%; width: 5px; border-radius: 0 8px 8px 0; background: var(--st-active); transition: width 420ms var(--ease-out, ease-out); }
+.l15-scale__bar[data-kind="ins"] { background: var(--st-compare); }
+.l15-scale__bar[data-kind="mrg"] { background: var(--st-done); }
+.l15-scale__num { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.35; font-variant-numeric: tabular-nums; }
+.l15-scale__num b { display: block; font-size: 16px; color: var(--ink); }
+.l15-scale__num i { font-style: normal; }
+.l15-scale__num span { display: block; font-size: 12.5px; color: var(--ink-3); }
+@container fig (max-width: 720px) {
+  .l15-scale__row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .l15-scale__num b, .l15-scale__num span { display: inline; margin-right: 8px; }
+  .l15-scale__num b + span { margin-left: 2px; }
+}
+
+/* ---------------------------------------------------------------- intuition minis */
+.l15-mini-title { margin: 0; padding: 9px 12px 0; font-size: 13px; font-weight: 700; color: var(--unit-ink); }
+.l15-mini-stage { min-height: 180px; }
+
+/* ---------------------------------------------------------------- recursion tree with work per level */
+.l15-tree { display: block; place-items: normal; padding: 6px 8px 4px; }
+.l15-treesvg { display: block; margin: 0 auto; max-width: 100%; overflow: visible; }
+.l15-lvl { opacity: 0; transform: translateY(-6px); transition: opacity var(--t, 300ms) var(--ease-out, ease-out), transform var(--t, 300ms) var(--ease-out, ease-out); }
+.l15-lvl.is-on { opacity: 1; transform: none; }
+.l15-lvl__name { font: 700 13px var(--font-sans); fill: var(--ink); }
+.l15-lvl__sub { font: 550 11.5px var(--font-mono); fill: var(--ink-3); }
+.l15-node { fill: color-mix(in srgb, var(--st-active) 13%, var(--el-fill)); stroke: var(--st-active); stroke-width: 1.5px; }
+.l15-node.is-leaf { fill: color-mix(in srgb, var(--st-visited) 14%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-visited) 75%, var(--el-fill)); }
+.l15-node__txt { font: 700 13px var(--font-sans); fill: var(--el-ink); }
+.l15-work { fill: var(--st-swap); }
+.l15-work__txt { font: 700 13px var(--font-mono); fill: var(--ink-2); }
+.l15-total { opacity: 0; transition: opacity var(--t, 300ms); }
+.l15-total.is-on { opacity: 1; }
+.l15-total line { stroke: var(--ink-3); stroke-width: 1.5px; }
+.l15-total__txt { font: 750 15px var(--font-mono); fill: var(--ink); }
+
+/* ---------------------------------------------------------------- lab */
+.l15-labstage { min-height: 300px; }
+.l15-treewrap { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.l15-treewrap__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; padding: 0 4px; }
+.l15-treewrap__title { margin: 0; font-size: 13px; font-weight: 700; color: var(--ink-2); letter-spacing: .02em; }
+.l15-treestage { min-height: 150px; }
+
+/* ---------------------------------------------------------------- frozen merge (click check) */
+.l15-frozen { width: 100%; max-width: 520px; height: auto; margin: 0 auto; display: block; overflow: visible; }
+.l15-frozen__label { font: 650 12px var(--font-sans); fill: var(--ink-3); letter-spacing: .04em; }
+.l15-fbox rect { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 1.5px; transition: fill 160ms, stroke 160ms; }
+.l15-fbox text { font: 700 17px var(--font-sans); fill: var(--el-ink); pointer-events: none; }
+.l15-fbox.is-run rect { fill: color-mix(in srgb, var(--st-visited) 14%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-visited) 75%, var(--el-fill)); }
+.l15-fbox.is-ghost rect { fill: none; stroke: var(--line-strong); stroke-dasharray: 5 4; }
+.l15-fbox.is-ghost text { fill: var(--ink-3); opacity: .55; }
+.l15-fbox.is-out rect { fill: color-mix(in srgb, var(--st-done) 22%, var(--el-fill)); stroke: var(--st-done); }
+.l15-fslot { fill: none; stroke: var(--line-strong); stroke-dasharray: 5 4; stroke-width: 1.5px; }
+.l15-fbox.is-pick-right rect { fill: var(--st-done); stroke: var(--st-done); }
+.l15-fbox.is-pick-right text { fill: var(--on-state); }
+.l15-fbox.is-pick-wrong rect { fill: color-mix(in srgb, var(--st-error) 22%, var(--el-fill)); stroke: var(--st-error); }
+.l15-fbox:not(.is-ghost):not(.is-out):hover rect, .l15-fbox:focus-visible rect { stroke: var(--accent); stroke-width: 3px; }
+.l15-fbox { cursor: pointer; outline: none; }
+.l15-fptr path { fill: var(--st-active); }
+.l15-fptr text { font: 750 13px var(--font-mono); fill: color-mix(in srgb, var(--st-active) 70%, var(--ink)); }
+.l15-fptr.is-j path { fill: var(--st-frontier); }
+.l15-fptr.is-j text { fill: color-mix(in srgb, var(--st-frontier) 60%, var(--ink)); }
+.l15-fptr.is-k path { fill: var(--st-swap); }
+.l15-fptr.is-k text { fill: color-mix(in srgb, var(--st-swap) 60%, var(--ink)); }
+
+/* ---------------------------------------------------------------- master theorem explorer */
+.l15-master { display: grid; gap: 7px; padding: 14px 16px 16px; align-content: center; place-items: stretch; }
+.l15-mrow { display: grid; grid-template-columns: 170px minmax(0, 1fr) 54px; align-items: center; gap: 6px 12px; }
+.l15-mrow__lab { margin: 0; font-size: 13px; line-height: 1.25; color: var(--ink-2); }
+.l15-mrow__lab b { display: block; color: var(--ink); font-size: 13.5px; }
+.l15-mrow__lab span { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-3); }
+.l15-mtrack { height: 22px; border-radius: 6px; background: var(--bg-sunken); border: 1px solid var(--line); overflow: hidden; }
+.l15-mbar { height: 100%; width: 3px; background: var(--st-swap); border-radius: 0 5px 5px 0; transition: width 400ms var(--ease-out, ease-out), background 300ms; }
+.l15-mrow[data-big="max"] .l15-mbar { background: var(--st-done); }
+.l15-mbar__val, .l15-mbar__val { font: 700 12.5px var(--font-mono); }
+.l15-mbar__val { color: var(--ink-2); }
+.l15-mrow > .l15-mbar__val { font-variant-numeric: tabular-nums; text-align: left; }
+@container fig (max-width: 620px) {
+  .l15-mrow { grid-template-columns: minmax(0, 1fr) 44px; }
+  .l15-mrow__lab { grid-column: 1 / -1; }
+  .l15-mrow__lab b, .l15-mrow__lab span { display: inline; margin-right: 8px; }
+}
+
+/* ---------------------------------------------------------------- race */
+.l15-race { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+.l15-lane { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); transition: border-color var(--dur), box-shadow var(--dur); }
+.l15-lane.is-finished { border-color: color-mix(in srgb, var(--st-done) 55%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--st-done) 30%, transparent); }
+.l15-lane__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.l15-lane__name { font-weight: 700; font-size: 14.5px; }
+.l15-lane__status { font-size: 12.5px; font-weight: 650; padding: 2px 9px; border-radius: 999px; background: var(--bg-sunken); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.l15-lane.is-finished .l15-lane__status { background: color-mix(in srgb, var(--st-done) 14%, var(--bg-elev)); color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+.l15-lane__status[data-rank="1"] { background: var(--st-done) !important; color: color-mix(in srgb, var(--st-done) 20%, black) !important; }
+.l15-lane__stage { min-height: 150px; display: grid; align-items: end; }
+.l15-lane__stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.l15-lane__stats .stats { gap: 6px; }
+.l15-lane__stats .stat { min-width: 0; flex: 1 1 70px; padding: 6px 9px 7px; }
+.l15-lane__stats .stat__value { font-size: 17px; }
+
+/* ---------------------------------------------------------------- summary tiles */
+#summary-card .summary__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+#summary-card .summary__viz { height: 150px; display: grid; place-items: center; overflow: hidden; }
+.l15-tiny-node { fill: color-mix(in srgb, var(--st-active) 13%, var(--el-fill)); stroke: var(--st-active); stroke-width: 1.25px; }
+.l15-tiny-n { font: 700 12px var(--font-mono); fill: var(--ink-2); }
+
+/* ---------------------------------------------------------------- narrow figures */
+@container fig (max-width: 560px) {
+  .fig__toolbar .seg { flex-wrap: wrap; }
+  .l15-lane__stage { min-height: 120px; }
+}

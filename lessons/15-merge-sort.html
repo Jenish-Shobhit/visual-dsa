@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Merge sort &amp; divide and conquer · Visual DSA</title>
+<meta name="description" content="Watch merge sort split an array into halves and merge it back in order, see why every level of the recursion tree costs n, and race it against insertion sort.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/15-merge-sort.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/vdsa/views/list.js" defer></script>
+<script src="../js/algos/14-elementary-sorts.js" defer></script>
+<script src="../js/algos/15-merge-sort.js" defer></script>
+<script src="../js/lessons/15-merge-sort-views.js" defer></script>
+<script src="../js/lessons/15-merge-sort-figs.js" defer></script>
+<script src="../js/lessons/15-merge-sort-lab.js" defer></script>
+<script src="../js/lessons/15-merge-sort.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="15-merge-sort">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Merge sort &amp; divide and conquer</h1>
+      <p class="hero__lede">Split the array in half, sort each half the same way, then merge two sorted halves in one pass. Halving n times gives log₂ n levels and every level costs n, so the whole sort costs n log n.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">22 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="12-recursion.html">Needs: recursion</a></li>
+        <li><a class="chip" data-icon="prereq" href="14-elementary-sorts.html">Needs: simple sorts</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: eight numbers split in half again and again, dropping one row each time until every number stands alone, then merge back up row by row, each merge producing a longer sorted run, until the top row is sorted."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">Why n² is too slow</h2>
+      <p>Insertion sort is fine for a hand of cards. Give it a million records and it makes about a quarter of a trillion comparisons. Slide the size up and watch the two bars. Merge sort needs about <em>n</em> log₂ <em>n</em> comparisons, and on this scale its bar is a sliver.</p>
+      <figure class="fig wide" id="fig-scale">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">How much work does each sort do?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="l15-slider"></div><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain l15-scale" data-stage>
+          <div class="l15-scale__row" data-row="ins"><p class="l15-scale__name">Insertion sort <span>about n² ÷ 4</span></p><div class="l15-scale__track"><div class="l15-scale__bar" data-bar></div></div><p class="l15-scale__num" data-num></p></div>
+          <div class="l15-scale__row" data-row="mrg"><p class="l15-scale__name">Merge sort <span>about n log₂ n</span></p><div class="l15-scale__track"><div class="l15-scale__bar" data-bar></div></div><p class="l15-scale__num" data-num></p></div>
+        </div>
+        <p class="fig__caption" data-readout aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: two horizontal bars whose lengths are the comparisons made by insertion sort and merge sort on n values. Both are drawn on the same linear scale, so merge sort’s bar shrinks to almost nothing as n grows. The time estimate assumes one billion comparisons per second.</figcaption>
+      </figure>
+      <p>The gap does not come from a faster computer. It comes from a different plan: instead of fixing the whole array at once, solve smaller copies of the same problem and combine their answers.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Divide and conquer</p>
+        <p>A <dfn>divide-and-conquer</dfn> algorithm has three moves. <strong>Divide</strong> the problem into smaller copies of itself. <strong>Conquer</strong> each copy by calling the same algorithm. <strong>Combine</strong> the answers into an answer for the whole. A problem small enough to answer directly is the <dfn>base case</dfn>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2 data-toc="Intuition">Two sorted piles are easy to combine</h2>
+      <p>Imagine two stacks of exam papers, each already sorted by name. To make one sorted stack, look at the top paper of each pile, move the one that comes first, and repeat. You never look deeper than the top two papers.</p>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: merging two piles</p>
+        <p>If merging sorted piles is cheap, then sorting a big pile only needs sorting two smaller piles first. And a pile of one paper is already sorted. That is merge sort: divide, conquer, combine.</p>
+      </aside>
+      <div class="mini-row wide" id="mini-intuition"></div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>A person slides papers around on a desk. A program has to write the merged result somewhere while it is still reading both runs, so a merge needs a separate output area. That extra memory is merge sort’s price, and we come back to it under Cost.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ DIVIDE -->
+    <section id="divide">
+      <h2 data-toc="Divide">Halve until nothing is left to sort</h2>
+      <p>Dividing is the easy part: take the middle index. Keep halving every piece until each holds one value. A single value is sorted by definition, so there is nothing more to do there. Then merge the pieces back, level by level.</p>
+      <figure class="fig wide" id="fig-levels">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Split every run, then merge every pair</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><button type="button" class="btn btn--sm" data-shuffle>New numbers</button></div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a column of rows, one per depth of the recursion. The whole array is on the top row. Each split drops the two halves of every run one row down, until every value is alone on the bottom row. Then each pair of runs merges into a sorted run one row up, until the top row holds the sorted array.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Odd sizes</p>
+        <p>With mid = ⌊(lo + hi) / 2⌋ the left half gets the extra value, so the two halves differ by at most one. Pick 11 values above and look at the third row: runs of 3 and 2. Halving n values takes ⌈log₂ n⌉ rounds however uneven the halves are.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ MERGE -->
+    <section id="merge">
+      <h2 data-toc="Merge">The merge is where the work happens</h2>
+      <p>Two sorted runs sit side by side. Because each run is sorted, its front value is its smallest. So the smallest value not yet written is always one of the two fronts. Take the smaller one, write it to the output, and advance that run’s pointer.</p>
+      <p>Your turn. Click the value that goes next. The figure explains every choice, right or wrong.</p>
+      <figure class="fig wide" id="fig-merge">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which one goes next?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><button type="button" class="btn btn--sm" data-shuffle>New numbers</button><button type="button" class="btn btn--sm btn--soft" data-hint>Show me the next move</button><button type="button" class="btn btn--sm btn--ghost" data-restart>Start over</button></div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption l15-msg" data-msg aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: two sorted runs on the top two rows and an empty output row below. Click the front value that is smaller (the left one on a tie) and it flies to the output. When one run is empty, click the other to copy what is left.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Invariant</p>
+        <p>At every moment the output holds the <em>k</em> smallest values of both runs, in order, and the next one is a front. Each comparison writes exactly one value, so merging <em>n</em> values takes at most <em>n</em> − 1 comparisons and exactly <em>n</em> writes: <span class="big-o" data-o="n">O(n)</span>, and the merge never backs up.</p>
+      </aside>
+      <h3 class="l15-h3">Ties decide stability</h3>
+      <p>What if the two fronts are equal? Taking the left one keeps equal values in their original order, which makes the sort <dfn>stable</dfn>. Taking the right one still sorts correctly, but equal values swap places. Try both.</p>
+      <figure class="fig wide" id="fig-stable">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">On a tie, take the left or the right value</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <p class="fig__caption l15-verdict" data-verdict aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: the left run 2, 3, 7 and the right run 3, 5, 9 merge into one output row. The two 3s carry tags a (left run) and b (right run). When the left value is taken on a tie the output has 3a before 3b; when the right one is taken, 3b comes first.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ RECURSION TREE -->
+    <section id="tree">
+      <h2 data-toc="Why n log n">Add up the work: every level costs n</h2>
+      <p>Each call of merge sort does its own merge and hands the rest to two smaller calls. Draw the calls as a tree and label each with the values its merge writes. Going down a level doubles the number of pieces and halves each piece, so the pieces on one level always add up to the whole array.</p>
+      <figure class="fig wide" id="fig-tree">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The recursion tree, one level at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="l15-slider"></div></div>
+        <div class="fig__stage fig__stage--plain l15-tree" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <p class="fig__caption l15-readout" data-readout aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: rows of boxes, one row per level of the recursion. The boxes in a row have widths proportional to the size of each piece and always fill the same total width, n. Each level of merging writes n values, and the number of merging levels is log₂ n rounded up.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Merge work per level is <em>n</em>. The number of merging levels is ⌈log₂ <em>n</em>⌉, because each level halves the piece size and you stop at size 1. Total: <span class="big-o" data-o="nlogn">n log n</span> writes, whatever the order of the input.</p>
+      </aside>
+      <details class="accordion">
+        <summary>The same thing as a recurrence</summary>
+        <div class="accordion__body">
+          <p>Let <em>T</em>(<em>n</em>) be the work for <em>n</em> values. Two calls on half the size, plus a merge of <em>n</em> values: <code>T(n) = 2 T(n/2) + n</code>. Substitute it into itself: <code>T(n) = n + 2·(n/2 + 2 T(n/4)) = 2n + 4 T(n/4) = 3n + 8 T(n/8) = …</code> After <em>k</em> substitutions the cost is <code>k·n + 2ᵏ T(n/2ᵏ)</code>. The recursion bottoms out when n/2ᵏ = 1, that is k = log₂ n, leaving <code>n log₂ n + n·T(1)</code>. Each substitution is one row of the tree above.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>The whole algorithm on your own numbers. Items drop one row when their run is split and rise one row as they are merged. The recursion tree below the array lights the call that is running. Press <kbd>←</kbd> and <kbd>→</kbd> to step and <kbd>Space</kbd> to play. The lab pauses a few times to ask what happens next.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace merge sort on your own numbers</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l15-input"></div><div class="l15-mode"><span class="field-label">Show the array as</span><div data-mode></div></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage l15-labstage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="l15-treewrap">
+              <div class="l15-treewrap__head"><p class="l15-treewrap__title">Recursion tree</p><div data-tree-legend></div></div>
+              <div class="fig__stage fig__stage--plain l15-treestage" data-tree></div>
+            </div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the caption under the figure explains every step in words. The code panel highlights the line that runs, and the variables panel shows lo, mid, hi, the two runs L and R, and the pointers i, j and k.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The divide-and-conquer template</h2>
+      <p>Every divide-and-conquer algorithm follows this map. The boxes carry merge sort’s version of each move. The dashed arrow is the recursion: each half starts again at the top. The chart is wired to the lab: step the lab and the box that is running lights up, with a token travelling along the arrow that was taken.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Divide, conquer, combine as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 360px"></div>
+        <figcaption class="fig__foot">Text alternative: mergeSort(lo, hi). If the range is small enough, one value or none, return. Otherwise divide at the middle, conquer by calling mergeSort on each half (a dashed arrow leads back to the top for each call), combine the two sorted halves by merging, and return.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ BOTTOM-UP -->
+    <section id="bottom-up">
+      <h2 data-toc="Bottom-up">Bottom-up: merge sort without recursion</h2>
+      <p>The recursion only decides which runs to merge. You can skip it: start with <em>n</em> runs of length 1, merge neighbours into runs of 2, then runs of 4, and so on. For a power of two the merges are exactly the ones the recursion makes, just in a different order.</p>
+      <figure class="fig wide" id="fig-bottomup">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Runs of 1, 2, 4, 8 merging pairwise</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><button type="button" class="btn btn--sm" data-shuffle>New numbers</button></div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: rows labelled runs of 1, runs of 2, runs of 4 and so on. In each pass, neighbouring runs merge into one sorted run one row up. An odd run at the end moves up unchanged.</figcaption>
+      </figure>
+      <pre class="l15-code" data-code-block="bottomup"></pre>
+      <p>Bottom-up needs no call stack, which is handy on a system with a small one, and it is the form used when merging runs stored on disk or tape. With 11 values, watch the last run of 3 wait for a partner two passes later.</p>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Merge sort does the same amount of work whether the input is random, sorted or reversed: the tree has the same shape, and every level writes every value. Real runs on real arrays show the difference between <em>n</em> log <em>n</em> and <em>n</em>².</p>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Comparisons as n grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-case></div><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Counts come from running both sorts on real arrays; random inputs are averaged over 16 runs. Hover or focus the chart and use the arrow keys to read exact values.</figcaption>
+      </figure>
+      <p>Now race them. One clock for both lanes: each tick is one comparison or one write. On a few values insertion sort can win, and on nearly sorted input it wins by a mile, because merge sort ignores any order that is already there. Push n up and see where the lead flips.</p>
+      <figure class="fig full" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Merge sort vs insertion sort</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="l15-slider"></div><button type="button" class="btn btn--sm" data-shuffle>New numbers</button></div>
+        <div class="fig__stage fig__stage--plain" data-stage><div class="l15-race" data-lanes></div></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: two lanes sort the same values. Each lane counts its comparisons, writes and ticks and shows its finishing place when done.</figcaption>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Algorithm</th><th scope="col">Best case</th><th scope="col">Average</th><th scope="col">Worst case</th><th scope="col">Extra space</th><th scope="col">Stable</th><th scope="col">Adaptive</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Merge sort</th><td><span class="big-o" data-o="nlogn"></span> about ½ n log₂ n comparisons, still n log₂ n writes</td><td><span class="big-o" data-o="nlogn"></span></td><td><span class="big-o" data-o="nlogn"></span> at most n log₂ n − n + 1 comparisons</td><td><span class="big-o" data-o="n"></span> for arrays, <span class="big-o" data-o="1"></span> for linked lists</td><td>Yes (ties take the left)</td><td>No</td></tr>
+            <tr><th scope="row">Insertion sort</th><td><span class="big-o" data-o="n"></span> already sorted</td><td><span class="big-o" data-o="n2"></span> about n²/4 comparisons</td><td><span class="big-o" data-o="n2"></span> reversed</td><td><span class="big-o" data-o="1"></span></td><td>Yes</td><td>Yes</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The price: extra memory</p>
+        <p>The merge reads two runs and writes a third, so it needs room for a copy of the values it is merging: <span class="big-o" data-o="n">O(n)</span> extra space for arrays. The recursion itself is shallow, only log₂ n calls deep. A merge of linked lists relinks nodes instead of copying, and needs no extra space.</p>
+      </aside>
+      <details class="accordion">
+        <summary>Where does n log₂ n − n + 1 come from?</summary>
+        <div class="accordion__body"><p>A merge of n values makes at most n − 1 comparisons, because each comparison writes one value and the last value needs no comparison. Sum n − 1 over the merges at each level and add up the levels: for n a power of two that is n log₂ n − (n − 1) in total.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ MASTER THEOREM -->
+    <section id="master">
+      <h2 data-toc="Beyond sorting">Other recursions, other trees</h2>
+      <p>Merge sort’s tree is balanced: every level costs the same. Change how many calls you make, or how much each call combines, and the tree changes shape. Pick a recursion and compare the work on each level.</p>
+      <figure class="fig wide" id="fig-master">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Work per level for T(n) = a · T(n/2) + nᶜ</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__toolbar l15-master-ctl"><div data-a></div><div data-c></div></div>
+        <div class="fig__stage fig__stage--plain l15-master" data-stage></div>
+        <p class="fig__caption" data-verdict aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: horizontal bars, one per level of the recursion tree, showing the total work on that level. Merge sort’s bars are all equal. When the leaves dominate, the bars grow towards the bottom; when the root dominates, they shrink towards the bottom.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">The three shapes</p>
+        <p>Compare the leaves’ work, about <em>n</em> raised to log₂ <em>a</em>, with the root’s combine work, <em>n</em><sup><em>c</em></sup>. If the leaves win, the total is the leaf cost. If the root wins, the total is the root cost. If they tie, every level costs the same and you multiply by the log n levels. This is the master theorem, read off the picture.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The merge step is a tool on its own, and the sort has practical cousins.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="inv">Count inversions</button>
+          <button data-tab="hybrid">Insertion-sort cutoff</button>
+          <button data-tab="kway">Merge k runs</button>
+          <button data-tab="list">Linked lists</button>
+        </div>
+        <div data-tab-panel="inv"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="inv" role="img" aria-label="Merging 3, 5, 8 with 1, 4, 9 while counting inversions."></div><figcaption data-inv-note></figcaption></figure><div><p>An inversion is a pair that is out of order. While merging, every time a value from the right run is written before <em>m</em> values still waiting in the left run, it is out of order with exactly those <em>m</em> values. Add <em>m</em> to a counter. The merge sort finishes with the inversion count in <span class="big-o" data-o="nlogn"></span> instead of n².</p><pre data-code-block="inv"></pre></div></div></div>
+        <div data-tab-panel="hybrid"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="hybrid" role="img" aria-label="Sixteen values cut into four runs of four, each sorted by insertion sort, then merged."></div><figcaption>Sort runs of 4 by insertion, then merge.</figcaption></figure><div><p>Recursing down to single values is wasteful: on a handful of values, insertion sort is faster than more calls and merges. Real libraries stop the recursion at a small size, or start from short runs sorted by insertion sort. Python’s and Java’s object sort, Timsort, builds on natural runs and merges them.</p><pre data-code-block="hybrid"></pre></div></div></div>
+        <div data-tab-panel="kway"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="kway" role="img" aria-label="Three sorted runs merged into one output by always taking the smallest front."></div><figcaption>k runs: take the smallest of k fronts.</figcaption></figure><div><p>The merge works for any number of sorted runs: keep a pointer on each and take the smallest front. External sorting does exactly this. It sorts memory-sized chunks, writes them out as runs, then merges many runs at once, reading each one strictly front to back. That is why merge sort suits tapes, disks and huge files.</p><pre data-code-block="kway"></pre></div></div></div>
+        <div data-tab-panel="list"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="list" role="img" aria-label="Two sorted linked lists merged by relinking nodes."></div><figcaption>Relink nodes: no copies, no extra array.</figcaption></figure><div><p>On a linked list you cannot jump to the middle, but you can walk to it, and merging only needs the fronts. Merge sort is the standard way to sort a linked list: the merge relinks the existing nodes, so it uses no extra space beyond the log n calls.</p><pre data-code-block="list"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ WHICH SORT -->
+    <section id="choose">
+      <h2 data-toc="Should you?">Should you use merge sort?</h2>
+      <p>Answer the questions to walk the diagram.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Choosing a sort</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 360px"></div>
+        <p class="fig__caption" data-answer aria-live="polite"></p>
+        <div class="fig__controls l15-btnbar"><button type="button" class="btn btn--sm" data-restart>Start over</button></div>
+        <figcaption class="fig__foot">Text alternative: for a linked list or data too big for memory, use merge sort. Otherwise, if equal keys must keep their order, use merge sort. Otherwise, if you need a guaranteed n log n and can spare the memory, use merge sort; if you cannot spare the memory, heapsort. If no worst-case guarantee is needed, use quicksort or the built-in sort.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-levels"></div>
+        <div class="quiz" id="quiz-recurrence"></div>
+        <div class="quiz" id="quiz-tie"></div>
+        <div class="quiz" id="quiz-sorted"></div>
+        <div class="quiz" id="quiz-binary"></div>
+      </div>
+      <figure class="fig wide" id="fig-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A merge, frozen halfway</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: the left run 2, 6, 9, 12 and the right run 1, 4, 7, 15; the values 1, 2 and 4 are already written to the output. The pointers i and j rest on 6 and 7.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Merge sort &amp; divide and conquer</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="nlogn">O(n log n) always</span><span class="chip chip--sm">Stable</span><span class="chip chip--sm">O(n) extra space</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1945<small>an early program</small></div>
+        <p class="history__people">John von Neumann and Betty Holberton<span>EDVAC (1945) · UNIVAC (1951–52)</span></p>
+        <div class="history__body">
+          <p>Merge sort was among the first programs written for a stored-program computer: John von Neumann wrote it in 1945 to show that EDVAC could do more than arithmetic. Donald Knuth later studied the 23-page manuscript.</p>
+          <p>A few years later IBM salespeople claimed that data on magnetic tape could not be sorted. Betty Holberton answered by writing a tape merge sort for UNIVAC, working it out with cards spread on her floor, and then the Sort-Merge Generator, one of the first programs that write programs. Its descendant Timsort, a merge-based hybrid from 2002, sorts objects in Python, Java and Android.</p>
+        </div>
+        <p class="history__source">Sources: D. E. Knuth, “Von Neumann’s First Computer Program”, <em>Computing Surveys</em> 2(4), 1970; R. C. Martin, <em>We, Programmers</em> (2025), ch. 4 (Holberton and UNIVAC); the UNIVAC Sort-Merge Generator; T. Peters’s Timsort (2002).</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Merge two sorted arrays</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given two sorted arrays, return one sorted array in O(n + m) time. Then make the merge stable: what must you do when two values are equal?</p></li>
+        <li><div class="practice__title">Count the inversions</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Count the pairs i &lt; j with a[i] &gt; a[j] in O(n log n) by adding a counter to merge sort. Check it against a brute-force count on random arrays.</p></li>
+        <li><div class="practice__title">Sort a linked list</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Sort a singly linked list in O(n log n) time with O(log n) extra space. How do you find the middle, and why does merging need no copies?</p></li>
+        <li><div class="practice__title">Solve the recurrence</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Draw the recursion tree for T(n) = 3T(n/2) + n and find the work on each level. Which levels dominate, and what does T(n) solve to?</p></li>
+        <li><div class="practice__title">Merge k sorted lists</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Merge k sorted lists with n values in total in O(n log k) time. Hint: a small heap of the k fronts, or merge the lists pairwise like a tournament.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-03-divide-solve-combine.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Divide, solve, combine: recurrences and the master theorem</span><span class="deeper__text" style="display:block">Solving T(n) = aT(n/b) + f(n) two ways, the three master-theorem cases, and Karatsuba multiplication.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

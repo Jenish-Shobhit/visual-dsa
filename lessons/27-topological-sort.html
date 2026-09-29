@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Topological sort &amp; cycles · Visual DSA</title>
+<meta name="description" content="Put tasks in an order where every prerequisite comes first. Kahn's algorithm peels off what is ready, DFS orders by finish time, and a cycle means no order exists. Labs, animated figures and strongly connected components.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/27-topological-sort.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/graph.js" defer></script>
+<script src="../js/vdsa/views/stack.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/27-topological-sort.js" defer></script>
+<script src="../js/lessons/27-topological-sort.js" defer></script>
+<script src="../js/lessons/27-topological-sort-labs.js" defer></script>
+<script src="../js/lessons/27-topological-sort-more.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="27-topological-sort">
+<main id="main" class="lesson">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Topological sort &amp; cycles</h1>
+      <p class="hero__lede">Some things must happen before others. A topological order lines everything up so every prerequisite comes first, and when no such line exists, you have found a cycle.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">18 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="26-bfs-and-dfs.html">Needs: BFS &amp; DFS, queues</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage t27-hero" id="teaser" role="img" aria-label="Animation: a tangle of eleven tasks with arrows in every direction. Tasks with nothing before them light up first, then the next wave, and so on, until the tasks slide into columns and every arrow points to the right."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>You are planning a computer-science degree. Some courses need others first: Data Structures needs an intro programming course, and Algorithms needs both Data Structures and Discrete Math. An arrow from <em>a</em> to <em>b</em> means “take <em>a</em> before <em>b</em>”.</p>
+      <figure class="fig" id="fig-problem">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Nine courses and their prerequisites</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <figcaption class="fig__foot">Text alternative: CS1 leads to Data Structures. Math leads to Discrete Math and to Machine Learning. Discrete Math and Data Structures lead to Algorithms. Data Structures also leads to Operating Systems and Databases. Operating Systems leads to Networks. Algorithms leads to Machine Learning. CS1 and Math have no prerequisites.</figcaption>
+      </figure>
+      <p>The drawing is a tangle, and you cannot simply read a schedule off it. What you want is a line-up of all nine courses in which <em>every arrow points forward</em>. That line-up is a <strong>topological order</strong>, and building one is <strong>topological sorting</strong>.</p>
+      <p>The same problem is everywhere a task waits for other tasks.</p>
+      <div class="mini-row wide" id="mini-uses"></div>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>You already sort by dependency every morning. Socks go on before shoes, a shirt before a tie. Nothing says whether you put on socks or a shirt first, only that each item comes after the things it needs.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>directed acyclic graph</dfn> (DAG) is a set of vertices joined by one-way arrows, with no way to start at a vertex, follow arrows, and return to it. A topological order exists <em>exactly</em> when the graph is a DAG.</p>
+      </aside>
+      <p>Play with that definition. Add tasks and arrows below. As long as you avoid a loop, the graph stays a DAG and an order exists. Close a loop and it disappears.</p>
+      <figure class="fig wide" id="fig-dagplay">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Draw dependencies, watch for the loop</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="t27-verdict-wrap"><p class="t27-verdict" data-verdict aria-live="polite"></p><div class="t27-strip" data-strip></div></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="t27-btns" data-buttons></div>
+        <figcaption class="fig__foot">Click empty space to add a task. Drag from one task to another to add an arrow. Select an arrow or task and press Delete to remove it. Text alternative: a five-task graph, A before B and C, B and C before D, D before E, with the verdict “this is a DAG” and one valid order underneath. Adding the arrow E to A turns the verdict into a cycle warning.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>You never dress in a loop, but real dependency lists contain mistakes: task A waits for B, and B waits for A. No line-up can satisfy that, so a good algorithm must notice, not loop forever. Spotting the loop is half of this lesson.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ KAHN -->
+    <section id="kahn">
+      <h2 data-toc="Kahn: peel off what is ready">Kahn’s algorithm: peel off what is ready</h2>
+      <p>Where do you start? With a course that waits for nothing. Count the arrows pointing <em>into</em> each vertex: its <strong>in-degree</strong>. A vertex with in-degree 0 has no prerequisites, so it is safe to place first.</p>
+      <p>Once you place it, its outgoing arrows are used up: every course it pointed at now waits for one thing fewer. Watch that happen to Algorithms, which waits for three courses.</p>
+      <figure class="fig wide" id="fig-indegree">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The in-degree badge counts down</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="t27-panel t27-panel--row"><p class="t27-panel__title">Order so far</p><div class="t27-strip" data-strip></div></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: DISC, DS and MATH each point at ALG, so ALG starts with badge 3. As each is placed, its arrow disappears and the badge drops to 2, 1 and finally 0. At 0, ALG is ready and is placed last.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p><strong>Kahn’s algorithm:</strong> keep a <em>ready set</em> of vertices with in-degree 0. Place one, delete its arrows, and add every vertex whose in-degree just hit 0. Repeat until nothing is ready.</p>
+      </aside>
+      <p>Now run it yourself. Pick which ready vertex to take (each rule gives a different, equally valid order), type your own dependencies, or load a preset. At the end the graph redraws itself in layers, and every arrow points right. Try the “Ring” preset to see what a cycle does.</p>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab: Kahn’s algorithm</h2>
+      <figure class="fig fig--lab full" id="lab-kahn">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace Kahn’s algorithm on your own dependencies</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar t27-toolbar"><div data-seg></div></div>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain t27-lab-stage" data-stage></div>
+            <div class="t27-panels">
+              <div class="t27-panel t27-panel--row"><p class="t27-panel__title" data-panel-title>Ready set</p><div class="t27-panel__box" data-container></div></div>
+              <div class="t27-panel t27-panel--row"><p class="t27-panel__title">Order so far</p><div class="t27-strip" data-strip></div></div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask you to predict a step. Press <kbd>←</kbd> <kbd>→</kbd> to step and <kbd>Space</kbd> to play. Text alternative: the caption under the graph says why each step happens; the variables panel lists the current vertex, the arrow being removed and the ready set. With the course graph, CS1 and MATH are ready first, and the last step redraws the graph in layers with every arrow pointing right.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the order is always valid</p>
+        <p>A vertex is placed only when its in-degree is 0, and in-degree only drops when a prerequisite is placed. So by the time a vertex goes into the order, every course it depends on is already in front of it. No arrow can ever point backwards.</p>
+      </aside>
+      <p>Because every ready vertex is a safe choice, you are free to pick any of them, which is why the same graph has many valid orders. It is also why Kahn’s algorithm is the tool of choice when you want a tie-break rule, or every wave of ready tasks to run in parallel.</p>
+      <figure class="fig wide" id="fig-flow-kahn">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Kahn’s algorithm as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 560px"></div>
+        <figcaption class="fig__foot">It is wired to the lab above: step the lab and the box that runs lights up here. Text alternative: count in-degrees; put every vertex with in-degree 0 in the ready set. While the ready set is not empty, take a vertex, append it to the order, and for each of its arrows reduce the target’s in-degree, adding the target to the ready set when it reaches 0. When the ready set is empty, if every vertex is placed return the order, otherwise report a cycle.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ MANY ORDERS -->
+    <section id="orders">
+      <h2>Many valid orders</h2>
+      <p>There is no single “the” topological order. Nothing forces CS1 before Math, so either can go first. The order below is a line of nine courses, with an arch for each prerequisite. An arrow that points right arches over the line. One that points <em>left</em> is a broken promise, and it hangs below in red.</p>
+      <figure class="fig wide" id="fig-orders">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Break the order, then fix it</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 640px"></div>
+        <p class="t27-verdict" data-status aria-live="polite"></p>
+        <p class="fig__caption" data-caption></p>
+        <div class="t27-btns" data-buttons></div>
+        <figcaption class="fig__foot">Drag a course to a new slot, or focus one and press <kbd>←</kbd> <kbd>→</kbd> to move it. Click one course, then another, to swap them. Text alternative: nine courses in a row. Each prerequisite is an arch from the earlier course to the later one; if it points to an earlier course it hangs below the row in red. Random shuffles usually break several arrows; the valid button always finds an order with none.</figcaption>
+      </figure>
+      <p>Out of 362,880 ways to line up nine courses, only a small fraction are valid. Each prerequisite you add removes some of them. Add enough and the order becomes forced, with exactly one valid line-up. The chart in the cost section shows this shrinking freedom.</p>
+    </section>
+
+    <!-- ============================================================ CYCLES -->
+    <section id="cycles">
+      <h2>When there is no order</h2>
+      <p>Now add a mistake. Suppose a new rule says Data Structures needs Machine Learning first, while Machine Learning already needs Algorithms, which needs Data Structures. Each course on that loop waits for the next.</p>
+      <p>Run Kahn’s algorithm and watch it fail in a useful way: the ready set runs dry while courses are still unplaced. Their badges never reach 0.</p>
+      <figure class="fig wide" id="fig-cycle">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Kahn gets stuck on a cycle</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="t27-panel t27-panel--row"><p class="t27-panel__title">Order so far</p><div class="t27-strip" data-strip></div></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: with the extra arrow ML to DS, Kahn places CS1, MATH and DISC and then stops. The other six vertices glow: DS, ALG and ML form a loop, and OS, DB and NET are stuck behind it. Without the extra arrow, all nine are placed. A self-dependency (OS to OS) also blocks OS and NET.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Kahn’s leftover count is a cycle detector</p>
+        <p>If Kahn places fewer vertices than the graph has, there is a cycle. The unplaced vertices are on a cycle or depend on one. You do not need extra code: “order shorter than the vertex count” <em>is</em> the check.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ DFS -->
+    <section id="dfs">
+      <h2 data-toc="DFS: order by finish time">The second way: DFS and finish time</h2>
+      <p>Kahn builds the order from the front. Depth-first search builds it from the back. Run a DFS along the arrows, and every time a vertex <strong>finishes</strong> (everything it points to is done), put it at the <em>front</em> of the answer. A course that finishes last has nothing after it that is still unfinished, so it can safely come first.</p>
+      <p>DFS gives each vertex one of three colours, and the colours also expose cycles.</p>
+      <div class="mini-row wide" id="mini-colors"></div>
+      <p>Step through it. An arrow from a vertex to a <strong>grey</strong> one closes a loop, because grey vertices are exactly the ones on the current route. Load the “Ring” or “Cycle behind a start” preset and see the alarm go off.</p>
+      <figure class="fig fig--lab full" id="lab-dfs">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace DFS topological sort on your own dependencies</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain t27-lab-stage" data-stage></div>
+            <div class="t27-panel t27-panel--row"><p class="t27-panel__title">Answer so far, front first</p><div class="t27-strip" data-strip></div></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Under each vertex you see d/f: the clock tick when DFS entered it and when it finished. The lab pauses once to ask you to predict a step. Text alternative: DFS turns vertices grey as it dives and black as it backs out; each black vertex is added to the front of the answer strip. On a cycle it stops the moment an arrow reaches a grey vertex and lights the loop red.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why reverse finish order works</p>
+        <p>Take any arrow u → v. When DFS looks along it, v is either white (so it will start and finish inside u, before u finishes) or black (already finished). It cannot be grey unless the graph has a cycle. Either way v finishes before u, so v lands behind u in the answer.</p>
+      </aside>
+      <figure class="fig wide" id="fig-flow-dfs">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">DFS topological sort as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 560px"></div>
+        <figcaption class="fig__foot">Wired to the DFS lab. Note that <em>visit(v)</em> is a recursive call: when it finishes, control returns to the loop of its caller. Text alternative: for each still-white vertex, visit it: colour it grey; for each arrow to v, if v is grey there is a cycle, stop; if v is white, visit it; if v is black, ignore. When no arrows are left, colour the vertex black and put it at the front of the order.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Different answer, same validity</p>
+        <p>DFS and Kahn usually give different orders for the same graph, and both are right. Change the order in which DFS scans the names and you get yet another. Only the guarantee, every arrow points forward, is fixed.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ SCC -->
+    <section id="scc">
+      <h2 data-toc="Strongly connected components">When cycles are allowed: strongly connected components</h2>
+      <p>Sometimes cycles are real, not mistakes: pages that link to each other, functions that call each other, tasks that genuinely feed each other. You cannot order the vertices on a cycle, but you can still find them and treat each group as one unit.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>Two vertices are in the same <dfn>strongly connected component</dfn> (SCC) if each can reach the other by following arrows. Every vertex is in exactly one component. A vertex on no cycle is a component of its own.</p>
+      </aside>
+      <p><strong>Kosaraju’s algorithm</strong> finds them with two DFS passes. Pass 1 records the finish order. Then reverse every arrow and run DFS again, always starting from the vertex that finished <em>last</em>. Each walk on the reversed graph collects exactly one component.</p>
+      <figure class="fig fig--lab full" id="lab-scc">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Find the components, then collapse them</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain t27-lab-stage" data-stage></div>
+            <div class="t27-panel t27-panel--row"><p class="t27-panel__title" data-strip-title>Finish stack</p><div class="t27-strip" data-strip></div></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Under each vertex, f1, f2 … is its position on the finish stack. The lab pauses once to ask you to predict a step. Text alternative: pass 1 colours vertices grey then black and stacks them by finish time. Pass 2 draws the arrows reversed and pops the stack; each walk paints one component a colour. Finally each component pulls together into one vertex and the resulting graph slides into layers with every arrow pointing right.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">The condensation is always a DAG</p>
+        <p>Squash each component into one vertex and keep an arrow between two components if any arrow went between their members. The result can never have a cycle: a cycle would merge its components into one. So every graph, cycles and all, has a DAG hiding inside it, and you can topologically sort that.</p>
+      </aside>
+      <figure class="fig wide" id="fig-flow-scc">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Kosaraju as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 560px"></div>
+        <figcaption class="fig__foot">Wired to the SCC lab. Text alternative: pass 1 is a DFS that pushes each vertex on the finish stack as it finishes. Then reverse every arrow. While the finish stack is not empty, pop the top vertex; if it has no component, run DFS from it on the reversed graph and everything reached is one component. When the stack is empty, contract the components to get the condensation DAG.</figcaption>
+      </figure>
+      <details class="accordion">
+        <summary>Why does the reversed walk stay inside one component?</summary>
+        <div class="accordion__body"><p>The vertex with the latest finish time lies in a component that no other component points into. Reversing the arrows makes it a component that nothing points <em>out of</em>. So the walk can reach its own component but cannot leak into another. Then the next-latest unassigned vertex is in the next such component, and so on.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>What about Tarjan’s algorithm?</summary>
+        <div class="accordion__body"><p>Tarjan’s algorithm finds the same components with a single DFS. It tracks for each vertex the earliest discovery time it can reach (its low-link) on a stack; when a vertex’s low-link equals its own discovery time, it is the root of a component and everything above it on the stack belongs to it. Same O(V + E), one pass, a little harder to see.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ WHICH TOOL -->
+    <section id="choose">
+      <h2>Which tool should you use?</h2>
+      <p>You now have three related tools. Answer the questions in order to see which one fits.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Kahn, DFS or SCC?</h3></div>
+          <button type="button" class="btn btn--ghost btn--sm" data-restart>Start over</button>
+        </header>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 520px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: need a dependency order? If yes: want parallel rounds or a tie rule, use Kahn; otherwise if the graph is very deep use Kahn, else DFS finish order. If no order is needed but you want groups of mutually dependent vertices, use SCC; otherwise a plain BFS or DFS or a shortest-path algorithm.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ CRITICAL PATH -->
+    <section id="critical">
+      <h2>Beyond ordering: the critical path</h2>
+      <p>Give every course a duration. Now a different question appears: what is the fastest the whole plan can finish, if you can take unrelated courses at the same time? The answer is the length of the <strong>longest path</strong> through the DAG, the <strong>critical path</strong>.</p>
+      <p>A topological order makes it easy. Visit the vertices in order, so each vertex’s prerequisites are already done, and compute its earliest finish time.</p>
+      <figure class="fig wide" id="fig-critical">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Earliest finish times and the critical path</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: each course shows how many weeks it takes. Going through the courses in topological order, each course finishes after its longest-finishing prerequisite plus its own time. The largest finish time is the project length, and following the “last to finish” prerequisites backwards gives the critical path, highlighted in orange.</figcaption>
+      </figure>
+      <pre data-code-block="critical"></pre>
+      <p>Longest paths are hard in a general graph, but on a DAG they take O(V + E). This is the idea behind the critical path method of the 1950s, the origin of the whole topic (see the history below).</p>
+    </section>
+
+    <!-- ============================================================ PATTERNS -->
+    <section id="patterns-section">
+      <h2>Variations and patterns</h2>
+      <p>A few things you will meet again and again once you have a topological order in hand.</p>
+      <div class="tabs wide" id="patterns">
+        <div class="tabs__list">
+          <button data-tab="rounds">Rounds in parallel</button>
+          <button data-tab="rules">Three rules, three orders</button>
+          <button data-tab="paths">DP on a DAG</button>
+        </div>
+        <div data-tab-panel="rounds"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="rounds"></div><figcaption>Each colour is one round: the courses in it can all be taken at the same time.</figcaption></figure><div><p data-rounds-note></p><pre data-code-block="rounds"></pre></div></div></div>
+        <div data-tab-panel="rules"><div class="split"><div data-rules></div><div><p>The ready set is where you get to choose. A queue keeps things fair, a stack dives, and “smallest name first” gives the alphabetically smallest valid order, which is what many puzzles ask for. Every one of these is a correct answer.</p><p>For “smallest first”, keep the ready set in a min-heap (lesson 21): O((V + E) log V).</p></div></div></div>
+        <div data-tab-panel="paths"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="paths"></div><figcaption>The badge is the number of different routes from A.</figcaption></figure><div><p data-paths-note></p><pre data-code-block="paths"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Count two operations: handling a vertex and handling an arrow. Kahn reads every arrow once to count in-degrees, takes every vertex once, and removes every arrow once. DFS enters every vertex once and examines every arrow once. Both are linear in the size of the graph.</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Method</th><th scope="col">Vertex steps</th><th scope="col">Arrow steps</th><th scope="col" class="num">Time</th><th scope="col" class="num">Extra space</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Kahn</th><td>V takes</td><td>2E (count + remove)</td><td class="num"><span class="big-o" data-o="n">O(V + E)</span></td><td class="num"><span class="big-o" data-o="n">O(V)</span></td></tr>
+            <tr><th scope="row">DFS finish order</th><td>V enters</td><td>E examined</td><td class="num"><span class="big-o" data-o="n">O(V + E)</span></td><td class="num"><span class="big-o" data-o="n">O(V)</span></td></tr>
+            <tr><th scope="row">Kosaraju SCC</th><td>2V (two passes)</td><td>2E, plus the reversed copy</td><td class="num"><span class="big-o" data-o="n">O(V + E)</span></td><td class="num"><span class="big-o" data-o="n">O(V + E)</span></td></tr>
+            <tr><th scope="row">Critical path</th><td>V, after the order</td><td>E</td><td class="num"><span class="big-o" data-o="n">O(V + E)</span></td><td class="num"><span class="big-o" data-o="n">O(V)</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The chart runs both algorithms on random DAGs of growing size and counts every step. Drag the slider to make the graphs denser.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Measured work as the graph grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 240px"></div><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Each point is one run on a random DAG with the given number of vertices and about E/V arrows per vertex. Kahn counts V + 2E steps (it reads each arrow twice) and DFS counts V + E. Both lines are straight: doubling the graph doubles the work.</figcaption>
+      </figure>
+      <p>The number of <em>orders</em> is a different story. Nothing here is linear: with no arrows, n tasks have n! orders, and each arrow you add cuts that number down.</p>
+      <figure class="fig wide" id="fig-orders-chart">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Every prerequisite removes freedom</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 240px"></div><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-say></p>
+        <figcaption class="fig__foot">Eight tasks, and arrows added one at a time to a random DAG. The count of valid orders is computed exactly, by dynamic programming over subsets. With no arrows there are 8! = 40,320; with all 28 there is exactly one. On the log scale the fall looks like a smooth slope; on the linear scale it is a cliff.</figcaption>
+      </figure>
+      <details class="accordion">
+        <summary>Why is a cyclic graph not more expensive?</summary>
+        <div class="accordion__body"><p>Kahn simply stops early, when the ready set runs dry, and DFS stops at the first grey vertex. Detecting the cycle costs no more than sorting would have.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <figure class="fig" id="fig-quiz-first">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Where can you start?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: the nine courses and their prerequisite arrows. CS1 and Math have no arrow pointing into them.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-first-courses"></div>
+      <figure class="fig" id="fig-quiz-kahn">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Kahn paused mid-run</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="t27-panel t27-panel--row"><p class="t27-panel__title">Ready set (front on the left)</p><div class="t27-panel__box" data-container></div><p class="t27-placed" data-order></p></div>
+        <figcaption class="fig__foot">Text alternative: the course graph with some courses placed, badges showing the remaining in-degree of the others, and the ready set listed below.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-next-kahn"></div>
+      <figure class="fig wide" id="fig-quiz-order">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A proposed line-up</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 640px"></div>
+        <figcaption class="fig__foot">Text alternative: the nine courses in a row with an arch for each prerequisite. Exactly one prerequisite arrow points to an earlier course: Operating Systems to Networks, because Networks was placed before Operating Systems.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-order-edge"></div>
+      <figure class="fig" id="fig-quiz-scc">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">How many components?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: A and B point at each other; B points to C; C points to D, D to E and E back to C; E points to F; F and G point at each other; G points to H.</figcaption>
+      </figure>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-scc"></div>
+        <div class="quiz" id="quiz-why-dfs"></div>
+        <div class="quiz" id="quiz-stuck"></div>
+        <div class="quiz" id="quiz-which-dag"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Topological sort &amp; cycles</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="n">O(V + E)</span><span class="chip chip--sm">DAGs only</span><span class="chip chip--sm">a cycle means no order</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1962<small>Kahn’s algorithm</small></div>
+        <p class="history__people">Arthur B. Kahn<span>Westinghouse · CACM, November 1962</span></p>
+        <div class="history__body">
+          <p>Topological sorting grew out of project management. Networks of tasks that must wait for other tasks, such as PERT for the Navy’s Polaris missile and the critical path method used in industry in 1957 and 1958, needed an order that respects every dependency.</p>
+          <p>In 1962 Arthur Kahn of Westinghouse published the rule you traced above: repeatedly remove a task with no remaining prerequisites. He reported ordering a 30,000-activity network in under an hour on an IBM 7090. Robert Tarjan’s one-pass SCC algorithm followed in 1972, and Kosaraju’s two-pass method was published by Sharir in 1981.</p>
+        </div>
+        <p class="history__source">Sources: A. B. Kahn, “Topological Sorting of Large Networks”, <em>Communications of the ACM</em> 5(11), 1962; R. Tarjan, “Depth-first search and linear graph algorithms”, <em>SIAM J. Computing</em> 1(2), 1972; M. Sharir (1981). See docs/research/HISTORY.md.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Course schedule</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">You must take n courses, and some have prerequisites given as pairs (a, b) meaning “take b before a”. Return whether you can finish all of them. Which of the two ideas, a leftover count or a grey vertex, is easier to code for you?</p></li>
+        <li><div class="practice__title">Course schedule, part two</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Return one valid order in which to take the courses, or an empty list if there is none. Then change your solution to return the lexicographically smallest valid order. What data structure does the ready set become?</p></li>
+        <li><div class="practice__title">Alien dictionary</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">You are given words sorted in an unknown alphabet. Compare neighbouring words to find pairs of letters where one must come before another, and build an order of the letters. When is there no valid alphabet?</p></li>
+        <li><div class="practice__title">Parallel courses</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Each semester you can take any number of courses whose prerequisites are done. What is the minimum number of semesters, or −1 if impossible? Explain why the answer is the length of the longest chain, and how one small change to Kahn’s loop computes it.</p></li>
+        <li><div class="practice__title">Safe states</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">In a directed graph, a vertex is safe if every route from it ends at a vertex with no outgoing arrows. Find all safe vertices. Hint: run Kahn’s algorithm on the reversed graph, and say why the cycle detector and the answer are the same thing here.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-11-graphs-and-their-traversals.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Graphs &amp; their traversals</span><span class="deeper__text" style="display:block">The long-form study: topological order two ways with proofs, strongly connected components (Tarjan and Kosaraju), and worked traces.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

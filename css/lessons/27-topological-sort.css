@@ -1,0 +1,107 @@
+/* Lesson 27 · Topological sort & cycles — lesson-specific layout and figure styles.
+   Colours come only from tokens (css/tokens.css), so both themes work. */
+
+/* ---------------------------------------------------------------- hero */
+.t27-hero { padding: clamp(10px, 2vw, 18px); grid-template-columns: minmax(0, 1fr); align-content: center; }
+.t27-hero > svg { height: auto; }
+@media (max-width: 900px) { .t27-hero { aspect-ratio: auto; } }
+
+/* viz.css sets `svg.vz.vz { min-width: 0 }`, which outranks `.fig__stage--scroll > svg { min-width: … }`, so wide
+   flowcharts shrink to unreadable type on phones instead of scrolling. Restore the scroll behaviour. */
+.fig__stage--scroll > svg.vz.vz { min-width: var(--stage-min, 620px); }
+
+/* ---------------------------------------------------------------- lesson-specific node colours (the legend explains them) */
+/* DFS colours: white = default outline, grey = on the route, black = finished */
+.vz .vz-item.is-grey { --vz-fill: color-mix(in srgb, var(--ink) 30%, var(--el-fill)); --vz-stroke: color-mix(in srgb, var(--ink) 60%, var(--el-fill)); --vz-ink: var(--el-ink); --vz-c: var(--ink-2); }
+.vz .vz-item.is-black { --vz-fill: var(--ink); --vz-stroke: var(--ink); --vz-ink: var(--bg-elev); --vz-c: var(--ink); }
+/* strongly connected components: one colour per component */
+.vz .vz-item:is(.is-cc1, .is-cc2, .is-cc3, .is-cc4, .is-cc5, .is-cc6) {
+  --vz-fill: var(--vz-c); --vz-stroke: var(--vz-c);
+  --vz-ink: color-mix(in srgb, var(--vz-c) 15%, black);
+}
+.vz .vz-item.is-cc1 { --vz-ink: var(--on-state); }
+.vz .is-cc1 { --vz-c: var(--u1); }
+.vz .is-cc2 { --vz-c: var(--u2); }
+.vz .is-cc3 { --vz-c: var(--u3); }
+.vz .is-cc4 { --vz-c: var(--u4); }
+.vz .is-cc5 { --vz-c: var(--u6); }
+.vz .is-cc6 { --vz-c: var(--u7); }
+
+/* ---------------------------------------------------------------- shared panels and strips */
+.t27-panel { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 12px 16px 14px; }
+.t27-panel__title { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.t27-panel__box { min-height: 58px; min-width: 0; display: grid; align-items: center; }
+.t27-panel--row { border-top: 1px solid var(--line); background: color-mix(in srgb, var(--bg-sunken) 35%, var(--bg-elev)); }
+.t27-panels { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid var(--line); background: color-mix(in srgb, var(--bg-sunken) 35%, var(--bg-elev)); }
+.t27-panels > .t27-panel + .t27-panel { border-left: 1px solid var(--line); }
+.t27-panels .t27-panel--row { border-top: 0; background: none; }
+@container fig (max-width: 620px) {
+  .t27-panels { grid-template-columns: minmax(0, 1fr); }
+  .t27-panels > .t27-panel + .t27-panel { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+.t27-strip { display: flex; flex-wrap: wrap; gap: 4px 4px; min-height: 34px; align-items: center; }
+.t27-strip__chip {
+  display: inline-grid; place-items: center; min-width: 34px; height: 32px; padding: 0 9px;
+  border-radius: 10px; font: 700 13.5px var(--font-mono);
+  background: color-mix(in srgb, var(--st-done) 16%, var(--el-fill));
+  border: 1.5px solid var(--st-done); color: var(--ink);
+  animation: t27-chip-in var(--t27-dur, 320ms) var(--ease-out);
+}
+.t27-strip__chip.is-new { background: var(--st-active); border-color: var(--st-active); color: var(--on-state); }
+.t27-strip__arrow { color: var(--ink-3); font-size: 12px; }
+.t27-strip__empty { color: var(--ink-3); font-size: 13px; font-style: italic; }
+@keyframes t27-chip-in { from { transform: translateY(-6px) scale(.85); opacity: 0; } }
+.t27-rule { display: grid; gap: 4px; padding: 8px 0; }
+.t27-rule + .t27-rule { border-top: 1px dashed var(--line); }
+.t27-rule__label { margin: 0; font-size: 13px; font-weight: 650; color: var(--ink-2); }
+
+/* verdict banner (draw-your-own graph, order shuffler) */
+.t27-verdict { margin: 0; padding: 10px 14px; border-left: 4px solid var(--line-strong); font-size: 15px; line-height: 1.5; background: var(--bg-sunken); color: var(--ink); }
+.t27-verdict.is-ok { border-left-color: var(--st-done); background: color-mix(in srgb, var(--st-done) 9%, var(--bg-elev)); }
+.t27-verdict.is-bad { border-left-color: var(--st-error); background: color-mix(in srgb, var(--st-error) 9%, var(--bg-elev)); }
+.t27-verdict-wrap { border-top: 1px solid var(--line); }
+.t27-verdict-wrap .t27-strip { padding: 6px 16px 12px; }
+
+/* ---------------------------------------------------------------- toolbars and lab layout */
+.fig .seg { flex-wrap: wrap; }
+.t27-toolbar { align-items: flex-end; }
+.t27-btns { padding: 10px 14px 12px; display: flex; flex-wrap: wrap; gap: 8px; border-top: 1px solid var(--line); }
+.t27-btns:empty { display: none; }
+.t27-lab-stage { min-height: 300px; }
+
+/* ---------------------------------------------------------------- order line: chips on a line, arcs for the arrows */
+.fig__stage > svg.t27-order { width: 100%; height: auto; max-height: none; }
+.t27-order__axis { stroke: var(--line-strong); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-linecap: round; }
+.t27-chip rect { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 1.6; transition: fill 250ms, stroke 250ms; }
+.t27-chip text { fill: var(--el-ink); font: 700 13px var(--font-mono); pointer-events: none; }
+.t27-chip.is-valid rect { stroke: var(--st-done); fill: color-mix(in srgb, var(--st-done) 12%, var(--el-fill)); }
+.t27-chip.is-bad rect { stroke: var(--st-error); fill: color-mix(in srgb, var(--st-error) 10%, var(--el-fill)); }
+.t27-chip.is-selected rect { stroke: var(--st-active); stroke-width: 3; fill: color-mix(in srgb, var(--st-active) 14%, var(--el-fill)); }
+.t27-chip[tabindex] { cursor: grab; touch-action: none; outline: none; }
+.t27-chip[tabindex]:focus-visible rect { stroke: var(--accent); stroke-width: 3; }
+.t27-chip.is-dragging { cursor: grabbing; }
+.t27-chip.is-dragging rect { stroke: var(--st-active); stroke-width: 2.5; fill: var(--bg-elev); filter: drop-shadow(0 4px 6px color-mix(in srgb, black 30%, transparent)); }
+.t27-arc__line { fill: none; stroke: var(--el-edge-strong); stroke-width: 1.8; stroke-linecap: round; transition: stroke 250ms; }
+.t27-arc__head { fill: var(--el-edge-strong); transition: fill 250ms; }
+.t27-arc.is-bad .t27-arc__line { stroke: var(--st-error); stroke-width: 2.6; }
+.t27-arc.is-bad .t27-arc__head { fill: var(--st-error); }
+.t27-arc__hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: default; outline: none; }
+.t27-arc.is-pick-right .t27-arc__line { stroke: var(--st-done); stroke-width: 3; fill: none; }
+.t27-arc.is-pick-right .t27-arc__head { fill: var(--st-done); }
+.t27-arc.is-pick-right, .t27-arc.is-pick-wrong { filter: none; outline: none; box-shadow: none; }
+.t27-arc.is-pick-wrong .t27-arc__line { stroke: var(--st-error); stroke-dasharray: 4 3; fill: none; }
+.t27-arc:focus-visible .t27-arc__line { stroke: var(--accent); stroke-width: 3; }
+[data-clickable] .t27-arc__hit { cursor: pointer; }
+
+/* ---------------------------------------------------------------- mini figures */
+.mini__stage .vz-graph { width: 100%; }
+
+/* ---------------------------------------------------------------- quiz figures */
+#fig-quiz-kahn .fig__stage, #fig-quiz-scc .fig__stage { min-height: 220px; }
+.t27-placed { margin: 0; padding: 0 16px 10px; font-size: 14px; color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- summary card: three tiles per row */
+#summary-card .summary__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 720px) { #summary-card .summary__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 420px) { #summary-card .summary__grid { grid-template-columns: minmax(0, 1fr); } }

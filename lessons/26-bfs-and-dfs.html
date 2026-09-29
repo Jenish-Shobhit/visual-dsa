@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>BFS &amp; DFS · Visual DSA</title>
+<meta name="description" content="Breadth-first and depth-first search, animated: a queue spreads in waves and finds fewest-edge paths, a stack dives deep and exposes cycles. Labs on graphs and paintable grids.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/26-bfs-and-dfs.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/graph.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/vdsa/views/stack.js" defer></script>
+<script src="../js/vdsa/views/callstack.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/26-bfs-and-dfs.js" defer></script>
+<script src="../js/lessons/26-bfs-and-dfs.js" defer></script>
+<script src="../js/lessons/26-bfs-and-dfs-labs.js" defer></script>
+<script src="../js/lessons/26-bfs-and-dfs-more.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="26-bfs-and-dfs">
+<main id="main" class="lesson">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">BFS &amp; DFS</h1>
+      <p class="hero__lede">Two ways to explore a graph. A queue spreads out in waves and finds the route with the fewest edges; a stack dives as deep as it can and exposes the graph’s shape.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">20 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: graphs, queues, stacks</li>
+      </ul>
+    </div>
+    <div class="hero__stage bd-hero" id="teaser" role="img" aria-label="Animation: a breadth-first search wave spreads across a grid with walls, one ring of equal distance at a time, until it has reached every open cell."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>Here is a small friendship network. A line means two people have shaken hands. The question sounds easy: how many handshakes separate you from each person? A friend is one handshake away, a friend of a friend two.</p>
+      <figure class="fig" id="fig-problem">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Who is furthest from you?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: You know Ana, Ben and Cat. Ana knows Dan, Ben knows Eve, Cat knows Fay. Dan and Fay know each other, Eve knows Ivy, Fay knows Gus, and Gus knows Hal. Hal is drawn right below You.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-problem"></div>
+      <p>The drawing misleads you on purpose: Hal sits right under You, yet he is four handshakes away. Distance in a graph means <em>edges on the shortest route</em>, and nothing about the picture tells you that. You need a search that is systematic.</p>
+      <p>The same question hides everywhere. A maze asks for the fewest moves to the exit. A web crawler asks which pages are within two clicks. A paint bucket asks which pixels touch the one you clicked.</p>
+      <div class="mini-row wide" id="mini-uses"></div>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Drop a stone in a pond. The ripple reaches everything one step away before anything two steps away. <strong>Breadth-first search</strong> (BFS) explores a graph like that ripple, ring by ring.</p>
+      <p>Now explore a cave with a ball of thread. You follow one tunnel as far as it goes, and at a dead end you wind the thread back to the last fork with a tunnel you have not tried. <strong>Depth-first search</strong> (DFS) explores like that.</p>
+      <div class="mini-row wide" id="mini-analogy"></div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogies break</p>
+        <p>A graph can loop back on itself, so both searches must remember every vertex they have already seen. Without that memory the ripple would echo forever and the explorer would walk in circles.</p>
+      </aside>
+      <p>Watch both searches start at A on the same graph, at the same speed. Each step, each search visits one more vertex.</p>
+      <figure class="fig wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The wave and the dive: BFS and DFS race from A to I</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="bd-race">
+          <div class="bd-race__col">
+            <p class="bd-race__label"><b>BFS</b> <span>takes the oldest discovery (queue)</span></p>
+            <div class="fig__stage fig__stage--plain bd-race__stage" data-stage="bfs"></div>
+            <div class="bd-strip" data-strip="bfs"></div>
+          </div>
+          <div class="bd-race__col">
+            <p class="bd-race__label"><b>DFS</b> <span>takes the newest discovery (stack)</span></p>
+            <div class="fig__stage fig__stage--plain bd-race__stage" data-stage="dfs"></div>
+            <div class="bd-strip" data-strip="dfs"></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: after the same number of visits, BFS has covered everything near A in rings, while DFS has followed one long route. BFS reaches I in 4 edges; DFS reaches it along an 8-edge route.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ THE UNIVERSAL WALK -->
+    <section id="walk">
+      <h2 data-toc="One loop, two containers">One loop, two containers</h2>
+      <p>Both searches keep two things. The <strong>frontier</strong> holds vertices you have discovered but not finished exploring. The <strong>seen</strong> set remembers every vertex ever discovered, so nothing is processed twice.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>Every vertex is in one of three states: <dfn>unseen</dfn> (not discovered yet), <dfn>frontier</dfn> (discovered, waiting to be explored) or <dfn>visited</dfn> (explored). Some books call them white, grey and black.</p>
+      </aside>
+      <div class="mini-row wide" id="mini-states"></div>
+      <p>Both searches repeat one move: pick a vertex from the frontier and look at its neighbours. The only difference is <em>which</em> vertex they pick. BFS picks the oldest discovery, so its frontier is a <strong>queue</strong>. DFS picks the newest, so its frontier is a <strong>stack</strong>.</p>
+      <p>Switch the container below and watch how the same graph is explored in a different order.</p>
+      <figure class="fig wide" id="fig-frontier">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Same graph, different container</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="bd-split">
+          <div class="fig__stage fig__stage--plain" data-stage></div>
+          <div class="bd-panel">
+            <p class="bd-panel__title" data-panel-title>Frontier: a queue</p>
+            <div class="bd-panel__box" data-container></div>
+            <p class="bd-panel__title">Visit order</p>
+            <div class="bd-order" data-order></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: with a queue the frontier grows at the rear and shrinks at the front, and vertices are visited nearest first. With a stack the frontier is the current route: it grows and shrinks at the top, and the search runs deep before it backs up.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>The container decides the order, and the order decides what you learn. First in, first out gives distances. Last in, first out gives depth, and with it the graph’s structure.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ BFS -->
+    <section id="bfs">
+      <h2 data-toc="BFS: waves and distances">BFS: waves and distances</h2>
+      <p>The queue hands vertices out in the order they were found. So BFS finishes every vertex at distance 1 before it touches distance 2, and all of distance 2 before distance 3. The <strong>distance</strong> of a vertex is the number of edges on the shortest route from the start.</p>
+      <p>When BFS discovers a vertex it writes down two things: its distance (one more than the vertex it came from) and its <strong>parent</strong>, the vertex it came from. Step through, then watch the graph rearrange itself by distance.</p>
+      <figure class="fig wide" id="fig-layers">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">BFS layers, then the path back along parent pointers</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: BFS from A labels distances A 0; B and C 1; D, E and F 2; G and H 3; I 4. The vertices then slide into five columns by distance. Every edge joins neighbouring columns or stays inside one. Following parents from I gives I, G, D, B, A.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the first route found is a shortest one</p>
+        <p>The queue only ever holds two neighbouring distances, d and d + 1, in that order. Suppose a vertex v had a shorter route than the one BFS found. The vertex just before v on that route is closer to the start, so it left the queue earlier and would have discovered v first. Contradiction.</p>
+      </aside>
+      <p>Following parent pointers from any vertex back to the start spells out a shortest route in reverse. Together the parent edges form the <strong>BFS tree</strong>: one shortest route from the start to every reachable vertex.</p>
+      <p>One line decides whether BFS is fast: you must mark a vertex as seen <em>when you add it to the queue</em>, not when you take it out. Try both on a graph where everyone knows everyone.</p>
+      <figure class="fig" id="fig-mark">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Mark on discovery, or pay for copies</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="bd-panel bd-panel--row">
+          <p class="bd-panel__title">Queue</p>
+          <div class="bd-panel__box" data-container></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: on five vertices that all know each other, marking on discovery puts each vertex in the queue once, 5 entries. Marking on dequeue lets the same vertex be queued again and again, 11 entries for the same answer.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ DFS -->
+    <section id="dfs">
+      <h2 data-toc="DFS: dive and back up">DFS: dive and back up</h2>
+      <p>DFS takes the first unseen neighbour and keeps going. When a vertex has no unseen neighbours left, DFS backs up to the most recent vertex that still has one. Written with recursion, the call stack does the backing up for you: each running call is one vertex on the current route.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A clock ticks once each time DFS enters or leaves a vertex. The <dfn>discovery time</dfn> d is the tick when the call starts; the <dfn>finish time</dfn> f is the tick when it returns. Below each vertex you see them as d/f.</p>
+      </aside>
+      <figure class="fig wide" id="fig-dfs">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Recursive DFS from A: the route, the call stack and the clock</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="bd-dfs">
+          <div class="fig__stage fig__stage--plain" data-stage="graph"></div>
+          <div class="bd-dfs__stack">
+            <p class="bd-panel__title">Call stack</p>
+            <div data-stage="stack"></div>
+          </div>
+        </div>
+        <div class="bd-timeline" data-stage="timeline"></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: DFS from A enters A, B, D, G, E, C, F, H and I, each one level deeper, then finishes them in reverse order as it backs up. The timeline draws each vertex as a bar from its discovery time to its finish time; the bars nest like brackets.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">The clock records the tree</p>
+        <p>Look at the bars: two of them never partly overlap. Either one sits completely inside the other, or they do not touch. A bar inside another means a descendant: DFS entered and left it while the outer call was still running.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Deep graphs break recursion</p>
+        <p>A graph shaped like a long line makes recursive DFS nest one call per vertex. Around ten thousand calls deep, many languages run out of stack. For big inputs, keep your own stack in a loop (see the variations below).</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Pick BFS or DFS, a start and, for BFS, a target. Type your own edges, choose a preset, or draw a graph by hand. Every step lights the line of code that runs and says why. Press <kbd>←</kbd> <kbd>→</kbd> to step and <kbd>Space</kbd> to play.</p>
+      <figure class="fig fig--lab full" id="lab-graph">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace BFS or DFS on your own graph</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar bd-toolbar">
+          <div data-algo></div>
+          <label class="bd-select"><span class="field-label">Start</span><select class="field" data-start aria-label="Start vertex"></select></label>
+          <label class="bd-select" data-target-wrap><span class="field-label">Target</span><select class="field" data-target aria-label="Target vertex"></select></label>
+          <button type="button" class="btn btn--secondary" data-draw aria-pressed="false">Draw a graph</button>
+        </div>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="bd-lab-stage">
+              <div class="fig__stage fig__stage--plain" data-stage></div>
+              <div class="bd-editor" data-editor hidden>
+                <div class="bd-editor__bar">
+                  <p class="bd-editor__help">Click empty space to add a vertex. Drag from one vertex to another to join them. Select and press <kbd>Delete</kbd> to remove.</p>
+                  <div class="btn-row">
+                    <button type="button" class="btn btn--ghost btn--sm" data-editor-clear>Clear</button>
+                    <button type="button" class="btn btn--primary btn--sm" data-editor-done>Use this graph</button>
+                  </div>
+                </div>
+                <div class="bd-editor__canvas" data-editor-canvas></div>
+                <p class="input-row__error" data-editor-error role="alert"></p>
+              </div>
+            </div>
+            <div class="bd-panel bd-panel--row">
+              <p class="bd-panel__title" data-panel-title>Queue</p>
+              <div class="bd-panel__box" data-container></div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask you to predict a step. Text alternative: the caption under the graph describes every step in words, and the variables panel lists the current vertex, the neighbour being checked and the frontier.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ GRIDS -->
+    <section id="grids">
+      <h2 data-toc="Grids are graphs">Grids are graphs in disguise</h2>
+      <p>A grid is a graph you never have to draw. Every open cell is a vertex, and it has an edge to each open cell directly above, below, left or right of it. Walls are simply missing vertices.</p>
+      <p>So BFS on a grid is a flood: from the start it fills cells in diamond-shaped rings, and the first time it reaches the goal it has found a shortest route. Drag on the grid to draw or erase walls, drag S and T to move them, then compare BFS with DFS.</p>
+      <figure class="fig fig--lab full" id="lab-grid">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Paint walls, then flood the grid</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar bd-toolbar">
+          <div data-mode></div>
+          <div class="input-row__presets" role="group" aria-label="Grid presets" data-presets></div>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain bd-grid-stage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a grid of cells with walls. BFS colours cells in rings of equal distance and then draws the shortest path back from T to S. DFS snakes along one route, backs out of dead ends, and stops at the first route it finds. With the keyboard, Tab to the grid, move with the arrow keys and press Enter to toggle a wall.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Flood fill, “number of islands”, the paint bucket in an image editor and the fewest moves in a maze are all one BFS (or DFS) on a grid. Only the question you ask at the end changes.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ FLOWCHARTS -->
+    <section id="flowchart">
+      <h2>The decisions, as flowcharts</h2>
+      <p>This is the lab’s algorithm as a map of decisions. It is wired to the lab: step the lab and the box that runs lights up here. Switch the lab to DFS and the map changes with it.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-flow-title>BFS decision flow</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <figcaption class="fig__foot">Text alternative for BFS: put the start in the queue; while the queue is not empty, take the front vertex; if it is the target, rebuild the path; otherwise check each neighbour, and add unseen ones with a distance and a parent. For DFS: enter a vertex and stamp its time; for each neighbour, dive into it if unseen; when none are left, finish and return to the caller.</figcaption>
+      </figure>
+      <p>Which one should you reach for? Answer the questions in order.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">BFS or DFS?</h3></div>
+          <button type="button" class="btn btn--ghost btn--sm" data-restart>Start over</button>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 320px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: weighted edges lead to Dijkstra or A*. Unweighted, and you need the fewest edges: BFS. You need cycles, an ordering or other structure: DFS. You only need to visit everything: either works, DFS is shortest to write, and BFS or an explicit stack avoids deep recursion.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="reveal">
+      <h2 data-toc="What the walks reveal">What the walks reveal</h2>
+      <p>One search only reaches the start’s own piece of the graph. Restart it from every vertex that is still unseen and you find the <strong>connected components</strong>: the separate islands of the graph.</p>
+      <figure class="fig" id="fig-components">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Connected components by repeated BFS</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: scanning A to K, a new BFS starts at A, then at F, then at I and finally at K, colouring four components of sizes 5, 3, 2 and 1.</figcaption>
+      </figure>
+      <p>BFS can also two-colour a graph: the start is side A, its neighbours side B, theirs side A again. If an edge ever joins two vertices on the same side, the graph has an odd cycle and is not <strong>bipartite</strong>.</p>
+      <figure class="fig" id="fig-bipartite">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Two-colouring spreads until an odd cycle breaks it</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: on a six-cycle with a chord from B to E the colours alternate and every edge joins side A to side B. Adding the edge from C to E creates the triangle C, B, E; BFS finds C and E on the same side, flags that edge in red and lights the three-edge cycle.</figcaption>
+      </figure>
+      <p>DFS has a sharper tool. In a directed graph, an edge that points to a vertex <em>still on the stack</em> points back to an ancestor: a <strong>back edge</strong>. A back edge exists exactly when the graph has a cycle.</p>
+      <figure class="fig" id="fig-cycles">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">DFS finds the cycle: tree, back, forward and cross edges</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: DFS from A enters B, D and E. The edge from E back to B reaches a vertex still on the stack, so it is a back edge and B, D, E form a cycle. Later C to D is a cross edge and A to E a forward edge; neither makes a cycle. Without the edge from E to B there is no back edge and no cycle.</figcaption>
+      </figure>
+      <p>A few more patterns you will meet again and again:</p>
+      <div class="tabs wide" id="patterns">
+        <div class="tabs__list">
+          <button data-tab="multi">Multi-source BFS</button>
+          <button data-tab="iter">DFS with your own stack</button>
+          <button data-tab="implicit">Graphs you never build</button>
+        </div>
+        <div data-tab-panel="multi"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="multi"></div><figcaption>Two sources, one wave: each cell shows the distance to the <b>nearest</b> source.</figcaption></figure><div><p>Put several start vertices in the queue at distance 0. One BFS then gives every vertex its distance to the nearest start: the nearest exit, the nearest hospital, how long until every orange in a crate rots.</p><pre data-code-block="multi"></pre></div></div></div>
+        <div data-tab-panel="iter"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="iter"></div><figcaption>The stack holds (vertex, next neighbour) pairs: the whole route, no recursion.</figcaption></figure><div><p>Keep the route in an array instead of the call stack. Each entry remembers where its neighbour scan stopped, so the order matches the recursive version exactly and depth is limited only by memory.</p><pre data-code-block="iter"></pre></div></div></div>
+        <div data-tab-panel="implicit"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="implicit"></div><figcaption>Words are vertices; changing one letter is an edge.</figcaption></figure><div><p>Many puzzles are graphs whose edges you generate on the fly: word ladders, lock combinations, sliding tiles, knight moves. Write a <code>neighbours(state)</code> function and run BFS for the fewest moves.</p><pre data-code-block="implicit"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Count two operations: taking a vertex out of the frontier, and checking one entry of an adjacency list. Each reachable vertex leaves the frontier once. Each adjacency list is scanned once, and together the lists hold every edge twice (once from each end) in an undirected graph.</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Stored as</th><th scope="col">Vertex steps</th><th scope="col">Edge checks</th><th scope="col" class="num">BFS and DFS time</th><th scope="col" class="num">Extra space</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Adjacency list</th><td>V</td><td>2E undirected, E directed</td><td class="num"><span class="big-o" data-o="n">O(V + E)</span></td><td class="num"><span class="big-o" data-o="n">O(V)</span></td></tr>
+            <tr><th scope="row">Adjacency matrix</th><td>V</td><td>V per vertex, V² in total</td><td class="num"><span class="big-o" data-o="n2">O(V²)</span></td><td class="num"><span class="big-o" data-o="n">O(V)</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The chart runs BFS on random graphs of growing size and counts every operation. Drag the slider to make the graphs denser.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Measured BFS work as the graph grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 240px"></div><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Each point is one BFS on a connected random graph with the given number of vertices and an average of k neighbours per vertex. The list line grows in step with V + 2E; the matrix line grows with V².</figcaption>
+      </figure>
+      <p>Space is where the two searches differ. The frontier of BFS holds a whole layer; the stack of DFS holds a whole route. Which one is bigger depends on the graph’s shape.</p>
+      <figure class="fig wide" id="fig-space">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Largest frontier on four graph shapes (measured)</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Shapes: a tree with 4 children per vertex and 3 levels (85 vertices), a path of 40 vertices, an 8 × 8 grid and 12 vertices that all know each other; every search starts at a corner or an end. Text alternative: on a bushy tree the BFS queue grows to a whole level while the DFS stack stays as short as the tree is tall. On a long path it is the reverse: the queue holds one vertex, the stack holds all of them.</figcaption>
+      </figure>
+      <details class="accordion">
+        <summary>Why is the matrix version quadratic even on a sparse graph?</summary>
+        <div class="accordion__body"><p>To find the neighbours of one vertex in a matrix you must read its whole row, V cells, most of them zero. Doing that for each of V vertices costs V² reads, whether the graph has 10 edges or 10,000.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why O(V + E) and not O(E)?</summary>
+        <div class="accordion__body"><p>A graph can have far fewer edges than vertices; with no edges at all, a full traversal that restarts at every vertex still does V units of work. So both terms stay.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <figure class="fig" id="fig-quiz-bfs">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">BFS paused mid-search</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="bd-panel bd-panel--row">
+          <p class="bd-panel__title">Queue</p>
+          <div class="bd-panel__box" data-container></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: BFS from S has visited S and A. The queue holds B, then C, then D.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-next-bfs"></div>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-dfs-order"></div>
+        <div class="quiz" id="quiz-shortest"></div>
+        <div class="quiz" id="quiz-mark"></div>
+        <div class="quiz" id="quiz-when"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">BFS &amp; DFS</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="n">O(V + E)</span><span class="chip chip--sm">adjacency list</span><span class="chip chip--sm">O(V) extra space</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1882<small>DFS in print</small></div>
+        <p class="history__people">Charles Trémaux, Konrad Zuse, Edward F. Moore<span>maze rule, 1882 · BFS, 1945 · BFS rediscovered, 1957</span></p>
+        <div class="history__body">
+          <p>Depth-first search began as a 19th-century maze trick. Charles Trémaux marked each passage as he walked it and retreated along his own marks when he got stuck; Édouard Lucas published the rule in 1882.</p>
+          <p>Breadth-first search was written down by Konrad Zuse in 1945, in a thesis on his Plankalkül language that stayed unpublished until 1972. So Edward Moore of Bell Labs reinvented it in 1957 to find the shortest path through a maze, and C. Y. Lee used it in 1961 to route wires on circuit boards. In the early 1970s Robert Tarjan showed how much structure one linear-time DFS reveals.</p>
+        </div>
+        <p class="history__source">Sources: É. Lucas, <em>Récréations mathématiques</em> (1882); E. F. Moore, “The Shortest Path Through a Maze” (1959); C. Y. Lee (1961); R. Tarjan, “Depth-first search and linear graph algorithms” (1972). See docs/research/HISTORY.md.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Shortest reach</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given n vertices, a list of undirected edges and a start s, return the number of edges on the shortest route from s to every vertex, or −1 when a vertex cannot be reached. Explain why the answer for a vertex is final the moment it is discovered.</p></li>
+        <li><div class="practice__title">Number of islands</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">A grid holds land (1) and water (0). Count the islands: groups of land cells joined up, down, left or right. What is the running time on an r × c grid?</p></li>
+        <li><div class="practice__title">Rotting oranges</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Each minute, every rotten orange rots its fresh neighbours (up, down, left, right). Return the minutes until no fresh orange is left, or −1 if some can never rot. Why is one BFS enough, however many rotten oranges you start with?</p></li>
+        <li><div class="practice__title">Is the graph bipartite?</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Decide whether the vertices of an undirected graph, which may be disconnected, can be split into two groups so that every edge joins the groups. When the answer is no, return an odd cycle as proof.</p></li>
+        <li><div class="practice__title">Course schedule</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Courses have prerequisites (“take b before a”). Using DFS with three colours, decide whether every course can be finished, and if not, print one cycle of courses that block each other.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-11-graphs-and-their-traversals.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Graphs &amp; their traversals</span><span class="deeper__text" style="display:block">The long-form study: the BFS distance proof, DFS timestamps and edge classes, topological order, strongly connected components, bridges and articulation points.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

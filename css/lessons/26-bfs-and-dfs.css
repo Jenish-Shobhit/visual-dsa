@@ -1,0 +1,149 @@
+/* Lesson 26 · BFS & DFS — lesson-specific layout and figure styles.
+   Colours come only from tokens (css/tokens.css), so both themes work. */
+
+/* ---------------------------------------------------------------- hero */
+.bd-hero { padding: clamp(10px, 2vw, 18px); grid-template-columns: minmax(0, 1fr); align-content: center; }
+.bd-hero > svg { height: auto; }
+@media (max-width: 900px) { .bd-hero { aspect-ratio: auto; } }
+
+/* The grid view wraps its SVG in a host <div>; inside a centred grid stage that div shrinks to the SVG's
+   default 300 px. Stretch it so the grid can use the full stage width. */
+.fig__stage > .vz-grid-host, .hero__stage > .vz-grid-host, .mini__stage > .vz-grid-host { width: 100%; justify-self: stretch; }
+
+/* viz.css sets `svg.vz.vz { min-width: 0 }`, which outranks `.fig__stage--scroll > svg { min-width: … }`, so wide
+   flowcharts shrink to unreadable type on phones instead of scrolling. Restore the scroll behaviour. */
+.fig__stage--scroll > svg.vz.vz { min-width: var(--stage-min, 620px); }
+
+/* ---------------------------------------------------------------- shared panels */
+.bd-panel { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 12px 16px 14px; }
+.bd-panel__title {
+  margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.bd-panel__box { min-height: 64px; min-width: 0; display: grid; align-items: center; }
+.bd-panel--row { border-top: 1px solid var(--line); background: color-mix(in srgb, var(--bg-sunken) 35%, var(--bg-elev)); }
+.bd-panel--row .bd-panel__box { min-height: 58px; }
+
+/* visit-order chips */
+.bd-order { display: flex; flex-wrap: wrap; gap: 6px; min-height: 30px; align-items: center; }
+.bd-order__chip {
+  display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px;
+  border-radius: 9px; font: 700 14px var(--font-mono);
+  background: color-mix(in srgb, var(--st-visited) 18%, var(--el-fill));
+  border: 1.5px solid var(--st-visited); color: var(--ink);
+  animation: bd-chip-in var(--bd-dur, 320ms) var(--ease-out);
+}
+.bd-order__chip.is-new { background: var(--st-active); border-color: var(--st-active); color: var(--on-state); }
+.bd-order__arrow { color: var(--ink-3); font-size: 12px; }
+.bd-order__empty { color: var(--ink-3); font-size: 13px; font-style: italic; }
+@keyframes bd-chip-in { from { transform: translateY(-6px) scale(.85); opacity: 0; } }
+
+/* ---------------------------------------------------------------- race: two graphs side by side */
+.bd-race { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.bd-race__col { min-width: 0; display: flex; flex-direction: column; }
+.bd-race__col + .bd-race__col { border-left: 1px solid var(--line); }
+.bd-race__label { margin: 0; padding: 12px 16px 0; font-size: 14px; color: var(--ink-2); }
+.bd-race__label b { font-size: 15px; color: var(--ink); margin-right: 4px; }
+.bd-race__stage { min-height: 200px; padding: 8px 10px 4px; }
+.bd-strip { padding: 4px 12px 10px; min-height: 64px; }
+@container fig (max-width: 680px) {
+  .bd-race { grid-template-columns: minmax(0, 1fr); }
+  .bd-race__col + .bd-race__col { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+/* ---------------------------------------------------------------- graph + side panel */
+.bd-split { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+.bd-split > .fig__stage { min-height: 260px; }
+.bd-split > .bd-panel { border-left: 1px solid var(--line); background: color-mix(in srgb, var(--bg-sunken) 35%, var(--bg-elev)); justify-content: center; }
+@container fig (max-width: 720px) {
+  .bd-split { grid-template-columns: minmax(0, 1fr); }
+  .bd-split > .bd-panel { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+/* ---------------------------------------------------------------- DFS: graph + call stack + timeline */
+.bd-dfs { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
+.bd-dfs__stack { border-left: 1px solid var(--line); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; background: color-mix(in srgb, var(--bg-sunken) 35%, var(--bg-elev)); }
+@container fig (max-width: 720px) {
+  .bd-dfs { grid-template-columns: minmax(0, 1fr); }
+  .bd-dfs__stack { border-left: 0; border-top: 1px solid var(--line); }
+}
+.bd-timeline { border-top: 1px solid var(--line); padding: 10px 16px 12px; overflow-x: auto; overscroll-behavior-x: contain; }
+.bd-timeline > svg { display: block; min-width: 460px; }
+.bd-tl { font-family: var(--font-sans); }
+.bd-tl .bd-tl-axis line { stroke: var(--line-strong); }
+.bd-tl .bd-tl-axis text { fill: var(--ink-3); font: 500 10.5px var(--font-mono); text-anchor: middle; }
+.bd-tl .bd-tl-axis .bd-tl-now { stroke: var(--st-active); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.bd-tl .bd-tl-title { fill: var(--ink-3); font: 700 10.5px var(--font-sans); letter-spacing: .06em; text-transform: uppercase; }
+.bd-tl .bd-tl-bar rect { stroke-width: 1.5; transition: fill var(--t, 300ms), stroke var(--t, 300ms); }
+.bd-tl .bd-tl-bar text { font: 700 11.5px var(--font-mono); dominant-baseline: central; transition: fill var(--t, 300ms); }
+.bd-tl .bd-tl-bar.is-open rect { fill: color-mix(in srgb, var(--st-frontier) 22%, var(--el-fill)); stroke: var(--st-frontier); stroke-dasharray: 4 3; }
+.bd-tl .bd-tl-bar.is-open text { fill: color-mix(in srgb, var(--st-frontier) 55%, var(--ink)); }
+.bd-tl .bd-tl-bar.is-active rect { fill: var(--st-active); stroke: var(--st-active); stroke-dasharray: none; }
+.bd-tl .bd-tl-bar.is-active text { fill: var(--on-state); }
+.bd-tl .bd-tl-bar.is-closed rect { fill: color-mix(in srgb, var(--st-visited) 22%, var(--el-fill)); stroke: var(--st-visited); }
+.bd-tl .bd-tl-bar.is-closed text { fill: var(--ink); }
+.bd-parens { margin: 8px 0 0; font: 600 13px/1.6 var(--font-mono); color: var(--ink-2); word-break: break-word; min-height: 1.6em; }
+.bd-parens span { transition: color var(--t, 300ms); }
+.bd-parens .is-new { color: color-mix(in srgb, var(--st-active) 80%, var(--ink)); font-weight: 800; }
+
+/* ---------------------------------------------------------------- layers figure: distance bands behind the graph */
+.bd-bands rect { fill: color-mix(in srgb, var(--st-frontier) 7%, transparent); stroke: color-mix(in srgb, var(--st-frontier) 35%, transparent); stroke-width: 1; stroke-dasharray: 4 4; }
+.bd-bands text { fill: color-mix(in srgb, var(--st-frontier) 60%, var(--ink)); font: 700 12px var(--font-mono); text-anchor: middle; }
+
+/* ---------------------------------------------------------------- lab toolbar and editor */
+.fig .seg { flex-wrap: wrap; }
+.bd-toolbar { align-items: flex-end; }
+.bd-select { display: flex; flex-direction: column; gap: 4px; }
+.bd-select .field { height: 36px; min-width: 96px; padding: 0 10px; }
+.bd-select[hidden] { display: none; }
+.bd-lab-stage { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 300px; }
+.bd-lab-stage > .fig__stage { flex: 1; }
+.bd-editor {
+  position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column;
+  background: var(--bg-elev);
+}
+.bd-editor[hidden] { display: none; }
+.bd-editor__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--accent) 6%, var(--bg-elev)); }
+.bd-editor__help { margin: 0; font-size: 13.5px; color: var(--ink-2); max-width: 46em; }
+.bd-editor__canvas { flex: 1; min-height: 260px; padding: 10px; background-color: var(--bg-elev); background-image: radial-gradient(circle at 1px 1px, var(--stage-dot) 1px, transparent 1.2px); background-size: 18px 18px; }
+.bd-editor .input-row__error { padding: 0 14px 8px; margin: 0; }
+.bd-grid-stage { padding: clamp(8px, 2cqi, 18px); }
+
+/* ---------------------------------------------------------------- mini figures */
+.bd-mini-svg { width: 100%; max-width: 360px; height: auto; display: block; margin: 0 auto; }
+.bd-mini-svg .ripple { fill: none; stroke: var(--st-frontier); stroke-width: 2; }
+.bd-mini-svg .dot { fill: var(--el-fill); stroke: var(--el-edge-strong); stroke-width: 1.5; transition: fill var(--t, 300ms), stroke var(--t, 300ms); }
+.bd-mini-svg .dot.is-lit { fill: var(--st-frontier); stroke: var(--st-frontier); }
+.bd-mini-svg .dot.is-done { fill: color-mix(in srgb, var(--st-visited) 30%, var(--el-fill)); stroke: var(--st-visited); }
+.bd-mini-svg .stone { fill: var(--st-active); }
+.bd-mini-svg .tunnel { fill: none; stroke: color-mix(in srgb, var(--ink) 16%, transparent); stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+.bd-mini-svg .thread { fill: none; stroke: var(--st-path); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.bd-mini-svg .walker { fill: var(--st-path); stroke: var(--bg-elev); stroke-width: 2; }
+.bd-mini-svg .deadend { fill: var(--st-visited); }
+.bd-mini-svg .lbl { fill: var(--ink-3); font: 600 11px var(--font-sans); }
+.bd-state-node circle { stroke-width: 2; }
+.bd-state-node text { font: 700 15px var(--font-sans); text-anchor: middle; dominant-baseline: central; }
+
+/* ---------------------------------------------------------------- lesson-specific colour roles (legend explains them) */
+/* connected components: one colour per component */
+.vz .vz-item:is(.is-cc1, .is-cc2, .is-cc3, .is-cc4) {
+  --vz-fill: var(--vz-c); --vz-stroke: var(--vz-c);
+  --vz-ink: color-mix(in srgb, var(--vz-c) 18%, black);
+}
+.vz .is-cc1 { --vz-c: var(--u3); }
+.vz .is-cc2 { --vz-c: var(--u4); }
+.vz .is-cc3 { --vz-c: var(--u6); }
+.vz .is-cc4 { --vz-c: var(--u5); }
+/* bipartite: two sides */
+.vz .vz-item:is(.is-sidea, .is-sideb) { --vz-fill: var(--vz-c); --vz-stroke: var(--vz-c); }
+.vz .vz-item.is-sidea { --vz-ink: var(--on-state); }
+.vz .vz-item.is-sideb { --vz-ink: color-mix(in srgb, var(--vz-c) 18%, black); }
+.vz .is-sidea { --vz-c: var(--u1); }
+.vz .is-sideb { --vz-c: var(--u3); }
+.bd-sw-cc1 { --sw: var(--u3); } .bd-sw-cc2 { --sw: var(--u4); } .bd-sw-cc3 { --sw: var(--u6); } .bd-sw-cc4 { --sw: var(--u5); }
+
+/* the current vertex in the bipartite figure keeps its side colour and gains a ring */
+.vz-graph .vz-gnode.is-ring .vz-shape { stroke: var(--ink); stroke-width: 3px; }
+
+/* ---------------------------------------------------------------- quiz figure */
+#fig-quiz-bfs .fig__stage { min-height: 220px; }

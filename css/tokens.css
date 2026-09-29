@@ -1,0 +1,217 @@
+/* Visual DSA design tokens.
+   Every page loads this first. Components (css/vdsa.css) and visualisations (css/viz.css)
+   read only these variables, so light and dark themes stay consistent everywhere.
+
+   Theme selection: <html data-theme="light|dark">. With no attribute the system preference wins. */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces and ink */
+  --bg: #fbfaf7;
+  --bg-elev: #ffffff;
+  --bg-sunken: #f3f1ec;
+  --bg-tint: #f6f5ff;
+  --ink: #1b1e26;
+  --ink-2: #4a5061;
+  --ink-3: #7c8293;
+  --line: #e6e3db;
+  --line-strong: #cdc8bb;
+  --shadow-1: 0 1px 2px rgba(27, 30, 38, .06), 0 1px 1px rgba(27, 30, 38, .04);
+  --shadow-2: 0 10px 30px -12px rgba(27, 30, 38, .22), 0 2px 6px rgba(27, 30, 38, .06);
+  --shadow-3: 0 30px 60px -20px rgba(27, 30, 38, .32);
+
+  /* Brand */
+  --accent: #5a4ff3;
+  --accent-2: #8b5cf6;
+  --accent-ink: #ffffff;
+  --accent-soft: #ecebff;
+
+  /* Unit colours (chrome only: eyebrows, progress, contents). Same hues as js/curriculum.js. */
+  --u1: #5a4ff3;
+  --u2: #0899b5;
+  --u3: #e08a00;
+  --u4: #12a37a;
+  --u5: #e5484d;
+  --u6: #c2359a;
+  --u7: #7a4ff0;
+
+  /* Semantic visualisation states — one meaning per colour, everywhere on the site. */
+  --st-default: #1b1e26;   /* outline of an untouched element */
+  --st-active: #2f6fe4;    /* current element / pointer focus */
+  --st-compare: #e08a00;   /* being compared or examined */
+  --st-swap: #e5484d;      /* being moved, written, swapped */
+  --st-done: #12a37a;      /* finalised: sorted, settled, confirmed */
+  --st-found: #0b8a63;     /* successful search result */
+  --st-visited: #7c6fb0;   /* already processed */
+  --st-frontier: #0899b5;  /* discovered, waiting (queue / heap / stack) */
+  --st-path: #f06a1d;      /* part of the answer path */
+  --st-pivot: #c2359a;     /* pivot / special marker */
+  --st-key: #7a4ff0;       /* held key / value in hand */
+  --st-error: #d0302f;     /* conflict, invalid, overflow */
+  --st-muted: #b9b6ad;     /* out of consideration */
+
+  /* Element defaults for nodes, cells, bars */
+  --el-fill: #ffffff;
+  --el-stroke: #2a2e39;
+  --el-ink: #1b1e26;
+  --el-edge: #9a9790;
+  --el-edge-strong: #4a5061;
+  --on-state: #ffffff;     /* text on a filled state colour */
+
+  /* Code */
+  --code-bg: #f5f3ee;
+  --code-ink: #2a2e39;
+  --code-line-active: #fff1c7;
+  --code-line-active-bar: #e08a00;
+  --tok-keyword: #7a3fd6;
+  --tok-string: #0b7a52;
+  --tok-number: #b3470d;
+  --tok-comment: #8b8f9c;
+  --tok-function: #2f5fc4;
+  --tok-operator: #6b4e2e;
+
+  /* Type */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Scale */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+  --measure: 700px;        /* prose column */
+  --wide: 1120px;          /* figures and labs */
+  --full: 1360px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --dur-fast: 160ms;
+  --dur: 320ms;
+  --dur-slow: 600ms;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1016;
+  --bg-elev: #161923;
+  --bg-sunken: #0a0c11;
+  --bg-tint: #171630;
+  --ink: #e9eaf0;
+  --ink-2: #aeb3c2;
+  --ink-3: #767d90;
+  --line: #252936;
+  --line-strong: #373c4c;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-2: 0 10px 30px -12px rgba(0, 0, 0, .7), 0 2px 6px rgba(0, 0, 0, .3);
+  --shadow-3: 0 30px 60px -20px rgba(0, 0, 0, .8);
+  --accent: #8e86ff;
+  --accent-2: #b08cff;
+  --accent-ink: #0e1016;
+  --accent-soft: #221f45;
+  --u1: #8e86ff;
+  --u2: #2cc9e6;
+  --u3: #ffb224;
+  --u4: #3dd68c;
+  --u5: #ff6369;
+  --u6: #ec5bc4;
+  --u7: #a585ff;
+  --st-default: #d7dae4;
+  --st-active: #5b9bff;
+  --st-compare: #ffb224;
+  --st-swap: #ff6369;
+  --st-done: #3dd68c;
+  --st-found: #2bc48a;
+  --st-visited: #9d8fe0;
+  --st-frontier: #2cc9e6;
+  --st-path: #ff8b3e;
+  --st-pivot: #ec5bc4;
+  --st-key: #a585ff;
+  --st-error: #ff5c5c;
+  --st-muted: #4a4f5e;
+  --el-fill: #1b1f2b;
+  --el-stroke: #c9cede;
+  --el-ink: #e9eaf0;
+  --el-edge: #5b6173;
+  --el-edge-strong: #aeb3c2;
+  --on-state: #0e1016;
+  --code-bg: #12151d;
+  --code-ink: #dfe2ec;
+  --code-line-active: #3a2f10;
+  --code-line-active-bar: #ffb224;
+  --tok-keyword: #c49bff;
+  --tok-string: #7ee2b0;
+  --tok-number: #ffab70;
+  --tok-comment: #6c7386;
+  --tok-function: #8ab4ff;
+  --tok-operator: #d8c3a5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e1016;
+    --bg-elev: #161923;
+    --bg-sunken: #0a0c11;
+    --bg-tint: #171630;
+    --ink: #e9eaf0;
+    --ink-2: #aeb3c2;
+    --ink-3: #767d90;
+    --line: #252936;
+    --line-strong: #373c4c;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, .4);
+    --shadow-2: 0 10px 30px -12px rgba(0, 0, 0, .7), 0 2px 6px rgba(0, 0, 0, .3);
+    --shadow-3: 0 30px 60px -20px rgba(0, 0, 0, .8);
+    --accent: #8e86ff;
+    --accent-2: #b08cff;
+    --accent-ink: #0e1016;
+    --accent-soft: #221f45;
+    --u1: #8e86ff;
+    --u2: #2cc9e6;
+    --u3: #ffb224;
+    --u4: #3dd68c;
+    --u5: #ff6369;
+    --u6: #ec5bc4;
+    --u7: #a585ff;
+    --st-default: #d7dae4;
+    --st-active: #5b9bff;
+    --st-compare: #ffb224;
+    --st-swap: #ff6369;
+    --st-done: #3dd68c;
+    --st-found: #2bc48a;
+    --st-visited: #9d8fe0;
+    --st-frontier: #2cc9e6;
+    --st-path: #ff8b3e;
+    --st-pivot: #ec5bc4;
+    --st-key: #a585ff;
+    --st-error: #ff5c5c;
+    --st-muted: #4a4f5e;
+    --el-fill: #1b1f2b;
+    --el-stroke: #c9cede;
+    --el-ink: #e9eaf0;
+    --el-edge: #5b6173;
+    --el-edge-strong: #aeb3c2;
+    --on-state: #0e1016;
+    --code-bg: #12151d;
+    --code-ink: #dfe2ec;
+    --code-line-active: #3a2f10;
+    --code-line-active-bar: #ffb224;
+    --tok-keyword: #c49bff;
+    --tok-string: #7ee2b0;
+    --tok-number: #ffab70;
+    --tok-comment: #6c7386;
+    --tok-function: #8ab4ff;
+    --tok-operator: #d8c3a5;
+  }
+}

@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Lesson template · Visual DSA</title>
+<meta name="description" content="The pattern every Visual DSA lesson copies: a find-the-maximum mini lesson that uses every section and component.">
+<!--
+  LESSON TEMPLATE — copy this file to lessons/NN-slug.html and js/lessons/_template.js to js/lessons/NN-slug.js.
+  Read docs/ENGINE.md ("How to build a lesson") first. Every section below carries an AUTHOR note.
+
+  Load order matters:
+  1. tokens.css → vdsa.css → viz.css           (design tokens first; renderer styles last)
+  2. core.js WITHOUT defer, in <head>           (applies the saved theme before first paint)
+  3. everything else with defer, in this order  (curriculum before shell; engine before renderers; lesson last)
+-->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<!-- Renderers you need, e.g.:
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+Pure step generators, e.g.: <script src="../js/algos/find-max.js" defer></script> -->
+<script src="../js/lessons/_template.js" defer></script>
+<style>
+  /* Lesson-specific figure styles. Keep this block tiny: real lessons draw with VDSA.views.* and css/viz.css.
+     The template draws its own SVG so it has no dependency on the renderer library. Colours come only from
+     the --st-* state tokens; transitions follow --t, which each render sets to the player's step duration. */
+  .tp { font-family: var(--font-sans); }
+  .tp .cell rect { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 1.5; transition: fill var(--t, 300ms) var(--ease-out), stroke var(--t, 300ms); }
+  .tp .cell .val { font-size: 18px; font-weight: 650; fill: var(--el-ink); text-anchor: middle; dominant-baseline: central; transition: fill var(--t, 300ms); }
+  .tp .cell .idx { font-family: var(--font-mono); font-size: 11px; fill: var(--ink-3); text-anchor: middle; }
+  .tp .is-compare rect { fill: color-mix(in srgb, var(--st-compare) 18%, var(--el-fill)); stroke: var(--st-compare); stroke-width: 2.5; }
+  .tp .is-key rect { fill: var(--st-key); stroke: var(--st-key); }
+  .tp .is-key .val, .tp .is-found .val { fill: var(--on-state); }
+  .tp .is-visited rect { fill: color-mix(in srgb, var(--st-visited) 12%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-visited) 70%, var(--el-fill)); }
+  .tp .is-visited .val { fill: color-mix(in srgb, var(--el-ink) 70%, transparent); }
+  .tp .is-found rect { fill: var(--st-found); stroke: var(--st-found); }
+  .tp .tag rect { fill: var(--st-key); }
+  .tp .tag text { fill: var(--on-state); font-size: 12px; font-weight: 750; text-anchor: middle; dominant-baseline: central; }
+  .tp .tag path { fill: var(--st-key); }
+  .tp .ptr path { fill: var(--st-compare); }
+  .tp .ptr text { fill: color-mix(in srgb, var(--st-compare) 70%, var(--ink)); font-family: var(--font-mono); font-size: 13px; font-weight: 700; text-anchor: middle; }
+  .tp .region rect { fill: color-mix(in srgb, var(--st-visited) 9%, transparent); stroke: color-mix(in srgb, var(--st-visited) 55%, transparent); stroke-dasharray: 5 4; transition: opacity var(--t, 300ms); }
+  .tp .region text { fill: color-mix(in srgb, var(--st-visited) 75%, var(--ink)); font-size: 12px; font-weight: 650; }
+  .tp .bar { fill: color-mix(in srgb, var(--el-stroke) 7%, var(--el-fill)); stroke: color-mix(in srgb, var(--el-stroke) 55%, var(--el-fill)); stroke-width: 1.5; transition: fill var(--t, 300ms), stroke var(--t, 300ms); }
+  .tp .bar.is-compare { fill: var(--st-compare); stroke: var(--st-compare); }
+  .tp .bar.is-key { fill: var(--st-key); stroke: var(--st-key); }
+  .tp .bar.is-visited { fill: color-mix(in srgb, var(--st-visited) 22%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-visited) 60%, var(--el-fill)); }
+  .tp .bar.is-found { fill: var(--st-found); stroke: var(--st-found); }
+  .tp .level line { stroke: var(--st-key); stroke-width: 2; stroke-dasharray: 6 5; }
+  .tp .readout { font-size: 13px; font-weight: 600; fill: var(--ink-3); }
+  .tp .readout tspan.v { font-size: 22px; font-weight: 760; fill: color-mix(in srgb, var(--st-key) 80%, var(--ink)); }
+  .tp .node rect, .tp .node polygon { fill: var(--el-fill); stroke: var(--el-edge-strong); stroke-width: 1.5; transition: fill var(--t, 300ms), stroke var(--t, 300ms); }
+  .tp .node text { font-size: 14px; font-weight: 600; fill: var(--el-ink); text-anchor: middle; dominant-baseline: central; }
+  .tp .node.is-active rect, .tp .node.is-active polygon { fill: color-mix(in srgb, var(--st-active) 16%, var(--el-fill)); stroke: var(--st-active); stroke-width: 2.5; }
+  .tp .edge path { fill: none; stroke: var(--el-edge); stroke-width: 1.6; }
+  .tp .edge text { fill: var(--ink-3); font-size: 12px; font-weight: 600; }
+  .tp .edge.is-active path { stroke: var(--st-active); stroke-width: 2.2; }
+  .tp .axis line, .tp .axis path { stroke: var(--line-strong); }
+  .tp .grid line { stroke: var(--line); }
+  .tp .axis text { fill: var(--ink-3); font-size: 11px; font-family: var(--font-mono); }
+  .tp .series-cmp { fill: none; stroke: var(--ink-3); stroke-width: 2; stroke-dasharray: 2 5; stroke-linecap: round; }
+  .tp .series-upd { fill: none; stroke: var(--st-key); stroke-width: 3; stroke-linejoin: round; }
+  .tp .cursor line { stroke: var(--ink-2); stroke-dasharray: 3 3; }
+  .tp .cursor circle { stroke: var(--bg-elev); stroke-width: 2; }
+  .tp .lbl { font-size: 12px; font-weight: 650; }
+</style>
+</head>
+<!-- AUTHOR: data-lesson is your curriculum id (js/curriculum.js). The template borrows lesson 06's chrome with
+     data-preview-as so it never records progress. Delete data-preview-as in a real lesson. -->
+<body data-page="lesson" data-lesson="_template" data-preview-as="06-arrays">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ 1. HERO
+       AUTHOR: number + unit are filled from the curriculum (data-fill). Title = curriculum title.
+       Lede = one-sentence promise. Meta chips: minutes, difficulty, prerequisites (link to live lessons).
+       The stage holds a looping teaser (VDSA.teaser) that shows the essence in five seconds. -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Find the maximum</h1>
+      <p class="hero__lede">Walk the list once, keep the best value in your hand, and swap it only for something strictly larger.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">10 min</li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li class="chip" data-icon="prereq">Needs lesson 01</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: bars are scanned left to right while a dashed line rises to the tallest bar seen so far."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <div class="flow" style="padding-top: 8px">
+    <aside class="callout callout--fun wide" aria-label="Template note">
+      <p class="callout__title">This page is the lesson template</p>
+      <p>It is a complete mini lesson on finding the maximum, built from every section and component. View the source: each section carries an AUTHOR note, and <code>js/lessons/_template.js</code> shows how every figure is wired. Reference: <code>docs/ENGINE.md</code>.</p>
+    </aside>
+    </div>
+
+    <!-- ============================================================ 2. THE PROBLEM
+         AUTHOR: a concrete, real-world need, drawn. The why comes before the what. Include a small interactive
+         (here: a click quiz on a figure). -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>A weather station logs the temperature every hour. At midnight it has to report the day’s high. You cannot sort the readings first, and you can only look at each number as it arrives.</p>
+      <p>Try it yourself. Which reading below is the highest?</p>
+      <figure class="fig" id="fig-problem">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Eight hourly readings, in °C</h3></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: eight temperature readings in a row, 14, 17, 21, 19, 24, 22, 18 and 15 degrees.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-problem"></div>
+      <p>You probably scanned from left to right and kept the largest number in your head. That habit is the whole algorithm. The rest of this lesson makes it precise and proves it is right.</p>
+    </section>
+
+    <!-- ============================================================ 3. BUILD THE INTUITION
+         AUTHOR: an analogy with a visual, then its limits (warning callout). -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Picture a queue of people walking past you one at a time. You hold a card with the height of the tallest person so far. When someone taller walks by, you rewrite the card.</p>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: the tallest person in the queue</p>
+        <p>You never compare two people in the queue with each other. Each newcomer is compared once, with the card in your hand.</p>
+      </aside>
+      <div class="mini-row wide" id="mini-intuition"></div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>People walk past once and are gone. A list stays in memory, so a program <em>could</em> look back. Finding the maximum never needs to, which is why it also works on a stream of readings.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 4. THE MECHANISM, ONE IDEA PER FIGURE
+         AUTHOR: short paragraphs, each followed by a small (often steppable) figure showing exactly that idea.
+         Define each term next to a picture of it (definition callout). End with the key idea. -->
+    <section id="mechanism">
+      <h2>One value in hand</h2>
+      <p>Start by holding the first value. Then compare every other value with the one in your hand, exactly once, from left to right. Replace the held value only when the new one is <strong>strictly larger</strong>.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>An <dfn>invariant</dfn> is a fact that stays true at every step of a loop. Here it is: <em>best is the largest of the values scanned so far</em>.</p>
+      </aside>
+      <p>Step through the figure. The dashed region is everything already scanned. The invariant says nothing inside it is larger than <code>best</code>.</p>
+      <figure class="fig" id="fig-invariant">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The invariant, one step at a time</h3></div>
+          <div data-toggle></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>When the scan reaches the end, the scanned region is the whole list. So the invariant becomes the answer: <code>best</code> is the largest value in the list.</p>
+      </aside>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why strictly larger?</p>
+        <p>With <code>&gt;</code> the first copy of a repeated maximum wins, and equal values never cost an update. With <code>&gt;=</code> the last copy wins. Both give the same value, but a different position.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 5. THE LAB
+         AUTHOR: the large code-synced visualiser: custom input + presets, controls, code panel (pseudo + js/py),
+         variable watch, operation counters, legend, and at least one checkpoint prediction. -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Type your own numbers or pick a preset, then press play. Every step lights the line of code that runs and explains why it runs. Press <kbd>←</kbd> and <kbd>→</kbd> to step, <kbd>Space</kbd> to play, and <kbd>?</kbd> for all shortcuts.</p>
+      <figure class="fig fig--lab wide" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace find-max on your own numbers</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask you to predict a step. Text alternative: the caption under the figure describes every step in words.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 6. FLOWCHART
+         AUTHOR: the decision logic (or a when-to-use-it diagram), with the active node lit during the trace. -->
+    <section id="flowchart">
+      <h2>The decisions, as a flowchart</h2>
+      <p>The same algorithm as a map of decisions. It is wired to the lab above: step the lab and the current box lights up here.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Find-max decision flow</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: set best to the first value; while there are values left, compare the next one with best; if it is larger, it becomes best; move to the next value; at the end, return best.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 7. COST
+         AUTHOR: operation counts on a live chart; a complexity table with Big-O badges; best / average / worst
+         with the inputs that cause them. Name the operation, the case and the input size. -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Count two operations: <strong>comparisons</strong> (<code>a[i] &gt; best</code>) and <strong>updates</strong> (<code>best = a[i]</code>). Comparisons never depend on the order of the input. Updates do.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Operations as the list grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider style="flex: 1 1 260px"></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <div class="fig__stats" data-stats></div>
+      </figure>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Case</th><th scope="col">Input that causes it</th><th scope="col" class="num">Comparisons</th><th scope="col" class="num">Updates</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Best</th><td>Largest value first, e.g. <code>9, 1, 2, 3</code></td><td class="num"><span class="big-o" data-o="n">n − 1</span></td><td class="num"><span class="big-o" data-o="1">0</span></td></tr>
+            <tr><th scope="row">Average</th><td>Distinct values in random order</td><td class="num"><span class="big-o" data-o="n">n − 1</span></td><td class="num"><span class="big-o" data-o="logn">H<sub>n</sub> − 1 ≈ ln n</span></td></tr>
+            <tr><th scope="row">Worst</th><td>Strictly increasing, e.g. <code>1, 2, 3, 9</code></td><td class="num"><span class="big-o" data-o="n">n − 1</span></td><td class="num"><span class="big-o" data-o="n">n − 1</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Overall, find-max takes <span class="big-o" data-o="n"></span> time on a list of <em>n</em> values, and <span class="big-o" data-o="1"></span> extra space. For comparison, the badges run from <span class="big-o" data-o="1"></span> through <span class="big-o" data-o="logn"></span>, <span class="big-o" data-o="nlogn"></span>, <span class="big-o" data-o="n2"></span> and <span class="big-o" data-o="2n"></span> to <span class="big-o" data-o="nfact"></span>.</p>
+      <details class="accordion">
+        <summary>Why n − 1 comparisons, and not n?</summary>
+        <div class="accordion__body"><p>The first value is taken without comparing it to anything. Each of the other n − 1 values is compared exactly once. No correct algorithm can do better: every value except the maximum must lose at least one comparison, or you could not rule it out.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Where does H<sub>n</sub> − 1 come from?</summary>
+        <div class="accordion__body"><p>In a random order, the value at position i is the largest of the first i with probability 1/i. Adding those chances for i = 2 … n gives 1/2 + 1/3 + … + 1/n = H<sub>n</sub> − 1, which grows like ln n.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ 8. VARIATIONS AND PATTERNS
+         AUTHOR: common variants and interview patterns, each with a mini visual. Tabs keep them compact. -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Change what you hold, or the rule for replacing it, and the same scan answers other questions.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="min">Minimum</button>
+          <button data-tab="argmax">Position of the maximum</button>
+          <button data-tab="top2">Two largest</button>
+        </div>
+        <div data-tab-panel="min"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="min"></div><figcaption>Flip the comparison to <code>&lt;</code>.</figcaption></figure><div><p>Hold the smallest value so far and replace it when a value is strictly smaller. Same cost: n − 1 comparisons.</p><pre data-code-block="min"></pre></div></div></div>
+        <div data-tab-panel="argmax"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="argmax"></div><figcaption>Hold the index, not the value.</figcaption></figure><div><p>Keep <code>bestIndex</code> instead of <code>best</code> and compare <code>a[i]</code> with <code>a[bestIndex]</code>. Many interview questions want the position.</p><pre data-code-block="argmax"></pre></div></div></div>
+        <div data-tab-panel="top2"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="top2"></div><figcaption>Two values in hand.</figcaption></figure><div><p>Hold <code>first</code> and <code>second</code>. A new value larger than <code>first</code> pushes <code>first</code> down to <code>second</code>. Still one pass.</p><pre data-code-block="top2"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 9. CHECK YOURSELF
+         AUTHOR: at least 3 checks per lesson in total (predictions in the lab count). Explanations say why. -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-count"></div>
+        <div class="quiz" id="quiz-updates"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 10. SUMMARY CARD
+         AUTHOR: a visual cheat sheet — 3 to 6 tiles, each with a tiny picture, a label and one line. -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Find the maximum</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="n"></span><span class="chip chip--sm">1 pass</span><span class="chip chip--sm">O(1) extra space</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 11. HISTORY NOTE
+         AUTHOR: who, when, and one good anecdote. Cite the source (docs/research/HISTORY.md). -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1968<small>published</small></div>
+        <p class="history__people">Donald Knuth<span>The Art of Computer Programming, volume 1</span></p>
+        <div class="history__body">
+          <p>Knuth chose “find the maximum” as the first algorithm he analysed in full. He asked how many times the held value changes, and showed that on a random order the average is H<sub>n</sub>&nbsp;−&nbsp;1: the harmonic numbers, hiding inside the humblest loop.</p>
+        </div>
+        <p class="history__source">Source: D. E. Knuth, <em>The Art of Computer Programming</em>, Vol. 1, §1.2.10, “Analysis of an Algorithm”.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 12. PRACTICE AND GO DEEPER
+         AUTHOR: 3–5 problems, no solutions on the page. Then link the matching study when one exists. -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Second largest</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Return the second-largest distinct value in one pass. What should happen if every value is equal?</p></li>
+        <li><div class="practice__title">Maximum of a stream</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Readings arrive one at a time and you must report the maximum of the last k readings after each one.</p></li>
+        <li><div class="practice__title">Fewest comparisons for min and max</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Find both the minimum and the maximum using about 3n/2 comparisons instead of 2n − 2. Hint: look at values in pairs.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-00-cost-of-a-computation.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">The cost of a computation</span><span class="deeper__text" style="display:block">A long-form study of how to count operations and why the model you count in matters.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+  <!-- 13. PREV / NEXT and "Mark lesson complete" are added by the shell from js/curriculum.js. -->
+</main>
+</body>
+</html>

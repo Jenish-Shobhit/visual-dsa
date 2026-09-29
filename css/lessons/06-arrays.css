@@ -1,0 +1,177 @@
+/* Lesson 06 · Arrays & dynamic arrays — lesson-specific styles.
+   Colours come only from tokens (css/tokens.css) so light and dark themes both work.
+   Custom SVGs carry `vz a6`, so cells, pointers and edges reuse css/viz.css; the rules below add the rest. */
+
+/* ------------------------------------------------------------------ hero teaser */
+.a6-hero { display: flex; flex-direction: column; justify-content: center; align-items: stretch; gap: 10px; }
+.a6-hero__host { width: 100%; }
+.a6-hero__label {
+  align-self: center;
+  min-height: 1.6em; margin: 0; padding: 3px 12px;
+  border-radius: 999px; border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg-elev) 85%, transparent);
+  font: 600 13px/1.4 var(--font-mono); color: var(--ink-2);
+  white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+}
+.a6-hero__label:empty { visibility: hidden; }
+
+/* ------------------------------------------------------------------ small layout helpers */
+.a6-toolbar-note { margin: 0 0 6px; font-size: 13px; color: var(--ink-3); align-self: center; }
+.a6-stage-top { place-items: start center; }
+.fig__stage.a6-stage-top > svg { align-self: start; }
+
+/* size / capacity meter (growth figure) */
+.a6-meters { align-items: center; }
+.a6-meter { display: flex; align-items: center; gap: 12px; flex: 1 1 320px; min-width: 0; }
+.a6-meter__label { font-size: 13px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+.a6-meter__track { position: relative; flex: 1; height: 22px; border-radius: 7px; background: var(--bg-sunken); border: 1px solid var(--line); overflow: hidden; }
+.a6-meter__slots { position: absolute; inset: 0 auto 0 0; display: grid; grid-template-columns: repeat(var(--n, 1), 1fr); gap: 2px; padding: 2px; transition: width var(--dur) var(--ease-out); }
+.a6-meter__slots b { border-radius: 4px; border: 1px dashed color-mix(in srgb, var(--ink-3) 60%, transparent); }
+.a6-meter__fill { position: absolute; inset: 2px auto 2px 2px; width: 0; border-radius: 4px; background: color-mix(in srgb, var(--st-active) 70%, var(--bg-elev)); transition: width var(--dur) var(--ease-out); z-index: 1; }
+.a6-meter__text { font: 600 14px var(--font-mono); color: var(--ink-2); white-space: nowrap; min-width: 7.5em; }
+.a6-meter__text b { color: var(--ink); }
+.a6-meter__text em { font-style: normal; font-family: var(--font-sans); font-size: 12px; font-weight: 700; margin-left: 4px; padding: 1px 7px; border-radius: 999px; color: var(--on-state); background: var(--st-error); }
+
+/* ------------------------------------------------------------------ lab toolbar */
+.a6-labbar { flex-direction: column; align-items: stretch; gap: 12px; }
+.a6-labbar__row { width: 100%; }
+.a6-labbar__ops { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; }
+.a6-field { display: flex; flex-direction: column; min-width: 0; }
+.a6-field--num { width: 92px; }
+.a6-field--num .field { text-align: center; }
+.a6-field[hidden] { display: none; }
+.a6-labbar__status { margin: 0 0 8px auto; font-size: 13.5px; color: var(--ink-3); white-space: nowrap; }
+.a6-labbar__status b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.a6-labbar__error { margin: -4px 0 0; }
+.a6-flow-note:empty { display: none; }
+
+/* ------------------------------------------------------------------ shared SVG text */
+.a6 .a6-title { font-size: 12px; letter-spacing: .02em; }
+.a6 .a6-count { fill: var(--ink); font-weight: 700; font-size: 12.5px; letter-spacing: 0; }
+.a6 .a6-addr { font-size: 10px; }
+.a6 .a6-formula { fill: var(--ink); font: 650 13.5px var(--font-mono); }
+.a6 .a6-formula--big { font-size: 16px; }
+.a6 .a6-f0 { fill: color-mix(in srgb, var(--st-found) 75%, var(--ink)); }
+.a6 .a6-f1, .a6 .a6-f2 { fill: var(--ink-2); }
+.a6 .a6-f3 { fill: color-mix(in srgb, var(--st-found) 75%, var(--ink)); font-weight: 750; }
+.a6 tspan { transition: opacity 220ms var(--ease-out); }
+
+/* ------------------------------------------------------------------ access race */
+.a6 .a6-mem { fill: var(--bg-sunken); stroke: var(--line); stroke-width: 1; }
+.a6 .a6-ptrdot { fill: var(--vz-ink, var(--el-ink)); opacity: .55; }
+.a6 .a6-tag { font-size: 9.5px; fill: var(--ink-3); }
+.a6 .a6-token-ring { fill: none; stroke: var(--st-active); stroke-width: 2.5; stroke-dasharray: 4 3; }
+.a6 .a6-target { fill: none; stroke: var(--st-compare); stroke-width: 2; stroke-dasharray: 5 4; }
+.a6 .a6-link .vz-line { stroke-width: 1.5px; }
+.a6 .a6-link.is-default .vz-line { stroke-dasharray: 4 4; }
+
+/* ------------------------------------------------------------------ address calculator */
+.a6 .a6-byte { fill: color-mix(in srgb, var(--ink-3) 30%, transparent); }
+.a6 .a6-sep line { stroke: color-mix(in srgb, var(--vz-ink, var(--el-ink)) 30%, transparent); stroke-width: 1; stroke-dasharray: 2 3; }
+.a6 .a6-idx { font-size: 11px; }
+.a6 .a6-elem.is-found .a6-idx, .a6 .a6-elem.is-found .a6-addr { fill: color-mix(in srgb, var(--st-found) 75%, var(--ink)); font-weight: 700; }
+.a6 .a6-jump { fill: none; stroke: var(--st-found); stroke-width: 2.25; stroke-linecap: round; }
+.a6 .a6-jump-head { fill: var(--st-found); }
+.a6 .a6-jumper { fill: var(--st-found); stroke: var(--bg-elev); stroke-width: 2; }
+.a6 .a6-walker circle { fill: var(--st-visited); }
+.a6 .a6-walktext { fill: color-mix(in srgb, var(--st-visited) 70%, var(--ink)); font-weight: 600; font-size: 10.5px; }
+
+/* ------------------------------------------------------------------ bookshelf */
+.a6 .a6-plank { fill: color-mix(in srgb, var(--st-path) 42%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-path) 60%, var(--ink)); stroke-width: 1; }
+.a6 .a6-tick { stroke: var(--ink-3); stroke-width: 1; }
+.a6 .a6-wall rect { fill: color-mix(in srgb, var(--ink-3) 35%, var(--bg-sunken)); stroke: var(--ink-3); stroke-width: 1; }
+.a6 .a6-spine { stroke: color-mix(in srgb, var(--vz-ink, var(--el-ink)) 30%, transparent); stroke-width: 1.5; }
+.a6 .a6-ruler line { stroke: var(--st-active); stroke-width: 3; stroke-linecap: round; }
+.a6 .a6-ruler text { fill: color-mix(in srgb, var(--st-active) 75%, var(--ink)); font: 650 12px var(--font-sans); }
+
+/* ------------------------------------------------------------------ cost-per-append chart */
+.a6 .a6-grid line { stroke: var(--line); stroke-width: 1; }
+.a6 .a6-cbar.is-default .vz-shape { fill: transparent; stroke: transparent; }
+.a6 .a6-cbar.is-default.is-cheap .vz-shape, .a6 .a6-cbar.is-active .vz-shape { fill: color-mix(in srgb, var(--st-default) 22%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-default) 45%, var(--el-fill)); }
+.a6 .a6-cbar.is-active .vz-shape { fill: color-mix(in srgb, var(--st-active) 55%, var(--el-fill)); stroke: var(--st-active); }
+.a6 .a6-spiketag { fill: color-mix(in srgb, var(--st-swap) 72%, var(--ink)); font: 700 11px var(--font-sans); }
+.a6 .a6-three line { stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 6 5; }
+.a6 .a6-three text { fill: var(--ink-3); font: 600 11.5px var(--font-sans); }
+.a6 .a6-avg { fill: none; stroke: var(--st-active); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.a6 .a6-avg-head { fill: var(--st-active); stroke: var(--bg-elev); stroke-width: 2; }
+.a6 .a6-avg-text { fill: color-mix(in srgb, var(--st-active) 75%, var(--ink)); font: 700 12px var(--font-sans); paint-order: stroke; stroke: var(--bg-elev); stroke-width: 4px; stroke-linejoin: round; }
+.a6 .a6-cursor { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 2 3; }
+
+/* ------------------------------------------------------------------ bank account */
+.a6 .a6-block-frame { fill: color-mix(in srgb, var(--bg-sunken) 60%, transparent); stroke: var(--line-strong); stroke-width: 1; }
+.a6 .a6-coin-edge { fill: color-mix(in srgb, var(--st-compare) 62%, black); }
+.a6 .a6-coin-face { fill: var(--st-compare); stroke: color-mix(in srgb, var(--st-compare) 55%, black); stroke-width: 1; }
+
+/* ------------------------------------------------------------------ 2D row-major */
+.a6 .a6-band { fill: color-mix(in srgb, var(--st-visited) 12%, transparent); stroke: color-mix(in srgb, var(--st-visited) 45%, transparent); stroke-dasharray: 4 3; transition: x var(--vz-dur), y var(--vz-dur), width var(--vz-dur), height var(--vz-dur); }
+.a6 .a6-link-line { fill: none; stroke: var(--st-active); stroke-width: 2; stroke-dasharray: 5 4; transition: opacity 240ms; }
+
+/* ------------------------------------------------------------------ cache walk */
+.a6 .a6-minicell { fill: var(--el-fill); stroke: var(--line-strong); stroke-width: 1; transition: fill var(--vz-dur); }
+.a6 .a6-minicell.is-seen { fill: color-mix(in srgb, var(--st-visited) 30%, var(--el-fill)); }
+.a6 .a6-minicell.is-now { fill: var(--st-active); stroke: var(--st-active); }
+.a6 .a6-line { fill: none; stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 3; transition: fill var(--vz-dur), stroke var(--vz-dur); }
+.a6 .a6-line.is-cached { fill: color-mix(in srgb, var(--st-frontier) 12%, transparent); stroke: var(--st-frontier); stroke-width: 2; stroke-dasharray: none; }
+.a6 .a6-line.is-loading { stroke: var(--st-swap); }
+.a6 .a6-linelabel { font-size: 9.5px; }
+
+/* ------------------------------------------------------------------ small pictures */
+.a6 .a6-foreign { fill: color-mix(in srgb, var(--ink-3) 22%, var(--bg-sunken)); stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 2; }
+.a6 .a6-bracket { fill: none; stroke: var(--ink-3); stroke-width: 1.25; }
+.a6 .a6-rbar.is-bad { fill: var(--st-swap); }
+.a6 .a6-rbar.is-good { fill: var(--st-done); }
+.a6 .a6-rnum { fill: var(--ink); font: 700 12px var(--font-mono); }
+.a6 .a6-fused { fill: color-mix(in srgb, var(--st-done) 60%, var(--el-fill)); stroke: var(--st-done); stroke-width: 1.25; }
+.a6 .a6-fempty { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 4 3; }
+.a6 .a6-sbar { fill: color-mix(in srgb, var(--st-default) 22%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-default) 40%, var(--el-fill)); stroke-width: .75; }
+.a6 .a6-sbar.is-spike { fill: var(--st-swap); stroke: var(--st-swap); }
+.a6 .a6-savg { stroke: var(--st-active); stroke-width: 2.5; stroke-linecap: round; }
+.a6 .a6-mini-arrow { fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 3 3; }
+
+/* ------------------------------------------------------------------ shrink lanes (HTML) */
+.a6-shrink { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; align-items: start; place-items: stretch; }
+.a6-lane { min-width: 0; padding: 12px 14px 14px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--bg-elev); transition: box-shadow var(--dur), border-color var(--dur); }
+.a6-lane.is-copying { border-color: color-mix(in srgb, var(--st-swap) 55%, var(--line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--st-swap) 16%, transparent); }
+.a6-lane__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14.5px; }
+.a6-lane__copies { font-size: 13.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.a6-lane__copies b { color: var(--ink); font-size: 16px; }
+.a6-plus { display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 999px; font-weight: 700; font-size: 12px; color: var(--on-state); background: var(--st-swap); }
+.a6-lane__arr { margin-top: 8px; min-height: 40px; }
+.a6-load { margin-top: 4px; padding: 0 4px 26px; }
+.a6-load__track { position: relative; height: 10px; border-radius: 6px; background: var(--bg-sunken); border: 1px solid var(--line); }
+.a6-load__fill { position: absolute; inset: 0 auto 0 0; width: var(--load, 0%); border-radius: inherit; background: color-mix(in srgb, var(--st-active) 55%, var(--bg-elev)); transition: width var(--dur, 300ms) var(--ease-out); }
+.a6-load__tick { position: absolute; left: var(--at); top: 14px; transform: translateX(-50%); font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+.a6-load__tick::before { content: ""; position: absolute; left: 50%; top: -15px; width: 1.5px; height: 12px; background: var(--ink-3); }
+.a6-load__tick--grow { transform: translateX(-100%); }
+.a6-load__tick--grow::before { left: 100%; }
+.a6-load__tick--trig { color: color-mix(in srgb, var(--st-swap) 72%, var(--ink)); font-weight: 650; }
+.a6-load__tick--trig::before { background: var(--st-swap); }
+.a6-load__mark { position: absolute; left: var(--load, 0%); top: -24px; transform: translateX(-50%); font: 700 11px var(--font-mono); color: var(--ink); background: var(--bg-elev); padding: 0 4px; border-radius: 4px; transition: left var(--dur, 300ms) var(--ease-out); white-space: nowrap; }
+.a6-load { padding-top: 22px; }
+
+/* ------------------------------------------------------------------ variations */
+#variants .mini__stage { min-height: 150px; }
+#variants [data-factor-slider] { margin-top: 14px; }
+#variants [data-factor-stats] { margin-top: 12px; }
+
+/* growth figure: enough room for two blocks, no more */
+#fig-growth .fig__stage { min-height: 300px; }
+/* shrink lanes: a used slot is tinted, a free slot is sunken */
+.a6-lane .vz-item.is-default { --vz-fill: color-mix(in srgb, var(--st-active) 22%, var(--el-fill)); --vz-stroke: color-mix(in srgb, var(--st-active) 55%, var(--el-fill)); }
+/* summary: three tiles per row on wide screens */
+#summary-card .summary__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+
+/* bank balance sparkline */
+.a6 .a6-spark-bg { fill: color-mix(in srgb, var(--bg-sunken) 70%, transparent); stroke: var(--line); stroke-width: 1; }
+.a6 .a6-spark-zero { stroke: var(--st-error); stroke-width: 1.25; stroke-dasharray: 4 3; }
+.a6 .a6-spark-line { fill: none; stroke: var(--st-compare); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.a6 .a6-spark-dot { fill: var(--st-compare); stroke: var(--bg-elev); stroke-width: 1.5; }
+.a6 .a6-spark-val { fill: color-mix(in srgb, var(--st-compare) 60%, var(--ink)); font: 700 12px var(--font-mono); }
+
+.a6-inline { align-items: center; }
+.a6-toolbar-label { font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.a6-inline .seg__btn { min-width: 34px; }
+
+/* Engine workaround: viz.css `svg.vz.vz { min-width: 0 }` out-ranks `.fig__stage--scroll > svg { min-width }`,
+   so renderer SVGs never get the documented scroll width. Restore it for this lesson's scroll stages. */
+.fig .fig__stage--scroll > svg.vz.vz { min-width: var(--stage-min, 620px); }

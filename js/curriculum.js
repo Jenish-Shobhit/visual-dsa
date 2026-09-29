@@ -95,7 +95,7 @@
   };
 
   // Lessons that are published. Keep in sync with lessons/*.html (tests/site_integrity.py checks this).
-  api.markLive(['01-algorithms', '02-bits-and-memory', '05-big-o', '14-elementary-sorts']);
+  api.markLive(['01-algorithms', '02-bits-and-memory', '05-big-o', '06-arrays', '14-elementary-sorts']);
 
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.VDSA_CURRICULUM = api;

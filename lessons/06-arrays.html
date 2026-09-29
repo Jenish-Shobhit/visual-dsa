@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Arrays &amp; dynamic arrays · Visual DSA</title>
+<meta name="description" content="Why an array finds any element with one multiplication, why inserting in the middle shifts everything, and how doubling makes appends O(1) amortized — with animated memory, a code-synced lab and the bank-account picture of amortized cost.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/06-arrays.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/06-arrays.js" defer></script>
+<script src="../js/lessons/06-arrays-views.js" defer></script>
+<script src="../js/lessons/06-arrays.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="06-arrays">
+<main id="main" class="lesson">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Arrays &amp; dynamic arrays</h1>
+      <p class="hero__lede">Put values side by side in memory and any index is one multiplication away. Then watch why inserting in the middle is slow, and how doubling the storage makes appending cheap on average.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock" data-fill="minutes"></li>
+        <li class="chip" data-icon="level">Beginner → intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: Big-O (lesson 05)</li>
+      </ul>
+    </div>
+    <div class="hero__stage a6-hero" role="img" aria-label="Animation: values in a row of memory slots slide right to open a gap for a new value. When every slot is full, a block twice as big appears below, every value is copied into it, and the old block disappears.">
+      <div class="a6-hero__host" id="teaser"></div>
+      <p class="a6-hero__label" aria-hidden="true"></p>
+    </div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>Your music app holds 10,000 songs. You tap song number 7,342 and it must start playing now, not after the app has looked at 7,341 other songs first. New songs also arrive all the time and join the end of the list.</p>
+      <p>So you need a list that can <strong>reach any position instantly</strong> and <strong>grow</strong>. Memory offers two ways to store a list. Pick a position below and race them.</p>
+      <figure class="fig wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Reach element k: follow links, or calculate the address</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar a6-inline"><span class="a6-toolbar-label" id="race-k-label">Target index k</span><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the same eight values stored twice. In the linked version each node sits somewhere random in memory and stores where the next node is, so reaching node k takes k hops. In the array the values sit side by side, so the address of element k is computed with one multiplication and one addition.</figcaption>
+      </figure>
+      <p>The linked version must visit every node before the one you want. The array does arithmetic instead. That single trick is the whole reason arrays exist, and this lesson follows it to its costs: slow inserts in the middle, a full array that must move, and the surprising maths that makes appending cheap anyway.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Picture a bookshelf where every book has exactly the same width and the books are packed tight from the left edge. Step through the figure: finding, inserting and running out of room all look like something you have done with real books.</p>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: the packed bookshelf</p>
+        <p>Position <em>i</em> is always <em>i</em> book-widths from the left edge, so you can reach for it without scanning. Squeezing a book into the middle means sliding every book after it. And when the shelf is full, you buy a longer one and move all the books.</p>
+      </aside>
+      <figure class="fig" id="fig-shelf">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Find, insert, run out of room</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>Real books have different widths; array elements never do. That is why an array holds values of one type, or, in Python and JavaScript, fixed-size references to values stored elsewhere. And a shelf can sometimes be extended in place, but memory right after an array usually belongs to something else.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ MECHANISM 1: ADDRESSES -->
+    <section id="address">
+      <h2 data-toc="O(1) indexing">One multiplication finds any element</h2>
+      <p>Memory is one long row of numbered bytes. An array claims a single unbroken run of them, starting at its <em>base address</em>. Every element takes the same number of bytes, so element <em>i</em> starts exactly <em>i</em> elements after the base.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>An <dfn>array</dfn> stores elements of equal size in <dfn>contiguous</dfn> memory: no gaps, in index order. So <code>address(a[i]) = base + i × size</code>, where <code>size</code> is the number of bytes per element.</p>
+      </aside>
+      <p>Click any element below. The formula fills in and the pointer jumps straight there, while a walker taking one element at a time is still on its way. Change the element size and watch the boxes stretch: the formula adapts by multiplying by a different number.</p>
+      <figure class="fig wide" id="fig-address">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The address calculator</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><p class="a6-toolbar-note">Click an element, or Tab to it and press Enter.</p></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: 32 bytes of memory starting at address 0x1000, split into elements of 2, 4 or 8 bytes. The address of element i is 0x1000 plus i times the element size; reading it takes one calculation whatever i is, while walking from the start takes i steps.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Reading or writing <code>a[i]</code> costs the same for <em>i</em> = 3 as for <em>i</em> = 3,000,000: one multiplication, one addition, one memory access. That is <span class="big-o" data-o="1"></span> access by index.</p>
+      </aside>
+      <p>Now use the formula yourself. The strip below is a window into memory somewhere in the middle of an array, so counting boxes will not help.</p>
+      <figure class="fig" id="fig-addrquiz">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Eight 4-byte integers, labelled only by address</h3></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: eight cells with the addresses 0x200C to 0x2028 in steps of 4, holding the values 31, 8, 57, 14, 90, 26, 3 and 45.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-addr"></div>
+    </section>
+
+    <!-- ============================================================ MECHANISM 2: SHIFTING -->
+    <section id="shifting">
+      <h2 data-toc="Insert and delete">Inserting and deleting in the middle</h2>
+      <p>The no-gaps rule that makes reading fast makes editing slow. To insert at index <em>i</em>, every element from <em>i</em> to the end must move one slot right first. To delete, every element after the gap moves one slot left.</p>
+      <p>Order matters. Moving the first element first would overwrite its neighbour before that neighbour has moved. Step through all three modes, including the wrong one, and predict which value moves first.</p>
+      <figure class="fig wide" id="fig-shift">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Shifting to open or close a gap</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">The figure pauses once in insert mode to ask you a question. Text alternative: the captions describe every move.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Inserting or deleting at index <em>i</em> of <em>n</em> elements moves <em>n</em> − <em>i</em> (insert) or <em>n</em> − 1 − <em>i</em> (delete) elements. At the front that is every element: <span class="big-o" data-o="n"></span>. At the end it is none: <span class="big-o" data-o="1"></span>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ MECHANISM 3: CAPACITY AND GROWTH -->
+    <section id="growth">
+      <h2 data-toc="Growing by doubling">When the array is full: grow by doubling</h2>
+      <p>An array claims its run of memory up front. Its <em>capacity</em> is how many slots it reserved; its <em>size</em> is how many it uses. Appending is cheap while <code>size &lt; capacity</code>: write into the next free slot.</p>
+      <div class="mini-row wide" id="mini-neighbours"></div>
+      <p>When <code>size = capacity</code> there is nowhere to write, and the array cannot stretch because the next bytes belong to someone else. A <em>dynamic array</em> (Python's <code>list</code>, Java's <code>ArrayList</code>, C++'s <code>vector</code>) handles it by allocating a new block <strong>twice as big</strong>, copying every element across and freeing the old block.</p>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Append nine values to an empty dynamic array</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar a6-meters" data-meters></div>
+        <div class="fig__stage fig__stage--tall fig__stage--scroll" data-stage style="--stage-min: 500px"></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: capacity grows 1, 2, 4, 8, 16. Each time the array is full, a block twice as big is allocated, every value is copied into it one by one, and the old block is freed. The ninth append copies eight values.</figcaption>
+      </figure>
+      <p>Most appends cost one write. A few are expensive: the fifth append copies 4 values, the ninth copies 8. Hold that thought; the section on amortized cost shows why the expensive ones do not matter as much as they seem.</p>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Build an array, then run any operation on it: read, search, append, insert or delete. Each run starts from the array the previous run left behind, and a full array grows before it can take a new value. Watch the counters: they are the cost.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Array operations, traced line by line</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar a6-labbar">
+          <div class="a6-labbar__row" data-input></div>
+          <div class="a6-labbar__row a6-labbar__ops">
+            <div class="a6-field"><span class="field-label" id="lab-op-label">Operation</span><div data-op aria-labelledby="lab-op-label"></div></div>
+            <div class="a6-field a6-field--num" data-idx-wrap><label class="field-label" for="lab-i">Index i</label><input class="field" id="lab-i" type="text" inputmode="numeric" value="2" autocomplete="off"></div>
+            <div class="a6-field a6-field--num" data-x-wrap><label class="field-label" for="lab-x">Value x</label><input class="field" id="lab-x" type="text" inputmode="numeric" value="4" autocomplete="off"></div>
+            <div class="a6-field a6-field--btn"><button type="button" class="btn btn--primary" data-run>Run</button></div>
+            <p class="a6-labbar__status" data-status></p>
+          </div>
+          <p class="input-row__error a6-labbar__error" role="alert" data-error></p>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall fig__stage--scroll" data-stage style="--stage-min: 500px"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses to ask you to predict a step. Keyboard: <kbd>←</kbd> <kbd>→</kbd> step, <kbd>Space</kbd> play. Text alternative: the caption under the figure describes every step in words.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2>The decisions, as a flowchart</h2>
+      <p>Insert and append share one piece of logic: make room if the array is full, shift if the new value goes in the middle, then write. The chart is wired to the lab: run an append or an insert above and the current box lights up here.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">insert(i, x), and append(x) = insert(size, x)</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption a6-flow-note" data-note aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: if size equals capacity, grow the array by allocating a block twice as big and copying every element. Then set j to size; while j is greater than i, copy a[j − 1] into a[j] and decrease j. Finally write x into a[i] and add one to size.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ AMORTIZED -->
+    <section id="amortized">
+      <h2 data-toc="Amortized cost">Spikes that are already paid for</h2>
+      <p>One append can copy the whole array, so its worst case is <span class="big-o" data-o="n"></span>. Yet every language advertises appends as constant time. Both are true, and the chart shows how: each bar is the real cost of one append; the line is the average cost of all appends so far.</p>
+      <figure class="fig wide" id="fig-spikes">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The cost of every append, and the running average</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: with doubling, appends 2, 3, 5, 9, 17 and 33 are spikes costing 2, 3, 5, 9, 17 and 33; every other append costs 1. The running average never reaches 3. With grow-by-one, every append copies everything, and the average climbs without limit.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>An operation has <dfn>amortized cost</dfn> <em>c</em> if <strong>every</strong> sequence of <em>m</em> operations, starting from empty, costs at most <em>m</em> × <em>c</em> in total. A single operation may cost more; the sequence never does.</p>
+      </aside>
+      <p>Why do the spikes never drag the average up? Each copy doubles the room, so the next spike is twice as far away. The copies form the series 1 + 2 + 4 + … + 2<sup>k</sup>, which is less than twice its last term, and the last term is less than <em>n</em>. So <em>n</em> appends do at most <em>n</em> writes plus 2<em>n</em> copies: under 3<em>n</em> work in total.</p>
+
+      <h3 id="bank">The bank account: paying for copies in advance</h3>
+      <p>Another way to see it, and the one that makes it click: charge every append a flat <strong>3 coins</strong>. One coin pays for the write. The other two stay on the new element as savings. When the array doubles, the coins on the newer half pay for every copy.</p>
+      <figure class="fig wide" id="fig-bank">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Three coins per append, and the bank never goes negative</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: each append drops three coins; one is spent on the write and two are stacked on the new element. When the array is full, a block twice as big is allocated and each copy spends one coin taken from the elements added since the last doubling. The number of coins stored never drops below zero.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why two coins are exactly enough</p>
+        <p>Right after a doubling the array is half full. Before the next doubling, the newer half fills up with as many elements as the older half has. Each new element carries two coins: one to copy itself, one to copy an older element that spent its own coins last time. Charge 3, save 2, and every copy is prepaid.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Amortized is not "on average, if you are lucky"</p>
+        <p>There is no probability here. The bound holds for the worst sequence an adversary could pick. What it does not promise is that <em>each</em> append is fast: one append still copies everything. If every single operation has a deadline, such as a game frame or an audio buffer, reserve capacity up front.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ WHY DOUBLE -->
+    <section id="doubling">
+      <h2 data-toc="Why double?">Why double, and not add 10?</h2>
+      <p>Growing by a fixed amount looks thrifty. It is a trap: the array fills again after a few appends, and every resize copies more than the last. Race four growth rules and count the total copies.</p>
+      <figure class="fig wide" id="fig-doubling">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Total elements copied after n appends</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: after 100 appends, growing by 1 has copied 4,950 elements and growing by 10 has copied 450; growing by 1.5× has copied 284 and doubling 127. Adding a constant makes the total grow like n², multiplying keeps it proportional to n.</figcaption>
+      </figure>
+      <p>Adding <em>k</em> slots at a time resizes about <em>n</em>/<em>k</em> times, and those copies add up to roughly <em>n</em>²/2<em>k</em>: <span class="big-o" data-o="n2"></span> in total, so <span class="big-o" data-o="n"></span> per append however large <em>k</em> is. Multiplying by any factor <em>a</em> &gt; 1 keeps the total under <em>a</em>/(<em>a</em> − 1) × <em>n</em>: <span class="big-o" data-o="1"></span> per append. The factor only trades copying against wasted space.</p>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What each operation costs</h2>
+      <p>Here is the whole cost story on one page, with <em>n</em> = the number of elements and the operation counted as element reads, writes, shifts and copies.</p>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Operation</th><th scope="col">Best case</th><th scope="col">Worst case</th><th scope="col">Amortized</th><th scope="col">Why</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Read or write <code>a[i]</code></th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td><td>base + i × size</td></tr>
+            <tr><th scope="row">Search for a value</th><td><span class="big-o" data-o="1"></span> (first slot)</td><td><span class="big-o" data-o="n"></span> (absent)</td><td>—</td><td>No shortcut from a value to its index</td></tr>
+            <tr><th scope="row">Append</th><td><span class="big-o" data-o="1"></span> (room left)</td><td><span class="big-o" data-o="n"></span> (full: copy all)</td><td><span class="big-o" data-o="1"></span></td><td>Doubling makes copies rare</td></tr>
+            <tr><th scope="row">Insert at index <em>i</em></th><td><span class="big-o" data-o="1"></span> (i = n)</td><td><span class="big-o" data-o="n"></span> (i = 0)</td><td><span class="big-o" data-o="n">O(n − i)</span></td><td>n − i elements shift right</td></tr>
+            <tr><th scope="row">Delete at index <em>i</em></th><td><span class="big-o" data-o="1"></span> (last)</td><td><span class="big-o" data-o="n"></span> (i = 0)</td><td><span class="big-o" data-o="n">O(n − i)</span></td><td>n − 1 − i elements shift left</td></tr>
+            <tr><th scope="row">Pop from the end</th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="n"></span> (if it shrinks)</td><td><span class="big-o" data-o="1"></span></td><td>Shrink at ¼ full, not ½</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Extra space: an array of <em>n</em> elements needs <span class="big-o" data-o="n"></span> memory, and a doubling array wastes at most about half of it as spare capacity. Not sure what an operation costs? Walk the decision tree: click the answers on the arrows.</p>
+      <figure class="fig wide" id="fig-costtree">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">What will this array operation cost?</h3></div>
+          <button type="button" class="btn btn--sm btn--ghost" data-restart>Start over</button>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: do you know the index? If you only know the value, searching costs O(n). If you know the index and only read or overwrite it, O(1). If you add or remove at the end, O(1) amortized. In the middle, O(n − i) shifts.</figcaption>
+      </figure>
+      <details class="accordion">
+        <summary>Why is the average below 3, and not exactly 3?</summary>
+        <div class="accordion__body"><p>After <em>n</em> appends the copies total 1 + 2 + 4 + … + 2<sup>k</sup> = 2<sup>k+1</sup> − 1, where 2<sup>k</sup> is the largest power of two below <em>n</em>. That is less than 2<em>n</em>, and the writes add exactly <em>n</em>. The average touches 3 only in the limit, just after a doubling; right before one, it sits near 2.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>If insert is O(n), why do people call arrays fast?</summary>
+        <div class="accordion__body"><p>Because shifting is a single sweep over contiguous memory, which hardware does extremely well (see the cache section below). For a few thousand elements, inserting into an array often beats a linked list whose O(1) splice first needs an O(n) walk to find the spot.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ SHRINKING -->
+    <section id="shrinking">
+      <h2 data-toc="Shrinking">Shrinking without thrashing</h2>
+      <p>If you pop most elements, you may want the memory back. The obvious rule, "halve the capacity when the array is half full", has a nasty flaw. Sit exactly at the boundary and alternate push and pop: every single operation copies the whole array.</p>
+      <figure class="fig wide" id="fig-shrink">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The same push, pop, push, pop… under two shrink rules</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain a6-shrink" data-stage>
+          <div class="a6-lane" data-lane="half">
+            <div class="a6-lane__head"><b>Shrink when ½ full</b><span class="a6-lane__copies" data-copies></span></div>
+            <div class="a6-lane__arr" data-arr></div>
+            <div class="a6-load" data-load aria-hidden="true"><div class="a6-load__track"><i class="a6-load__fill"></i><span class="a6-load__tick" style="--at: 25%">¼</span><span class="a6-load__tick a6-load__tick--trig" style="--at: 50%">½ shrink</span><span class="a6-load__tick a6-load__tick--grow" style="--at: 100%">full: grow</span><b class="a6-load__mark"></b></div></div>
+          </div>
+          <div class="a6-lane" data-lane="quarter">
+            <div class="a6-lane__head"><b>Shrink when ¼ full</b><span class="a6-lane__copies" data-copies></span></div>
+            <div class="a6-lane__arr" data-arr></div>
+            <div class="a6-load" data-load aria-hidden="true"><div class="a6-load__track"><i class="a6-load__fill"></i><span class="a6-load__tick a6-load__tick--trig" style="--at: 25%">¼ shrink</span><span class="a6-load__tick" style="--at: 50%">½</span><span class="a6-load__tick a6-load__tick--grow" style="--at: 100%">full: grow</span><b class="a6-load__mark"></b></div></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: both arrays start full with 8 of 8. With the half rule, each push doubles to 16 and each pop halves back to 8, copying 8 elements every time. With the quarter rule, after the first doubling the array rests half full and no further copies happen.</figcaption>
+      </figure>
+      <p>The fix is a gap between the two triggers: grow when full, shrink only at a quarter full. After either resize the array lands half full, far from both triggers, so many cheap operations must happen before the next copy. Push and pop are both <span class="big-o" data-o="1"></span> amortized again.</p>
+    </section>
+
+    <!-- ============================================================ 2D ARRAYS -->
+    <section id="two-d">
+      <h2 data-toc="2D arrays">2D arrays are rows laid end to end</h2>
+      <p>Memory has only one dimension, so a grid must be flattened. Most languages (C, C++, Python's NumPy by default) store it <em>row-major</em>: row 0, then row 1, then row 2. Element <code>m[r][c]</code> of a grid with <em>C</em> columns sits at index <code>r × C + c</code>.</p>
+      <figure class="fig wide" id="fig-rowmajor">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">From m[r][c] to one address</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><button type="button" class="btn btn--sm" data-replay>Replay the layout</button><p class="a6-toolbar-note">Click any cell in the grid or in memory.</p></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a 3 by 4 grid of letters A to L. In row-major order memory holds A B C D, E F G H, I J K L. In column-major order it holds A E I, B F J, C G K, D H L. The selected cell's index and address are shown as a formula.</figcaption>
+      </figure>
+
+      <h3 id="cache">Why the walking order matters: cache lines</h3>
+      <p>The processor never fetches one number from main memory. It fetches a whole <em>cache line</em>, typically 64 bytes, and keeps a few recent lines close by. Walking an array in address order uses every number in each line it loads; jumping around wastes most of every load.</p>
+      <figure class="fig wide" id="fig-cache">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Same 16 numbers, two walking orders, a cache that holds 2 lines</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a 4 by 4 grid stored row-major, 4 numbers per cache line. Walking row by row loads each line once: 4 loads and 12 hits. Walking column by column needs a different line at every step and the small cache keeps evicting it: 16 loads.</figcaption>
+      </figure>
+      <p>Both walks do the same 16 reads, so Big-O calls them equal. In practice the row walk can be several times faster on large grids. It is also why scanning an array beats walking a linked list whose nodes are scattered across memory.</p>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Small changes to the rules give you cheaper operations when you can accept a trade-off.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="swap">Delete by swapping</button>
+          <button data-tab="reserve">Reserve up front</button>
+          <button data-tab="factor">The growth factor</button>
+          <button data-tab="langs">In your language</button>
+        </div>
+        <div data-tab-panel="swap"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="swap"></div><figcaption>Delete index 1 by moving the <b>last</b> element into the hole.</figcaption></figure><div><p>If the order of elements does not matter (a bag of particles, a set of open connections), delete by copying the last element into the gap and shrinking size by one. One move instead of <em>n</em> − 1 − <em>i</em>: <span class="big-o" data-o="1"></span>.</p><pre data-code-block="swap"></pre></div></div></div>
+        <div data-tab-panel="reserve"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="reserve"></div><figcaption>Copies while appending 1,000 values.</figcaption></figure><div><p>When you know the final size, ask for the capacity once: <code>reserve(n)</code> in C++, <code>new ArrayList&lt;&gt;(n)</code> in Java. Every append is then a single write, with no spikes at all, which is exactly what real-time code needs.</p><pre data-code-block="reserve"></pre></div></div></div>
+        <div data-tab-panel="factor"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="factor"></div><figcaption data-factor-cap>Growth factor 2.</figcaption></figure><div><p>Any factor above 1 gives <span class="big-o" data-o="1"></span> amortized appends. A bigger factor copies less but can leave more slots empty; a smaller one saves memory but copies more. Drag the factor and watch both change.</p><div data-factor-slider></div><div class="stats" data-factor-stats></div></div></div></div>
+        <div data-tab-panel="langs">
+          <div class="table-wrap">
+            <table class="table table--compact">
+              <thead><tr><th scope="col">Language</th><th scope="col">Dynamic array</th><th scope="col">Grows by about</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">C</th><td>none built in: <code>int a[10]</code> is fixed; use <code>realloc</code></td><td>you decide</td></tr>
+                <tr><th scope="row">C++</th><td><code>std::vector</code></td><td>2× (GCC, Clang), 1.5× (MSVC)</td></tr>
+                <tr><th scope="row">Java</th><td><code>ArrayList</code></td><td>1.5×</td></tr>
+                <tr><th scope="row">Python</th><td><code>list</code> (an array of references)</td><td>≈ 1.125× plus a little</td></tr>
+                <tr><th scope="row">JavaScript</th><td><code>Array</code> (V8)</td><td>1.5× plus 16</td></tr>
+                <tr><th scope="row">Go</th><td>slices with <code>append</code></td><td>2× while small, then ≈ 1.25×</td></tr>
+                <tr><th scope="row">Rust</th><td><code>Vec</code></td><td>2×</td></tr>
+              </tbody>
+              <caption>Implementation details, not guarantees: they change between versions. Every one of them multiplies, and none adds a constant.</caption>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-insert0"></div>
+        <div class="quiz" id="quiz-copies17"></div>
+        <div class="quiz" id="quiz-amortized"></div>
+        <div class="quiz" id="quiz-shrink"></div>
+        <div class="quiz" id="quiz-2d"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Arrays &amp; dynamic arrays</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="1">O(1) index</span><span class="big-o big-o--lg" data-o="n">O(n) insert</span><span class="big-o big-o--lg" data-o="1">O(1)* append</span></div>
+        </div>
+        <div class="summary__grid"></div>
+        <p class="summary__foot">* amortized: any sequence of n appends costs under 3n.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1949<small>first index registers</small></div>
+        <p class="history__people">The Manchester Mark 1 team<span>“B-lines”; then FORTRAN, 1957, and Robert Tarjan, 1985</span></p>
+        <div class="history__body">
+          <p>On the UNIVAC I and the IBM 701, stepping through an array meant the program rewrote the address inside its own instructions, because the machines had no index registers. Manchester had built them in 1949, and FORTRAN in 1957 let scientists write <code>A(I)</code> and leave the address arithmetic to the compiler. Constant-time indexing also needed memory where every address is equally quick to reach: magnetic core, working by 1953.</p>
+          <p>The argument that doubling makes appends cheap on average got its general name and methods in 1985, when Robert Tarjan published “Amortized Computational Complexity”.</p>
+        </div>
+        <p class="history__source">Sources: R. C. Martin, <em>We, Programmers</em> (2025), ch. 4–5; Computer History Museum, “Whirlwind computer debuts core memory”; R. E. Tarjan, “Amortized Computational Complexity”, <em>SIAM J. Algebraic Discrete Methods</em> 6(2), 1985.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice" class="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Move the zeros</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Move every 0 in an array to the end while keeping the other values in order. Use no second array and shift as few elements as you can. How many writes does your method make?</p></li>
+        <li><div class="practice__title">Flatten a 3D array</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">A row-major 3D array has dimensions D × R × C and 8-byte elements starting at address base. Write the formula for the address of <code>t[d][r][c]</code> and check it on a 2 × 3 × 4 example.</p></li>
+        <li><div class="practice__title">Merge from the back</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Array A has m sorted values followed by n empty slots; array B has n sorted values. Merge B into A so A is sorted, without extra memory and without shifting anything more than once.</p></li>
+        <li><div class="practice__title">A dynamic array that shrinks</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Implement push, pop and get on a fixed-size backing array that doubles when full and halves at a quarter full. Count every copy, and find a sequence of operations that would make the half-full rule copy on every step.</p></li>
+        <li><div class="practice__title">No spikes allowed</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Redesign append so that every call does O(1) work in the worst case, not just amortized, by copying a few old elements into the new block on each append while both blocks are alive. How many per append are enough?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-02-amortized-cost-aggregate-accounting-potential.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Amortized cost: aggregate, accounting and potential</span><span class="deeper__text" style="display:block">The doubling array proved three ways, the potential function Φ = 2n − C, thrashing, and where amortized bounds break.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+      <a class="deeper" href="../studies/dsa-01-linear-layouts-and-access-disciplines.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Also</span><span class="deeper__title" style="display:block">Linear layouts and access disciplines</span><span class="deeper__text" style="display:block">Contiguous versus linked memory, the shift cascade, and why cache locality breaks ties between equal Big-O bounds.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

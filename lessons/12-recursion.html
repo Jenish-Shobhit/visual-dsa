@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Recursion · Visual DSA</title>
+<meta name="description" content="A function that calls itself: base cases, the call stack, recursion trees, Fibonacci's call explosion, the Tower of Hanoi and stack overflow, all animated and steppable.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/12-recursion.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/vdsa/views/callstack.js" defer></script>
+<script src="../js/vdsa/views/stack.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/12-recursion.js" defer></script>
+<script src="../js/lessons/12-recursion-figs.js" defer></script>
+<script src="../js/lessons/12-recursion-hanoi.js" defer></script>
+<script src="../js/lessons/12-recursion.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="12-recursion">
+<main id="main" class="lesson">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Recursion</h1>
+      <p class="hero__lede">A function that solves a problem by trusting a smaller copy of itself. Watch the calls pile up, hit a base case, and hand their answers back.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">20 min</li>
+        <li class="chip" data-icon="level">Beginner to intermediate</li>
+        <li class="chip" data-icon="prereq">Needs lesson 04: functions and the stack</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: nested frames for fact(4) open one inside another down to fact(0), then close from the inside out as the values 1, 1, 2, 6 and 24 travel outward."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem: folders inside folders</h2>
+      <p>Your laptop wants to show how many files live under a folder. The folder holds files, and also folders, which hold files and more folders. You don’t know how deep it goes, so no fixed number of loops can do the job.</p>
+      <p>One rule works at every level: <em>a folder’s total is its own files plus the total of each subfolder</em>. The rule uses itself. Before you step through it, try the question under the figure.</p>
+      <figure class="fig" id="fig-folders">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Counting files: each folder asks its subfolders</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: a folder tree. home has 2 files and the subfolders photos (3 files; subfolders 2023 with 4 and 2024 with 5), music (1) and notes (2; subfolder drafts with 3). Totals are computed from the deepest folders upward: 2023 reports 4, 2024 reports 5, photos 12, music 1, drafts 3, notes 5, home 20.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-folders"></div>
+      <p>Notice the order. <code>home/</code> was the first folder asked and the last to answer. The deepest folders answer first, and their totals travel back to whoever asked. <em>Last asked, first answered</em>: that order is the heart of recursion.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>You sit in a dark cinema and want to know your row number. You can’t see enough to count the rows, but you can whisper to the person in front of you.</p>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: which row am I in?</p>
+        <p>Ask the person in front which row they are in, then add one to their answer. They do exactly the same thing. The person in the front row doesn’t need to ask anyone: the screen is right there.</p>
+      </aside>
+      <figure class="fig" id="fig-rows">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Questions travel forward, answers travel back</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: five seats in a row facing a screen. The question “which row?” passes from row 5 forward to row 1; row 1 answers 1, and each row adds one as the answer passes back to row 5.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>In the cinema each question goes to a different person. In a program there is one function: every call runs the same code with its own arguments, in its own frame. And the machine has a limited number of seats for waiting calls. You will hit that limit later in this lesson.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ BASE CASE + RECURSIVE CASE -->
+    <section id="base-case">
+      <h2>Two parts: a base case and a smaller self</h2>
+      <p>Every recursive function has the same two parts. Take factorial: 4! means 4 × 3 × 2 × 1. The part after the 4 is 3!, the same kind of problem, only smaller.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>A <dfn>base case</dfn> is an input the function answers directly, without calling itself: <code>fact(0) = 1</code>. The <dfn>recursive case</dfn> answers every other input from a smaller one: <code>fact(n) = n × fact(n − 1)</code>.</p>
+      </aside>
+      <div class="mini-row wide" id="mini-parts"></div>
+      <p>You can run that definition by hand. Replace each call with its definition until no calls are left, then multiply. Step through the rewriting and count the multiplications that have to wait.</p>
+      <figure class="fig" id="fig-unfold">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Unfolding fact(4) by substitution</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: fact(4) becomes 4 × fact(3), then 4 × 3 × fact(2), then 4 × 3 × 2 × fact(1), then 4 × 3 × 2 × 1 × fact(0), then 4 × 3 × 2 × 1 × 1. The products then collapse from the right: 1, 2, 6, 24.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Two obligations make a recursion correct. Every call must move <em>closer</em> to a base case, and the answer from the smaller call must be enough to build the current answer.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE CALL STACK -->
+    <section id="call-stack">
+      <h2>The call stack remembers who is waiting</h2>
+      <p>The rewriting above hides a question: where does the waiting <code>4 × …</code> live while <code>fact(3)</code> runs? The machine keeps it in a frame, and piles frames on the call stack.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>A <dfn>frame</dfn> holds one call’s arguments, its local variables and the line to resume at. The <dfn>call stack</dfn> is the pile of frames for calls that have started but not finished. Only the top frame runs.</p>
+      </aside>
+      <p>Step through <code>fact(4)</code>. A frame drops onto the stack when a call begins. A return marks it done, lifts it off, and hands its value to the frame below. The chart traces the stack’s height over time.</p>
+      <figure class="fig wide" id="fig-stack">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">fact(4): the stack grows, then unwinds</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage><div class="rc-split"><div class="rc-split__a" data-cs></div><div class="rc-split__b" data-mountain></div></div></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: frames for fact(4), fact(3), fact(2), fact(1) and fact(0) are pushed on top of main. fact(0) returns 1; then each frame multiplies and returns: 1, 2, 6, 24. The depth chart rises to 5 and falls back to 0.</figcaption>
+      </figure>
+      <p>Each frame has its own <code>n</code>. When <code>fact(4)</code> calls <code>fact(3)</code>, its <code>n</code> does not become 3. A new frame appears with a new <code>n</code>, and the old one waits underneath, unchanged.</p>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why a stack?</p>
+        <p>The last call to start is always the first to finish, so the frame that runs next is always on top. Last in, first out: exactly the stack from lesson 09.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ LEAP OF FAITH -->
+    <section id="leap">
+      <h2>The leap of faith</h2>
+      <p>Tracing every frame works for <code>fact(4)</code>. It does not work for a folder tree ten levels deep. Experienced programmers reason differently: they <em>assume</em> the smaller call already works, and only check that one level is right.</p>
+      <p>Drag the slider to open the boxes. Closed, a box is a promise: <code>total(rest)</code> returns the right sum. Open, it holds the same one-line rule, all the way down to the base case. The arithmetic at the top never changes.</p>
+      <figure class="fig" id="fig-leap">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trust the box, or open it: total([3, 1, 4, 1, 5])</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 280px"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-note aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: total([3, 1, 4, 1, 5]) = 3 + total([1, 4, 1, 5]). Trusting that the inner call returns 11 gives 14. Opening every box shows 1 + 10, 4 + 6, 1 + 5, 5 + 0 and the base case total([]) = 0.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">This is induction</p>
+        <p>If the base case is right, and each level is right whenever the level below it is right, then every level is right. That argument, mathematical induction, is why you may trust the box without opening it.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Now drive it yourself. Pick a function and an input, then step through the descent and back through the unwinding. The recursion tree keeps every call so far; the call stack keeps only the calls still running. Both are drawn from the same steps.</p>
+      <p>Press <kbd>←</kbd> and <kbd>→</kbd> to step, <kbd>Space</kbd> to play, and <kbd>?</kbd> for all shortcuts. The lab stops once to ask you for a return value.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Recursion lab: the tree and the stack, step by step</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar rc-labbar">
+          <div class="rc-labbar__kind"><span class="field-label" id="lab-kind-label">Function</span><div data-kind aria-labelledby="lab-kind-label"></div></div>
+          <div class="rc-labbar__input" data-input></div>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain" data-stage>
+              <div class="rc-labstage">
+                <div class="rc-labstage__tree"><p class="rc-panel-label">Recursion tree · every call so far</p><div data-tree></div></div>
+                <div class="rc-labstage__stack"><p class="rc-panel-label">Call stack · calls still running</p><div data-cs></div></div>
+              </div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the caption describes every step in words. The tree shows each call as a node (blue running, cyan waiting, green returned with its value); the stack shows the frames of the calls still running, newest on top.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2>Writing a recursive function</h2>
+      <p>Every recursive function you write follows one recipe. The flowchart is wired to the lab: step the lab and the current box lights up. Look for the arrow from “call f on a smaller input” back to the top. That loop is the recursion.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The recipe, lit by the lab</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Every path through “call f on a smaller input” must bring the input closer to a base case. Text alternative: call f(input). Is it a base case? If yes, return the answer directly. If no, call f on a smaller input (which loops back to the start), combine its answer with your part, and return the combined answer.</figcaption>
+      </figure>
+      <p>When you write one, work in this order:</p>
+      <ol>
+        <li>Find the smallest inputs and answer them directly.</li>
+        <li>For any other input, pick a smaller input of the same kind.</li>
+        <li>Assume the call on it works, and build your answer from its answer.</li>
+        <li>Check that every path shrinks toward a base case.</li>
+      </ol>
+    </section>
+
+    <!-- ============================================================ RECURSION TREES / FIB -->
+    <section id="trees">
+      <h2>When a call branches: recursion trees</h2>
+      <p>Factorial calls itself once, so its calls form a single chain. Fibonacci calls itself twice: <code>fib(n) = fib(n − 1) + fib(n − 2)</code>, with <code>fib(0) = 0</code> and <code>fib(1) = 1</code>. Draw each call under the call that made it and you get a tree.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>recursion tree</dfn> has one node per call and an edge from each call to the calls it makes. At any moment the call stack is one path in it, from the root down to the running call.</p>
+      </aside>
+      <p>Drag <em>n</em> up and watch the tree explode. Colour marks the argument: every <code>fib(3)</code> has the same colour, and each one redoes the same work. Press a colour chip to light up every copy.</p>
+      <figure class="fig full" id="fig-fib">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The fib call explosion</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar">
+          <div data-slider style="flex: 1 1 240px"></div>
+          <div data-toggle></div>
+          <button type="button" class="btn btn--secondary btn--sm" data-replay>Replay the calls</button>
+        </div>
+        <div class="fig__stage" data-stage></div>
+        <div class="rc-chips" data-chips role="group" aria-label="Highlight every call with one argument"></div>
+        <div class="fig__stats" data-stats></div>
+        <p class="fig__caption" data-note aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: the call tree of fib(n) drawn with one dot per call, coloured by argument. The naive tree has 2·fib(n + 1) − 1 calls (109 for n = 9); with remembered answers it has 2n − 1 (17 for n = 9).</figcaption>
+      </figure>
+      <p>Now switch on <b>remember answers</b>. Each <code>fib(k)</code> is computed once and stored; every later request is a lookup, drawn as a hollow ring. The tree collapses to a chain with short spurs: 2n − 1 calls instead of millions.</p>
+      <figure class="fig wide" id="fig-fibchart">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Calls made by fib(n): naive vs remembered answers</h3></div>
+          <div data-seg></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: naive fib(n) makes 2·fib(n + 1) − 1 calls, which grows by about 1.6 times per step (2,692,537 calls at n = 30). The memoised version makes 2n − 1 calls (59 at n = 30). On a log scale the naive curve is a straight, steep line.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Memoization, a preview</p>
+        <p>Storing answers so that repeated subproblems cost nothing is called <em>memoization</em>. It is the first step toward dynamic programming in lesson 34.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ HANOI -->
+    <section id="hanoi">
+      <h2>Tower of Hanoi</h2>
+      <p>Three pegs hold a tower of discs on the first. Move the whole tower to the last peg. Only one disc moves at a time, and a larger disc may never sit on a smaller one.</p>
+      <p>It looks hard until you think recursively. To move <em>n</em> discs from A to C: move the top <em>n</em> − 1 to B, out of the way. Move the biggest disc to C. Then move the <em>n</em> − 1 from B onto it. Moving <em>n</em> − 1 discs is the same puzzle, smaller.</p>
+      <figure class="fig fig--lab full" id="fig-hanoi">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Tower of Hanoi: discs, the three-step plan, and the tree of subproblems</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar">
+          <div><span class="field-label" id="hanoi-n-label">Discs</span><div data-n aria-labelledby="hanoi-n-label"></div></div>
+          <div data-toggle></div>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain rc-hanoi-stage" data-stage>
+              <div data-discs></div>
+              <p class="rc-panel-label">Recursion tree · one node per subproblem</p>
+              <div data-tree></div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the caption narrates every call and move. The bar under the pegs shows all 2ⁿ − 1 moves in order, split into the root’s three steps: move n − 1 discs to B, move disc n, move n − 1 discs onto it.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Why exactly 2ⁿ − 1 moves?</p>
+        <p>Moving <em>n</em> discs costs two moves of <em>n</em> − 1 discs plus one: M(n) = 2·M(n − 1) + 1, with M(1) = 1. That gives 1, 3, 7, 15, 31, … = 2ⁿ − 1. No method does better: the largest disc must move at least once, and before it can, every other disc must be off it and off the target peg.</p>
+      </aside>
+      <aside class="callout callout--fun">
+        <p class="callout__title">The end of the world</p>
+        <p>Édouard Lucas sold the puzzle in 1883 with a legend: priests move a tower of 64 golden discs, and the world ends when they finish. At one move per second, 2⁶⁴ − 1 moves take about 585 billion years, more than 40 times the age of the universe.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ STACK OVERFLOW -->
+    <section id="overflow">
+      <h2>When the base case is missing</h2>
+      <p>Delete the base case and nothing tells the function to stop. Each call makes another, every frame waits for one that never returns, and the stack fills up. This toy stack holds 8 frames.</p>
+      <figure class="fig wide" id="fig-overflow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">countdown(3), with and without a base case</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage>
+          <div class="rc-split rc-split--overflow"><div class="rc-split__a" data-stackview></div><div class="rc-split__b"><pre class="rc-code" data-src></pre><div class="rc-console" data-console aria-label="Program output"></div></div></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: with the base case, frames countdown(3) to countdown(0) are pushed, countdown(0) prints liftoff, and all four pop. Without it, frames keep coming with negative arguments until the ninth frame does not fit and the program crashes.</figcaption>
+      </figure>
+      <p>Real stacks are bigger, but never infinite. Python stops at 1,000 nested calls by default. Browsers allow thousands to tens of thousands for a small function, depending on the engine and the size of each frame.</p>
+      <div class="rc-measure" id="measure">
+        <div>
+          <p class="rc-measure__title">Try it: how deep can this browser go?</p>
+          <p class="rc-measure__text">The button runs a function that calls itself with no base case and counts the frames until the browser throws <code>RangeError</code>. The page catches the error, so nothing breaks.</p>
+        </div>
+        <div class="rc-measure__act"><button type="button" class="btn btn--primary" data-measure>Measure the stack</button><output class="rc-measure__out" data-out aria-live="polite">not measured yet</output></div>
+      </div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Two ways to overflow</p>
+        <p>A missing base case, or a step that never reaches it: <code>countdown(n + 1)</code> moves away from 0, and <code>fact(−1)</code> skips past <code>n == 0</code> forever. Check that every path strictly shrinks toward a base case.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ RECURSION VS ITERATION -->
+    <section id="iteration">
+      <h2>Recursion or a loop?</h2>
+      <p>Anything recursion computes, a loop with a stack can compute too, and the reverse. The difference is memory and clarity. Plain recursion keeps one frame per pending call; a loop keeps one frame.</p>
+      <figure class="fig wide" id="fig-lanes">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">5! three ways: the frames each one keeps</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: plain recursive fact(5) stacks six frames, each waiting to multiply. The tail-recursive factT(n, acc) keeps one frame whose arguments change: (5, 1), (4, 5), (3, 20), (2, 60), (1, 120), (0, 120). The loop keeps one frame with i and acc.</figcaption>
+      </figure>
+      <p>The middle lane is a <em>tail call</em>: the recursive call is the very last thing the function does, so nothing is left pending. The running product travels in an extra argument, <code>acc</code>. A compiler can then reuse the frame instead of stacking a new one.</p>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Don’t count on frame reuse</p>
+        <p>Scheme guarantees it for every tail call. Python never does it, and among the major JavaScript engines only Safari’s does. In most languages you use, a deep tail recursion still overflows: write the loop.</p>
+      </aside>
+      <p>So when should you recurse? Walk the decision tree: press the answer that fits your problem.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Recursion, memoized recursion or a loop?</h3></div>
+          <button type="button" class="btn btn--ghost btn--sm" data-restart>Start over</button>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-note aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: if the problem is not nested or splittable, use a loop. If subproblems repeat, use recursion with memoization. If the depth could reach thousands, use a loop with your own stack. Otherwise plain recursion is the clearest.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FRACTAL -->
+    <section id="fractal">
+      <h2>Recursion you can see</h2>
+      <p>Recursion also draws. A tree is a trunk with two smaller trees on top; each of those is a trunk with two smaller trees; stop at some depth. That sentence is the whole program.</p>
+      <figure class="fig wide" id="fig-fractal">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A tree made of smaller trees</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-depth style="flex: 1 1 220px"></div><div data-angle style="flex: 1 1 220px"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a branching tree drawing. Depth 0 is a single trunk; each extra level adds two shorter branches at the tip of every branch drawn so far.</figcaption>
+      </figure>
+      <p>Each extra level doubles the newest branches, so depth <em>d</em> draws 2<sup>d+1</sup> − 1 segments. That is Hanoi’s count again, for the same reason: every call makes two more.</p>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Two numbers describe a recursion’s cost. <b>Time</b> grows with the number of calls: every node of the recursion tree. <b>Space</b> grows with the deepest the stack gets: the tree’s height, because only one root-to-leaf path is on the stack at a time.</p>
+      <figure class="fig wide" id="fig-space">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">fib(5): time counts every node, space counts one path</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: the 15-node call tree of fib(5). In time mode every node is lit: 15 calls. In space mode only the longest path fib(5), fib(4), fib(3), fib(2), fib(1) is lit: at most 5 frames at once.</figcaption>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Function</th><th scope="col">Shape of the tree</th><th scope="col" class="num">Calls (time)</th><th scope="col" class="num">Deepest stack (space)</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><code>fact(n)</code></th><td>a chain of n + 1 calls</td><td class="num"><span class="big-o" data-o="n">O(n)</span></td><td class="num"><span class="big-o" data-o="n">O(n)</span></td></tr>
+            <tr><th scope="row"><code>total(a, i)</code> with an index</th><td>a chain of n + 1 calls</td><td class="num"><span class="big-o" data-o="n">O(n)</span></td><td class="num"><span class="big-o" data-o="n">O(n)</span></td></tr>
+            <tr><th scope="row"><code>power(x, n)</code> by halving</th><td>a chain of ⌊log₂ n⌋ + 2 calls</td><td class="num"><span class="big-o" data-o="logn">O(log n)</span></td><td class="num"><span class="big-o" data-o="logn">O(log n)</span></td></tr>
+            <tr><th scope="row">binary search</th><td>one call per halving</td><td class="num"><span class="big-o" data-o="logn">O(log n)</span></td><td class="num"><span class="big-o" data-o="logn">O(log n)</span></td></tr>
+            <tr><th scope="row"><code>fib(n)</code>, naive</th><td>two calls per call; 2·fib(n + 1) − 1 in all</td><td class="num"><span class="big-o" data-o="2n">O(1.62ⁿ)</span></td><td class="num"><span class="big-o" data-o="n">O(n)</span></td></tr>
+            <tr><th scope="row"><code>fib(n)</code>, remembered</th><td>2n − 1 calls, most of them lookups</td><td class="num"><span class="big-o" data-o="n">O(n)</span></td><td class="num"><span class="big-o" data-o="n">O(n)</span></td></tr>
+            <tr><th scope="row"><code>hanoi(n)</code></th><td>a full binary tree of 2ⁿ − 1 calls</td><td class="num"><span class="big-o" data-o="2n">O(2ⁿ)</span></td><td class="num"><span class="big-o" data-o="n">O(n)</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The shape decides the growth. A chain grows linearly, halving grows logarithmically, and two calls per call grow exponentially. Switch the chart to the log scale to see all five at once.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Total calls as n grows</h3></div>
+          <div data-seg></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: calls against n from 1 to 20. power by halving stays under 7 calls; factorial grows to 21; memoised fib to 39; naive fib reaches 21,891 and Hanoi 1,048,575.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Hidden cost: slicing</p>
+        <p>The lab’s <code>total(a[1:])</code> copies the rest of the list at every call: n + (n − 1) + … + 1 copied items, which is O(n²) time. Pass an index instead, <code>total(a, i)</code> with the base case <code>i == len(a)</code>, and the work drops to O(n).</p>
+      </aside>
+      <details class="accordion">
+        <summary>Why does naive fib make about 1.6ⁿ calls?</summary>
+        <div class="accordion__body"><p>calls(n) = calls(n − 1) + calls(n − 2) + 1. That is the Fibonacci recurrence itself (plus one), so the call count grows like fib(n), by a factor of φ ≈ 1.618 per step. Exactly: calls(n) = 2·fib(n + 1) − 1, so fib(30) makes 2,692,537 calls.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why is the space only O(n) when the time is exponential?</summary>
+        <div class="accordion__body"><p>A frame is popped as soon as its call returns, and its memory is reused by the next call. The stack only ever holds the calls on one path from the root, and the longest path in fib’s tree is fib(n), fib(n − 1), …, fib(1): n frames.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The same shape, a base case plus a smaller self, shows up across strings, arrays and whole algorithm families.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="pal">Palindromes</button>
+          <button data-tab="bs">Binary search</button>
+          <button data-tab="dc">Divide and conquer</button>
+          <button data-tab="tail">Tail calls</button>
+        </div>
+        <div data-tab-panel="pal">
+          <div class="split">
+            <figure class="fig rc-mini-fig" id="fig-pal">
+              <div class="fig__toolbar rc-mini-bar"><div data-seg></div></div>
+              <div class="fig__stage" data-stage></div>
+              <p class="fig__caption" data-caption></p>
+              <div class="fig__controls" data-controls></div>
+            </figure>
+            <div>
+              <p>A string is a palindrome when its first and last characters match and the inside is a palindrome. Empty and one-character strings are base cases, and so is a mismatch: the answer is false without another call.</p>
+              <pre data-code-block="pal"></pre>
+            </div>
+          </div>
+        </div>
+        <div data-tab-panel="bs">
+          <div class="split">
+            <figure class="fig rc-mini-fig" id="fig-bs">
+              <div class="fig__toolbar rc-mini-bar"><div data-seg></div></div>
+              <div class="fig__stage" data-stage></div>
+              <p class="fig__caption" data-caption></p>
+              <div class="fig__controls" data-controls></div>
+            </figure>
+            <div>
+              <p>Look at the middle of a sorted array, then recurse into the one half that can hold the target. One call per level, and each level halves the range: about log₂ n calls. Lesson 13 builds it properly.</p>
+              <pre data-code-block="bs"></pre>
+            </div>
+          </div>
+        </div>
+        <div data-tab-panel="dc">
+          <div class="split">
+            <figure class="fig rc-mini-fig" id="fig-dc">
+              <div class="fig__toolbar rc-mini-bar"><div data-seg></div></div>
+              <div class="fig__stage" data-stage></div>
+            </figure>
+            <div>
+              <p>Split the input into halves, solve each half recursively, and combine the two answers. Merge sort (lesson 15) splits a list until single items remain, then merges sorted halves on the way back up.</p>
+              <pre data-code-block="dc"></pre>
+            </div>
+          </div>
+        </div>
+        <div data-tab-panel="tail">
+          <div class="split">
+            <figure class="mini"><div class="mini__stage" data-mini="tail"></div><figcaption>Pending work needs a frame; a tail call has none left.</figcaption></figure>
+            <div>
+              <p>Move the pending work into an argument and the recursive call becomes the last thing the function does. That is what lets Scheme reuse one frame for the whole loop.</p>
+              <pre data-code-block="tail"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-digits"></div>
+        <div class="quiz" id="quiz-fib5"></div>
+        <div class="quiz" id="quiz-hanoi5"></div>
+        <div class="quiz" id="quiz-progress"></div>
+        <div class="quiz" id="quiz-space"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Recursion</p></div>
+          <div class="cluster"><span class="chip chip--sm">base case + smaller self</span><span class="chip chip--sm">time = calls</span><span class="chip chip--sm">space = depth</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1960<small>ALGOL 60</small></div>
+        <p class="history__people">Edsger W. Dijkstra and Jaap Zonneveld<span>the first ALGOL 60 compiler, Amsterdam</span></p>
+        <div class="history__body">
+          <p>Recursion was controversial. Most of the ALGOL 60 committee thought it too slow to be worth having and voted it out, but the report’s wording was ambiguous enough to let it in. Dijkstra, who had argued for it with John McCarthy, implemented it anyway with Jaap Zonneveld, giving every call its own frame on a stack: the design you traced in this lesson.</p>
+          <p>The examples are older. Fibonacci’s rabbit puzzle dates from 1202, and Édouard Lucas sold the Tower of Hanoi in 1883 under the pen name “N. Claus de Siam”.</p>
+        </div>
+        <p class="history__source">Sources: E. W. Dijkstra, “Recursive Programming”, <em>Numerische Mathematik</em> 2 (1960); R. C. Martin, <em>We, Programmers</em> (2025), ch. 6.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice" class="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Down and back up</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Write one recursive function, with no loops, that prints n, n − 1, …, 1 and then 1, 2, …, n. Where does the second half of the output come from?</p></li>
+        <li><div class="practice__title">Flatten a nested list</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Turn <code>[1, [2, [3, 4]], 5]</code> into <code>[1, 2, 3, 4, 5]</code>. Say what the base case is and what “smaller” means here.</p></li>
+        <li><div class="practice__title">Every subset</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Return all subsets of a list of distinct items. How do the subsets of <code>[a, b, c]</code> relate to the subsets of <code>[b, c]</code>? How many calls does your function make?</p></li>
+        <li><div class="practice__title">Paths in a grid</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Count the paths from the top-left to the bottom-right corner of an r × c grid moving only right or down. Write the recursion, find the repeated subproblems, then remember their answers.</p></li>
+        <li><div class="practice__title">Hanoi without recursion</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Solve the Tower of Hanoi with a loop and your own stack of pending subproblems. Show that it makes exactly the same 2ⁿ − 1 moves, in the same order, as the recursive version.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-03-divide-solve-combine.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Divide, Solve, Combine: recurrences and the Master Theorem</span><span class="deeper__text" style="display:block">Sum the work in a recursion tree level by level, and solve T(n) = a·T(n/b) + f(n) for merge sort, binary search and Karatsuba.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,235 @@
+/* Lesson 12 · Recursion — figure styles. Colours come only from tokens (--st-*, --ink*, --el-*, --bg*), so both
+   themes work. Custom SVGs carry the .vz class, so `.is-<state>` sets --vz-c (css/viz.css) and every
+   transition follows --vz-dur, which each render sets to the player's step duration (0 under reduced motion). */
+
+.rc { font-family: var(--font-sans); }
+.rc text { font-variant-numeric: tabular-nums; }
+.rc .rc-tr, .rc-doll rect, .rc-frow__bg, .rc-seat__back, .rc-seat__head, .rc-seat__body, .rc-box rect, .rc-tok rect, .rc-fn circle, .rc-disc rect {
+  transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease), fill-opacity var(--vz-dur) var(--vz-ease);
+}
+
+/* ------------------------------------------------------------ hero teaser: nested frames */
+.rc-dolls { width: 100%; height: 100%; overflow: visible; }
+.rc .rc-doll rect{ fill: color-mix(in srgb, var(--vz-c) 7%, var(--el-fill)); stroke: var(--vz-c); stroke-width: 2px; }
+.rc .rc-doll.is-active rect{ fill: color-mix(in srgb, var(--vz-c) 14%, var(--el-fill)); stroke-width: 2.5px; }
+.rc .rc-doll.is-frontier rect{ stroke-dasharray: 7 5; }
+.rc .rc-doll.is-done rect{ fill: color-mix(in srgb, var(--vz-c) 16%, var(--el-fill)); }
+.rc .rc-doll__label{ font-family: var(--font-mono); font-weight: 700; fill: var(--vz-text); }
+.rc .rc-doll__val{ font-family: var(--font-mono); font-weight: 750; fill: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+.rc .rc-doll__big{ font-family: var(--font-mono); font-weight: 800; fill: color-mix(in srgb, var(--st-done) 72%, var(--ink)); }
+.rc .rc-bubble rect{ fill: var(--st-done); }
+.rc .rc-bubble text{ fill: color-mix(in srgb, var(--st-done) 20%, black); font: 800 13px var(--font-mono); }
+
+/* ------------------------------------------------------------ problem: folders */
+.rc .rc-guides path{ fill: none; stroke: var(--line-strong); stroke-width: 1.5px; }
+.rc .rc-frow__bg{ fill: transparent; stroke: transparent; stroke-width: 1.5px; }
+.rc .rc-frow.is-active .rc-frow__bg{ fill: color-mix(in srgb, var(--st-active) 10%, var(--el-fill)); stroke: var(--st-active); }
+.rc .rc-frow.is-frontier .rc-frow__bg{ fill: color-mix(in srgb, var(--st-frontier) 8%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-frontier) 55%, transparent); stroke-dasharray: 6 4; }
+.rc .rc-frow.is-done .rc-frow__bg{ fill: color-mix(in srgb, var(--st-done) 7%, transparent); }
+.rc .rc-ficon{ fill: color-mix(in srgb, var(--st-compare) 30%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-compare) 80%, var(--ink)); stroke-width: 1.3px; transition: fill var(--vz-dur); }
+.rc .rc-frow.is-active .rc-ficon{ fill: var(--st-compare); }
+.rc .rc-frow__name{ font: 650 14px var(--font-mono); fill: var(--ink); }
+.rc .rc-frow.is-default .rc-frow__name{ fill: var(--ink-2); }
+.rc .rc-pill rect{ fill: var(--bg-sunken); stroke: var(--line); }
+.rc .rc-pill text{ font: 600 11px var(--font-mono); fill: var(--ink-2); }
+.rc .rc-frow__tally{ font: 600 12.5px var(--font-mono); fill: color-mix(in srgb, var(--st-frontier) 60%, var(--ink)); }
+.rc .rc-total rect{ fill: transparent; }
+.rc .rc-total text{ font: 700 12px var(--font-mono); fill: var(--ink-3); }
+.rc .rc-total[data-kind="done"] rect{ fill: var(--st-done); }
+.rc .rc-total[data-kind="done"] text{ fill: color-mix(in srgb, var(--st-done) 20%, black); font-size: 12.5px; }
+.rc .rc-fly rect{ fill: var(--st-done); stroke: var(--bg-elev); stroke-width: 2px; }
+.rc .rc-fly text{ font: 750 12px var(--font-mono); fill: color-mix(in srgb, var(--st-done) 20%, black); }
+.rc .rc-folders .rc-frow[data-id]{ outline: none; }
+
+/* ------------------------------------------------------------ intuition: cinema */
+.rc .rc-screen__glow{ fill: color-mix(in srgb, var(--accent) 10%, transparent); }
+.rc .rc-screen__bar{ fill: color-mix(in srgb, var(--accent) 60%, var(--el-fill)); }
+.rc .rc-screen__label{ font: 600 11px var(--font-sans); fill: var(--ink-3); letter-spacing: .06em; }
+.rc .rc-seat__back, .rc .rc-seat__cush{ fill: color-mix(in srgb, var(--ink) 9%, var(--bg-sunken)); stroke: var(--line-strong); stroke-width: 1.5px; }
+.rc .rc-seat__cush{ fill: color-mix(in srgb, var(--ink) 14%, var(--bg-sunken)); }
+.rc .rc-seat__head, .rc .rc-seat__body{ fill: color-mix(in srgb, var(--vz-c) 22%, var(--el-fill)); stroke: var(--vz-c); stroke-width: 2px; }
+.rc .rc-seat.is-default .rc-seat__head, .rc .rc-seat.is-default .rc-seat__body{ fill: color-mix(in srgb, var(--ink) 30%, var(--el-fill)); stroke: none; }
+.rc .rc-seat:is(.is-active, .is-done, .is-found, .is-key) .rc-seat__head, .rc .rc-seat:is(.is-active, .is-done, .is-found, .is-key) .rc-seat__body { fill: var(--vz-c); }
+.rc .rc-seat__row{ font: 700 13px var(--font-mono); fill: var(--ink-2); }
+.rc .rc-seat:is(.is-done, .is-found) .rc-seat__row { fill: var(--vz-text); }
+.rc .rc-seat__tag{ font: 700 12px var(--font-sans); fill: color-mix(in srgb, var(--st-key) 72%, var(--ink)); }
+.rc .rc-seat__wait{ font: italic 600 10.5px var(--font-sans); fill: color-mix(in srgb, var(--st-frontier) 65%, var(--ink)); transition: opacity var(--vz-dur); }
+.rc .rc-speech rect{ fill: var(--bg-elev); stroke: var(--st-active); stroke-width: 1.5px; }
+.rc .rc-speech text{ font: 650 12px var(--font-sans); fill: color-mix(in srgb, var(--st-active) 70%, var(--ink)); }
+.rc .rc-answer circle{ fill: var(--st-done); stroke: var(--bg-elev); stroke-width: 2px; }
+.rc .rc-answer text{ font: 800 13px var(--font-mono); fill: color-mix(in srgb, var(--st-done) 20%, black); }
+
+/* ------------------------------------------------------------ minis */
+.rc .rc-arrow path{ fill: none; stroke: var(--el-edge-strong); stroke-width: 1.6px; }
+.rc .rc-arrow .rc-arrow__head{ fill: var(--el-edge-strong); stroke: none; }
+.rc .rc-mini-expr{ font: 700 14px var(--font-mono); fill: var(--ink); }
+
+/* ------------------------------------------------------------ substitution tokens */
+.rc .rc-tok text{ font-family: var(--font-mono); font-weight: 700; fill: var(--ink); }
+.rc .rc-tok--op text{ font-weight: 500; fill: var(--ink-3); }
+.rc .rc-tok--call rect{ fill: color-mix(in srgb, var(--st-active) 10%, var(--el-fill)); stroke: var(--st-active); stroke-width: 1.8px; stroke-dasharray: 5 3; }
+.rc .rc-tok--call text{ fill: color-mix(in srgb, var(--st-active) 72%, var(--ink)); }
+.rc .rc-tok.is-done rect{ fill: var(--st-done); stroke: var(--st-done); }
+.rc .rc-tok.is-done text{ fill: color-mix(in srgb, var(--st-done) 20%, black); }
+.rc .rc-unfold__pending{ font: 600 12.5px var(--font-sans); fill: var(--ink-3); }
+.rc .rc-unfold__dots circle{ fill: var(--st-frontier); }
+
+/* ------------------------------------------------------------ two-panel stages */
+.rc-split { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; align-items: end; }
+.rc-split__a, .rc-split__b { min-width: 0; }
+.rc-split--overflow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+@container fig (max-width: 640px) { .rc-split, .rc-split--overflow { grid-template-columns: minmax(0, 1fr); } }
+
+/* depth mountain */
+.rc .rc-mgrid line{ stroke: var(--line); }
+.rc .rc-mgrid text{ font: 500 11px var(--font-mono); fill: var(--ink-3); }
+.rc .rc-mgrid .rc-maxis{ font: 600 11px var(--font-sans); }
+.rc .rc-mghost{ fill: none; stroke: var(--line-strong); stroke-width: 1.5px; stroke-dasharray: 3 4; }
+.rc .rc-marea{ fill: color-mix(in srgb, var(--st-frontier) 14%, transparent); }
+.rc .rc-mline{ fill: none; stroke: var(--st-frontier); stroke-width: 2.5px; stroke-linejoin: round; }
+.rc .rc-mcur line{ stroke: var(--ink-3); stroke-dasharray: 3 3; }
+.rc .rc-mcur circle{ fill: var(--st-active); stroke: var(--bg-elev); stroke-width: 2px; }
+.rc .rc-mlabels text{ font: 600 11.5px var(--font-sans); }
+.rc .rc-mlabels .is-down{ fill: color-mix(in srgb, var(--st-frontier) 65%, var(--ink)); }
+.rc .rc-mlabels .is-up{ fill: color-mix(in srgb, var(--st-done) 65%, var(--ink)); }
+.rc .rc-mlabels .is-base{ fill: var(--ink-2); font-size: 11px; }
+
+/* ------------------------------------------------------------ leap of faith boxes */
+.rc .rc-box rect{ fill: color-mix(in srgb, var(--st-active) 4%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-active) 55%, var(--el-fill)); stroke-width: 1.5px; }
+.rc .rc-box.is-root rect{ stroke: var(--st-active); stroke-width: 2px; }
+.rc .rc-box.is-sealed rect{ fill: var(--st-key); stroke: var(--st-key); }
+.rc .rc-box.is-base rect{ fill: color-mix(in srgb, var(--st-done) 14%, var(--el-fill)); stroke: var(--st-done); stroke-width: 2px; }
+.rc .rc-box__name{ font-family: var(--font-mono); font-weight: 650; fill: var(--ink); }
+.rc .rc-box__math{ font-family: var(--font-mono); font-weight: 700; fill: color-mix(in srgb, var(--st-active) 70%, var(--ink)); }
+.rc .rc-box.is-sealed .rc-box__name, .rc .rc-box.is-sealed .rc-box__math{ fill: var(--on-state); }
+.rc .rc-box.is-base .rc-box__math{ fill: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+
+/* ------------------------------------------------------------ lab layout */
+.rc-labbar { align-items: flex-start; }
+.rc-labbar__kind { display: flex; flex-direction: column; gap: 6px; }
+.rc-labbar__input { flex: 1 1 360px; min-width: 0; }
+.rc-labstage { width: 100%; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-self: stretch; }
+.rc-labstage__tree, .rc-labstage__stack { min-width: 0; }
+@container fig (max-width: 900px) { .rc-labstage { grid-template-columns: minmax(0, 1fr); } }
+.rc-panel-label { margin: 0 0 8px; font-size: 12px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.fig__stage > .rc-panel-label, .rc-hanoi-stage .rc-panel-label { justify-self: start; }
+
+/* ------------------------------------------------------------ fib explosion */
+.rc .rc-fe{ stroke: var(--el-edge); stroke-width: 1.3px; }
+.rc .rc-fn circle{ fill: var(--fc, var(--st-muted)); stroke: var(--bg-elev); stroke-width: 1.5px; }
+.rc .rc-fn text{ font-family: var(--font-mono); font-weight: 750; fill: var(--on-state); pointer-events: none; }
+.rc .rc-fn.is-hit circle{ fill: var(--bg-elev); stroke: var(--fc); stroke-width: 2.5px; }
+.rc .rc-fn.is-hit text{ fill: var(--ink); }
+.rc .rc-fn.is-dim circle{ fill-opacity: .16; stroke-opacity: .3; }
+.rc .rc-fn.is-dim text{ fill-opacity: .3; }
+.rc .rc-fn.is-hl circle{ stroke: var(--ink); stroke-width: 2.5px; }
+.rc-fn-0 { --fc: var(--st-muted); } .rc-fn-1 { --fc: var(--st-visited); } .rc-fn-2 { --fc: var(--st-frontier); } .rc-fn-3 { --fc: var(--st-compare); }
+.rc-fn-4 { --fc: var(--st-pivot); } .rc-fn-5 { --fc: var(--st-done); } .rc-fn-6 { --fc: var(--st-active); } .rc-fn-7 { --fc: var(--st-path); }
+.rc-fn-8 { --fc: var(--st-key); } .rc-fn-9 { --fc: var(--st-swap); }
+.rc .rc-fn:is(.rc-fn-2, .rc-fn-3, .rc-fn-5, .rc .rc-fn-7) text{ fill: color-mix(in srgb, var(--fc) 20%, black); }
+.rc .rc-fn.rc-fn-0 text{ fill: var(--ink); }
+.rc-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 18px; border-top: 1px solid var(--line); }
+.rc-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 7px; border-radius: 999px;
+  border: 1px solid var(--line-strong); background: var(--bg-elev); color: var(--ink-2);
+  font: 600 12.5px var(--font-mono); cursor: pointer;
+}
+.rc-chip:hover { border-color: var(--fc); }
+.rc-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rc-chip.is-on { border-color: var(--fc); background: color-mix(in srgb, var(--fc) 16%, var(--bg-elev)); color: var(--ink); }
+.rc-chip__sw { width: 12px; height: 12px; border-radius: 50%; background: var(--fc); flex: none; }
+
+/* ------------------------------------------------------------ hanoi */
+.rc-hanoi-stage { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+.rc-hanoi-stage > div { width: 100%; }
+.rc .rc-hbase__plate{ fill: color-mix(in srgb, var(--ink) 18%, var(--bg-sunken)); }
+.rc .rc-hbase__peg{ fill: color-mix(in srgb, var(--ink) 22%, var(--bg-sunken)); }
+.rc .rc-hbase__label{ font: 700 14px var(--font-mono); fill: var(--ink-2); }
+.rc .rc-disc{ --dc: color-mix(in oklab, var(--st-compare), var(--st-path) var(--p, 50%)); }
+.rc .rc-disc rect{ fill: var(--dc); stroke: color-mix(in srgb, var(--dc) 60%, black); stroke-width: 1px; }
+.rc .rc-disc text{ font-family: var(--font-mono); font-weight: 800; fill: color-mix(in srgb, var(--dc) 18%, black); }
+.rc .rc-disc.is-focus rect{ stroke: var(--ink); stroke-width: 2px; }
+.rc.rc-hanoi.has-focus .rc-disc:not(.is-focus) rect{ fill: color-mix(in oklab, var(--dc) 38%, var(--bg-elev)); stroke: color-mix(in srgb, var(--dc) 55%, var(--bg-elev)); }
+.rc.rc-hanoi.has-focus .rc-disc:not(.is-focus) text{ fill: var(--ink-2); }
+.rc .rc-disc.is-moving rect{ filter: drop-shadow(0 4px 6px color-mix(in srgb, black 30%, transparent)); }
+.rc .rc-harc{ transition: opacity var(--vz-dur); }
+.rc .rc-harc path{ fill: none; stroke: var(--st-active); stroke-width: 2px; stroke-dasharray: 5 4; }
+.rc .rc-harc .rc-harc__head{ fill: var(--st-active); stroke: none; }
+.rc .rc-harc text{ font: 700 12px var(--font-mono); fill: color-mix(in srgb, var(--st-active) 72%, var(--ink)); }
+.rc .rc-htime__title{ font: 600 11.5px var(--font-sans); fill: var(--ink-3); }
+.rc .rc-htime__seg{ fill-opacity: .2; }
+.rc .rc-htime__done{ fill-opacity: 1; }
+.rc .rc-htime__seg--p1{ fill: var(--st-frontier); }
+.rc .rc-htime__seg--p2{ fill: var(--st-pivot); }
+.rc .rc-htime__seg--p3{ fill: var(--st-done); }
+.rc .rc-htime__tick{ stroke: var(--bg-elev); stroke-width: 1px; }
+.rc .rc-htime__lab{ font: 650 11.5px var(--font-mono); }
+.rc .rc-htime__lab--1{ fill: color-mix(in srgb, var(--st-frontier) 65%, var(--ink)); }
+.rc .rc-htime__lab--2{ fill: color-mix(in srgb, var(--st-pivot) 65%, var(--ink)); }
+.rc .rc-htime__lab--3{ fill: color-mix(in srgb, var(--st-done) 65%, var(--ink)); }
+.rc .rc-htime__bracket{ fill: none; stroke: var(--st-active); stroke-width: 2px; }
+.rc .rc-htime__marker{ fill: var(--ink-2); }
+
+/* ------------------------------------------------------------ overflow */
+.rc-code { margin: 0 0 12px; }
+.rc-code.is-broken { box-shadow: inset 3px 0 0 var(--st-error); }
+.rc-console {
+  display: flex; flex-direction: column; gap: 2px; min-height: 150px; max-height: 190px; overflow: auto;
+  padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--line);
+  background: var(--code-bg); font: 600 13px/1.5 var(--font-mono); color: var(--code-ink);
+}
+.rc-console__title { font: 650 11px var(--font-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px; }
+.rc-console__err { color: var(--st-error); font-weight: 750; }
+.rc-console.is-crashed { border-color: var(--st-error); box-shadow: 0 0 0 1px var(--st-error); }
+.rc-measure {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: center;
+  margin-top: var(--space-5); padding: 18px 20px; border-radius: var(--r-lg);
+  border: 1px solid var(--line); background: var(--bg-elev); box-shadow: var(--shadow-1);
+}
+.rc-measure__title { margin: 0 0 4px; font-weight: 650; font-size: 16px; }
+.rc-measure__text { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-2); }
+.rc-measure__act { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 280px; }
+.rc-measure__out { font-size: 14px; color: var(--ink-2); text-align: right; }
+@media (max-width: 640px) {
+  .rc-measure { grid-template-columns: minmax(0, 1fr); }
+  .rc-measure__act { align-items: flex-start; max-width: none; }
+  .rc-measure__out { text-align: left; }
+}
+
+/* ------------------------------------------------------------ lanes */
+.rc .rc-lane__title{ font: 700 13px var(--font-sans); fill: var(--ink); }
+.rc .rc-lane__sub{ font: 500 11px var(--font-mono); fill: var(--ink-3); }
+.rc .rc-lane__floor{ stroke: var(--line-strong); stroke-width: 2px; }
+.rc .rc-lane__sep{ stroke: var(--line); stroke-dasharray: 3 4; }
+.rc .rc-lane__count{ font: 600 11.5px var(--font-sans); fill: var(--ink-2); }
+.rc .rc-lane__result{ font: 700 11.5px var(--font-mono); fill: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+.rc .rc-lframe__a{ font-family: var(--font-mono); font-weight: 700; }
+.rc .rc-lframe__b{ font-family: var(--font-mono); font-weight: 500; }
+
+/* ------------------------------------------------------------ fractal */
+.rc .rc-br{ stroke-linecap: round; stroke: color-mix(in oklab, var(--st-path), var(--st-done) var(--q, 0%)); }
+.rc .rc-br-0{ --q: 0%; } .rc .rc-br-1{ --q: 10%; } .rc .rc-br-2{ --q: 20%; } .rc .rc-br-3{ --q: 30%; } .rc .rc-br-4{ --q: 40%; } .rc .rc-br-5{ --q: 50%; }
+.rc .rc-br-6{ --q: 60%; } .rc .rc-br-7{ --q: 70%; } .rc .rc-br-8{ --q: 80%; } .rc .rc-br-9{ --q: 90%; } .rc .rc-br-10{ --q: 100%; }
+
+/* ------------------------------------------------------------ summary tiles */
+.rc .rc-sum-edge{ stroke: var(--el-edge); stroke-width: 1.6px; }
+.rc .rc-sum-edge.is-path{ stroke: var(--st-path); stroke-width: 2.4px; }
+.rc .rc-sum-dot{ fill: var(--el-fill); stroke: var(--el-edge-strong); stroke-width: 1.5px; }
+.rc .rc-sum-dot.is-path{ fill: var(--st-path); stroke: var(--st-path); }
+.rc .rc-sum-dot.rc-fn-3{ fill: var(--st-compare); stroke: var(--st-compare); }
+.rc .rc-sum-peg{ stroke: color-mix(in srgb, var(--ink) 30%, var(--bg-sunken)); stroke-width: 3px; stroke-linecap: round; }
+.rc .rc-sum-disc{ fill: var(--st-path); }
+.rc .rc-sum-disc.is-2{ fill: color-mix(in oklab, var(--st-compare), var(--st-path) 50%); }
+.rc .rc-sum-disc.is-3{ fill: var(--st-compare); }
+
+/* ------------------------------------------------------------ variations + quiz code */
+.rc-mini-fig { min-width: 0; }
+.rc-mini-fig .fig__stage { min-height: 150px; }
+.rc-mini-bar { padding: 10px 12px; }
+.rc-quiz-code { margin: 10px 0 0; padding: 10px 12px; border-radius: var(--r-md); background: var(--code-bg); color: var(--code-ink); font: 500 13.5px/1.55 var(--font-mono); white-space: pre; overflow-x: auto; }
+
+/* summary: six tiles in rows of three (two on medium screens) */
+#summary-card .summary__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); }
+.rc .rc-mini-note { font: 500 10px var(--font-mono); fill: var(--ink-3); }
+.rc .rc-box__hint { font: italic 600 13px var(--font-sans); fill: color-mix(in srgb, var(--on-state) 82%, transparent); }
+.rc-labbar .seg { flex-wrap: wrap; }

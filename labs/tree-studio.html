@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Tree studio · Visual DSA</title>
+<meta name="description" content="Insert, delete and search in binary search trees, AVL trees, red-black trees, heaps and tries, one animated step at a time. Compare a BST, an AVL tree and a red-black tree on the same keys.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/labs/tree-studio.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/algos/19-binary-search-trees.js" defer></script>
+<script src="../js/algos/20-balanced-trees.js" defer></script>
+<script src="../js/algos/21-heaps.js" defer></script>
+<script src="../js/algos/22-tries.js" defer></script>
+<script src="../js/labs/tree-studio-model.js" defer></script>
+<script src="../js/labs/tree-studio.js" defer></script>
+</head>
+<body data-page="lab" data-crumb="Tree studio">
+<main id="main" class="ts">
+
+  <header class="ts-head">
+    <p class="hero__eyebrow"><span class="hero__num">Lab</span><span>Trees and heaps</span></p>
+    <h1 class="ts-head__title">Tree studio</h1>
+    <p class="ts-head__lede">Pick a structure, type a value, and watch every comparison, rotation and swap. Insert ten random keys, then <b>1 to 15 in order</b>, and see why balanced trees exist.</p>
+  </header>
+
+  <figure class="fig fig--lab wide ts-fig" id="studio" aria-labelledby="ts-title">
+    <header class="fig__head ts-fig__head">
+      <div class="fig__titles"><h2 class="fig__title" id="ts-title">Studio</h2></div>
+      <div data-legend></div>
+    </header>
+
+    <div class="fig__toolbar ts-tools">
+      <div class="ts-row">
+        <div class="ts-field ts-field--kind">
+          <span class="field-label" id="ts-kind-l">Structure</span>
+          <div data-kind aria-labelledby="ts-kind-l"></div>
+        </div>
+        <div class="ts-field ts-field--switches">
+          <div data-compare></div>
+          <div data-instant></div>
+        </div>
+      </div>
+      <div class="ts-row ts-row--ops">
+        <div class="ts-field ts-field--value">
+          <label class="field-label" for="ts-value" data-value-label>Value</label>
+          <input class="field" id="ts-value" data-value type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="e.g. 42" aria-describedby="ts-msg">
+        </div>
+        <div class="btn-row ts-ops" role="group" aria-label="Operations">
+          <button class="btn btn--primary" type="button" data-op="insert">Insert</button>
+          <button class="btn" type="button" data-op="delete">Delete</button>
+          <button class="btn" type="button" data-op="search">Search</button>
+          <button class="btn" type="button" data-op="extract" hidden>Extract <span data-extract-word>min</span></button>
+        </div>
+        <div class="btn-row ts-bulk" role="group" aria-label="Bulk and history">
+          <button class="btn btn--sm" type="button" data-bulk="random">Insert 10 random</button>
+          <button class="btn btn--sm" type="button" data-bulk="ordered">Insert 1 to 15 in order</button>
+          <button class="btn btn--sm" type="button" data-act="clear">Clear</button>
+          <button class="btn btn--sm" type="button" data-act="undo" disabled>Undo</button>
+          <button class="btn btn--sm btn--ghost" type="button" data-act="share" title="Copy a link to this exact setup">Copy link</button>
+        </div>
+      </div>
+      <p class="ts-msg" id="ts-msg" data-msg role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="ts-stage" data-panes></div>
+
+    <p class="fig__caption ts-caption" data-caption aria-live="polite"></p>
+    <div class="fig__controls" data-controls></div>
+
+    <div class="ts-under">
+      <section class="ts-card" aria-labelledby="ts-seq-h">
+        <h3 class="ts-card__title" id="ts-seq-h" data-seq-title>Sequences</h3>
+        <div class="ts-seq" data-seq></div>
+        <p class="ts-card__note" data-seq-note></p>
+      </section>
+      <section class="ts-card" aria-labelledby="ts-spark-h">
+        <h3 class="ts-card__title" id="ts-spark-h">Height after every operation</h3>
+        <div class="ts-spark" data-spark></div>
+        <ul class="ts-spark__key" data-spark-key aria-label="Chart key"></ul>
+        <p class="ts-card__note">The dashed line is the best any binary tree could do for that many nodes: <em>⌊log₂ n⌋</em>.</p>
+      </section>
+    </div>
+
+    <figcaption class="fig__foot ts-foot">
+      <span>Keys (when not typing): <kbd>/</kbd> value, <kbd>Enter</kbd> insert, <kbd>D</kbd> delete, <kbd>S</kbd> search, <kbd>X</kbd> extract, <kbd>U</kbd> undo. Player: <kbd>←</kbd> <kbd>→</kbd> step, <kbd>Space</kbd> play or pause.</span>
+      <span>Numbers from −99 to 999. Trees stop at 127 nodes, heaps at 63 values, tries at 40 words.</span>
+    </figcaption>
+  </figure>
+
+  <section class="ts-tips flow" aria-labelledby="ts-tips-h">
+    <h2 id="ts-tips-h">Things to try</h2>
+    <ul>
+      <li>Turn on <b>Compare</b>, then press <b>Insert 1 to 15 in order</b>. The BST becomes a stick 14 links tall; the AVL and red-black trees stay near 3 and 5.</li>
+      <li>On the AVL tree insert <b>30, 20, 10</b>: a straight line, one rotation. Then <b>30, 10, 20</b>: a bend, two rotations.</li>
+      <li>In a min-heap insert <b>9, 8, 7, 6, 5</b>, then extract three times and watch the last leaf travel to the root and sift down.</li>
+      <li>In the trie insert <b>tea</b>, <b>ten</b> and <b>to</b>: the shared prefix is stored once.</li>
+    </ul>
+  </section>
+
+</main>
+</body>
+</html>

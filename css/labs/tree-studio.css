@@ -1,0 +1,133 @@
+/* Tree studio (labs/tree-studio.html, js/labs/tree-studio.js).
+   Colours, type, radii and spacing come only from css/tokens.css. Layout pieces (.fig, .btn, .seg, .field, .toggle,
+   .legend, .player) come from css/vdsa.css; the tree drawing is css/viz.css. */
+
+.ts { width: min(var(--full), 100% - 2 * var(--gutter)); margin-inline: auto; padding: var(--space-6) 0 var(--space-7); }
+.ts-head { max-width: 62ch; margin-bottom: var(--space-5); }
+.ts-head__title { font-family: var(--font-display); font-size: clamp(30px, 4.4vw, 46px); line-height: 1.05; letter-spacing: -.025em; margin: .15em 0 .3em; }
+.ts-head__lede { margin: 0; color: var(--ink-2); font-size: 17px; line-height: 1.55; }
+.ts-head__lede b { color: var(--ink); }
+
+.ts-fig { margin: 0; }
+.ts-fig__head { flex-wrap: wrap; gap: 8px 16px; }
+
+/* ------------------------------------------------------------------ toolbar */
+.ts-tools { display: grid; gap: 14px; padding: 14px 18px 12px; }
+.ts-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 22px; min-width: 0; }
+.ts-field { min-width: 0; }
+.ts-field--kind .seg { flex-wrap: wrap; }
+.ts-field--kind .seg.is-disabled { opacity: .5; }
+.ts-field--switches { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; padding-bottom: 6px; }
+.ts-lesson { margin: 0; margin-left: auto; padding-bottom: 6px; font-size: 14px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; }
+.ts-lesson__a { color: color-mix(in srgb, var(--accent) 75%, var(--ink)); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); text-underline-offset: 3px; }
+.ts-lesson__a:hover { text-decoration-color: currentColor; }
+.ts-lesson__a.is-soon { color: var(--ink-3); text-decoration: none; font-weight: 500; }
+.ts-row--ops { align-items: flex-end; }
+.ts-field--value { flex: 0 1 240px; }
+.ts-field--value .field { width: 100%; font-variant-numeric: tabular-nums; }
+.ts-ops .btn { min-width: 84px; }
+.ts-bulk { margin-left: auto; }
+.ts-msg { margin: 0; min-height: 1.4em; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
+.ts-msg:empty { min-height: 0; }
+.ts-msg[data-kind="error"] { color: var(--st-error); font-weight: 560; }
+
+/* ------------------------------------------------------------------ stage and panes */
+.ts-stage {
+  display: grid; gap: 0; grid-template-columns: 1fr;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background-color: var(--bg-elev);
+  background-image: radial-gradient(circle at 1px 1px, var(--stage-dot) 1px, transparent 1.2px);
+  background-size: 18px 18px;
+}
+.ts-pane { min-width: 0; display: flex; flex-direction: column; padding: 12px clamp(8px, 2cqi, 20px) 6px; }
+.ts-pane + .ts-pane { border-top: 1px dashed var(--line-strong); }
+.ts-pane__head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-height: 30px; }
+.ts-pane__name { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: .01em; color: var(--ink-2); }
+.ts-pane__lesson { font-size: 13.5px; }
+.ts-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.ts-stat { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 10px 4px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg-elev); font-size: 12.5px; line-height: 1.3; }
+.ts-stat__l { color: var(--ink-3); font-weight: 600; }
+.ts-chip__v { color: var(--ink); font-weight: 720; font-variant-numeric: tabular-nums; min-width: 1ch; text-align: right; }
+.ts-stat.is-bump { animation: ts-bump 480ms var(--ease-out); }
+@keyframes ts-bump { 30% { transform: translateY(-2px); border-color: var(--accent); } }
+
+.ts-pane__view { min-height: clamp(300px, 46vh, 460px); display: grid; place-items: center; min-width: 0; }
+.ts-pane__view > svg { width: 100%; max-height: 640px; }
+.ts-pane__cap { display: none; margin: 4px 0 0; padding-top: 6px; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); min-height: 4.4em; }
+.ts-pane__cap b { color: var(--ink); font-weight: 650; }
+.ts.is-compare .ts-pane__view { min-height: clamp(260px, 38vh, 380px); }
+.ts.is-compare .ts-pane__cap { display: block; }
+@container fig (min-width: 900px) {
+  .ts-stage[data-count="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ts-stage[data-count="3"] .ts-pane + .ts-pane { border-top: 0; border-left: 1px dashed var(--line-strong); }
+}
+.ts-caption { min-height: calc(1.55em * 2 + 26px); }
+
+/* ------------------------------------------------------------------ side panels */
+.ts-under { display: grid; grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--line); }
+@container fig (min-width: 860px) {
+  .ts-under { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  .ts-under > .ts-card + .ts-card { border-left: 1px solid var(--line); border-top: 0; }
+}
+.ts-card { padding: 16px 18px 14px; min-width: 0; }
+.ts-card + .ts-card { border-top: 1px solid var(--line); }
+.ts-card__title { margin: 0 0 10px; font-size: 15px; font-weight: 700; letter-spacing: -.005em; }
+.ts-card__note { margin: 10px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-3); }
+.ts-card__note em { font-style: normal; font-family: var(--font-mono); font-size: .92em; }
+
+.ts-seq { display: grid; gap: 10px; max-height: 300px; overflow: auto; padding-right: 4px; }
+.ts-seq__row { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 4px 10px; align-items: start; }
+.ts-seq__k { font-size: 12.5px; font-weight: 650; color: var(--ink-3); padding-top: 4px; }
+.ts-seq__v { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.ts-seq__empty { font-size: 13px; color: var(--ink-3); font-style: italic; padding-top: 3px; }
+@media (max-width: 520px) { .ts-seq__row { grid-template-columns: 1fr; } }
+.ts-chip {
+  --c: var(--st-default);
+  display: inline-flex; align-items: baseline; gap: 3px;
+  min-width: 28px; justify-content: center; padding: 2px 8px 3px;
+  border-radius: 7px; border: 1px solid var(--line-strong);
+  background: var(--bg-elev); color: var(--ink);
+  font-family: var(--font-mono); font-size: 13.5px; font-variant-numeric: tabular-nums; line-height: 1.35;
+  transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast);
+}
+.ts-chip__i { font-size: 9.5px; color: var(--ink-3); font-family: var(--font-sans); }
+.ts-chip.is-visited { background: color-mix(in srgb, var(--st-visited) 22%, var(--bg-elev)); border-color: color-mix(in srgb, var(--st-visited) 60%, var(--line)); }
+.ts-chip.is-muted { opacity: .55; }
+.ts-chip.is-compare, .ts-chip.is-key, .ts-chip.is-found, .ts-chip.is-active, .ts-chip.is-swap, .ts-chip.is-error, .ts-chip.is-done, .ts-chip.is-pivot, .ts-chip.is-path, .ts-chip.is-frontier {
+  background: var(--c); border-color: var(--c); color: var(--on-state);
+}
+.ts-chip.is-compare { --c: var(--st-compare); } .ts-chip.is-key { --c: var(--st-key); } .ts-chip.is-found { --c: var(--st-found); }
+.ts-chip.is-active { --c: var(--st-active); } .ts-chip.is-swap { --c: var(--st-swap); } .ts-chip.is-error { --c: var(--st-error); }
+.ts-chip.is-done { --c: var(--st-done); } .ts-chip.is-pivot { --c: var(--st-pivot); } .ts-chip.is-path { --c: var(--st-path); } .ts-chip.is-frontier { --c: var(--st-frontier); }
+.ts-chip.is-key .ts-chip__i, .ts-chip.is-compare .ts-chip__i, .ts-chip.is-found .ts-chip__i, .ts-chip.is-swap .ts-chip__i, .ts-chip.is-active .ts-chip__i, .ts-chip.is-done .ts-chip__i, .ts-chip.is-error .ts-chip__i { color: inherit; opacity: .8; }
+
+.ts-spark { min-height: 96px; }
+.ts-spark__svg { width: 100%; height: auto; max-height: 220px; display: block; overflow: visible; }
+.ts-spark__empty { margin: 0; font-size: 14px; color: var(--ink-3); line-height: 1.5; }
+.ts-spark__grid { stroke: var(--line); stroke-width: 1; }
+.ts-spark__tick { fill: var(--ink-3); font-size: 10.5px; font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
+.ts-spark__ref { fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.ts-spark__line { fill: none; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.ts-spark__last { font-size: 11.5px; font-weight: 700; font-family: var(--font-sans); }
+.ts-spark__key { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink-2); }
+.ts-swatch { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.ts-spark__key b { margin-right: 4px; color: var(--ink); }
+
+.ts-foot { display: grid; gap: 4px; }
+.ts-tips { margin-top: var(--space-7); }
+.ts-tips ul { padding-left: 1.2em; color: var(--ink-2); line-height: 1.6; max-width: 70ch; }
+.ts-tips h2 { font-size: 22px; margin: 0 0 .5em; }
+.ts-tips li + li { margin-top: .4em; }
+.ts-tips b { color: var(--ink); }
+
+@media (max-width: 640px) {
+  .ts-tools { padding: 12px 14px 10px; }
+  .ts-lesson, .ts-bulk { margin-left: 0; }
+  .ts-field--value { flex: 1 1 100%; }
+  .ts-pane__view { min-height: 280px; }
+}
+@media (prefers-reduced-motion: reduce) { .ts-stat.is-bump { animation: none; } }
+
+.ts-pane__view { position: relative; }
+.ts-pane__hint { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; text-align: center; padding: 0 16px; color: var(--ink-3); font-size: 15px; pointer-events: none; }
+.ts-pane__hint[hidden] { display: none; }

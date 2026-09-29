@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Minimum spanning trees · Visual DSA</title>
+<meta name="description" content="Connect every vertex as cheaply as possible. Drag a cut across a map, watch Kruskal and Prim build the same tree in different orders, see why the cycle property works, and turn an MST into clusters.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/30-minimum-spanning-trees.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/graph.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/30-minimum-spanning-trees.js" defer></script>
+<script src="../js/lessons/30-minimum-spanning-trees.js" defer></script>
+<script src="../js/lessons/30-minimum-spanning-trees-labs.js" defer></script>
+<script src="../js/lessons/30-minimum-spanning-trees-more.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="30-minimum-spanning-trees">
+<main id="main" class="lesson">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Minimum spanning trees</h1>
+      <p class="hero__lede">Join every town with the least total road. One rule does it: keep adding the cheapest edge that crosses a cut, and never look back.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">18 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: graphs, union-find, heaps</li>
+      </ul>
+    </div>
+    <div class="hero__stage mst-hero" id="teaser" role="img" aria-label="Animation: nine towns are joined one road at a time, always by the cheapest road that connects two separate networks. Each network has its own colour and merges with another when a road joins them. A road that would close a loop flashes red and is skipped."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>Six towns want to share one water network. Each line is a pipe you could lay, and its number is the cost. You must lay enough pipes that every town is connected, directly or through others, and you want the total cost as low as you can make it.</p>
+      <p>Try it. Click a road to build it, click again to remove it.</p>
+      <figure class="fig" id="fig-problem">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Connect all six towns for the least money</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <div class="mst-readout" data-readout aria-live="polite"></div>
+        <div class="fig__toolbar"><button type="button" class="btn btn--soft btn--sm" data-best>Show the cheapest network</button><button type="button" class="btn btn--ghost btn--sm" data-reset>Clear</button></div>
+        <figcaption class="fig__foot">Text alternative: six towns A to F and nine possible roads with costs 1 to 9. The cheapest way to connect all six towns costs 15.</figcaption>
+      </figure>
+      <p>Two things happen as you play. Once everything is connected, extra pipes only add cost, and you learn to spot the wasteful ones. Yet finding the <em>cheapest</em> set by hand is harder than it looks, because a cheap pipe in one place can force an expensive one somewhere else. Or can it?</p>
+      <p>The same question hides in many places: laying cable between offices, wiring a circuit board with the least copper, or grouping similar data points.</p>
+      <div class="mini-row wide" id="mini-uses"></div>
+    </section>
+
+    <!-- ============================================================ WHAT IS A SPANNING TREE -->
+    <section id="tree">
+      <h2>Spanning trees</h2>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>A <dfn>spanning tree</dfn> of a connected graph uses some of its edges to connect <em>every</em> vertex with <em>no cycle</em>. A <dfn>minimum spanning tree</dfn> (MST) is a spanning tree whose edge weights add up to the least possible.</p>
+      </aside>
+      <p>A graph with V vertices needs at least V − 1 edges to be connected, and any more than V − 1 edges must close a cycle. So every spanning tree has exactly <strong>V − 1 edges</strong>.</p>
+      <div class="mini-row wide" id="mini-tree"></div>
+      <p>A graph has many spanning trees, and their weights differ. Flip through them: the cheapest is a needle in a haystack.</p>
+      <figure class="fig wide" id="fig-gallery">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Every spanning tree of the six towns</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar">
+          <button type="button" class="btn btn--secondary btn--sm" data-next>Show another spanning tree</button>
+          <button type="button" class="btn btn--soft btn--sm" data-cheapest>Jump to the cheapest</button>
+          <button type="button" class="btn btn--ghost btn--sm" data-dearest>Jump to the dearest</button>
+        </div>
+        <div class="mst-gallery">
+          <div class="fig__stage fig__stage--plain" data-stage></div>
+          <div class="mst-gallery__chart" data-chart></div>
+        </div>
+        <div class="mst-readout mst-readout--text" data-readout aria-live="polite"></div>
+        <figcaption class="fig__foot">Text alternative: the six-town graph has 66 spanning trees. The bars count how many trees have each total weight; exactly one tree has the minimum weight, 15.</figcaption>
+      </figure>
+      <p>Checking them all does not scale: a graph on 50 vertices can have more spanning trees than there are atoms in the Earth. We need a rule that walks straight to the cheapest one.</p>
+    </section>
+
+    <!-- ============================================================ THE CUT PROPERTY -->
+    <section id="cut">
+      <h2>The cut property</h2>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>cut</dfn> splits the vertices into two non-empty groups. An edge <dfn>crosses</dfn> the cut if its two ends are in different groups.</p>
+      </aside>
+      <p>Drag the ends of the line across the map. Every road that crosses it turns amber, and the lightest one turns green. Turn on “Show the MST” to check where the true tree runs.</p>
+      <figure class="fig wide" id="fig-cut">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Cut explorer: drag the line</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar mst-toolbar">
+          <div data-sliders class="cut-sliders"></div>
+          <button type="button" class="btn btn--secondary btn--sm" data-random>Random cut</button>
+          <button type="button" class="btn btn--ghost btn--sm" data-reset>Reset</button>
+          <div data-mst-toggle></div>
+        </div>
+        <div class="fig__stage fig__stage--plain mst-cutstage" data-stage></div>
+        <div class="mst-readout mst-readout--text" data-readout aria-live="polite"></div>
+        <p class="mst-explored" data-explored aria-live="polite">Cuts you have tried: <b>0</b>.</p>
+        <figcaption class="fig__foot">Text alternative: nine towns and fifteen roads. A movable line splits the towns into two groups. Roads that cross the line are highlighted, and the cheapest of them is marked safe. The cheapest crossing road always belongs to the minimum spanning tree.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-cut"></div>
+      <aside class="callout callout--key">
+        <p class="callout__title">Cut property</p>
+        <p>For <strong>any</strong> cut, the lightest edge that crosses it belongs to a minimum spanning tree (to <em>the</em> MST, if weights are distinct). Kruskal and Prim differ only in which cuts they look at.</p>
+      </aside>
+      <p>Why can you trust it? Suppose some spanning tree T does not use the lightest crossing edge e. Add e to T. That creates a cycle, and the cycle must cross the cut a second time, at some heavier edge f. Swap f for e: the tree stays connected and gets cheaper. So a tree without e was never the cheapest.</p>
+      <figure class="fig wide" id="fig-proof">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The swap: why the lightest crossing edge is safe</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a spanning tree of weight 49 avoids the cheapest crossing road E–H (10). Adding E–H creates a cycle that crosses the cut a second time at F–I (16). Removing F–I gives a spanning tree of weight 43, so the tree without E–H could be improved.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ KRUSKAL -->
+    <section id="kruskal">
+      <h2>Kruskal: sort, then sweep</h2>
+      <p>Kruskal sorts every edge from lightest to heaviest and walks down the list. For each edge it asks one question: <strong>are the two ends already connected?</strong> If not, the edge is kept. If so, it is skipped, because keeping it would close a cycle.</p>
+      <p>That question is exactly what a union-find structure answers, and it is where the colours come from: each colour is one component. Try the test yourself on a half-built network.</p>
+      <figure class="fig wide" id="fig-cycle-test">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Would this road close a loop?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: three roads are already built, giving three groups: A and C, D E and F, and B alone. Click any two towns to learn whether a road between them would close a loop.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why keeping the lightest joining edge is right</p>
+        <p>When Kruskal reaches an edge that joins two different components, take the cut that puts one component on its own side. No lighter edge crosses that cut, because every lighter edge was already judged and those inside the component were kept or skipped. So the edge is the lightest crossing edge: the cut property says keep it.</p>
+      </aside>
+      <p>Here is the whole algorithm, live. Pick a preset, type your own roads, or draw a graph. Every step lights the line of code that runs, and the coloured pills show the components merging.</p>
+    </section>
+
+    <section id="lab-k">
+      <h2 data-toc="Kruskal lab">Lab: Kruskal</h2>
+      <figure class="fig fig--lab full" id="lab-kruskal" data-algo="kruskal">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace Kruskal on your own graph</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__toolbar"><button type="button" class="btn btn--secondary btn--sm" data-draw aria-pressed="false">Draw a graph</button></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="mst-lab-stage">
+              <div class="fig__stage fig__stage--plain" data-stage></div>
+              <div class="mst-editor" data-editor hidden>
+                <div class="mst-editor__bar">
+                  <p class="mst-editor__help">Click empty space to add a vertex. Drag from one vertex to another to join them. Click a weight to edit it. Select something and press <kbd>Delete</kbd> to remove it.</p>
+                  <div class="btn-row">
+                    <button type="button" class="btn btn--ghost btn--sm" data-editor-clear>Clear</button>
+                    <button type="button" class="btn btn--primary btn--sm" data-editor-done>Use this graph</button>
+                  </div>
+                </div>
+                <div class="mst-editor__canvas" data-editor-canvas></div>
+                <p class="input-row__error" data-editor-error role="alert"></p>
+              </div>
+            </div>
+            <div data-panels></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask you to predict a step. Text alternative: the caption under the graph says which edge Kruskal takes, what find returns for its two ends, and whether the edge is kept or skipped.</figcaption>
+      </figure>
+      <figure class="fig wide" id="fig-flow-kruskal">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Kruskal as a flowchart (lit by the lab above)</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 460px"></div>
+        <figcaption class="fig__foot">Text alternative: sort the edges and start with every vertex alone. Take the next lightest edge. If its ends are in different components, keep it and merge them; otherwise skip it. Stop when V − 1 edges are kept.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ PRIM -->
+    <section id="prim">
+      <h2>Prim: grow one tree</h2>
+      <p>Prim starts from a single vertex and grows one tree. Every round it looks at all edges that leave the tree and takes the cheapest. Those edges are exactly the edges that cross the cut between the tree and everything else, so the cut property says the cheapest one is safe.</p>
+      <p>To find that cheapest edge fast, Prim keeps them in a <strong>priority queue</strong> (a min-heap, lesson 21). When a vertex joins, its new edges are pushed. Some queue entries go stale when their far end joins the tree by another route; Prim discards them when they reach the top.</p>
+    </section>
+
+    <section id="lab-p">
+      <h2 data-toc="Prim lab">Lab: Prim</h2>
+      <figure class="fig fig--lab full" id="lab-prim" data-algo="prim">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace Prim on your own graph</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__toolbar mst-toolbar">
+          <label class="mst-select"><span class="field-label">Start at</span><select class="field" data-start aria-label="Start vertex"></select></label>
+          <button type="button" class="btn btn--secondary btn--sm" data-draw aria-pressed="false">Draw a graph</button>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="mst-lab-stage">
+              <div class="fig__stage fig__stage--plain" data-stage></div>
+              <div class="mst-editor" data-editor hidden>
+                <div class="mst-editor__bar">
+                  <p class="mst-editor__help">Click empty space to add a vertex. Drag from one vertex to another to join them. Click a weight to edit it. Select something and press <kbd>Delete</kbd> to remove it.</p>
+                  <div class="btn-row">
+                    <button type="button" class="btn btn--ghost btn--sm" data-editor-clear>Clear</button>
+                    <button type="button" class="btn btn--primary btn--sm" data-editor-done>Use this graph</button>
+                  </div>
+                </div>
+                <div class="mst-editor__canvas" data-editor-canvas></div>
+                <p class="input-row__error" data-editor-error role="alert"></p>
+              </div>
+            </div>
+            <div data-panels></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses twice to ask you to predict. Text alternative: the caption says which edge Prim popped, whether its far end was already in the tree, and which edges were pushed. The queue panel lists every entry with its weight.</figcaption>
+      </figure>
+      <figure class="fig wide" id="fig-flow-prim">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Prim as a flowchart (lit by the lab above)</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 520px"></div>
+        <figcaption class="fig__foot">Text alternative: start with the tree holding one vertex. Push every edge leaving the newest vertex. While the queue is not empty and the tree is not full, pop the lightest edge; if its far end is already in the tree, discard it, otherwise add the vertex and its edge.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COMPARE -->
+    <section id="compare">
+      <h2>Same tree, different order</h2>
+      <p>Kruskal and Prim look at the graph in very different ways. Kruskal jumps around the map picking the cheapest safe edge anywhere. Prim crawls outward from a start. Step them together and compare the order in which they commit edges.</p>
+      <figure class="fig wide" id="fig-compare">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Kruskal and Prim on the nine towns, side by side</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar mst-toolbar"><label class="mst-select"><span class="field-label">Prim starts at</span><select class="field" data-start aria-label="Prim start vertex"></select></label></div>
+        <div class="mst-race">
+          <div class="mst-race__col">
+            <p class="mst-race__label"><b>Kruskal</b> <span>cheapest safe edge anywhere</span></p>
+            <div class="fig__stage fig__stage--plain mst-race__stage" data-stage="k"></div>
+            <div class="mst-order" data-order="k"></div>
+          </div>
+          <div class="mst-race__col">
+            <p class="mst-race__label"><b>Prim</b> <span>cheapest edge leaving the tree</span></p>
+            <div class="fig__stage fig__stage--plain mst-race__stage" data-stage="p"></div>
+            <div class="mst-order" data-order="p"></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: after each step both algorithms have kept the same number of edges. Kruskal keeps edges in increasing weight order; Prim keeps them in the order it reaches new towns. After the last step both trees are identical and weigh 43.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Same destination</p>
+        <p>With distinct weights the MST is unique, so both algorithms must end with the same edges. The order differs because Kruskal’s cuts are chosen by weight, while Prim’s cut is always “the tree versus the rest”.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CYCLE PROPERTY -->
+    <section id="cycle">
+      <h2>The cycle property</h2>
+      <p>The cut property has a twin. <strong>In any cycle, the heaviest edge is not needed:</strong> the other edges still connect the same vertices, at lower cost. Kruskal’s “skip” is this rule in action.</p>
+      <p>Run it as an algorithm. Find a cycle, drop its heaviest edge, and repeat until no cycle is left. What remains has to be a tree, and it is the minimum one.</p>
+      <figure class="fig wide" id="fig-cycle">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Drop the heaviest edge of every cycle</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: repeatedly a shortest cycle is highlighted, its heaviest edge is removed, and the map stays connected. When no cycle remains, the leftover edges are the minimum spanning tree, with the same total weight Kruskal and Prim found.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The cycle property needs a cycle</p>
+        <p>The heaviest edge of a cycle is safe to delete, but the heaviest edge of the <em>graph</em> is not always deletable. A bridge, an edge on no cycle, must stay however heavy it is, or the graph falls apart.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CLUSTERING -->
+    <section id="clusters">
+      <h2>MST clustering</h2>
+      <p>The MST has a surprising second job. Treat data points as vertices, and the distance between two points as an edge weight. The MST links each point to its nearest neighbours. Delete the k − 1 heaviest MST edges and the tree falls into <strong>k clusters</strong>.</p>
+      <p>This is the same as running Kruskal and stopping when k components are left: the long edges are exactly the ones Kruskal would add last. Slide k and watch the longest links snap.</p>
+      <figure class="fig wide" id="fig-cluster">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Cut the k − 1 longest links of the MST</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar mst-toolbar"><div data-slider style="flex: 1 1 260px"></div><button type="button" class="btn btn--secondary btn--sm" data-shuffle>New points</button></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="mst-readout mst-readout--text" data-readout aria-live="polite"></div>
+        <figcaption class="fig__foot">Text alternative: fourteen points form three loose groups. Their minimum spanning tree joins each group with short edges and the groups with two long edges. With k equal to 3 the two longest MST edges are cut; when the groups are well separated they come back as the clusters.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Both algorithms take about <span class="big-o" data-o="nlogn">O(E log V)</span> time. Kruskal spends it sorting the edges; the union-find work afterwards is almost free. Prim spends it on heap pushes and pops. What differs is how they behave when the graph is sparse or dense.</p>
+      <p>The chart below is not a formula. It counts the real comparisons and pointer hops that the three implementations make on random connected graphs.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Measured work as the graph grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 520px"></div>
+        <div class="mst-readout mst-readout--text" data-readout aria-live="polite"></div>
+        <figcaption class="fig__foot">Text alternative: on sparse graphs with three times as many edges as vertices, the heap version of Prim and Kruskal do far less work than the array version. On complete graphs the array version of Prim, whose work grows like V squared, does the least.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Algorithm</th><th scope="col">Data structure</th><th scope="col" class="num">Time</th><th scope="col">Best when</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Kruskal</th><td>sort + union-find</td><td class="num"><span class="big-o" data-o="nlogn">O(E log E)</span></td><td>sparse graph, edges given as a list, edges already sorted</td></tr>
+            <tr><th scope="row">Prim</th><td>binary heap</td><td class="num"><span class="big-o" data-o="nlogn">O(E log V)</span></td><td>sparse graph with adjacency lists; the everyday default</td></tr>
+            <tr><th scope="row">Prim</th><td>plain array, no heap</td><td class="num"><span class="big-o" data-o="n2">O(V²)</span></td><td>dense graph (E close to V²), or an implicit graph like points in a plane</td></tr>
+            <tr><th scope="row">Prim</th><td>Fibonacci heap</td><td class="num"><span class="big-o" data-o="nlogn">O(E + V log V)</span></td><td>the best bound in theory; rarely worth the code</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Why are O(E log E) and O(E log V) the same? A simple graph has E ≤ V², so log E ≤ 2 log V. Kruskal’s bound can be written either way. Space is O(V + E) for both.</p>
+      <details class="accordion">
+        <summary>Where does the O(V²) version come from?</summary>
+        <div class="accordion__body"><p>Keep an array <code>key[v]</code> with the cheapest known edge from the tree to each outside vertex. Each of the V rounds scans the array for the smallest key (V steps) and then updates the neighbours. That is V × V plus E, and it never needs a heap. On a complete graph E is about V²/2, so a heap would only add a log factor to more work.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The same idea, bent a few ways. Each tab has a picture.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="ties">Ties</button>
+          <button data-tab="sp">Not shortest paths</button>
+          <button data-tab="boruvka">Borůvka</button>
+          <button data-tab="max">Maximum tree</button>
+        </div>
+        <div data-tab-panel="ties"><div class="split"><figure class="mini"><div class="mini__stage" id="mini-ties"></div><figcaption>A square of equal weights: any three sides form an MST.</figcaption></figure><div><p>When weights repeat, the MST need not be unique. This square has four minimum spanning trees, all of weight 6, one for each side you leave out. Kruskal picks among them by the order of equal edges, so a different tie-break gives a different tree.</p><p>The <em>weight</em> of the MST is always unique. Distinct weights are a sufficient condition for a unique tree, not a necessary one.</p></div></div></div>
+        <div data-tab-panel="sp"><div class="split"><figure class="mini"><div class="mini__stage" id="mini-sp"></div><figcaption>The MST path from A to B costs 10; the direct road costs 6.</figcaption></figure><div><p>An MST minimises the <em>total</em>, not the distance between any two vertices. In the six-town graph the direct road A–B costs 6, but the MST reaches B through A–C–D–B for 10.</p><p>If you need cheap routes from one source, that is a shortest-path tree (Dijkstra, lesson 28), a different tree.</p></div></div></div>
+        <div data-tab-panel="boruvka"><div class="split"><figure class="fig fig--plain" id="fig-boruvka"><div class="fig__stage fig__stage--plain" data-stage></div><p class="fig__caption" data-caption></p><div class="fig__controls" data-controls></div></figure><div><p><strong>Borůvka’s algorithm</strong> (1926) is the oldest. In each round every component grabs its own cheapest outgoing edge, and all the grabbed edges are added at once. Each round at least halves the number of components, so it needs at most log V rounds.</p><p>It runs well in parallel, and it is the first step of some of the fastest known MST algorithms.</p></div></div></div>
+        <div data-tab-panel="max"><div class="split"><figure class="mini"><div class="mini__stage" id="mini-max"></div><figcaption>Maximum spanning tree: sort heaviest first.</figcaption></figure><div><p>To connect everything with the <em>most</em> total weight, run Kruskal with the sort reversed, or negate every weight. Negative weights are fine: the cut and cycle properties only compare weights.</p><p>Not fine: a graph that is not connected. Then no spanning tree exists, and the algorithms return a spanning <em>forest</em>, one tree per component.</p></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ DECISION -->
+    <section id="choose">
+      <h2>Kruskal or Prim?</h2>
+      <p>Both are correct, so the choice is about shape and convenience. Answer the questions to see which one fits.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which MST algorithm should I write?</h3></div>
+          <button type="button" class="btn btn--soft btn--sm" data-restart>Start over</button>
+        </header>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 420px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: if the graph is dense, use Prim with a plain array. Otherwise, if the edges come as a sorted list or you need a forest or clusters, use Kruskal. Otherwise, if the tree must grow from a start or the graph is implicit, use Prim with a heap. If none applies, either works.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ CHECK -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="mst-checks">
+        <figure class="fig" id="fig-total">
+          <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A small graph</h3></div></header>
+          <div class="fig__stage" data-stage></div>
+          <figcaption class="fig__foot">Text alternative: a square A, B, C, D with edges A–B 4, B–C 2, C–D 3, D–A 6 and a diagonal A–C 5.</figcaption>
+        </figure>
+        <div class="quiz-stack">
+          <div class="quiz" id="quiz-total"></div>
+          <div class="quiz" id="quiz-dense"></div>
+          <div class="quiz" id="quiz-cycle"></div>
+          <div class="quiz" id="quiz-bridge"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Minimum spanning trees</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="nlogn">O(E log V)</span><span class="chip chip--sm">V − 1 edges</span><span class="chip chip--sm">greedy is correct</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1926<small>first published</small></div>
+        <p class="history__people">Otakar Borůvka<span>then Jarník 1930, Kruskal 1956, Prim 1957</span></p>
+        <div class="history__body">
+          <p>The first minimum spanning tree algorithm was written for a power company. In 1926 Otakar Borůvka, asked by a friend how to connect the towns of Moravia to the electric grid with the least cable, published a method that merges the cheapest links in rounds. Jarník, Kruskal and Prim followed, and Dijkstra used his version to save copper wire in the back panel of the X1 computer.</p>
+        </div>
+        <p class="history__source">Sources: O. Borůvka, “O jistém problému minimálním” (1926); J. Kruskal, <em>Proc. AMS</em> 7 (1956); R. Prim, <em>Bell System Technical Journal</em> 36 (1957); Graham &amp; Hell, <em>On the history of the minimum spanning tree problem</em> (1985).</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Min cost to connect all points</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given points in the plane, connect them all with the least total Manhattan distance. There are about n²/2 possible edges: which algorithm and which data structure keep this near O(n²)?</p></li>
+        <li><div class="practice__title">Redundant connection</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">A tree with n vertices had one extra edge added. Find the edge that can be removed to make it a tree again. Which half of Kruskal is this?</p></li>
+        <li><div class="practice__title">Second-best spanning tree</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Find the cheapest spanning tree that differs from the MST by exactly one edge. Hint: add a non-tree edge, then remove the heaviest edge on the cycle it creates.</p></li>
+        <li><div class="practice__title">Critical and pseudo-critical edges</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Call an edge critical if deleting it raises the MST weight, and pseudo-critical if some MST uses it but not every MST does. Classify every edge, using ties as the guide.</p></li>
+        <li><div class="practice__title">Bottleneck path</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Among all paths from s to t, find the one whose heaviest edge is as small as possible. Show that the path between s and t inside the MST is such a path.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-12-minimum-spanning-trees-and-union-find.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Minimum Spanning Trees &amp; the Union-Find Structure</span><span class="deeper__text" style="display:block">The full proofs of the cut and cycle properties, union by rank and path compression, worked traces and failure modes.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

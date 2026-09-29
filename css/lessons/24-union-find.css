@@ -1,0 +1,135 @@
+/* Lesson 24 · Union-find — lesson-specific styles. Colours come only from tokens (css/tokens.css). */
+
+/* ---------------------------------------------------------------- group colours (a group keeps one colour) */
+.uf-g0 { --gc: var(--st-active); }
+.uf-g1 { --gc: var(--st-done); }
+.uf-g2 { --gc: var(--st-pivot); }
+.uf-g3 { --gc: var(--st-frontier); }
+.uf-g4 { --gc: var(--st-visited); }
+.uf-g5 { --gc: var(--st-compare); }
+
+/* ---------------------------------------------------------------- hero teaser */
+.uf-hero { display: block; width: 100%; height: 100%; max-height: 340px; }
+.uf-hero-dot { fill: var(--el-fill); stroke: var(--st-default); stroke-width: 2; transition: fill .5s var(--ease-out), stroke .5s var(--ease-out); }
+.uf-hero-dot[class*="uf-g"] { fill: var(--gc); stroke: color-mix(in srgb, var(--gc) 70%, var(--ink)); }
+.uf-hero-halo { fill: color-mix(in srgb, var(--gc, var(--st-active)) 11%, transparent); stroke: color-mix(in srgb, var(--gc, var(--st-active)) 55%, transparent); stroke-width: 1.5; stroke-dasharray: 5 5; }
+.hero__stage:has(.uf-hero) { padding: clamp(8px, 2vw, 16px); }
+
+/* ---------------------------------------------------------------- forest figure stage */
+.uf-stage { display: block; place-items: normal; padding: 10px 8px 4px; overflow-x: auto; overscroll-behavior-x: contain; }
+.fig__stage.uf-stage { min-height: 0; }
+.uf-pair { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.uf-pair__forest { min-width: 0; }
+.uf-pair__forest > svg { display: block; margin-inline: auto; }
+.uf-pair__array { border-top: 1px dashed var(--line-strong); padding-top: 6px; min-width: 0; }
+.uf-pair__array::before {
+  content: 'the same forest, stored in one array: parent[i] is the number in box i';
+  display: block; margin: 0 4px 2px; font-size: 11.5px; font-weight: 600; color: var(--ink-3); letter-spacing: .01em;
+}
+
+.vz-uf .uf-node.is-root .vz-shape { --vz-sw: 3px; }
+.vz-uf .uf-node:not(.is-root) .vz-shape { --vz-sw: 1.75px; }
+.vz-uf .uf-node.is-default[class*="uf-g"] { --vz-fill: color-mix(in srgb, var(--gc) 22%, var(--el-fill)); --vz-stroke: var(--gc); }
+.vz-uf .uf-node.is-default.uf-g0 .vz-shape, .vz-uf .uf-node.is-default.uf-g1 .vz-shape { stroke: color-mix(in srgb, var(--gc) 85%, var(--ink)); }
+.vz-uf .uf-loop { opacity: 0; transition: opacity var(--vz-dur, 300ms) var(--ease-out); }
+.vz-uf .uf-loop.is-on { opacity: 1; }
+.vz-uf .uf-loop-line { fill: none; stroke: var(--ink-3); stroke-width: 1.6; stroke-linecap: round; }
+.vz-uf .uf-loop-head { fill: var(--ink-3); }
+.vz-uf .uf-badge { transition: opacity var(--vz-dur, 300ms); }
+.vz-uf .uf-badge rect { width: 16px; }
+.vz-uf .uf-badge text { font: 700 9.5px var(--font-mono); }
+.vz-uf .uf-ptr rect { fill: var(--st-active); }
+.vz-uf .uf-ptr text { fill: var(--on-state); font: 700 11px var(--font-mono); }
+.vz-uf .uf-ptr.is-compare rect { fill: var(--st-compare); }
+.vz-uf .uf-ptr.is-compare text { fill: color-mix(in srgb, var(--st-compare) 20%, black); }
+.vz-uf .uf-node.is-clickable { cursor: pointer; }
+.vz-uf .uf-node:focus-visible .vz-shape { stroke: var(--accent, var(--st-active)); stroke-width: 3.5px; }
+
+/* ---------------------------------------------------------------- friend groups (the problem) */
+.uf-stage--groups { padding: 6px 6px 0; }
+.uf-groups { display: block; margin-inline: auto; max-width: 100%; }
+.uf-person { cursor: pointer; }
+.uf-person-disc { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 2; transition: fill .45s var(--ease-out), stroke .45s var(--ease-out); }
+.uf-person-disc[class*="uf-g"] { fill: color-mix(in srgb, var(--gc) 78%, var(--el-fill)); stroke: color-mix(in srgb, var(--gc) 75%, var(--ink)); }
+.uf-person-name { fill: var(--ink-2); font-weight: 650; }
+.uf-person-ring { fill: none; stroke: var(--st-key); stroke-width: 3; stroke-dasharray: 4 4; opacity: 0; transition: opacity .2s; }
+.uf-person.is-picked .uf-person-ring { opacity: 1; }
+.uf-person:focus-visible .uf-person-ring { opacity: 1; stroke: var(--st-active); }
+.uf-person:hover .uf-person-ring { opacity: .6; }
+.uf-friend { stroke: color-mix(in srgb, var(--gc, var(--st-default)) 70%, var(--el-edge)); stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: var(--len, 200); animation: uf-draw .5s var(--ease-out); transition: stroke .45s var(--ease-out); }
+@keyframes uf-draw { from { stroke-dashoffset: var(--len, 200); } to { stroke-dashoffset: 0; } }
+.uf-ask { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; padding: 10px 16px 14px; border-top: 1px solid var(--line); }
+.uf-ask .field { width: auto; min-width: 84px; }
+.uf-answer { flex: 1 1 260px; margin: 0; padding: 7px 12px; border-radius: var(--radius-2, 10px); font-size: 14px; background: var(--bg-sunken); color: var(--ink-2); }
+.uf-answer.is-yes { background: color-mix(in srgb, var(--st-done) 16%, var(--bg-elev)); color: var(--ink); }
+.uf-answer.is-no { background: color-mix(in srgb, var(--st-error) 10%, var(--bg-elev)); color: var(--ink); }
+.uf-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* ---------------------------------------------------------------- lab */
+.lab__main > .uf-stage--lab { flex: 0 0 auto; }
+.uf-lab-toolbar { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
+.uf-lab-opts, .uf-builder { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.uf-n { display: inline-flex; align-items: center; gap: 8px; }
+.uf-n .field, .uf-builder .field { width: auto; min-width: 64px; }
+
+/* ---------------------------------------------------------------- flowcharts */
+.uf-flows { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+.uf-flow { min-width: 0; display: flex; flex-direction: column; }
+.uf-flow + .uf-flow { border-left: 1px solid var(--line); }
+.uf-flow__title { margin: 0; padding: 12px 16px 0; font: 700 12px var(--font-mono); letter-spacing: .04em; color: var(--ink-3); text-transform: none; }
+.fig__stage--scroll > svg.vz.vz { min-width: var(--stage-min, 620px); }
+@container fig (max-width: 720px) {
+  .uf-flows { grid-template-columns: minmax(0, 1fr); }
+  .uf-flow + .uf-flow { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+/* ---------------------------------------------------------------- race */
+.uf-race { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.uf-race__col { min-width: 0; display: flex; flex-direction: column; }
+.uf-race__col + .uf-race__col { border-left: 1px solid var(--line); }
+.uf-race__label { margin: 0; padding: 12px 16px 0; font-size: 14px; color: var(--ink-2); }
+.uf-race__label b { font-size: 15px; color: var(--ink); margin-right: 4px; }
+.uf-race__col > .uf-stage { min-height: 220px; }
+.uf-race__stats { padding: 4px 12px 12px; }
+.uf-race__stats .stat { flex: 1 1 110px; }
+@container fig (max-width: 680px) {
+  .uf-race { grid-template-columns: minmax(0, 1fr); }
+  .uf-race__col + .uf-race__col { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+/* ---------------------------------------------------------------- percolation */
+.uf-stage--grid { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; }
+.uf-grid-host { width: 100%; max-width: 420px; }
+.uf-grid-host > .vz-grid-host { width: 100%; justify-self: stretch; }
+.uf-edge-label { font-size: 12px; color: var(--ink-3); letter-spacing: .01em; }
+.uf-edge-label b { font: 700 11.5px var(--font-mono); color: var(--st-frontier); margin-right: 2px; }
+.uf-edge-label:last-child b { color: var(--st-found); }
+.uf-note { font-size: 13px; color: var(--ink-3); }
+
+/* ---------------------------------------------------------------- cycle detection */
+.uf-cycle { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.uf-cycle__forest { border-left: 1px solid var(--line); min-height: 220px; display: block; place-items: normal; }
+.uf-cycle__graph { min-height: 240px; }
+@container fig (max-width: 720px) {
+  .uf-cycle { grid-template-columns: minmax(0, 1fr); }
+  .uf-cycle__forest { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+/* ---------------------------------------------------------------- application minis */
+.uf-mini { display: block; place-items: normal; }
+.uf-accounts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; width: 100%; }
+.uf-acct { border: 1.5px solid var(--line-strong); border-radius: 10px; padding: 8px 10px; background: var(--el-fill); transition: background .45s var(--ease-out), border-color .45s var(--ease-out); }
+.uf-acct.is-merged { border-color: var(--gc); background: color-mix(in srgb, var(--gc) 16%, var(--el-fill)); }
+.uf-acct__name { margin: 0 0 4px; font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.uf-acct__mails { display: flex; flex-wrap: wrap; gap: 4px; }
+.uf-mail { font: 500 11px var(--font-mono); padding: 2px 6px; border-radius: 6px; background: var(--bg-sunken); color: var(--ink-2); transition: background .3s, color .3s; }
+.uf-mail.is-hot { background: var(--st-compare); color: color-mix(in srgb, var(--st-compare) 20%, black); }
+
+/* ---------------------------------------------------------------- summary tiles */
+.uf-sum { display: block; place-items: normal; min-height: 120px; padding: 4px 4px 0; overflow: hidden; }
+.uf-bigalpha { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 112px; }
+.uf-bigalpha__n { font: 800 30px var(--font-display); color: var(--st-done); letter-spacing: -.02em; }
+.uf-bigalpha__t { font: 600 12px var(--font-mono); color: var(--ink-3); }
+.uf-race__stats { margin-top: auto; }
+#lab-fig .input-row__field, #fig-cycle .input-row__field { flex: 1 1 100%; }
+.uf-lab-opts .seg { flex-wrap: wrap; max-width: 100%; }

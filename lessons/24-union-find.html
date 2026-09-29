@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Union-find · Visual DSA</title>
+<meta name="description" content="Union-find, animated: groups as trees of parent pointers, union by rank and path compression, a race between naive and optimised, percolation and cycle detection.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/24-union-find.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/graph.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/24-union-find.js" defer></script>
+<script src="../js/lessons/24-union-find.js" defer></script>
+<script src="../js/lessons/24-union-find-figs.js" defer></script>
+<script src="../js/lessons/24-union-find-lab.js" defer></script>
+<script src="../js/lessons/24-union-find-more.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="24-union-find">
+<main id="main" class="lesson">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Union-find</h1>
+      <p class="hero__lede">Keep track of which things belong together while groups keep merging. Each group is a tree that points at its root, and two tricks make the question “are these two connected?” cost almost nothing.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">16 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: arrays, trees</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: sixteen scattered dots merge, nearest first, into a few coloured groups. Each merge pulls the dots of two groups together and gives them one colour."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>You run a social network. People become friends one at a time, and all day long the app asks: “Are Ana and Ivy connected through friends of friends?” Two people are in the same <strong>group</strong> when a chain of friendships links them, however long.</p>
+      <p>Build some groups yourself. Click one person, then another, to make them friends. Watch what a new friendship does to the groups, and ask the question at the bottom.</p>
+      <figure class="fig wide" id="fig-groups">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Friendships merge groups</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar uf-toolbar">
+          <button type="button" class="btn btn--secondary btn--sm" data-random>Add a random friendship</button>
+          <button type="button" class="btn btn--ghost btn--sm" data-preset>Start from six friendships</button>
+          <button type="button" class="btn btn--ghost btn--sm" data-reset>Everyone alone</button>
+        </div>
+        <div class="fig__stage fig__stage--plain uf-stage uf-stage--groups" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="uf-ask">
+          <span class="field-label">Same group?</span>
+          <select class="field" data-a aria-label="First person"></select>
+          <select class="field" data-b aria-label="Second person"></select>
+          <p class="uf-answer" data-answer aria-live="polite"></p>
+        </div>
+        <figcaption class="fig__foot">Text alternative: ten people drawn as dots. Each friendship you add draws a line and gives both people’s whole groups one shared colour. The question box answers whether two people share a group.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-problem"></div>
+      <p>A search through the friendship list can answer the question, but it costs a walk through every friendship each time. With millions of people and thousands of questions per second, that is too slow. You do not need the route, only a yes or no.</p>
+      <aside class="callout callout--key">
+        <p class="callout__title">The dynamic connectivity problem</p>
+        <p>Keep a set of items in groups. Support two operations forever, in any order: <strong>union</strong> merges two groups, and <strong>find</strong> says which group an item is in. Union-find answers both in almost constant time, and it never needs to know <em>how</em> two items are connected.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Give every group a <strong>captain</strong>. Everyone remembers one person: their boss, who is either the captain or someone closer to the captain. To find your captain, ask your boss, then ask your boss’s boss, and so on until you meet someone who is their own boss.</p>
+      <p>Two people are in the same group exactly when they name the same captain. To merge two groups, one captain simply starts reporting to the other. Nobody else has to be told.</p>
+      <div class="mini-row wide" id="mini-captain"></div>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: chains of command</p>
+        <p>Merging groups is cheap because only one person changes their boss. Asking “who is my captain?” costs one question per level of the chain, so the whole game is to keep chains short.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>In a company, a boss knows their reports. Here nobody does: every element stores only its own parent. That is why the structure is tiny, and why you cannot list a group’s members without scanning everything.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ A FOREST IN AN ARRAY -->
+    <section id="forest">
+      <h2 data-toc="A forest in an array">A forest in an array</h2>
+      <p>Draw the “boss” of each element as an arrow and you get a <strong>forest</strong>: one tree per group, with the captain, called the <strong>root</strong>, at the top. The computer stores all of it in a single array: <code>parent[i]</code> is the boss of element <code>i</code>.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>An element is a <dfn>root</dfn> when <code>parent[i] = i</code>: it points to itself, so nobody is above it. The small curl on a node shows exactly that. Every element starts as a root of a group of one.</p>
+      </aside>
+      <p>Step through a few unions. The tree and the array change together: one union changes exactly one number in the array.</p>
+      <figure class="fig wide" id="fig-array">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Unions grow trees, and the array follows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain uf-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: eight elements start alone. union(0,1) sets parent[0] to 1. union(2,3) sets parent[2] to 3. union(1,3) sets parent[1] to 3, so 0, 1, 2 and 3 share the root 3. union(4,5) and union(6,7) build two more small trees, and union(5,3) hangs 5 under 3.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FIND -->
+    <section id="find">
+      <h2>Find: climb to the root</h2>
+      <p><strong>find(x)</strong> answers “which group is x in?” by returning the group’s root. Start at <code>x</code> and hop from each element to its parent until you reach an element that points to itself. Every hop follows one pointer, and the number of hops is the cost.</p>
+      <figure class="fig wide" id="fig-find">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">find climbs, one pointer at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain uf-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: in a forest where 0 points to 1, 1 to 2, and 2, 4 and 5 point to 3, find(0) climbs 0, 1, 2, 3 in three hops and returns 3. find(5) takes one hop. find(7) takes none because 7 is a root.</figcaption>
+      </figure>
+      <p>“Are a and b connected?” becomes <code>find(a) === find(b)</code>. Two elements share a group exactly when their climbs end at the same root.</p>
+    </section>
+
+    <!-- ============================================================ UNION -->
+    <section id="union">
+      <h2>Union: link the two roots</h2>
+      <p><strong>union(a, b)</strong> first finds the two roots, then makes one root the parent of the other. That is one pointer written, however large the groups are. If both finds return the same root, the elements are already together and nothing changes.</p>
+      <figure class="fig wide" id="fig-union">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">union = two finds and one link</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain uf-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: union(0, 6) finds the root of 0, which is 3 after three hops, and the root of 6, which is 6 itself. It then sets parent[3] to 6, so the whole tree of 3 now sits under 6.</figcaption>
+      </figure>
+      <p>Notice what gets linked: the <em>roots</em> 3 and 6, not the elements 0 and 6 you were given. That detail is the most common bug in a first implementation.</p>
+      <figure class="fig wide" id="fig-bug">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Link the roots, never the raw elements</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain uf-stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: the tree {0, 1, 2} hangs under root 2, and 3 stands alone. Writing parent[1] = 3 directly cuts 1 (and 0 below it) away from 2, so 2 and 1 stop being connected. Writing parent[2] = 3, the root, keeps everyone together.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ NAIVE WORST CASE -->
+    <section id="naive">
+      <h2>The trap: tall chains</h2>
+      <p>The plain rule “hang the first root under the second” looks harmless. But feed it <code>union(0,1)</code>, <code>union(1,2)</code>, <code>union(2,3)</code> and so on, and every new root goes on top of the old tree. The result is a <strong>chain</strong>, and the first find pays for every link.</p>
+      <figure class="fig wide" id="fig-chain">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A chain of seven, built by innocent unions</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain uf-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: with the naive rule, union(0,1) through union(5,6) make each new root the parent of the previous one, giving the chain 0, 1, 2, 3, 4, 5, 6. Then find(0) climbs six pointers.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Cost of the naive rule</p>
+        <p>A chain of <em>n</em> elements makes a find cost <em>n − 1</em> hops. Run <em>n</em> operations and you have a quadratic algorithm, no better than searching the friendship list. Two small ideas fix this, and they work independently.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ UNION BY RANK -->
+    <section id="rank">
+      <h2>Fix 1: union by rank</h2>
+      <p>The problem was hanging a tall tree under a short one, which makes everything in the tall tree one level deeper. Do the opposite: hang the <strong>shorter tree under the taller root</strong>. Store a number called <strong>rank</strong> on each root, an upper bound on its tree’s height, so you can compare without measuring.</p>
+      <p>Only when two trees of <em>equal</em> rank meet does the result grow: it becomes one level taller, so its rank goes up by one. The small badge on a root is its rank.</p>
+      <figure class="fig wide" id="fig-rank">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The shorter tree goes under the taller root</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain uf-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: unions of equal-rank trees build a rank 2 tree on 0 to 3 and a rank 1 tree on 4 and 5. When the rank 1 root meets the rank 2 root, the rank 1 root goes under it and the rank stays 2. Two equal rank 1 trees make a rank 2 tree.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the height stays small</p>
+        <p>A root of rank <em>r</em> always has at least 2<sup><em>r</em></sup> elements below and including it: rank 1 needs two equal singletons, rank 2 needs two rank-1 trees of at least 2 each, and so on. With <em>n</em> elements, 2<sup><em>r</em></sup> ≤ <em>n</em>, so every rank, and every find, is at most log<sub>2</sub> <em>n</em>.</p>
+      </aside>
+      <p>That bound is tight. Merge equal trees in rounds, pairs then quadruples then eights, and you build the tallest tree union by rank allows: height log<sub>2</sub> 16 = 4 for sixteen elements.</p>
+      <figure class="fig wide" id="fig-binomial">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The worst case for rank: merge equals, in rounds</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain uf-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: sixteen elements merged in four rounds of equal-rank trees end as one tree of height 4 and rank 4. Each round doubles the tree size and adds one level.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ PATH COMPRESSION -->
+    <section id="compress">
+      <h2>Fix 2: path compression</h2>
+      <p>A find that climbs a long path has just <em>learned</em> the root for every node on it. Use that: after reaching the root, walk the path again and point each node straight at the root. The next find from any of them is one hop.</p>
+      <p>Pick a variant. <strong>Full compression</strong> re-points every node on the path. <strong>Path halving</strong> re-points every other node to its grandparent in a single pass, which is about as good and needs no second walk.</p>
+      <figure class="fig wide" id="fig-compress">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A find that flattens the path it walks</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain uf-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a chain 0, 1, 2, 3, 4, 5, 6, 7 with root 7. The first find(0) climbs seven hops. With full compression every node on the path then points straight at 7, so the second find(0) takes one hop. Path halving points every other node at its grandparent, halving the chain. With no compression, both finds cost seven hops.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Compression does not change who is connected to whom, only how directly. It pays for itself: the walk you already made doubles as the flattening. Long paths are rare, and each one gets destroyed the first time somebody walks it.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Write your own sequence of unions and finds, or click the buttons to add operations one at a time. Switch union by rank and path compression on and off and watch the same operations build different trees. Press <kbd>←</kbd> <kbd>→</kbd> to step and <kbd>Space</kbd> to play.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace union and find on your own operations</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar uf-lab-toolbar">
+          <div class="uf-lab-opts">
+            <div data-toggle-rank></div>
+            <div data-seg-compress></div>
+            <label class="uf-n"><span class="field-label">Elements</span><select class="field" data-n aria-label="Number of elements"></select></label>
+          </div>
+          <div class="uf-builder" role="group" aria-label="Add an operation">
+            <span class="field-label">Add</span>
+            <select class="field" data-a aria-label="First element"></select>
+            <select class="field" data-b aria-label="Second element"></select>
+            <button type="button" class="btn btn--secondary btn--sm" data-add-union>union(a, b)</button>
+            <button type="button" class="btn btn--secondary btn--sm" data-add-find>find(a)</button>
+            <button type="button" class="btn btn--ghost btn--sm" data-undo>Undo last</button>
+          </div>
+        </div>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain uf-stage uf-stage--lab" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses to ask you to predict a step. Text alternative: the caption under the picture describes every step in words; the variables panel lists the current element, the two roots and the operation; the counters total the pointer hops.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHARTS -->
+    <section id="flowchart">
+      <h2>find and union, as flowcharts</h2>
+      <p>The two operations as maps of decisions. Both are wired to the lab: step the lab and the box that runs lights up here. Union calls find twice, then decides whether to link.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The two flowcharts</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="uf-flows">
+          <div class="uf-flow"><p class="uf-flow__title">find(x)</p><div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage="find" style="--stage-min: 300px"></div></div>
+          <div class="uf-flow"><p class="uf-flow__title">union(a, b)</p><div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage="union" style="--stage-min: 380px"></div></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative for find: is parent[x] equal to x? If not, move x up to its parent and ask again. If so, x is the root; with path compression, point every node you passed straight at the root; then return the root. For union: find the root of a and the root of b; if they are equal, do nothing; otherwise compare ranks and hang the lower-rank root under the higher, and when ranks tie, add one to the rank of the surviving root.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Here is the same set of random operations run on two structures: the naive one, and one with union by rank and path compression. Every operation is a find or a union; count the pointer hops each side follows.</p>
+      <figure class="fig full" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The race: naive against rank + compression</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="uf-race">
+          <div class="uf-race__col">
+            <p class="uf-race__label"><b>Naive</b> <span>no rank, no compression</span></p>
+            <div class="fig__stage fig__stage--plain uf-stage" data-stage="a"></div>
+            <div class="uf-race__stats" data-stats="a"></div>
+          </div>
+          <div class="uf-race__col">
+            <p class="uf-race__label"><b>Optimised</b> <span>union by rank + path compression</span></p>
+            <div class="fig__stage fig__stage--plain uf-stage" data-stage="b"></div>
+            <div class="uf-race__stats" data-stats="b"></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: two forests on twelve elements receive identical operations. The naive one grows tall and its running total of pointer hops climbs quickly; the optimised one stays flat, with a small height and far fewer hops. On the chain workload the naive tree reaches height 11.</figcaption>
+      </figure>
+      <p>Random operations flatter the naive version. The chart below runs 256 elements through three kinds of workload, and shows the average cost of a find so far. Switch to the chain: naive collapses, while rank stays close to one hop.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Average find cost as operations pile up</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg-work></div><div data-seg-metric></div></div>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 460px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a line chart with one line each for naive, union by rank only, and rank plus compression. On the chain workload the naive line climbs to about 60 hops per find while the other two stay near one. On the balanced-merges workload rank alone settles near four hops and compression brings it down toward two. On random operations all three stay small.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Structure</th><th scope="col">Tallest tree</th><th scope="col" class="num">One find (worst case)</th><th scope="col" class="num">m operations, n elements</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Naive linking</th><td>Chain: n − 1 levels</td><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="n2">O(m·n)</span></td></tr>
+            <tr><th scope="row">Union by rank</th><td>At most log₂ n</td><td class="num"><span class="big-o" data-o="logn"></span></td><td class="num"><span class="big-o" data-o="nlogn">O(m log n)</span></td></tr>
+            <tr><th scope="row">Path compression only</th><td>Can be tall for a while</td><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="nlogn">O(m log n) amortised</span></td></tr>
+            <tr><th scope="row">Rank + compression</th><td>Very flat</td><td class="num"><span class="big-o" data-o="logn"></span></td><td class="num"><span class="big-o" data-o="1">O(m·α(n)) amortised</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The last row is the headline: <strong>O(m·α(n))</strong> for <em>m</em> operations, where α is the <strong>inverse Ackermann function</strong>. It grows so slowly that α(n) is at most 4 for any number of elements you could ever store. Robert Tarjan proved in 1975 that this is exactly the right bound, and in 1989 Fredman and Saks proved that no such structure can beat it.</p>
+      <figure class="fig wide" id="fig-alpha">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">α(n) next to log₂ n</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: for n equal to 10, a thousand, a million, a billion and a trillion, log₂ n is about 3, 10, 20, 30 and 40, while α(n) is 3, 4, 4, 4 and 4. Even for 10 to the 80, the atoms in the universe, α(n) is still 4 while log₂ n is 266.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Rank is not height</p>
+        <p>After path compression the real height of a tree can be much smaller than its rank. Rank is only an upper bound, and you never lower it. Do not try to recompute it: the analysis depends on rank staying a bound that only grows.</p>
+      </aside>
+      <details class="accordion">
+        <summary>Where does the inverse Ackermann function come from?</summary>
+        <div class="accordion__body"><p>The Ackermann function A(k) grows faster than any tower of powers: A(0) = 2, A(1) = 3, A(2) = 5, A(3) = 13, and A(4) is a number with about twenty thousand digits. The inverse α(n) is the smallest k with A(k) ≥ n. Once <em>n</em> is 14 or more, α(n) is 4, and it stays 4 until n passes a number that cannot be written in the observable universe. Tarjan’s proof uses a potential function on ranks to show that compression “spends” each unit of slack only α(n) times.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ PERCOLATION -->
+    <section id="percolation">
+      <h2>Application: percolation</h2>
+      <p>Pour water on a porous rock. It reaches the bottom only if open sites form an unbroken path from top to bottom. Open random sites one at a time and ask, after each: does water get through? The <strong>percolation</strong> question is a connectivity question, and union-find answers it after every single opening.</p>
+      <p>Trick: add two virtual nodes, <strong>TOP</strong> above the first row and <strong>BOTTOM</strong> below the last, and union each open site in the first or last row with them. The grid percolates exactly when TOP and BOTTOM have the same root.</p>
+      <figure class="fig fig--lab wide" id="fig-perc">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Open sites until water reaches the bottom</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar uf-toolbar">
+          <button type="button" class="btn btn--secondary btn--sm" data-open1>Open a random site</button>
+          <button type="button" class="btn btn--secondary btn--sm" data-open5>Open 5</button>
+          <button type="button" class="btn btn--soft btn--sm" data-until>Open until it percolates</button>
+          <button type="button" class="btn btn--ghost btn--sm" data-clear>Start over</button>
+        </div>
+        <div class="fig__stage fig__stage--plain uf-stage uf-stage--grid" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a ten by ten grid of sites. Blocked sites are dark, open sites are tinted, open sites connected to the top row are filled with water, and once TOP and BOTTOM share a root the water-filled sites turn green. You can also click any blocked site to open it. Keyboard: Tab to the grid, move with the arrow keys, press Enter to open.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Backwash</p>
+        <p>Once the grid percolates, BOTTOM is connected to every open site in the last row. If “is this site full of water?” asked the same structure, every dry bottom site would suddenly look wet. Use a second structure without the BOTTOM node to answer that question; the picture above does.</p>
+      </aside>
+      <p>Repeat the experiment many times on a bigger grid. The chance of percolating jumps from almost 0 to almost 1 in a narrow band around 59 % open sites, a real phase transition, discovered with exactly this structure.</p>
+      <figure class="fig wide" id="fig-perc-curve">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Chance of percolating against the fraction of open sites</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar uf-toolbar"><button type="button" class="btn btn--secondary btn--sm" data-run>Run 200 random grids</button><span class="uf-note" data-note>20 × 20 grids, found with union-find.</span></div>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 420px"></div>
+        <figcaption class="fig__foot">Text alternative: an S-shaped curve. Below about 50 % open sites almost no grid percolates, above about 68 % almost all do, and the curve crosses one half near 59 %.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ CYCLE DETECTION -->
+    <section id="cycles">
+      <h2>Application: finding a cycle</h2>
+      <p>Is an undirected graph a forest, or does some edge close a loop? Take the edges one at a time. If both ends of the next edge already have the same root, they were connected before, so this edge closes a <strong>cycle</strong>. Otherwise it joins two groups: union them and move on.</p>
+      <figure class="fig full fig--lab" id="fig-cycle">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Cycle detection, edge by edge</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="uf-cycle">
+          <div class="fig__stage fig__stage--plain uf-cycle__graph" data-stage="graph"></div>
+          <div class="fig__stage fig__stage--plain uf-stage uf-cycle__forest" data-stage="forest"></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: on the left a graph, on the right the union-find forest for the edges accepted so far. Each edge is looked at, both ends are found, and if the roots match the edge is drawn red together with the loop it closes; otherwise the two groups are merged and the edge is kept.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>An edge is redundant exactly when its ends are already connected. That one test is the whole of Kruskal’s algorithm for minimum spanning trees (lesson 30): sort the edges, and keep an edge only when union succeeds.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ VARIATIONS AND PATTERNS -->
+    <section id="uses">
+      <h2>Variations and patterns</h2>
+      <p>Whenever a problem says “connected”, “same group”, “merge” or “does this edge make a cycle”, reach for union-find. Three more places it hides:</p>
+      <div class="tabs wide" id="uses-tabs">
+        <div class="tabs__list">
+          <button data-tab="kruskal">Kruskal’s MST</button>
+          <button data-tab="regions">Image regions</button>
+          <button data-tab="accounts">Merge accounts</button>
+        </div>
+        <div data-tab-panel="kruskal"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="kruskal"></div><figcaption>Cheapest edges first; skip any edge whose ends are already connected.</figcaption></figure><div><p>To connect every city as cheaply as possible, sort the roads by cost and add each one unless union says it would close a loop. With union-find the loop test is nearly free, so the sort dominates.</p><pre data-code-block="kruskal"></pre></div></div></div>
+        <div data-tab-panel="regions"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="regions"></div><figcaption>Neighbouring pixels of one colour are unioned; every group is a region.</figcaption></figure><div><p>Image segmentation and “number of islands” do the same thing: union every pair of touching cells with the same value, then each root names a region. It works even when cells arrive one at a time, which flood fill cannot do cheaply.</p><pre data-code-block="regions"></pre></div></div></div>
+        <div data-tab-panel="accounts"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="accounts"></div><figcaption>Accounts that share an e-mail belong to one person.</figcaption></figure><div><p>Give each account a number. Walk through all e-mails, and union an account with the account that first owned the same address. Each final root is one person.</p><pre data-code-block="accounts"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-array"></div>
+        <div class="quiz" id="quiz-rank"></div>
+        <div class="quiz" id="quiz-compress"></div>
+        <div class="quiz" id="quiz-cost"></div>
+      </div>
+      <figure class="fig" id="fig-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Click the answer on the forest</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain uf-stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: a forest of eight elements with parent array [1, 3, 3, 3, 3, 5, 5, 7], built so that 3 is the root of {0, 1, 2, 3, 4}, 5 is the root of {5, 6} and 7 is alone.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Union-find</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="1" title="amortised"></span><span class="chip chip--sm">O(m·α(n)) with both tricks</span><span class="chip chip--sm">O(n) space</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1964<small>first published</small></div>
+        <p class="history__people">Bernard Galler &amp; Michael Fischer<span>“An improved equivalence algorithm”</span></p>
+        <div class="history__body">
+          <p>Union-find was invented to compile FORTRAN. Its EQUIVALENCE statement lets several names share one storage location, and in 1964 Galler and Fischer tracked the groups of names as trees of parent pointers. In 1975 Robert Tarjan proved that with union by rank and path compression each operation costs O(α(n)), a function that stays at 4 or below for any input you could ever store.</p>
+        </div>
+        <p class="history__source">Source: B. A. Galler and M. J. Fischer, <em>Communications of the ACM</em> 7(5), 1964; R. E. Tarjan, “Efficiency of a good but not linear set union algorithm”, <em>Journal of the ACM</em> 22(2), 1975.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE AND GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Number of provinces</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">A matrix says which of n cities are directly connected. Count the groups of cities that are connected, directly or not. Hint: start with n groups and subtract one for every union that succeeds.</p></li>
+        <li><div class="practice__title">Redundant connection</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">A tree on n nodes gained one extra edge and now has a cycle. Given the edges in order, return the edge whose removal restores a tree. If several work, return the one that appears last.</p></li>
+        <li><div class="practice__title">Accounts merge</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Each account is a name with a list of e-mails. Two accounts are the same person if they share any e-mail. Merge them and return each person’s sorted e-mails. Names alone prove nothing.</p></li>
+        <li><div class="practice__title">Satisfiability of equality equations</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">You get equations like <code>a==b</code> and <code>b!=c</code> over lowercase letters. Decide whether all can hold at the same time. Which kind of equation should you process first, and why?</p></li>
+        <li><div class="practice__title">Number of islands II</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Land appears one cell at a time on an empty grid. After each new cell, report the number of islands. Why is a fresh flood fill after every step too slow, and what does union-find do instead?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-12-minimum-spanning-trees-and-union-find.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Minimum spanning trees &amp; the union-find structure</span><span class="deeper__text" style="display:block">The cut property, Kruskal and Prim, and the full proofs behind union by rank and the α(n) bound.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

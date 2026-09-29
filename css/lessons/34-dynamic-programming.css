@@ -1,0 +1,182 @@
+/* Lesson 34 · Dynamic programming I — lesson-specific styles.
+   Colours come only from tokens (--st-*, --ink*, --bg*, --line*), so light and dark themes both work.
+   Figure elements reuse viz.css classes (.vz-item/.vz-shape/.vz-ink/.vz-edge) wherever possible. */
+
+.dp-grow { flex: 1 1 240px; min-width: 0; }
+
+/* Stages that hold HTML layouts: block flow, full width. (.fig__stage centres with place-items, and Chromium now
+   applies justify-items to block layout, which would shrink-wrap these children.) */
+.dp-stairs-stage, .dp-bars-stage, .dp-trace-stage, .dp-order-stage, .dp-collapse-stage { display: block; place-items: normal; justify-items: normal; }
+
+/* ---------------------------------------------------------------- hero */
+.dp-hero { padding: clamp(8px, 1.6vw, 16px); }
+.dp-hero > svg { width: 100%; }
+
+/* ---------------------------------------------------------------- custom SVG views (VDSA.dp34.*) */
+.vz .dp34-rowlabel { font: 650 12px var(--font-mono); fill: var(--ink-2); }
+.vz .dp34-sub { font: 650 11px var(--font-mono); fill: var(--vz-text); }
+.vz .dp34-arc-halo { fill: none; stroke: var(--bg-elev); stroke-width: 6px; stroke-linecap: round; stroke-opacity: .85; }
+.vz .dp34-arclabel {
+  font: 700 11px var(--font-mono); fill: var(--vz-text);
+  paint-order: stroke; stroke: var(--bg-elev); stroke-width: 4px; stroke-linejoin: round;
+}
+.vz .dp34-arc.is-muted .dp34-arclabel { fill: var(--ink-3); }
+.vz .dp34-cursor { fill: none; stroke: var(--st-active); stroke-width: 2.5px; }
+.vz .dp34-cell .vz-value { font-weight: 700; }
+.dp34-node .vz .dp34-cell .vz-value { font-weight: 700; }
+
+/* collapse view */
+.vz .dp34-cnode .vz-value { font-weight: 700; }
+.vz .dp34-hud-num { font: 780 26px var(--font-sans); fill: var(--vz-text); letter-spacing: -.02em; }
+.vz .dp34-hud-lab { font: 600 13px var(--font-sans); fill: var(--ink-2); }
+.vz .dp34-slot .vz-slot { stroke-dasharray: 4 4; }
+.dp-collapse-stage { display: block; padding: 10px 12px 4px; }
+
+/* minis and static drawings */
+.vz.dp34-mini { display: block; margin: 0 auto; }
+.dp34-notebook .dp34-page { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1.5px; }
+.dp34-notebook .dp34-page-title { font: 700 13px var(--font-sans); fill: var(--ink-2); }
+.vz .dp34-marker circle { fill: var(--accent); }
+.vz .dp34-marker text { fill: var(--accent-ink); font: 750 13px var(--font-sans); }
+.vz .dp34-note { font: 600 14px var(--font-sans); fill: var(--ink-2); }
+.dp34-anatomy .dp34-arclabel { font-size: 13px; }
+
+/* anatomy key */
+.dp-anatomy-key {
+  list-style: none; counter-reset: dpk; margin: 0;
+  padding: 14px 18px 16px; border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 10px 24px;
+  font-size: 14.5px; line-height: 1.5; color: var(--ink);
+}
+.dp-anatomy-key li { position: relative; padding-left: 34px; margin: 0 !important; }
+.dp-anatomy-key li::before {
+  counter-increment: dpk; content: counter(dpk);
+  position: absolute; left: 0; top: 0;
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent); color: var(--accent-ink);
+  font: 750 12.5px var(--font-sans);
+}
+
+/* ---------------------------------------------------------------- staircase figure */
+.dp-stairs-stage { display: block; padding: clamp(12px, 2.5cqi, 24px); }
+.dp-stairs { display: grid; grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.1fr); gap: 20px 28px; align-items: center; }
+@container fig (max-width: 640px) { .dp-stairs { grid-template-columns: minmax(0, 1fr); } }
+.dp-stairs__art svg { width: 100%; max-width: 380px; display: block; margin: 0 auto; }
+.dp34-stairs .dp34-step { fill: color-mix(in srgb, var(--ink) 6%, var(--bg-elev)); stroke: var(--line-strong); stroke-width: 1px; }
+.dp34-stairs .dp34-ground { stroke: var(--line-strong); stroke-width: 1.5px; }
+.dp34-stairs .dp34-top { font: 650 12px var(--font-sans); fill: var(--ink-3); }
+.dp34-stairs .vz-edge .vz-line { stroke-dasharray: 5 4; }
+.dp-stairs__total { margin: 0 0 10px; font-size: 16px; color: var(--ink); }
+.dp-stairs__total b { font-size: 22px; font-weight: 760; }
+.dp-stairs__group {
+  padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--line);
+  background: var(--bg-elev); transition: border-color var(--dur), background var(--dur);
+}
+.dp-stairs__group + .dp-stairs__group { margin-top: 10px; }
+.dp-stairs__group.is-lit { border-color: color-mix(in srgb, var(--st-key) 55%, var(--line)); background: color-mix(in srgb, var(--st-key) 6%, var(--bg-elev)); }
+.dp-stairs__gtitle { margin: 0 0 8px; font-size: 13.5px; color: var(--ink-2); }
+.dp-stairs__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dp-stairs__none { font-size: 13px; color: var(--ink-3); font-style: italic; }
+.dp-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 8px; border-radius: 8px;
+  border: 1px solid var(--line-strong); background: var(--bg-elev);
+  font: 650 13px var(--font-mono); color: var(--ink); cursor: pointer;
+  transition: border-color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast);
+}
+.dp-chip:hover { border-color: var(--st-key); }
+.dp-chip:focus-visible { outline: none; box-shadow: var(--ring); }
+.dp-chip.is-current { border-color: var(--st-key); background: color-mix(in srgb, var(--st-key) 14%, var(--bg-elev)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--st-key) 30%, transparent); }
+.dp-chip__plus { color: var(--ink-3); font-weight: 500; }
+.dp-chip__hop.is-one { color: color-mix(in srgb, var(--st-active) 78%, var(--ink)); }
+.dp-chip__hop.is-two { color: color-mix(in srgb, var(--st-frontier) 70%, var(--ink)); }
+
+/* ---------------------------------------------------------------- call explosion bars */
+.dp-bars-stage { display: block; padding: 18px 18px 10px; }
+.dp-bars { display: grid; gap: 10px; }
+.dp-bar { display: grid; grid-template-columns: 128px minmax(0, 1fr) 118px; align-items: center; gap: 12px; }
+.dp-bar__label { font-size: 13.5px; font-weight: 620; color: var(--ink-2); }
+.dp-bar__track { position: relative; height: 24px; border-radius: 7px; background: var(--bg-sunken); overflow: hidden; }
+.dp-bar__fill { height: 100%; width: 2%; border-radius: 7px; background: var(--sw); transition: width var(--dur-slow) var(--ease-out); }
+.dp-bar__val { font: 700 14px var(--font-mono); color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+.dp-bar--ticks .dp-bar__track--ticks { height: 18px; background: none; overflow: visible; }
+.dp-tick { position: absolute; top: 0; padding-left: 4px; border-left: 1px solid var(--line-strong); font-size: 11.5px; color: var(--ink-3); white-space: nowrap; line-height: 18px; }
+@container fig (max-width: 520px) {
+  .dp-bar { grid-template-columns: minmax(0, 1fr) auto; }
+  .dp-bar__label { grid-column: 1 / -1; margin-bottom: -6px; }
+  .dp-bar--ticks .dp-bar__label { display: none; }
+  .dp-tick:nth-child(3) { display: none; }
+}
+
+/* ---------------------------------------------------------------- recursion tree figure */
+.dp-trace-stage { display: block; }
+.dp-trace-row { margin-top: 10px; }
+
+/* ---------------------------------------------------------------- top-down vs bottom-up */
+.dp-order-stage { display: block; padding: 14px; }
+.dp-order { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@container fig (max-width: 760px) { .dp-order { grid-template-columns: minmax(0, 1fr); } }
+.dp-order__panel { min-width: 0; padding: 10px 12px 8px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); }
+.dp-order__title { margin: 0 0 4px; font-size: 14px; font-weight: 680; color: var(--ink); }
+.dp-order__cap { margin: 4px 0 0; min-height: 3.1em; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.dp-order__cap.is-end { color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); font-weight: 600; }
+
+/* ---------------------------------------------------------------- lab */
+.dp-lab-toolbar { flex-direction: column; align-items: stretch; }
+.dp-lab-problem .seg { max-width: 100%; }
+.dp-lab-inputs { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; }
+.dp-lab-coinrow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 24px; width: 100%; }
+.dp-lab-coins { flex: 3 1 340px; min-width: 0; }
+.dp-lab-amount { flex: 1 1 220px; min-width: 0; padding-bottom: 6px; }
+.dp-lab-stage { min-height: clamp(160px, 22cqi, 300px); }
+
+/* recurrence strip */
+.dp-eq { padding: 10px 18px 11px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--bg-sunken) 45%, var(--bg-elev)); overflow-x: auto; min-height: 66px; }
+.dp-eq[hidden] { display: none; }
+.dp-eq__row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px 6px; font-family: var(--font-mono); font-size: 14px; line-height: 1.35; }
+.dp-eq__b { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.dp-eq__sym { color: var(--ink-2); white-space: nowrap; }
+.dp-eq__num { color: var(--ink); font-weight: 700; white-space: nowrap; }
+.dp-eq__lhs .dp-eq__sym { color: var(--ink); font-weight: 750; font-size: 15px; }
+.dp-eq__op { color: var(--ink-3); padding: 0 1px; }
+.dp-eq__fn .dp-eq__sym, .dp-eq__fn .dp-eq__num { color: var(--ink-2); font-weight: 650; }
+.dp-eq__term { padding: 3px 9px; border-radius: 9px; border: 1.5px solid var(--line-strong); background: var(--bg-elev); animation: dp-eq-in 280ms var(--ease-out) both; }
+.dp-eq__term[data-state] { border-color: color-mix(in srgb, var(--sw) 65%, transparent); background: color-mix(in srgb, var(--sw) 9%, var(--bg-elev)); }
+.dp-eq__term[data-state] .dp-eq__num { color: color-mix(in srgb, var(--sw) 72%, var(--ink)); }
+.dp-eq__term[data-state="key"] { border-width: 2px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--st-key) 16%, transparent); }
+.dp-eq__term.is-muted { border-style: dashed; background: transparent; }
+.dp-eq__term.is-muted .dp-eq__sym, .dp-eq__term.is-muted .dp-eq__num { color: var(--ink-3); font-weight: 500; }
+.dp-eq__val { color: var(--ink-3); font-weight: 600; }
+.dp-eq__res { padding: 3px 12px; border-radius: 9px; background: var(--accent-soft); }
+.dp-eq__res .dp-eq__num { font-size: 18px; font-weight: 780; color: color-mix(in srgb, var(--accent) 80%, var(--ink)); }
+.dp-eq__res.is-pending .dp-eq__num { color: var(--ink-3); animation: dp-pulse 1.4s ease-in-out infinite; }
+.dp-eq__note { align-self: center; font: italic 500 13.5px var(--font-sans); color: var(--ink-2); padding: 0 4px; }
+@keyframes dp-eq-in { from { opacity: 0; transform: translateY(4px); } }
+@keyframes dp-pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .dp-eq__term, .dp-eq__res.is-pending .dp-eq__num { animation: none; } }
+:root[data-motion="reduce"] .dp-eq__term, :root[data-motion="reduce"] .dp-eq__res.is-pending .dp-eq__num { animation: none; }
+
+/* ---------------------------------------------------------------- variations and code pairs */
+.dp-var-minis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 12px; margin-bottom: 18px; }
+.dp-var-minis .mini__stage { min-height: 96px; padding: 10px 8px; }
+.dp-code-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.dp-code-pair__title { margin: 0 0 6px; font-size: 13.5px; font-weight: 650; color: var(--ink-2); }
+.lesson-body > section > .dp-code-pair { margin-top: var(--space-5); }
+.summary__viz .vz { max-width: 100%; }
+
+/* flat recurrence (definitions, base cases, answers) */
+.dp-eq__row.is-flat { align-items: baseline; gap: 8px; }
+.dp-eq__flat.dp-eq__lhs { font-weight: 750; font-size: 15px; color: var(--ink); }
+.dp-eq__flat.dp-eq__res { font-size: 17px; font-weight: 780; color: color-mix(in srgb, var(--accent) 80%, var(--ink)); background: var(--accent-soft); padding: 1px 10px; border-radius: 8px; }
+
+/* lab toolbar: the problem switcher keeps its natural width; inputs take the full row */
+.dp-lab-toolbar { align-items: flex-start; }
+.dp-lab-toolbar > .dp-lab-inputs { width: 100%; }
+
+/* summary: three tiles per row on wide screens */
+#summary-card .summary__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
+
+/* keep the order panels' tables scrollable rather than clipped on phones */
+.dp-order__panel [data-left], .dp-order__panel [data-right] { overflow-x: auto; overscroll-behavior-x: contain; }
+.dp-cost-table { min-width: 660px; }

@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Dynamic programming I · Visual DSA</title>
+<meta name="description" content="Overlapping subproblems, memoization, tabulation and the subproblem DAG: watch a recursion tree of repeated calls collapse into a row of cached cells, then fill DP tables for climbing stairs, coin change, house robber and LIS.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/34-dynamic-programming.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/34-dynamic-programming.js" defer></script>
+<script src="../js/lessons/34-dynamic-programming-views.js" defer></script>
+<script src="../js/lessons/34-dynamic-programming-lab.js" defer></script>
+<script src="../js/lessons/34-dynamic-programming.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="34-dynamic-programming">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Dynamic programming I</h1>
+      <p class="hero__lede">When a recursion keeps asking the same questions, answer each one once and write it down. A tree of millions of calls shrinks to a short row of cells.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">22 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: recursion, Big-O</li>
+      </ul>
+    </div>
+    <div class="hero__stage dp-hero" id="teaser" role="img" aria-label="Animation: the recursion tree of fib(6) grows level by level to 25 calls, the repeated calls light up, then every call flies down into one of 7 cells, fib(0) to fib(6), and the tree edges bend into arrows between neighbouring cells."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>You stand at the bottom of a staircase. Each move climbs <b>1 stair or 2</b>. How many different ways are there to reach the top?</p>
+      <p>Drag the slider and watch every way play out. Each chip is one sequence of hops.</p>
+      <figure class="fig wide" id="fig-stairs">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Every way up a staircase of n stairs</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="dp-grow"></div></div>
+        <div class="fig__stage fig__stage--plain dp-stairs-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <figcaption class="fig__foot">Text alternative: a staircase of n stairs with a climber that hops along one sequence at a time. Next to it, every sequence of 1- and 2-stair hops that adds up to n, split into those whose last hop is 1 and those whose last hop is 2.</figcaption>
+      </figure>
+      <p>Look at the two groups. Every way ends with one last hop: a 1 from stair n − 1, or a 2 from stair n − 2. So the number of ways to reach n is the ways to reach n − 1 <em>plus</em> the ways to reach n − 2.</p>
+      <div class="quiz" id="quiz-stairs"></div>
+      <p>That rule turns straight into a recursion: <code>ways(n) = ways(n − 1) + ways(n − 2)</code>, with <code>ways(0) = ways(1) = 1</code>. It is the Fibonacci rule again, and it hides a trap. Push the slider below to see how many calls the plain recursion makes.</p>
+      <figure class="fig" id="fig-explode">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Calls made to count the ways up n stairs</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="dp-grow"></div></div>
+        <div class="fig__stage fig__stage--plain dp-bars-stage" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Bars use a logarithmic scale: each tick is 1,000 times the one before. Time assumes 100 million calls per second.</figcaption>
+      </figure>
+      <p>At 50 stairs the plain recursion makes about 40 billion calls, yet there are only 51 different questions: ways(0) to ways(50). This lesson is about the gap between those two numbers.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Someone writes 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 and asks for the total. You count: 8. They write one more “+ 1” in front and ask again. You say 9 at once, because you remember the 8.</p>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: keep a notebook</p>
+        <p>Before you work anything out, check your notebook. If the answer is there, read it. If not, work it out and write it down. <dfn>Dynamic programming</dfn> is that habit, applied to the smaller questions inside a big one.</p>
+      </aside>
+      <div class="mini-row wide" id="mini-intuition"></div>
+      <aside class="callout callout--def">
+        <p class="callout__title">Two conditions</p>
+        <p><dfn>Overlapping subproblems</dfn>: the same smaller question comes up many times, like the magenta repeats on the left. <dfn>Optimal substructure</dfn>: the answer to a big question is built from the answers to smaller ones, like ways(n) from ways(n − 1) and ways(n − 2).</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>A notebook only pays when questions repeat. Merge sort (right) splits a list into halves that never overlap, so every question is new and a notebook would stay empty. That is divide and conquer, not dynamic programming.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ MECHANISM 1: overlap + memo -->
+    <section id="overlap">
+      <h2 data-toc="Repeated work">The same question, over and over</h2>
+      <p>Step through plain recursion for <code>fib(5)</code>. Each circle is one call and its number is the argument. The row underneath counts how many times each question has been asked.</p>
+      <figure class="fig wide" id="fig-trace">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The recursion tree, call by call</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-mode></div><div data-n class="dp-grow"></div></div>
+        <div class="fig__stage fig__stage--tall dp-trace-stage" data-stage><div class="dp-trace-tree" data-tree></div><div class="dp-trace-row" data-row></div></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">The figure pauses twice to ask what happens next. Text alternative: the caption describes every call and return.</figcaption>
+      </figure>
+      <p>The counts in the row are Fibonacci numbers too: fib(1) is asked 5 times and fib(2) 3 times for fib(5), and the waste grows exponentially with n. Now switch the figure to <b>With a memo</b>.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>memo</dfn> is a table that stores the answer to each question the first time it is computed. <dfn>Memoization</dfn> is recursion plus a memo: check the memo first, and store each new answer before returning it. A lookup that finds the answer is a <em>memo hit</em>.</p>
+      </aside>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>With a memo, the work is the number of <em>different</em> questions, not the number of ways to reach them. fib(n) has n + 1 different questions, so memoized fib makes 2n&nbsp;−&nbsp;1 calls instead of a number that grows like 1.6<sup>n</sup>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ MECHANISM 2: the collapse -->
+    <section id="collapse">
+      <h2 data-toc="Tree to row">The tree is really a row</h2>
+      <p>Plain recursion draws a tree because it cannot tell that two calls ask the same thing. Glue together every call with the same argument, and see what is left.</p>
+      <figure class="fig wide" id="fig-collapse">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">25 calls collapse into 7 cells</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-n></div></div>
+        <div class="fig__stage fig__stage--plain dp-collapse-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: the recursion tree of fib(n); copies of the same call are highlighted one argument at a time; then every call moves into one cell per argument, duplicates merge, and the tree edges become arrows from cell k − 1 and cell k − 2 to cell k. The cells then fill from left to right.</figcaption>
+      </figure>
+      <p>The arrows that survive say which cells each cell reads: cell k reads cells k − 1 and k − 2. Every arrow points left to right, so filling the cells left to right always finds the inputs ready. Filling a table in such an order is called <dfn>tabulation</dfn>.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>DAG</dfn> (directed acyclic graph) is a set of arrows with no cycles: you can never follow arrows back to where you started. Every DAG has a <em>topological order</em>, a line-up in which every arrow points forward. Every dynamic program is a DAG of subproblems.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ MECHANISM 3: the recipe -->
+    <section id="recipe">
+      <h2 data-toc="The recipe">Five decisions make a DP</h2>
+      <p>Fibonacci, spell checkers and route planners all follow the same five decisions. The figure marks each one on a single table: the fewest coins from <code>{1, 3, 4}</code> that make each amount up to 6.</p>
+      <figure class="fig wide" id="fig-anatomy">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The anatomy of a DP table</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <ol class="dp-anatomy-key" data-key>
+          <li><b>State.</b> One cell, one question. Here dp[a] = the fewest coins that make exactly a.</li>
+          <li><b>Recurrence.</b> A cell from smaller cells: dp[a] = 1 + min(dp[a − 1], dp[a − 3], dp[a − 4]).</li>
+          <li><b>Base case.</b> A cell you know without computing: dp[0] = 0.</li>
+          <li><b>Order.</b> Any order that fills a cell after the cells it reads. Left to right works, because every arrow points right.</li>
+          <li><b>Answer.</b> The cell that holds the result: dp[6] = 2.</li>
+        </ol>
+      </figure>
+      <p>A sixth step is optional but common: store which choice won in each cell, then walk those choices back from the answer to rebuild the solution itself (here, 3 + 3), not only its size.</p>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why it is correct</p>
+        <p>Take the best way to pay 6. Its last coin is some c, and the rest pays 6 − c. If the rest were not the best way to pay 6 − c, swapping in a better one would improve the whole, a contradiction. So trying every last coin cannot miss the optimum.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ MECHANISM 4: top-down vs bottom-up -->
+    <section id="order">
+      <h2 data-toc="Top-down vs bottom-up">Top-down or bottom-up</h2>
+      <p>You can follow the recipe in two directions. <b>Top-down</b> keeps the recursion and adds a memo, so the recursion discovers the order for you. <b>Bottom-up</b> writes the loop yourself, from the smallest state up.</p>
+      <figure class="fig wide" id="fig-order">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The same table, filled in two orders</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-preset></div></div>
+        <div class="fig__stage fig__stage--plain dp-order-stage" data-stage>
+          <div class="dp-order">
+            <div class="dp-order__panel"><p class="dp-order__title">Top-down: recursion + memo</p><div data-left></div><p class="dp-order__cap" data-left-cap aria-hidden="true"></p></div>
+            <div class="dp-order__panel"><p class="dp-order__title">Bottom-up: a loop over a table</p><div data-right></div><p class="dp-order__cap" data-right-cap aria-hidden="true"></p></div>
+          </div>
+        </div>
+        <p class="sr-only" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Small “#” numbers under the cells give the order in which each cell was finished. Teal arcs on the left are calls still waiting for an answer: the call stack.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="table table--compact">
+          <thead><tr><th scope="col"></th><th scope="col">Top-down (memoization)</th><th scope="col">Bottom-up (tabulation)</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Who picks the order</th><td>The recursion, lazily</td><td>You, in the loop</td></tr>
+            <tr><th scope="row">States computed</th><td>Only those reachable from the question</td><td>Every state in range</td></tr>
+            <tr><th scope="row">Extra memory</th><td>Memo + call stack (can overflow on deep inputs)</td><td>The table; often shrinks to a few cells</td></tr>
+            <tr><th scope="row">Easiest when</th><td>The order is awkward to write down</td><td>The order is a simple loop</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Five classic problems, one machine. Pick a problem, change the input and step. Each step lights the code line, draws an arrow from every cell the new value reads, and writes the recurrence with the real numbers plugged in. When the table is full, a reconstruction pass walks the stored choices back.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Fill a DP table, one cell at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar dp-lab-toolbar">
+          <div data-problem class="dp-lab-problem"></div>
+          <div data-input class="dp-lab-inputs"></div>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall fig__stage--scroll dp-lab-stage" data-stage></div>
+            <div class="dp-eq" data-eq aria-hidden="true"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once on the fewest-coins problem to ask you for the next cell. Text alternative: the caption describes every step, including the recurrence with its numbers.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The recipe as a flowchart</h2>
+      <p>The same decisions as a flowchart, wired to the lab: step the lab and the current box lights up. The loop on the right is the table filling in order.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">How to design (and run) a DP</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <figcaption class="fig__foot">Text alternative: define the state; write the recurrence; set the base cases; while there is a next state in order, apply the recurrence and store it; then read the answer and walk the choices back.</figcaption>
+      </figure>
+      <p>Before you start, check that DP is the right tool at all. Click an answer on each question.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Is this a dynamic programming problem?</h3></div>
+          <div class="btn-row"><button type="button" class="btn btn--sm btn--ghost" data-restart>Start over</button></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: can the answer be built from answers to smaller versions? If not, try another approach. Do those smaller problems repeat? If not, use divide and conquer. Is one local choice provably safe? If so, use greedy. Otherwise, can a small state describe everything the rest of the problem needs? If so, use dynamic programming; if not, add a dimension to the state.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ THE DAG -->
+    <section id="dag">
+      <h2 data-toc="Subproblem DAG">DP is a shortest path in a DAG</h2>
+      <p>Draw each state as a circle and each choice as an arrow. For fewest coins with <code>{1, 3, 4}</code>, an arrow from amount a to a + c means “add one coin c”. Every path from 0 to 6 is a way to pay 6, so the fewest coins is the <b>shortest path</b>.</p>
+      <p>Before you step the figure, try the click check below it.</p>
+      <figure class="fig wide" id="fig-dag">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The subproblem DAG for paying 6 with {1, 3, 4}</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Straight arrows add a 1; arcs below add a 3; arcs above add a 4. The number under each circle is its distance from 0: the fewest coins for that amount.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-dag"></div>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why no priority queue?</p>
+        <p>Dijkstra’s algorithm needs a priority queue because it does not know which node is safe to finish next. Here every arrow points to a larger amount, so increasing order is a topological order: each amount is final before anything reads it. One pass, one relaxation per arrow.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ SPACE -->
+    <section id="space">
+      <h2 data-toc="Saving space">Keep only what you still need</h2>
+      <p>The Fibonacci recurrence reads only the last two cells. Once a cell falls two places behind, nothing will read it again, so it can go.</p>
+      <figure class="fig wide" id="fig-space">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A table shrinks to a sliding pair</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+      </figure>
+      <p>The same trick works whenever a cell reads only a few recent cells or rows. House robber needs two numbers; coin combinations needs one row. The price: without the full table you lose the stored choices, so keep the table when you must rebuild the answer.</p>
+      <div class="dp-code-pair wide">
+        <div><p class="dp-code-pair__title">Table: O(n) space</p><pre data-code-block="table"></pre></div>
+        <div><p class="dp-code-pair__title">Two variables: O(1) space</p><pre data-code-block="pair"></pre></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>A DP costs <b>(number of states) × (work per state)</b>. Fibonacci has n + 1 states and one addition each. Plain recursion instead pays once for every path through the tree.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Calls to compute fib(n): plain, memoized, table</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="dp-grow"></div><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Plain recursion makes 2·fib(n + 1) − 1 calls; memoization makes 2n − 1 calls (n ≥ 2); the loop makes n − 1 additions. Hover or focus the chart and use the arrow keys to read values.</figcaption>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table dp-cost-table">
+          <thead><tr><th scope="col">Problem</th><th scope="col">States</th><th scope="col">Work per state</th><th scope="col" class="num">Time</th><th scope="col" class="num">Space</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">fib(n), plain recursion</th><td>every path: 2·fib(n + 1) − 1 calls</td><td>1 addition</td><td class="num"><span class="big-o" data-o="2n">O(φⁿ) ≈ O(1.62ⁿ)</span></td><td class="num"><span class="big-o" data-o="n">O(n) stack</span></td></tr>
+            <tr><th scope="row">fib(n) / climbing stairs</th><td>n + 1</td><td>1 addition</td><td class="num"><span class="big-o" data-o="n">O(n)</span></td><td class="num"><span class="big-o" data-o="1">O(1)</span> with two variables</td></tr>
+            <tr><th scope="row">Fewest coins / combinations</th><td>A + 1 amounts (× k rows)</td><td>k coins (or 2 reads)</td><td class="num"><span class="big-o" data-o="nk">O(A·k)</span></td><td class="num"><span class="big-o" data-o="n">O(A)</span></td></tr>
+            <tr><th scope="row">House robber</th><td>n + 1</td><td>2 reads</td><td class="num"><span class="big-o" data-o="n">O(n)</span></td><td class="num"><span class="big-o" data-o="1">O(1)</span> with two variables</td></tr>
+            <tr><th scope="row">Longest increasing subsequence</th><td>n</td><td>up to n reads</td><td class="num"><span class="big-o" data-o="n2">O(n²)</span></td><td class="num"><span class="big-o" data-o="n">O(n)</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>For coins, A is the amount and k the number of coin types. For LIS, a cleverer method with binary search runs in <span class="big-o" data-o="nlogn"></span>, but the O(n²) table is the one to understand first.</p>
+      <details class="accordion">
+        <summary>Why is O(A·k) called “pseudo-polynomial”?</summary>
+        <div class="accordion__body"><p>The running time grows with the <em>value</em> of A, not with how many digits it takes to write it. Paying a million needs a million cells, but “1000000” is only seven digits. Double the digits and the table can grow a thousandfold. Coin change is still fast for everyday amounts.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Where does 2·fib(n + 1) − 1 come from?</summary>
+        <div class="accordion__body"><p>Let C(n) be the calls for fib(n). C(0) = C(1) = 1, and C(n) = 1 + C(n − 1) + C(n − 2): the call itself plus its two subtrees. Adding 1 to both sides gives C(n) + 1 = (C(n − 1) + 1) + (C(n − 2) + 1), the Fibonacci rule, starting from 2 and 2. So C(n) + 1 = 2·fib(n + 1).</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Most DP problems are the recipe with one knob turned. Four knobs come up again and again.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="combine">Min, count or decide</button>
+          <button data-tab="direction">Loop direction</button>
+          <button data-tab="rebuild">Rebuild the answer</button>
+          <button data-tab="answer">Where the answer lives</button>
+        </div>
+        <div data-tab-panel="combine">
+          <div class="dp-var-minis" data-mini="combine"></div>
+          <div class="split">
+            <p>Same arrows, different ways to combine them. With coins <code>{3, 4}</code> each amount reads a − 3 and a − 4. Take the <b>min</b> plus one for the fewest coins, the <b>sum</b> for the number of coin <em>sequences</em>, and <b>or</b> for “can it be paid at all”. Change the combiner, not the table.</p>
+            <pre data-code-block="combine"></pre>
+          </div>
+        </div>
+        <div data-tab-panel="direction">
+          <div class="dp-var-minis" data-mini="direction"></div>
+          <div class="split">
+            <p>With a single row, the loop direction decides which values a cell reads. Adding an item of weight 2 <b>left to right</b>, dp[6] reads dp[4], which already includes the item, so the item can be used again (unlimited supply). <b>Right to left</b>, dp[4] still holds the old value, so each item is used at most once (0/1 knapsack).</p>
+            <pre data-code-block="direction"></pre>
+          </div>
+        </div>
+        <div data-tab-panel="rebuild">
+          <div class="dp-var-minis" data-mini="rebuild"></div>
+          <div class="split">
+            <p>A table of numbers says <em>how good</em> the best answer is, not <em>what</em> it is. Store the winning choice in each cell, then start at the answer and follow the choices back. Here: 10 = 3 + 3 + 4, found by stepping back 3, 3 and 4.</p>
+            <pre data-code-block="rebuild"></pre>
+          </div>
+        </div>
+        <div data-tab-panel="answer">
+          <div class="dp-var-minis" data-mini="answer"></div>
+          <div class="split">
+            <p>House robber’s state is “best of the first i houses”, so the answer is the <b>last</b> cell. LIS’s state is “longest run <em>ending at</em> i”, so the answer is the <b>largest</b> cell, wherever it is. Read your own state definition to know which.</p>
+            <pre data-code-block="answer"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-memo10"></div>
+        <div class="quiz" id="quiz-deps"></div>
+        <div class="quiz" id="quiz-bug"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Dynamic programming</p></div>
+          <div class="cluster"><span class="chip chip--sm">time = states × work per state</span><span class="chip chip--sm">remember + compare</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1950s<small>named at RAND</small></div>
+        <p class="history__people">Richard Bellman<span><em>Dynamic Programming</em>, Princeton University Press, 1957</span></p>
+        <div class="history__body">
+          <p>Richard Bellman named dynamic programming at the RAND Corporation in the early 1950s, and by his own account chose the name to hide what he was doing. The Secretary of Defense, he wrote, could not stand the word “research”; “programming” meant planning, and nobody could use “dynamic” as an insult.</p>
+          <p>Historians point out that the dates do not quite line up: Charles Wilson became Secretary of Defense in January 1953, after Bellman was already using the term. Enjoy the story as Bellman told it. The idea itself is older: Fibonacci’s 1202 rabbit problem is the same recurrence you tabulated above.</p>
+        </div>
+        <p class="history__source">Sources: R. Bellman, <em>Eye of the Hurricane</em> (1984); S. Dreyfus, “Richard Bellman on the Birth of Dynamic Programming”, <em>Operations Research</em> 50(1), 2002.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Cheapest climb</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Stair i costs cost[i] to step on, and you may start on stair 0 or 1 and climb 1 or 2 at a time. Find the cheapest way past the top. Define the state before you write any code.</p></li>
+        <li><div class="practice__title">Coin change, impossible amounts</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Return the fewest coins for an amount, or −1 when it cannot be made. Which value must unreachable cells start with so that min() never picks them, and why is 0 wrong?</p></li>
+        <li><div class="practice__title">Decode ways</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Letters are encoded A = 1, B = 2, …, Z = 26. Count the ways to decode a string of digits such as “226”. A 0 cannot start a code. Which earlier cells can each cell read?</p></li>
+        <li><div class="practice__title">Houses in a circle</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Same as house robber, but the first and last houses are neighbours. Reduce it to two runs of the straight-line version.</p></li>
+        <li><div class="practice__title">Print the longest increasing subsequence</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Return one longest strictly increasing subsequence, not only its length, and count how many different longest ones there are. What extra number does each cell need to store?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-15-dynamic-programming-optimal-substructure-over-a-subproblem-dag.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Optimal substructure over a subproblem DAG</span><span class="deeper__text" style="display:block">The long-form study: semirings, edit distance, knapsack, Floyd–Warshall as DP, interval DP and the ways a DP fails silently.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

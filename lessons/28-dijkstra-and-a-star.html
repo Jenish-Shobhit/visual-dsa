@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Dijkstra &amp; A* · Visual DSA</title>
+<meta name="description" content="Shortest paths on weighted graphs, animated: relaxation, the closest-first rule, a priority queue with stale entries, the negative-edge counterexample, and A* aiming at the goal on a paintable grid.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/28-dijkstra-and-a-star.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/graph.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/28-dijkstra-and-a-star.js" defer></script>
+<script src="../js/lessons/28-dijkstra-and-a-star.js" defer></script>
+<script src="../js/lessons/28-dijkstra-and-a-star-figs.js" defer></script>
+<script src="../js/lessons/28-dijkstra-and-a-star-labs.js" defer></script>
+<script src="../js/lessons/28-dijkstra-and-a-star-grid.js" defer></script>
+<script src="../js/lessons/28-dijkstra-and-a-star-more.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="28-dijkstra-and-a-star">
+<main id="main" class="lesson">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Dijkstra &amp; A*</h1>
+      <p class="hero__lede">Find the cheapest route when roads have different lengths. Always settle the closest unsettled place, keep the candidates in a priority queue, and, with A*, let a good guess pull the search toward the goal.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">22 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: BFS, heaps</li>
+      </ul>
+    </div>
+    <div class="hero__stage dj-hero" id="teaser" role="img" aria-label="Animation: on a map of towns joined by roads with different lengths, distance labels spread out from a start town, starting at infinity and settling to their final values, and then the cheapest route to a far town lights up."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>Your phone finds the fastest way home. The map is a graph, and every road carries a number: the minutes it takes to drive. BFS from the last lesson counts <em>roads</em>, not <em>minutes</em>. Watch it choose.</p>
+      <figure class="fig wide" id="fig-hops">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Fewest roads is not the fastest route</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="dj-duo">
+          <div class="dj-duo__col">
+            <p class="dj-duo__label"><b>BFS</b> <span>counts roads</span></p>
+            <div class="fig__stage fig__stage--plain dj-duo__stage" data-stage="bfs"></div>
+            <p class="dj-tally" data-tally="bfs"></p>
+          </div>
+          <div class="dj-duo__col">
+            <p class="dj-duo__label"><b>Dijkstra</b> <span>adds up minutes</span></p>
+            <div class="fig__stage fig__stage--plain dj-duo__stage" data-stage="dj"></div>
+            <p class="dj-tally" data-tally="dj"></p>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: a map from Home to Cafe. The route with the fewest roads goes Home, D, Cafe: 2 roads but 17 minutes. The fastest route goes Home, A, C, Cafe: 3 roads and only 7 minutes.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-hops"></div>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>A <dfn>weighted graph</dfn> gives every edge a number, its <dfn>weight</dfn> (a cost, length or time). The <dfn>weight of a path</dfn> is the sum of its edge weights, and the <dfn>shortest path</dfn> is the path with the smallest total weight, however many edges it uses.</p>
+      </aside>
+      <p>The same question shows up everywhere: the fastest drive, the packet route with the lowest delay, the cheapest way through a game map.</p>
+      <div class="mini-row wide" id="mini-uses"></div>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Picture every road as a fuse. Light a fire at Start and let it burn along each fuse at one unit of weight per minute. A town catches fire the moment the <em>first</em> flame reaches it. So a town’s ignition time is exactly its shortest distance from Start.</p>
+      <figure class="fig wide" id="fig-fuse">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A fire racing along fuses</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: starting at S the fire reaches B at time 2, A at time 5, C at time 6, D at time 8 and T at time 11. The fuse edges that carried the first flame turn green and form the shortest-path tree.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>Fire needs no plan: it burns every fuse at once. A program has no clock and looks at one edge at a time. It must work out <em>which town would ignite next</em> without waiting, and that is the job of Dijkstra’s algorithm and its priority queue.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ RELAXATION -->
+    <section id="relax">
+      <h2>Relaxation: the one move</h2>
+      <p>Every vertex keeps a number, <code>dist</code>: the shortest route found <em>so far</em>. It starts at ∞ for everyone except the start. It is always an upper bound: the true distance is never more than <code>dist</code>, and the number only ever goes down.</p>
+      <p><strong>Relaxing</strong> an edge <code>u → v</code> of weight <code>w</code> asks one question: is going through <code>u</code> better than what <code>v</code> has? Try the edge with your own numbers.</p>
+      <figure class="fig wide" id="fig-relax">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Relax one edge</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar dj-sliders">
+          <div data-slider="du"></div>
+          <div data-slider="w"></div>
+          <div data-slider="dv"></div>
+          <div class="input-row__presets" role="group" aria-label="Relaxation examples" data-presets></div>
+        </div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: two vertices u and v joined by an edge of weight w. A candidate distance dist[u] + w travels along the edge to v and is compared with dist[v]. If it is smaller, dist[v] takes the new value and v remembers u as its parent; otherwise nothing changes.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-relax"></div>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Every shortest-path algorithm is just relaxation in a chosen order. Dijkstra’s trick is the order: relax the edges out of the <em>closest</em> unsettled vertex first.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ DIJKSTRA -->
+    <section id="dijkstra">
+      <h2>Dijkstra: settle the closest</h2>
+      <p>Dijkstra splits the vertices in two. The <strong>settled</strong> ones have a distance that is final. The rest are waiting, and some have a tentative <code>dist</code>. Each round it picks the waiting vertex with the smallest <code>dist</code>, settles it, and relaxes its outgoing edges.</p>
+      <p>Why is that pick safe? Look at the cut between settled and waiting vertices.</p>
+      <figure class="fig wide" id="fig-cut">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Why the closest vertex is already final</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: S, A and B are settled with distances 0, 2 and 3. X has tentative distance 4 and Y has 6. Any other route to X must leave the settled set through Y, which already costs 6, so with a non-negative edge from Y it cannot beat 4. A negative edge from Y to X of weight minus 5 would give 1 and break the argument.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">The proof in one sentence</p>
+        <p>Any other route to the closest waiting vertex must first leave the settled set through some other waiting vertex, which is already at least as far, and the rest of the route adds a weight of 0 or more. So nothing can beat the closest one. This is exactly where “no negative weights” is needed.</p>
+      </aside>
+      <p>Now run it by hand on a small map. Beside the graph sits the <strong>priority queue</strong>: entries <code>(distance, vertex)</code> sorted smallest first. Each vertex carries its distance as a badge, and the little <em>via</em> label names the neighbour it got that distance from.</p>
+      <figure class="fig wide" id="fig-hand">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Dijkstra by hand, from S to T</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="dj-pq-host" data-pq></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: Dijkstra from S settles B at 2, then A at 5 (through B, cheaper than the direct edge of 7), then C at 6, D at 8 and T at 11. The shortest route is S, B, A, C, D, T.</figcaption>
+      </figure>
+      <p>Each vertex remembers its <strong>parent</strong>, the neighbour that gave it its best distance. The parent edges form a tree, the <strong>shortest-path tree</strong>, and following parents back from any vertex spells out its shortest route in reverse.</p>
+      <p>One detail keeps the queue simple. A binary heap cannot cheaply lower an entry that is already inside it. So when a shorter route is found, Dijkstra pushes a <em>new</em> entry and leaves the old one behind. The leftover is <strong>stale</strong>: when it finally reaches the front, its distance is larger than the vertex’s current one, and it is thrown away. This is called lazy deletion.</p>
+      <figure class="fig" id="fig-lazy">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Stale entries: lazy deletion</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="dj-pq-host" data-pq></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: S reaches A directly at 4 and B at 1. From B, A becomes 3, so the queue now holds (3, A) and the out-of-date (4, A). When (4, A) reaches the front it is discarded.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Edit the map, choose a start and an optional target, and step through. Type edges like <code>A-B:4</code>, pick a preset, or draw the graph by hand and click an edge to change its weight. Every step lights the line of code that runs and says why.</p>
+      <figure class="fig fig--lab full" id="lab-graph">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace Dijkstra on your own weighted graph</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar dj-toolbar">
+          <label class="dj-select"><span class="field-label">Start</span><select class="field" data-start aria-label="Start vertex"></select></label>
+          <label class="dj-select"><span class="field-label">Target</span><select class="field" data-target aria-label="Target vertex"></select></label>
+          <div data-directed></div>
+          <button type="button" class="btn btn--secondary" data-draw aria-pressed="false">Draw a graph</button>
+        </div>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="dj-lab-stage">
+              <div class="fig__stage fig__stage--plain" data-stage></div>
+              <div class="dj-editor" data-editor hidden>
+                <div class="dj-editor__bar">
+                  <p class="dj-editor__help">Click empty space to add a vertex. Drag from one vertex to another to join them, then click the edge’s number to set its weight. Select and press <kbd>Delete</kbd> to remove.</p>
+                  <div class="btn-row">
+                    <button type="button" class="btn btn--ghost btn--sm" data-editor-clear>Clear</button>
+                    <button type="button" class="btn btn--primary btn--sm" data-editor-done>Use this graph</button>
+                  </div>
+                </div>
+                <div class="dj-editor__canvas" data-editor-canvas></div>
+                <p class="input-row__error" data-editor-error role="alert"></p>
+              </div>
+            </div>
+            <div class="dj-pq-host dj-pq-host--row" data-pq></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses to ask you to predict a step. Text alternative: the caption under the graph describes every step in words, and the variables panel lists the current vertex, the edge being relaxed and the queue.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2>The decisions, as a flowchart</h2>
+      <p>The lab’s algorithm as a map of decisions. It is wired to the lab: step the lab and the box that runs lights up here.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Dijkstra decision flow</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <figcaption class="fig__foot">Text alternative: put the start in the queue at 0. While the queue is not empty, pop the smallest entry; if it is stale, discard it. Otherwise settle the vertex; if it is the target, stop and rebuild the path. For each outgoing edge, if dist[u] + w beats dist[v], relax it and push the new entry.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ NEGATIVE EDGES -->
+    <section id="negative">
+      <h2>When a weight is negative</h2>
+      <p>Dijkstra’s proof needs every weight to be 0 or more. Give it one negative edge and the greedy choice fails. Here B → A has weight −3. Watch Dijkstra settle A at 1, and then meet an edge that would have made it −1.</p>
+      <figure class="fig wide" id="fig-neg">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The negative-edge counterexample</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="dj-pq-host" data-pq></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: edges S to A (1), S to B (2), A to T (1) and B to A (minus 3). Dijkstra settles S, A and B in that order and reports A = 1 and T = 2. But S, B, A costs 2 minus 3 = minus 1 and S, B, A, T costs 0, so A and T are wrong.</figcaption>
+      </figure>
+      <p>The fix is not to patch Dijkstra. With negative edges use <strong>Bellman-Ford</strong>, which relaxes every edge V − 1 times and needs no greedy choice. That is the next lesson.</p>
+    </section>
+
+    <!-- ============================================================ A* -->
+    <section id="astar">
+      <h2>A*: aim at the goal</h2>
+      <p>Dijkstra spreads in every direction, like a ripple, even away from the goal. On a map you know roughly where the goal is. A* uses that. For each waiting cell it adds a guess <code>h</code> of the cost still to go, and expands the cell with the smallest <strong>f = g + h</strong>, where <code>g</code> is the cost so far.</p>
+      <p>The guess used on grids is the <strong>Manhattan distance</strong>: how many steps you would need with no walls. Here is a search paused with its frontier labelled <code>g + h</code>.</p>
+      <figure class="fig wide" id="fig-fgh">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">f = g + h: which cell does A* expand?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain dj-fgh-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <figcaption class="fig__foot">Text alternative: a small grid with a start S on the left and a target T on the right, a wall between them, some cells already expanded, and frontier cells labelled g + h with their f total in the middle.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-fgh"></div>
+      <p>Three searches use the same loop and differ only in the priority. <strong>Dijkstra</strong> orders by <code>g</code>, <strong>A*</strong> by <code>g + h</code>, and <strong>greedy best-first</strong> by <code>h</code> alone: fast, but it ignores the cost already paid.</p>
+      <p>Paint walls and mud (a cell that costs 5 instead of 1), move S and T by dragging them, and compare. The table under the grid reruns all three searches on your map.</p>
+      <figure class="fig fig--lab full" id="lab-grid">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Pathfinding lab: Dijkstra, A* and greedy on your map</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar dj-toolbar">
+          <div data-algo></div>
+          <label class="dj-select"><span class="field-label">Estimate h</span><select class="field" data-heur aria-label="Heuristic"><option value="manhattan">Manhattan</option><option value="euclid">Euclidean</option><option value="zero">Zero (no guess)</option></select></label>
+          <div data-brush></div>
+          <div data-heat></div>
+        </div>
+        <div class="fig__toolbar">
+          <div class="input-row__presets" role="group" aria-label="Grid presets" data-presets></div>
+          <div data-size></div>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain dj-grid-stage" data-stage></div>
+            <div class="dj-heatbar" data-heatbar aria-hidden="true"><span>cheap</span><i></i><span>costly (cost from S)</span></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <div class="dj-compare" data-compare></div>
+        <figcaption class="fig__foot">Text alternative: a grid with walls and mud. The search colours the cells it expands from cheap to costly and then draws the route it found. The table lists how many cells each algorithm expanded and how much its route costs. With the keyboard, Tab to the grid, move with the arrow keys and press Enter to paint.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Admissible and consistent</p>
+        <p>A guess <code>h</code> is <dfn>admissible</dfn> if it never overestimates the true remaining cost. It is <dfn>consistent</dfn> if it never drops by more than the cost of a step: <code>h(u) ≤ w(u, v) + h(v)</code>. With a consistent guess, A* expands every cell at most once and its first answer is optimal.</p>
+      </aside>
+      <p>The guess is a dial. <code>h = 0</code> gives Dijkstra. Manhattan distance is admissible on a grid where a step costs at least 1, so A* stays optimal and expands far fewer cells. A guess that is <em>too big</em> pulls the search toward the goal so hard that it may accept a dearer route. Watch the three race on the same map.</p>
+      <figure class="fig full" id="fig-heur">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The heuristic explorer: h = 0, Manhattan, and an overestimate</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="dj-trio">
+          <div class="dj-trio__col"><p class="dj-trio__label"><b>h = 0</b> <span>Dijkstra</span></p><div class="fig__stage fig__stage--plain dj-trio__stage" data-stage="0"></div><p class="dj-tally" data-tally="0"></p></div>
+          <div class="dj-trio__col"><p class="dj-trio__label"><b>h = Manhattan</b> <span>A*</span></p><div class="fig__stage fig__stage--plain dj-trio__stage" data-stage="1"></div><p class="dj-tally" data-tally="1"></p></div>
+          <div class="dj-trio__col"><p class="dj-trio__label"><b>h = 3 × Manhattan</b> <span>overestimate</span></p><div class="fig__stage fig__stage--plain dj-trio__stage" data-stage="3"></div><p class="dj-tally" data-tally="3"></p></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: the same map, a wall with a muddy gap in the middle and an open gap at the bottom. Dijkstra expands the most cells and finds the cheapest route. A* with Manhattan distance finds the same route after far fewer expansions. Three times Manhattan expands the fewest cells but takes the muddy gap and pays 42 instead of 28.</figcaption>
+      </figure>
+      <p>Turn the dial yourself. The weight scales <code>h</code> in <code>f = g + weight × h</code>. At 0 you get Dijkstra, at 1 A*, and far beyond that greedy best-first.</p>
+      <figure class="fig wide" id="fig-hweight">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Turning the heuristic dial</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 280px"></div></div>
+        <div class="dj-dial">
+          <div class="fig__stage fig__stage--plain dj-dial__grid" data-stage="grid"></div>
+          <div class="fig__stage fig__stage--plain dj-dial__chart" data-stage="chart"></div>
+        </div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: as the weight rises from 0 to 1 the number of cells expanded drops steeply while the path cost stays at 100 percent of the optimum. Beyond a weight of about 2 the path cost climbs above 100 percent, the search is faster but no longer finds the cheapest route.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-admissible"></div>
+    </section>
+
+    <!-- ============================================================ WHICH ALGORITHM -->
+    <section id="choose">
+      <h2>Which shortest-path algorithm?</h2>
+      <p>Dijkstra is one tool in a family. Answer the questions in order to see which one fits your graph.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Choose a shortest-path algorithm</h3></div>
+          <button type="button" class="btn btn--ghost btn--sm" data-restart>Start over</button>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 460px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: unweighted graph, use BFS. A weighted DAG, relax in topological order. All pairs of vertices, Floyd-Warshall. Negative weights, Bellman-Ford. A goal with a good estimate, A*. Otherwise Dijkstra.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>With a binary heap, each edge relaxation may push one entry, so at most E entries enter the queue. Each push and each pop costs O(log V), and every vertex is expanded once.</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Queue</th><th scope="col">Time (V vertices, E edges)</th><th scope="col">Best when</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Scan an array for the minimum</th><td class="num"><span class="big-o" data-o="n2">O(V²)</span></td><td>the graph is dense: E close to V²</td></tr>
+            <tr><th scope="row">Binary heap, lazy deletion</th><td class="num"><span class="big-o" data-o="nlogn">O((V + E) log V)</span></td><td>almost always: simple and fast</td></tr>
+            <tr><th scope="row">Fibonacci heap</th><td class="num"><span class="big-o" data-o="nlogn">O(E + V log V)</span></td><td>the best bound in theory, rarely in practice</td></tr>
+            <tr><th scope="row">A* with a good h</th><td class="num"><span class="big-o" data-o="nlogn">O((V + E) log V)</span> worst</td><td>a goal and a cheap, close estimate; expands far fewer vertices</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Measure it. This chart runs Dijkstra with a binary heap on random graphs and counts every comparison the heap makes, against the curve (V + E) · log₂ V.</p>
+      <figure class="fig wide" id="fig-cost-graph">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Measured heap comparisons as the graph grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 240px"></div><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Each point is one Dijkstra run on a connected random graph with V vertices and an average of k edges per vertex, weights 1 to 9. The measured line stays close to the model curve.</figcaption>
+      </figure>
+      <p>A* is about vertices <em>expanded</em>, not big-O. On a grid with a start and a goal, count how many cells each search expands as the grid grows.</p>
+      <figure class="fig wide" id="fig-cost-grid">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Cells expanded as the grid grows (corner to corner)</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Each point is one search on an n × n grid from the top-left to the bottom-right corner, measured. On an open field Dijkstra expands almost every cell (about n²); A* with Manhattan distance expands a thin band (about n). Random walls narrow the gap.</figcaption>
+      </figure>
+      <details class="accordion">
+        <summary>Why do stale entries not ruin the bound?</summary>
+        <div class="accordion__body"><p>Each successful relaxation pushes exactly one entry, and there are at most E of those (one per edge), plus the first entry for the start. So the queue never sees more than E + 1 entries in total, and each costs O(log(E + 1)) = O(log V) to push and to pop, because E ≤ V².</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why does A* ever expand more than Dijkstra?</summary>
+        <div class="accordion__body"><p>With a consistent, admissible h it never expands a cell that Dijkstra would skip, so it does at most as much work (ties aside). A poor guess, such as h = 0, saves nothing. An inconsistent guess can force A* to reopen cells and spend extra time.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The same relax-and-settle loop answers more than one question.</p>
+      <div class="tabs wide" id="patterns">
+        <div class="tabs__list">
+          <button data-tab="early">Stop at the target</button>
+          <button data-tab="bidir">Search from both ends</button>
+          <button data-tab="zeroone">0-1 BFS</button>
+          <button data-tab="multi">Many sources</button>
+        </div>
+        <div data-tab-panel="early"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="early"></div><figcaption>Dijkstra stops the moment T is settled: the rest of the map is never touched.</figcaption></figure><div><p>When you need one destination, stop as soon as it leaves the queue. Its distance is final at that moment, so everything after is wasted work. This is the <em>found</em> step in the lab.</p><pre data-code-block="early"></pre></div></div></div>
+        <div data-tab-panel="bidir"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="bidir"></div><figcaption>Two small circles cover less area than one big circle.</figcaption></figure><div><p>Run one search from the start and one backwards from the goal, and stop when they meet. Each search only has to reach about half the distance, and the area it covers grows with the square of the radius, so the work drops sharply.</p><pre data-code-block="bidir"></pre></div></div></div>
+        <div data-tab-panel="zeroone"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="zeroone"></div><figcaption>Weights 0 go to the front of a deque, weights 1 to the back.</figcaption></figure><div><p>When every weight is 0 or 1, a double-ended queue replaces the heap. Push a weight-0 neighbour on the front and a weight-1 neighbour on the back: the deque stays sorted by distance and the whole search runs in O(V + E).</p><pre data-code-block="zeroone"></pre></div></div></div>
+        <div data-tab-panel="multi"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="multi"></div><figcaption>Two sources: each town shows the distance to the nearest one.</figcaption></figure><div><p>Start with several vertices in the queue, all at distance 0. One run gives every vertex its distance to the <em>nearest</em> source: the closest fire station, the closest charging point.</p><pre data-code-block="multi"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <figure class="fig wide" id="fig-quiz-next">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Dijkstra paused mid-search</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="dj-pq-host dj-pq-host--row" data-pq></div>
+        <figcaption class="fig__foot">Text alternative: Dijkstra from S has settled S and A. The queue holds B at 4, C at 6 and D at 7. The next vertex to settle is the one with the smallest distance.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-next"></div>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-pq-size"></div>
+        <div class="quiz" id="quiz-guarantee"></div>
+        <div class="quiz" id="quiz-negfix"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Dijkstra &amp; A*</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="nlogn">O((V + E) log V)</span><span class="chip chip--sm">weights ≥ 0</span><span class="chip chip--sm">binary heap</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1956<small>a café in Amsterdam</small></div>
+        <p class="history__people">Edsger Dijkstra; Peter Hart, Nils Nilsson, Bertram Raphael<span>Dijkstra, 1956 · A*, 1968</span></p>
+        <div class="history__body">
+          <p>Edsger Dijkstra designed his algorithm in about twenty minutes in 1956, sitting on a café terrace in Amsterdam with his fiancée, without pencil or paper. He wanted a demonstration for the new ARMAC computer that anyone could follow: the shortest route between Dutch cities. He published it in 1959, together with a minimum-spanning-tree method, in a three-page note.</p>
+          <p>A* came in 1968, from Hart, Nilsson and Raphael at SRI, to plan paths for Shakey, a robot that decided its own moves. In 2025 a team showed that Dijkstra’s sorting barrier for directed graphs can be broken, running in time O(m log<sup>2/3</sup> n).</p>
+        </div>
+        <p class="history__source">Sources: E. W. Dijkstra, “A Note on Two Problems in Connexion with Graphs”, <em>Numerische Mathematik</em> 1 (1959); P. Hart, N. Nilsson, B. Raphael, <em>IEEE Trans. SSC</em> 4(2) (1968); R. Duan et al., STOC 2025. See docs/research/HISTORY.md.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Network delay time</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">A network has n nodes and directed links with travel times. A signal starts at node k. Return the time until every node has received it, or −1 if some node never does. Which single number from the distance table is the answer?</p></li>
+        <li><div class="practice__title">Path with minimum effort</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">A hiker crosses a grid of heights from the top-left to the bottom-right. The effort of a route is the largest height difference between two consecutive cells. Find the route with the least effort. What replaces “sum of weights” in the relaxation, and why does Dijkstra still work?</p></li>
+        <li><div class="practice__title">Cheapest flights within K stops</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given flights with prices, find the cheapest way from a source to a destination using at most K stops. Explain why plain Dijkstra on cities can give the wrong answer, and what extra information each queue entry needs.</p></li>
+        <li><div class="practice__title">Two stale entries</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Build a graph with five vertices where lazy Dijkstra pushes exactly two entries that turn out stale. Then say how many entries a vertex can leave behind at most, in terms of its in-degree.</p></li>
+        <li><div class="practice__title">Sliding puzzle with A*</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Solve the 8-puzzle with A*. Compare two guesses: the number of misplaced tiles, and the sum of Manhattan distances of the tiles. Show that both are admissible and that the second expands fewer states.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-13-single-source-shortest-paths.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Single-source shortest paths</span><span class="deeper__text" style="display:block">The long-form study: the relaxation invariants, the path-relaxation lemma, a full proof of Dijkstra, Bellman-Ford, negative cycles and shortest paths on DAGs.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

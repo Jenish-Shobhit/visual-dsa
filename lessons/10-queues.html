@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Queues &amp; deques · Visual DSA</title>
+<meta name="description" content="First in, first out: watch a circular buffer wrap around, tell full from empty, compare a queue with a stack, and answer sliding-window questions with a monotonic deque.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/10-queues.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/stack.js" defer></script>
+<script src="../js/vdsa/views/list.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/10-queues.js" defer></script>
+<script src="../js/lessons/10-queues-views.js" defer></script>
+<script src="../js/lessons/10-queues-figs.js" defer></script>
+<script src="../js/lessons/10-queues-labs.js" defer></script>
+<script src="../js/lessons/10-queues.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="10-queues">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Queues &amp; deques</h1>
+      <p class="hero__lede">The fairest way to wait, and the trick that makes it fast: a circular buffer that reuses its own slots. Then a queue with two open ends that answers sliding-window questions in one pass.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">28 min</li>
+        <li class="chip" data-icon="level">Beginner to intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="06-arrays.html">Needs: arrays</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: people join a line at the right and are served one at a time at a ticket window on the left, always the person who has waited longest."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">Who goes next?</h2>
+      <p>A ticket window serves one person at a time. The fair rule is old and obvious: whoever arrived first is served first. Break that rule and someone can wait forever, which in software is a print job that never prints or a request that never gets an answer.</p>
+      <p>Run the window yourself. Add people at the back, serve the front, and watch how long the longest-waiting person has been there.</p>
+      <figure class="fig wide" id="fig-line">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A ticket line you control</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l10-btnbar">
+          <button type="button" class="btn btn--sm btn--soft" data-join>Someone joins</button>
+          <button type="button" class="btn btn--sm btn--primary" data-serve>Serve next</button>
+          <div data-toggle></div>
+          <button type="button" class="btn btn--sm btn--ghost" data-reset>Start over</button>
+        </div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption l10-msg" data-msg aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: up to eight numbered people stand in a line facing a ticket window. New people join at the back on the right; the window serves the person at the front on the left. Turning on the switch makes the window serve the newest person instead, and the longest wait keeps growing.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>queue</dfn> is a sequence that you may only change at its two ends: <strong>enqueue</strong> adds a value at the <em>rear</em>, <strong>dequeue</strong> removes the value at the <em>front</em>. The order out is the order in: <dfn>first in, first out</dfn>, or <dfn>FIFO</dfn>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2 data-toc="Intuition">Three ways to wait</h2>
+      <p>Restricting where you may touch a sequence sounds like a loss. It is a bargain: if you promise to work only at the ends, every operation can be made constant time. Which ends you allow gives three different tools.</p>
+      <div class="mini-row wide" id="mini-intuition"></div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the line analogy breaks</p>
+        <p>In a real line people leave, cut in, or swap places. A queue in a program allows none of that: you can look at the front, add at the rear, and remove the front. Nothing in the middle is reachable, and that is exactly why it is cheap.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ OPERATIONS -->
+    <section id="operations">
+      <h2 data-toc="Operations">The four operations</h2>
+      <p>A queue needs only four operations. Step through them below. Notice that the front and rear markers do all the work: nothing in the middle ever moves.</p>
+      <figure class="fig wide" id="fig-ops">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">enqueue, peek and dequeue on one queue</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: values 7, 3 and 9 join a queue at the rear; peek reads 7 without removing it; dequeue removes 7, then after 4 joins, removes 3, 9 and 4; a final dequeue on the empty queue is an underflow.</figcaption>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table table--compact">
+          <thead><tr><th scope="col">Operation</th><th scope="col">What it does</th><th scope="col">Cost</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><code>enqueue(x)</code></th><td>Add <em>x</em> at the rear.</td><td><span class="big-o" data-o="1"></span></td></tr>
+            <tr><th scope="row"><code>dequeue()</code></th><td>Remove and return the front value.</td><td><span class="big-o" data-o="1"></span></td></tr>
+            <tr><th scope="row"><code>peek()</code></th><td>Read the front value without removing it.</td><td><span class="big-o" data-o="1"></span></td></tr>
+            <tr><th scope="row"><code>isEmpty()</code>, <code>size()</code></th><td>Is anything waiting, and how many?</td><td><span class="big-o" data-o="1"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Underflow</p>
+        <p>Removing from an empty queue is called <dfn>underflow</dfn>. Every implementation must decide what it does: raise an error, return “nothing”, or wait until a value arrives. Deciding nothing means a crash or, worse, quiet garbage.</p>
+      </aside>
+      <p>The table says “O(1)”, but that promise depends on how you store the queue. The obvious array version breaks it.</p>
+    </section>
+
+    <!-- ============================================================ NAIVE ARRAYS -->
+    <section id="arrays">
+      <h2 data-toc="Array attempts">Two ways to break an array queue</h2>
+      <p>Store the queue in an array of fixed size, with the front at slot 0. Enqueue writes at the rear. Dequeue removes slot 0, and now the front is empty. There are two obvious fixes, and each has a flaw. Run the same operations on both.</p>
+      <figure class="fig wide" id="fig-naive">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Shift everything left, or move the front index?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l10-input"></div></div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: two rows of eight slots run the same operations. The top row slides every remaining value one slot left after each dequeue, so its move counter keeps growing. The bottom row only advances a front index, so slots behind the front are wasted; when its rear reaches the end of the array it refuses new values even though slots are free.</figcaption>
+      </figure>
+      <div class="mini-row wide l10-flaws">
+        <aside class="callout callout--warn"><p class="callout__title">Shift left: slow</p><p>Each dequeue slides every remaining value one slot: about <em>n</em> moves. A queue of a million values does a million moves to hand out one value.</p></aside>
+        <aside class="callout callout--warn"><p class="callout__title">Move front: wasteful</p><p>Nothing slides, but the slots behind the front are never used again. The rear runs out of array while most of it is empty.</p></aside>
+      </div>
+      <p>We want the speed of the second and the thrift of the first. The key is to let the rear <em>wrap around</em> into the space the front has left behind.</p>
+    </section>
+
+    <!-- ============================================================ CIRCULAR BUFFER -->
+    <section id="ring">
+      <h2 data-toc="Circular buffer">Bend the array into a ring</h2>
+      <p>Take the same array, but treat slot <em>C − 1</em> as if it were followed by slot 0. The array becomes a ring of <em>C</em> slots. Keep two facts: <code>head</code>, the slot of the front value, and <code>size</code>, how many values are stored.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">The one formula</p>
+        <p>The value at position <em>k</em> of the queue (0 is the front) lives in slot <code>(head + k) mod C</code>. So the next value goes to <code>(head + size) mod C</code>. The <dfn>mod</dfn> is the wrap-around: when the sum runs off the end of the array it comes back at slot 0.</p>
+      </aside>
+      <p>Drag the sliders. Watch the numbered values glide round the ring as <code>head</code> moves, and find a case where the sum reaches <em>C</em> or more.</p>
+      <figure class="fig wide" id="fig-mod">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Where does each position live?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l10-sliders"><div data-head></div><div data-size></div><div data-k></div></div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-readout aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a ring of eight slots. Three sliders set the head slot, the number of stored values and one position k to highlight. The caption gives the slot number as (head + k) mod 8 and says whether the sum wrapped past the end.</figcaption>
+      </figure>
+      <p>Enqueue writes one slot and adds one to <code>size</code>. Dequeue reads one slot, moves <code>head</code> one step, and subtracts one from <code>size</code>. No value ever moves, so both operations are O(1) with no shifting, and freed slots are reused at once.</p>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab: a circular buffer</h2>
+      <p>Type your own operations (a number enqueues it, <kbd>d</kbd> dequeues), or pick an example run. The ring and the plain array on the right are the <em>same memory</em>: watch the queue wrap from the end of the array to its start. The lab pauses twice to ask what happens next.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace a circular buffer</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l10-input"></div></div>
+        <div class="fig__toolbar l10-opts">
+          <div class="l10-opt"><span class="field-label">Bookkeeping</span><div data-scheme></div></div>
+          <div class="l10-opt"><span class="field-label">Capacity C</span><div data-cap></div></div>
+          <div class="l10-opt" data-policy-wrap><span class="field-label">When full</span><div data-policy></div></div>
+        </div>
+        <div class="fig__toolbar"><div class="input-row__presets" data-presets role="group" aria-label="Example runs"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall l10-labstage"><div class="l10-labstage__ring" data-ring></div><div class="l10-labstage__flat" data-flat></div></div>
+            <div class="l10-flags" data-flags aria-live="polite"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the same buffer drawn as a ring and as a row of slots. head and tail markers move one slot at a time and wrap from the last slot to slot 0. The caption explains every step, the code panel highlights the line that runs, and the flags show what isEmpty and isFull would report.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The logic as a flowchart</h2>
+      <p>The same decisions as a map. It follows the lab: the box that is running lights up, and a token travels along the arrow that was taken.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-flow-title>Enqueue and dequeue: head + size</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <figcaption class="fig__foot" data-flow-alt>Text alternative: enqueue first tests whether the buffer is full. If it is, it rejects (or drops the oldest value); otherwise it writes at the write index and advances it. Dequeue first tests whether the buffer is empty. If it is, it reports underflow; otherwise it reads the value at head and advances head.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FULL VS EMPTY -->
+    <section id="full-empty">
+      <h2 data-toc="Full or empty?">Full or empty? The ambiguity</h2>
+      <p>Choose <em>head + tail only</em> in the lab and press the <em>Full or empty?</em> example. Fill the buffer and both pointers land on the same slot. But an empty buffer has <code>head = tail</code> too. The pointers alone cannot tell the two states apart, so this code calls a full buffer empty and loses everything in it.</p>
+      <aside class="callout callout--key">
+        <p class="callout__title">Three honest fixes</p>
+        <p>Keep information that distinguishes the two states: an explicit <strong>size</strong>, or a <strong>full flag</strong>, or leave <strong>one slot always empty</strong> so that <code>head = tail</code> can only mean empty.</p>
+      </aside>
+      <div class="table-wrap wide">
+        <table class="table table--compact">
+          <thead><tr><th scope="col">Bookkeeping</th><th scope="col">Stores</th><th scope="col">Empty when</th><th scope="col">Full when</th><th scope="col">Values that fit</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">head + size</th><td><code>head</code>, <code>size</code></td><td><code>size = 0</code></td><td><code>size = C</code></td><td>C</td></tr>
+            <tr><th scope="row">spare slot</th><td><code>head</code>, <code>tail</code></td><td><code>head = tail</code></td><td><code>(tail + 1) mod C = head</code></td><td>C − 1</td></tr>
+            <tr><th scope="row">full flag</th><td><code>head</code>, <code>tail</code>, one boolean</td><td><code>head = tail</code> and not full</td><td><code>head = tail</code> and full</td><td>C</td></tr>
+            <tr><th scope="row">head + tail only</th><td><code>head</code>, <code>tail</code></td><td><code>head = tail</code></td><td>never known</td><td>a bug</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>When the buffer is full, something has to give. Systems <strong>reject</strong> the new value (a bounded queue), <strong>block</strong> the producer until there is room, <strong>overwrite</strong> the oldest value (audio, sensor data, logs), or <strong>grow</strong> the array by doubling it. Try <em>Overwrite oldest</em> in the lab.</p>
+    </section>
+
+    <!-- ============================================================ LINKED QUEUE -->
+    <section id="linked">
+      <h2 data-toc="Linked queue">A queue made of nodes</h2>
+      <p>A linked list can play the same role, with no fixed size. Keep a <code>head</code> pointer at the front node and a <code>tail</code> pointer at the rear node. Enqueue links a new node after the tail; dequeue moves the head one node along.</p>
+      <figure class="fig wide" id="fig-linked">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A linked queue with head and tail pointers</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l10-input"></div></div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: nodes in a row, each pointing to the next. A head chip marks the front node and a tail chip marks the rear node. Enqueue creates a node, points the old tail at it and moves the tail; dequeue moves the head forward and unlinks the old node.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The classic bug</p>
+        <p>When the last node is dequeued, <code>head</code> becomes null, and <code>tail</code> must become null <em>too</em>. If you forget, tail keeps pointing at a node that left the queue, and the next enqueue links to a ghost. Choose <em>Drain to empty</em> to see the moment.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ DEQUE -->
+    <section id="deque">
+      <h2>Deque: both ends open</h2>
+      <p>A <dfn>deque</dfn> (say “deck”, short for double-ended queue) allows insert and remove at <em>both</em> ends. Used at one end it is a stack; pushing at the back and popping at the front makes it a queue. A ring buffer supports it directly: the front moves <em>backwards</em> when you push at the front.</p>
+      <figure class="fig wide" id="fig-deque">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A deque on a ring: push and pop at both ends</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l10-btnbar">
+          <button type="button" class="btn btn--sm btn--soft" data-op="pushFront">pushFront</button>
+          <button type="button" class="btn btn--sm btn--soft" data-op="pushBack">pushBack</button>
+          <button type="button" class="btn btn--sm" data-op="popFront">popFront</button>
+          <button type="button" class="btn btn--sm" data-op="popBack">popBack</button>
+          <span class="l10-sep" aria-hidden="true"></span>
+          <button type="button" class="btn btn--sm btn--ghost" data-script="stack">As a stack</button>
+          <button type="button" class="btn btn--sm btn--ghost" data-script="queue">As a queue</button>
+          <button type="button" class="btn btn--sm btn--ghost" data-script="wrap">Wrap the head</button>
+          <button type="button" class="btn btn--sm btn--ghost" data-reset>Reset</button>
+        </div>
+        <div class="fig__stage fig__stage--plain l10-deque" data-stage>
+          <div class="l10-deque__logical"><p class="l10-svq__title">Logical order (front to back)</p><div data-deque></div></div>
+          <div class="l10-deque__ring"><p class="l10-svq__title">Physical memory (a ring of 8 slots)</p><div data-ring></div></div>
+        </div>
+        <p class="fig__caption" data-msg aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a deque of up to eight values drawn twice, in logical order and stored in a ring buffer. Four buttons push and pop at each end. Pushing at the front moves the head slot backwards, wrapping from slot 0 to slot 7.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The negative-modulo trap</p>
+        <p>Moving <code>head</code> backwards needs <code>(head − 1 + C) mod C</code>. In many languages <code>(−1) mod C</code> is <code>−1</code>, not <code>C − 1</code>, and the index falls off the array. The <code>+ C</code> is the whole fix.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ STACK VS QUEUE -->
+    <section id="stack-vs-queue">
+      <h2 data-toc="Stack vs queue">Same arrivals, different service</h2>
+      <p>A stack and a queue accept values the same way. They differ only in <em>which value they hand back</em>. Feed both the same arrivals and the same service calls, then compare who waited how long.</p>
+      <figure class="fig full" id="fig-svq">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The same line, served newest-first and oldest-first</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l10-input"></div></div>
+        <div class="fig__stage fig__stage--plain l10-svq" data-stage>
+          <div class="l10-svq__col">
+            <p class="l10-svq__title">Stack <span>· serves the newest</span></p>
+            <div data-stack></div>
+            <div class="l10-svq__served"><span>served (ticks waited):</span><div data-served-stack></div></div>
+          </div>
+          <div class="l10-svq__col">
+            <p class="l10-svq__title">Queue <span>· serves the oldest</span></p>
+            <div data-queue></div>
+            <div class="l10-svq__served"><span>served (ticks waited):</span><div data-served-queue></div></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: two rows drawn side by side, a stack that removes from its right end and a queue that removes from its left end. Under each is the list of values served so far with the number of ticks each waited. At the end the stack usually still holds the oldest value, which has waited the longest.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Starvation</p>
+        <p>With a steady flow of arrivals, a stack keeps serving the newest value and the oldest sits at the bottom forever. That is <dfn>starvation</dfn>. A queue rules it out: nobody waits behind a value that arrived after them.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ SLIDING WINDOW -->
+    <section id="window">
+      <h2 data-toc="Sliding window">Sliding window maximum</h2>
+      <p>Given a list of numbers, report the largest value in every window of <em>k</em> consecutive numbers. Scanning each window costs about <em>n · k</em>. A deque does it in one pass, by remembering only the values that could still become a maximum.</p>
+      <aside class="callout callout--key">
+        <p class="callout__title">The trick</p>
+        <p>Keep <em>indices</em> in a deque, ordered so their values <strong>decrease</strong> from front to back. The front is always the window maximum. When index <em>i</em> arrives: drop the front if it has left the window, pop from the back every value that is not larger than <code>nums[i]</code> (it can never win again), then push <em>i</em>.</p>
+      </aside>
+      <figure class="fig fig--lab full" id="win-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Sliding window maximum with a monotonic deque</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l10-opts">
+          <div class="l10-input" data-input></div>
+          <div class="l10-opt"><span class="field-label">Window size k</span><div data-k></div></div>
+        </div>
+        <div class="fig__toolbar"><div class="input-row__presets" data-presets role="group" aria-label="Example inputs"></div><p class="l10-note" data-note aria-live="polite"></p></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain l10-winstage">
+              <div class="l10-row"><p class="l10-rowlabel">Values and the window</p><div data-bars></div></div>
+              <div class="l10-row"><p class="l10-rowlabel">Deque of candidate indices <span>(decreasing values, at most k)</span></p><div data-dq></div></div>
+              <div class="l10-row"><p class="l10-rowlabel">Output: maximum of each window</p><div data-out></div></div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: bars show the input values with a highlighted window of k bars. Below them a deque holds the indices of candidate maxima, always in decreasing order of value, and below that an output row fills with the maximum of each window. The counters compare the deque’s comparisons with what checking every window from scratch would cost.</figcaption>
+      </figure>
+      <figure class="fig wide" id="fig-winflow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The sliding window logic as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 460px"></div>
+        <figcaption class="fig__foot">Text alternative: for each new index, drop the front index if it has expired, pop the back while its value is not larger than the new value, push the new index, and once the first window is full output the value at the front.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why it is O(n)</p>
+        <p>Each index is pushed once and popped at most once, from one end or the other. Over the whole scan that is at most <em>n</em> pushes and <em>n</em> pops, so at most about <em>2n</em> comparisons, however large <em>k</em> is.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <h3>A queue built from two stacks</h3>
+      <p>If all you have are stacks, you can still build a queue. Push every enqueue on an <em>inbox</em>. To dequeue, pop from an <em>outbox</em>; when it is empty, pour the whole inbox into it. Pouring reverses the order, which puts the oldest value on top.</p>
+      <figure class="fig wide" id="fig-twostacks">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Two stacks make a queue</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l10-input"></div></div>
+        <div class="fig__stage fig__stage--plain l10-pair" data-stage>
+          <div class="l10-pair__col"><p class="l10-svq__title">inbox <span>· enqueue pushes here</span></p><div data-inbox></div></div>
+          <div class="l10-pair__arrow" aria-hidden="true">pour<br>&rarr;</div>
+          <div class="l10-pair__col"><p class="l10-svq__title">outbox <span>· dequeue pops here</span></p><div data-outbox></div></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: two vertical stacks. Enqueue pushes onto the inbox. When the outbox is empty, dequeue pops every value from the inbox and pushes it on the outbox, which reverses their order; then it pops the top of the outbox, the oldest value.</figcaption>
+      </figure>
+      <p>One dequeue can move many values. But each value crosses over at most once, so any run of <em>n</em> operations does O(n) work in total: <dfn>amortized</dfn> O(1) per operation.</p>
+
+      <h3>A queue feeding a flood fill</h3>
+      <p>Breadth-first search explores a maze or a graph outward, one ring of distance at a time. Its engine is a queue: cells leave in the order they were found, so all the cells at distance <em>d</em> are expanded before any at <em>d + 1</em>. You will meet it in full in Unit 6; here is the queue at work. Click a cell to toggle a wall.</p>
+      <figure class="fig wide" id="fig-bfs">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">BFS flood fill: the queue decides the order</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l10-btnbar"><button type="button" class="btn btn--sm" data-maze>Reset maze</button><button type="button" class="btn btn--sm" data-clear>Clear walls</button><p class="l10-note" data-note></p></div>
+        <div class="fig__stage fig__stage--plain l10-bfs" data-stage>
+          <div data-grid></div>
+          <div class="l10-bfs__queue"><p class="l10-svq__title">The queue <span>· front on the left</span></p><div data-queue></div></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a grid of five rows and seven columns with a start cell S. Each step dequeues one cell and enqueues its unvisited neighbours; the number in a cell is its distance from S, and cells fill in rings of increasing distance.</figcaption>
+      </figure>
+
+      <h3>Where queues and deques hide</h3>
+      <div class="mini-row wide" id="mini-uses"></div>
+    </section>
+
+    <!-- ============================================================ CHOOSE -->
+    <section id="choose">
+      <h2 data-toc="Which one?">Which structure should you reach for?</h2>
+      <p>Answer the questions to walk the diagram. The right choice follows from one question: <em>which value must leave first?</em></p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Stack, queue, deque or heap?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 620px"></div>
+        <p class="fig__caption" data-answer aria-live="polite"></p>
+        <div class="fig__controls l10-btnbar"><button type="button" class="btn btn--sm" data-restart>Start over</button></div>
+        <figcaption class="fig__foot">Text alternative: for a sliding window maximum or minimum use a monotonic deque. Otherwise, if the newest value must leave first use a stack; if the oldest, a queue (a ring buffer if the size is bounded, a growable queue if not); if you need both ends, a deque; if the most urgent, a priority queue.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What they cost</h2>
+      <p>Everything so far claimed O(1). Here is what the code actually touches. Each curve is measured by running real implementations and counting how many stored values one dequeue reads or writes.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Work for one dequeue as the queue grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Hover or focus the chart and use the arrow keys to read exact values.</figcaption>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Queue implementation</th><th scope="col">enqueue</th><th scope="col">dequeue</th><th scope="col">peek</th><th scope="col">Space</th><th scope="col">Catch</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Array, shift left</th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="n"></span> slides n − 1 values</td><td><span class="big-o" data-o="1"></span></td><td>n</td><td>Slow dequeue</td></tr>
+            <tr><th scope="row">Array, move front</th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td><td>grows with total enqueues</td><td>Wasted slots, runs out of room</td></tr>
+            <tr><th scope="row">Circular buffer</th><td><span class="big-o" data-o="1"></span> worst case</td><td><span class="big-o" data-o="1"></span> worst case</td><td><span class="big-o" data-o="1"></span></td><td>C, fixed</td><td>Bounded; must tell full from empty</td></tr>
+            <tr><th scope="row">Growing circular buffer</th><td><span class="big-o" data-o="1"></span> amortized</td><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td><td>n, doubles when full</td><td>An occasional O(n) copy</td></tr>
+            <tr><th scope="row">Linked queue</th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td><td>n plus a pointer per node</td><td>Slower in practice: scattered memory</td></tr>
+            <tr><th scope="row">Two stacks</th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span> amortized (worst <span class="big-o" data-o="n"></span>)</td><td><span class="big-o" data-o="1"></span> amortized</td><td>n</td><td>One dequeue may move everything</td></tr>
+            <tr><th scope="row">Deque (ring)</th><td colspan="2"><span class="big-o" data-o="1"></span> at either end, both operations</td><td><span class="big-o" data-o="1"></span></td><td>C or n</td><td>Nothing reachable in the middle</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>So a queue’s O(1) is real for a circular buffer and a linked list, and false for the naive shifting array. Each stored value is touched a constant number of times on its way through.</p>
+      <p>The window lab has its own cost story: the deque never does more than <em>2n</em> comparisons, while checking every window costs about <em>n · k</em>.</p>
+      <figure class="fig wide" id="fig-cost2">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Sliding window maximum: comparisons as n grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Counts come from running the real algorithms on random and sorted inputs of increasing length. Hover the chart to read values.</figcaption>
+      </figure>
+      <details class="accordion">
+        <summary>Why does dequeue on a shifting array cost n?</summary>
+        <div class="accordion__body"><p>The front value is read, and every one of the other n − 1 values is copied one slot to the left to close the gap: n − 1 writes plus one read. A circular buffer never copies: it moves the <code>head</code> index instead, which is one addition and one remainder, however many values are stored.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why is the two-stack queue O(1) amortized?</summary>
+        <div class="accordion__body"><p>A value is pushed on the inbox once, popped from it once, pushed on the outbox once, and popped from it once: four stack operations in its whole life, whatever the queue length. A single dequeue can pour many values, but each value is poured at most once. So <em>n</em> operations cost at most 4<em>n</em> stack operations, and the average per operation is a constant.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-headtail"></div>
+        <div class="quiz" id="quiz-spare"></div>
+        <div class="quiz" id="quiz-undo"></div>
+        <div class="quiz" id="quiz-window"></div>
+      </div>
+      <figure class="fig" id="fig-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A ring buffer, frozen</h3></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: six slots numbered 0 to 5. Slots 4, 5 and 0 hold the values a, b and c, and head is at slot 4.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Queues &amp; deques</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="1">O(1) at the ends</span><span class="chip chip--sm">FIFO</span><span class="chip chip--sm">Wrap with mod C</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1909<small>the first queueing theory</small></div>
+        <p class="history__people">Agner Erlang<span>“The Theory of Probabilities and Telephone Conversations”</span></p>
+        <div class="history__body">
+          <p>Queueing theory began in a telephone exchange. In 1909 the Danish engineer Agner Erlang worked out how calls that arrive at random pile up waiting for a free line, the first paper on the mathematics of waiting.</p>
+          <p>In the 1960s Kristen Nygaard and Ole-Johan Dahl met the difference between a queue and a stack head-on. Their SIMULA simulations needed customers to leave a queue in the order they joined, which ALGOL’s stack could not do. Dahl moved the data to a heap, and the idea of objects was born. The word “deque” is credited by Knuth to E. J. Schweppe. And on 20 July 1969 the Apollo 11 computer, overloaded during the landing, raised its 1201 and 1202 alarms and shed low-priority jobs: a priority queue at work, on the flight software led by Margaret Hamilton.</p>
+        </div>
+        <p class="history__source">Sources: A. K. Erlang, <em>Nyt Tidsskrift for Matematik</em> B 20 (1909); R. C. Martin, <em>We, Programmers</em> (2025), ch. 7 and cast of characters; D. E. Knuth, <em>The Art of Computer Programming</em>, Vol. 1, §2.2.1.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Design a circular queue</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Implement <code>MyCircularQueue(k)</code> on a fixed array with <code>enQueue</code>, <code>deQueue</code>, <code>Front</code>, <code>Rear</code>, <code>isEmpty</code> and <code>isFull</code>, all in O(1). State which fields you keep, and argue that full and empty can never be confused.</p></li>
+        <li><div class="practice__title">Queue using two stacks</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Implement <code>push</code>, <code>pop</code>, <code>peek</code> and <code>empty</code> of a FIFO queue using only two stacks. Prove that <code>pop</code> is O(1) amortized even though a single call can take O(n).</p></li>
+        <li><div class="practice__title">Number of recent calls</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Write <code>ping(t)</code>, called with strictly increasing times in milliseconds, that returns how many pings happened in the last 3000 ms (including this one). Which end of your queue do old pings leave from?</p></li>
+        <li><div class="practice__title">Design a circular deque</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Add <code>insertFront</code>, <code>insertLast</code>, <code>deleteFront</code> and <code>deleteLast</code> to your circular queue. Handle the wrap when <code>insertFront</code> moves head below 0, and explain why <code>(head − 1) % k</code> is not enough in many languages.</p></li>
+        <li><div class="practice__title">Sliding window maximum</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Given an array and a window size <em>k</em>, return the maximum of every window in O(n). Prove that the deque’s values are strictly decreasing at every step, and change the pop rule to <code>&lt;</code> instead of <code>≤</code>: what changes, and is the answer still correct?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-01-linear-layouts-and-access-disciplines.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Linear layouts and access disciplines</span><span class="deeper__text" style="display:block">Arrays against linked lists, why restricting access buys constant time, the ring buffer derived from its invariant, and the failure modes that survive every “it worked on my example”.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

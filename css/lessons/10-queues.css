@@ -1,0 +1,153 @@
+/* Lesson 10 — Queues & deques. Lesson-specific styles only; colours come from tokens. */
+
+/* ---------------------------------------------------------------- toolbars */
+.l10-btnbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.l10-sep { width: 1px; align-self: stretch; min-height: 24px; background: var(--line-strong); margin: 0 4px; }
+.l10-input { flex: 1 1 460px; min-width: 0; }
+.l10-opts { align-items: flex-end; }
+.l10-opt { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.l10-opt[hidden] { display: none; }
+.l10-sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px 20px; align-items: end; }
+.l10-note { margin: 0; font-size: 13.5px; color: var(--ink-3); align-self: center; }
+.fig__toolbar .seg { flex-wrap: wrap; }
+
+/* ---------------------------------------------------------------- messages, chips */
+.fig__caption.l10-msg { min-height: calc(1.55em * 2 + 26px); }
+.fig__caption[data-state="done"] { background: color-mix(in srgb, var(--st-done) 9%, var(--bg-elev)); }
+.fig__caption[data-state="compare"] { background: color-mix(in srgb, var(--st-compare) 10%, var(--bg-elev)); }
+.fig__caption[data-state="error"] { background: color-mix(in srgb, var(--st-error) 9%, var(--bg-elev)); }
+.l10-chip {
+  display: inline-flex; align-items: center; padding: 3px 11px; border-radius: 999px;
+  font: 600 13px var(--font-mono); background: var(--bg-sunken); color: var(--ink-2);
+  border: 1px solid var(--line); font-variant-numeric: tabular-nums;
+}
+.l10-chip[data-state="compare"] { background: color-mix(in srgb, var(--st-compare) 16%, var(--bg-elev)); border-color: color-mix(in srgb, var(--st-compare) 55%, var(--line)); color: color-mix(in srgb, var(--st-compare) 55%, var(--ink)); }
+.l10-chip[data-state="error"] { background: color-mix(in srgb, var(--st-error) 13%, var(--bg-elev)); border-color: color-mix(in srgb, var(--st-error) 55%, var(--line)); color: color-mix(in srgb, var(--st-error) 65%, var(--ink)); }
+.l10-flags { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 10px 18px 0; min-height: 44px; }
+
+/* ---------------------------------------------------------------- ticket line */
+.l10-tl { width: 100%; height: auto; display: block; max-height: 300px; overflow: visible; }
+.hero__stage .l10-tl { max-height: none; }
+.l10-booth__wall { fill: color-mix(in srgb, var(--bg-sunken) 70%, var(--bg-elev)); stroke: var(--line-strong); stroke-width: 2; }
+.l10-booth__window { fill: color-mix(in srgb, var(--ink) 10%, var(--bg-elev)); stroke: var(--line-strong); stroke-width: 1.5; }
+.l10-booth__shelf { fill: var(--line-strong); }
+.l10-booth__sign { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 2; }
+.l10-booth__small { font: 700 9px var(--font-sans); letter-spacing: .09em; fill: var(--ink-3); }
+.l10-booth__num { font: 800 19px var(--font-sans); fill: var(--ink); font-variant-numeric: tabular-nums; }
+.l10-ground { stroke: var(--line-strong); stroke-width: 2; stroke-dasharray: 2 7; stroke-linecap: round; }
+.l10-hint { font: 600 11.5px var(--font-sans); fill: var(--ink-3); }
+.l10-p { --c: var(--st-active); }
+.l10-p.is-c1 { --c: var(--st-compare); }
+.l10-p.is-c2 { --c: var(--st-done); }
+.l10-p.is-c3 { --c: var(--st-pivot); }
+.l10-p.is-c4 { --c: var(--st-frontier); }
+.l10-p.is-c5 { --c: var(--st-visited); }
+.l10-p__head { fill: color-mix(in srgb, var(--c) 30%, var(--bg-elev)); stroke: var(--c); stroke-width: 2; }
+.l10-p__body { fill: color-mix(in srgb, var(--c) 22%, var(--bg-elev)); stroke: var(--c); stroke-width: 2; }
+.l10-p__num { font: 800 15px var(--font-sans); fill: var(--ink); font-variant-numeric: tabular-nums; }
+.l10-tag rect { fill: var(--tag, var(--st-active)); }
+.l10-tag path { fill: var(--tag, var(--st-active)); }
+.l10-tag text { font: 700 11px var(--font-mono); fill: var(--on-state); }
+.l10-tag--front { --tag: var(--st-active); }
+.l10-tag--back { --tag: var(--st-frontier); }
+.l10-tag--back text { fill: color-mix(in srgb, var(--st-frontier) 15%, black); }
+
+/* ---------------------------------------------------------------- mini figures */
+.l10-mini-title { margin: 0; padding: 9px 12px 0; font-size: 13.5px; font-weight: 750; color: var(--unit-ink); }
+.l10-mini-title span { font-weight: 600; color: var(--ink-3); }
+.l10-mini-stage { min-height: 168px; }
+.l10-flaws { margin-top: 4px; }
+.l10-flaws .callout { margin: 0; }
+
+/* ---------------------------------------------------------------- ring lab layout */
+.l10-labstage { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 8px 18px; align-items: center; place-items: center stretch; padding: 14px; }
+.l10-labstage__ring, .l10-labstage__flat { min-width: 0; }
+@container fig (max-width: 1000px) {
+  .l10-labstage { grid-template-columns: minmax(0, 1fr); }
+  .l10-labstage__ring { max-width: 340px; margin: 0 auto; width: 100%; }
+}
+
+/* ---------------------------------------------------------------- stack vs queue, two stacks, BFS, deque */
+.l10-svq { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-content: start; place-items: stretch; padding: 16px 18px; }
+.l10-svq__col { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); }
+.l10-svq__title { margin: 0; font-size: 14px; font-weight: 750; color: var(--ink); }
+.l10-svq__title span { font-weight: 600; color: var(--ink-3); }
+.l10-svq__served { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); min-height: 34px; }
+.l10-served { display: inline-flex; align-items: baseline; gap: 5px; padding: 2px 9px; border-radius: 999px; background: color-mix(in srgb, var(--st-done) 13%, var(--bg-elev)); border: 1px solid color-mix(in srgb, var(--st-done) 45%, var(--line)); color: var(--ink); font-variant-numeric: tabular-nums; }
+.l10-served b { font-weight: 750; }
+.l10-served small { font-size: 12px; color: var(--ink-3); }
+.l10-served.is-waiting { background: color-mix(in srgb, var(--st-error) 10%, var(--bg-elev)); border-color: color-mix(in srgb, var(--st-error) 45%, var(--line)); border-style: dashed; }
+.l10-served__none { font-weight: 500; font-style: italic; }
+@container fig (max-width: 700px) { .l10-svq { grid-template-columns: minmax(0, 1fr); } }
+
+.l10-pair { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-content: start; place-items: stretch; padding: 16px 18px; }
+.l10-pair__col { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); }
+.l10-pair__arrow { align-self: center; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-3); line-height: 1.3; }
+@container fig (max-width: 520px) {
+  .l10-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding: 10px; }
+  .l10-pair__arrow { display: none; }
+}
+
+.l10-bfs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; place-items: stretch; padding: 14px 18px; }
+.l10-bfs__queue { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); min-width: 0; }
+.l10-bfs [data-grid] { max-width: 460px; width: 100%; margin: 0 auto; }
+
+.l10-deque { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 14px; align-content: start; align-items: start; place-items: stretch; padding: 14px 18px; }
+.l10-deque__logical, .l10-deque__ring { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); }
+@container fig (max-width: 720px) { .l10-deque { grid-template-columns: minmax(0, 1fr); } .l10-deque__ring { max-width: 340px; width: 100%; margin: 0 auto; } }
+
+/* ---------------------------------------------------------------- sliding window lab */
+.l10-winstage { display: flex; flex-direction: column; gap: 10px; align-items: stretch; padding: 14px 18px; place-items: stretch; }
+.l10-row { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 35%, var(--bg-elev)); min-width: 0; }
+.l10-rowlabel { margin: 0; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.l10-rowlabel span { font-weight: 500; color: var(--ink-3); }
+
+/* ---------------------------------------------------------------- click-quiz slots */
+.l10-slots { width: 100%; height: auto; display: block; margin: 0 auto; }
+.l10-slot rect { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 1.75; transition: stroke .15s, fill .15s; }
+.l10-slot.is-free rect { fill: color-mix(in srgb, var(--bg-sunken) 60%, var(--el-fill)); stroke-dasharray: 4 4; stroke: var(--line-strong); }
+.l10-slot__v { font: 700 18px var(--font-sans); fill: var(--el-ink); }
+.l10-slot__i { font: 600 11px var(--font-mono); fill: var(--ink-3); }
+.l10-slot__ptr path { fill: var(--st-active); }
+.l10-slot__ptr text { font: 700 12px var(--font-mono); fill: color-mix(in srgb, var(--st-active) 70%, var(--ink)); }
+.l10-slot { cursor: pointer; }
+.l10-slot:hover rect, .l10-slot:focus-visible rect { stroke: var(--accent); stroke-width: 3; }
+.l10-slot.is-pick-right rect { fill: color-mix(in srgb, var(--st-done) 22%, var(--el-fill)); stroke: var(--st-done); stroke-width: 3; }
+.l10-slot.is-pick-wrong rect { fill: color-mix(in srgb, var(--st-error) 14%, var(--el-fill)); stroke: var(--st-error); stroke-width: 3; }
+
+/* ---------------------------------------------------------------- summary tiles */
+#summary-card .summary__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+#summary-card .summary__viz { height: 96px; }
+.l10-tile { width: 100%; height: 100%; display: block; }
+.l10-tile__box { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 1.6; }
+.l10-tile__box.is-front { fill: color-mix(in srgb, var(--st-active) 22%, var(--el-fill)); stroke: var(--st-active); }
+.l10-tile__box.is-rear { fill: color-mix(in srgb, var(--st-frontier) 22%, var(--el-fill)); stroke: var(--st-frontier); }
+.l10-tile__arrow { fill: none; stroke: var(--st-active); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.l10-tile__arrow.is-in { stroke: var(--st-frontier); }
+.l10-tile__t { font: 600 9.5px var(--font-mono); fill: var(--ink-3); }
+.l10-tile__dot { fill: var(--el-fill); stroke: var(--line-strong); stroke-width: 1.6; stroke-dasharray: 3 3; }
+.l10-tile__dot.is-live { fill: color-mix(in srgb, var(--st-active) 24%, var(--el-fill)); stroke: var(--st-active); stroke-dasharray: none; }
+.l10-tile__bar { fill: color-mix(in srgb, var(--ink) 12%, var(--bg-elev)); stroke: var(--line-strong); stroke-width: 1.2; }
+.l10-tile__bar.is-in { fill: color-mix(in srgb, var(--st-frontier) 30%, var(--bg-elev)); stroke: var(--st-frontier); }
+.l10-tile__bar.is-max { fill: var(--st-found); stroke: var(--st-found); }
+.l10-tile__win { fill: none; stroke: var(--st-active); stroke-width: 2; stroke-dasharray: 5 3; }
+.l10-tile__axis { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
+.l10-tile__line { fill: none; stroke-width: 3; stroke-linecap: round; }
+.l10-tile__line.is-bad { stroke: var(--st-error); }
+.l10-tile__line.is-good { stroke: var(--st-done); }
+
+/* ---------------------------------------------------------------- engine workarounds (see the report)
+   css/viz.css sets `.vz .vz-region` / `.vz .vz-pointer { --vz-c: var(--st-active) }` after the `.is-<state>` rules,
+   so regions and pointers draw blue whatever their state. Restore the state colours we use. */
+.vz .vz-region.is-muted { --vz-c: var(--st-muted); }
+.vz .vz-region.is-error { --vz-c: var(--st-error); }
+.vz .vz-region.is-visited { --vz-c: var(--st-visited); }
+.vz .vz-pointer.is-frontier { --vz-c: var(--st-frontier); }
+.vz .vz-pointer.is-error { --vz-c: var(--st-error); }
+.vz .vz-pointer.is-muted { --vz-c: var(--st-muted); }
+.vz .vz-pointer.is-compare { --vz-c: var(--st-compare); }
+
+@container fig (max-width: 560px) {
+  .l10-input { flex-basis: 100%; }
+  .fig__toolbar .seg { flex-wrap: wrap; }
+}

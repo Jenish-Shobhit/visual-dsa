@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>P, NP &amp; hard problems · Visual DSA</title>
+<meta name="description" content="Easy to check, hard to find. Race a Sudoku verifier against a solver, watch brute force explode on a travelling-salesperson map, morph one graph through three NP-complete problems, and learn what to do when your problem is NP-hard.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/37-p-vs-np.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/graph.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/37-p-vs-np.js" defer></script>
+<script src="../js/lessons/37-p-vs-np.js" defer></script>
+<script src="../js/lessons/37-p-vs-np-tsp.js" defer></script>
+<script src="../js/lessons/37-p-vs-np-logic.js" defer></script>
+<script src="../js/lessons/37-p-vs-np-more.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="37-p-vs-np">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">P, NP &amp; hard problems</h1>
+      <p class="hero__lede">Some answers are easy to check and, as far as anyone knows, brutally hard to find. Learn to spot those problems, prove they are hard, and cope with them anyway.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">22 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="05-big-o.html">Needs: Big-O</a></li>
+        <li><a class="chip" data-icon="prereq" href="25-graphs.html">Needs: graphs</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: a salesperson's tour flashes through different orders of seven cities while a counter of tours checked climbs, ending with the note that twenty cities would need more than 10 to the power 17 tours."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ 1. THE PROBLEM -->
+    <section id="problem">
+      <h2>Easy to check, hard to find</h2>
+      <p>Hand someone a blank Sudoku and they may struggle for an hour. Hand them a <em>filled</em> grid and ask whether it is correct, and they can tell you in a minute: every row, column and box must hold 1 to 9 once each.</p>
+      <p>That gap between <strong>checking</strong> an answer and <strong>finding</strong> one is the subject of this lesson. Race the two below. Both run on the same operation clock, so the difference is not a matter of hardware.</p>
+      <figure class="fig wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Verify a filled grid vs solve from the clues</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg-puzzle></div><div data-seg-cand></div></div>
+        <div class="fig__stage race-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: on the left a checker sweeps 27 units (9 rows, 9 columns, 9 boxes) of a filled Sudoku and finishes in 243 cell reads. On the right a backtracking solver places digits on the same puzzle from its clues; it needs thousands of placements.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">A fair warning about Sudoku</p>
+        <p>A fixed 9 × 9 grid is a finite puzzle, so on paper even brute force is "constant time". The claim about hardness is for the <em>generalised</em> puzzle on n² × n² grids, which is NP-complete (Yato and Seta, 2003). The 9 × 9 race is a model of that behaviour, not the proof.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 2. INTUITION -->
+    <section id="intuition">
+      <h2>Two kinds of effort</h2>
+      <p>Theory works with <dfn>decision problems</dfn>: questions with a yes or no answer. "What is the shortest tour?" becomes "Is there a tour of length at most k?" Nothing is lost, because asking for every k (with a binary search) recovers the optimum.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">P</p>
+        <p><dfn>P</dfn> is the set of decision problems that an algorithm can <em>solve</em> in polynomial time, meaning O(n<sup>k</sup>) for some fixed k. Sorting, shortest paths, matching and primality testing all live here.</p>
+      </aside>
+      <aside class="callout callout--def">
+        <p class="callout__title">NP</p>
+        <p><dfn>NP</dfn> is the set of decision problems where every "yes" instance has a short <dfn>certificate</dfn> that a polynomial-time <em>verifier</em> can check. It does <strong>not</strong> stand for "not polynomial". It stands for <em>nondeterministic</em> polynomial time.</p>
+      </aside>
+      <p>Each certificate below is easy to check. Whether it is easy to <em>find</em> is the open part.</p>
+      <div class="mini-row wide" id="mini-cert"></div>
+      <p>Every problem in P is also in NP: to verify, just solve the problem yourself and ignore the certificate. So <strong>P ⊆ NP</strong>, and that part is proven. Whether the two sets are equal is the P vs NP question, which nobody has answered.</p>
+      <p>Verifying is a skill. Try it: a friend claims five vertices form a clique, meaning every pair is joined by an edge. The claim is the certificate.</p>
+      <figure class="fig" id="fig-cert">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A claimed clique of size 5</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: a graph with vertices A to G. The highlighted vertices A, B, C, D and E are claimed to be a clique. Every pair among them is joined except B and E.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-cert"></div>
+      <p>You needed at most 10 pair checks for 5 vertices, k(k−1)/2 in general. Checking is fast, but you found the flaw only because someone gave you the candidate. Searching for a clique of size 5 among 200 vertices means facing about 2.5 billion candidate sets.</p>
+    </section>
+
+    <!-- ============================================================ 3. COST: EXPONENTIAL BLOW-UP -->
+    <section id="cost">
+      <h2>Why brute force stops working</h2>
+      <p>The obvious way to solve most NP problems is to try every candidate. The number of candidates grows like 2<sup>n</sup> (each item in or out) or n! (every ordering). Compare those with the polynomial n³ on a computer doing a billion steps per second.</p>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">n³ vs 2ⁿ vs n!, with clocks</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg-scale></div><div data-seg-rate></div><div data-slider style="flex: 1 1 260px"></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <div class="growth-clocks" data-clocks aria-live="polite"></div>
+        <figcaption class="fig__foot">Text alternative: a chart of steps against input size n on a logarithmic axis. n cubed reaches only a million at n = 100; 2 to the n crosses the age of the universe near n = 89; n factorial crosses it at n = 27.</figcaption>
+      </figure>
+      <p>Move the slider. At n = 20, n³ is 8,000 steps, 2<sup>n</sup> is about a million, and n! is <b>77 years</b>. Buying a computer a thousand times faster only shifts the wall: the age-of-the-universe line moves up by a factor of 1,000, and n! reaches it at n = 29 instead of 27.</p>
+      <aside class="callout callout--key">
+        <p class="callout__title">Polynomial is the dividing line</p>
+        <p>Polynomial time is closed under composition, does not depend on the machine model, and separates "grows gently" from "hits a wall". It is a modelling choice, not a law: an n<sup>100</sup> algorithm is useless, and 2<sup>n/100</sup> is fine for small n. But as the line between tractable and hopeless it works remarkably well.</p>
+      </aside>
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="sr-only">Problems by class, with the cost of checking and of solving</caption>
+          <thead><tr><th scope="col">Problem (decision form)</th><th scope="col">Checking a certificate</th><th scope="col">Best known way to solve it</th><th scope="col">Class</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Shortest path ≤ k</th><td><span class="big-o" data-o="n">O(V)</span></td><td><span class="big-o" data-o="nlogn">O(E log V)</span></td><td>P</td></tr>
+            <tr><th scope="row">Is this number prime?</th><td>(no certificate needed)</td><td>polynomial in the digits (AKS, 2002)</td><td>P</td></tr>
+            <tr><th scope="row">Is this formula satisfiable? (SAT)</th><td><span class="big-o" data-o="n">O(size)</span></td><td><span class="big-o" data-o="2n">2<sup>n</sup></span> in the worst case</td><td>NP-complete</td></tr>
+            <tr><th scope="row">Tour of length ≤ k? (TSP)</th><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="2n">O(n² 2<sup>n</sup>)</span> (Held–Karp)</td><td>NP-complete</td></tr>
+            <tr><th scope="row">Clique of size k?</th><td><span class="big-o" data-o="n2">O(k²)</span></td><td><span class="big-o" data-o="2n">exponential</span></td><td>NP-complete</td></tr>
+            <tr><th scope="row">Factor N into p × q</th><td><span class="big-o" data-o="n2">multiply and compare</span></td><td>sub-exponential, not polynomial (known)</td><td>NP, neither known P nor NP-complete</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>"Best known" is doing real work in that table. Nobody has <em>proved</em> that the exponential algorithms for the NP-complete rows are necessary. That is exactly what P vs NP asks.</p>
+    </section>
+
+    <!-- ============================================================ 4. TSP LAB -->
+    <section id="tsp">
+      <h2>The travelling salesperson lab</h2>
+      <p>A salesperson must visit every city once and return home by the shortest route. Click the map to place cities, then pick a method. <b>Brute force</b> measures every tour and is exact but stops at 9 cities. The other three are fast and give up the guarantee of the best answer.</p>
+      <figure class="fig fig--lab wide" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Four ways to tour your cities</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar tsp-toolbar">
+          <div data-seg-alg></div>
+          <div class="btn-row" data-presets></div>
+        </div>
+        <p class="tsp-note" data-note role="status"></p>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain tsp-stage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses to ask you to predict a step. Text alternative: the caption under the map describes every step. Click an empty spot to add a city, click a city to remove it.</figcaption>
+      </figure>
+      <p>Every added city multiplies brute force's work. With 9 cities there are 8! = 40,320 tours; 12 cities would already mean 39.9 million, and 20 cities 1.2 × 10<sup>17</sup>. The clever exact method, Held–Karp dynamic programming, still costs O(n² 2<sup>n</sup>): far better than n!, yet still exponential.</p>
+      <p>The heuristics are the opposite trade. Nearest neighbour does about n² work, 2-opt keeps repairing crossings, and the MST method comes with a proof. How close do they land to the true optimum on your map?</p>
+      <figure class="fig wide" id="fig-tspcompare">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Tour lengths on your map</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 480px"></div>
+        <div class="compare-table" data-table></div>
+        <figcaption class="fig__foot">Text alternative: a bar chart comparing the tour length found by each method on the cities currently in the lab, with the exact optimum computed by dynamic programming as the reference.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the MST bound holds</p>
+        <p>Delete one edge from any tour and you have a spanning path, which is a tree, so the minimum spanning tree weighs no more than the optimal tour. Walking the tree around costs 2 × (tree weight). Shortcutting past already-visited cities never lengthens the walk (triangle inequality). So the tour is at most 2 × tree ≤ 2 × optimum. Christofides (1976) improves the factor to 1.5.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 5. REDUCTIONS -->
+    <section id="reductions">
+      <h2>Reductions: one problem wearing another's clothes</h2>
+      <p>A <dfn>reduction</dfn> from A to B is a polynomial-time recipe that turns any instance of A into an instance of B with the same yes or no answer. If you had a fast algorithm for B, you would get one for A: convert, solve, read off the answer. We write A ≤<sub>p</sub> B, and it says <strong>B is at least as hard as A</strong>.</p>
+      <p>Here is one graph used three ways. Step through: an independent set, a vertex cover and a clique are the same object seen from different sides.</p>
+      <figure class="fig wide" id="fig-reduce">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Independent set, vertex cover and clique on one graph</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a six-vertex graph. Step 1 highlights a largest independent set; step 2 the remaining vertices as a vertex cover; steps 3 to 5 flip every edge to show the same set is a clique in the complement graph.</figcaption>
+      </figure>
+      <p>Now try it yourself. Click vertices to build a set S, and flip between the graph and its complement. The three checks below always agree, for every set you can build.</p>
+      <figure class="fig wide" id="fig-reduce-play">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Build a set S: three questions, one answer</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg-view></div><div class="btn-row" data-actions></div></div>
+        <div class="fig__stage" data-stage></div>
+        <div class="reduce-checks" data-checks aria-live="polite"></div>
+        <figcaption class="fig__foot">Text alternative: the same six-vertex graph with clickable vertices. Below it, three yes or no checks report whether S is an independent set of G, whether the vertices outside S form a vertex cover of G, and whether S is a clique in the complement graph.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The direction trips everyone up</p>
+        <p>To show a <em>new</em> problem H is hard, reduce a <em>known hard</em> problem to H: known ≤<sub>p</sub> H. Then a fast algorithm for H would crack the known problem. Reducing H to a known hard problem proves nothing about H: every easy problem reduces to something hard.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 6. SAT AND THE WEB -->
+    <section id="sat">
+      <h2>SAT, and the wall of NP-complete problems</h2>
+      <p>A <dfn>3-SAT</dfn> formula is an AND of clauses, each an OR of three literals (a variable or its negation). Is there a true/false assignment making every clause true? Toggle the variables. A clause lights up green when at least one of its literals is true.</p>
+      <figure class="fig wide" id="fig-sat">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">3-SAT playground</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg-formula></div><div data-seg-mode></div></div>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__stage sat-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: variable switches x1 to x4, a row of clause cards that turn green when satisfied, and a counter of assignments tried out of 2 to the n. Brute-force mode enumerates the assignments in counting order.</figcaption>
+      </figure>
+      <p>Two things to notice. Checking one assignment is a single pass over the clauses, and finding one may mean trying most of the 2<sup>n</sup>. And the unsatisfiable preset shows an asymmetry: a "yes" comes with a short certificate, while a "no" seems to need the entire search.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">NP-hard and NP-complete</p>
+        <p>A problem is <dfn>NP-hard</dfn> if every problem in NP reduces to it. It is <dfn>NP-complete</dfn> if it is NP-hard <em>and</em> in NP. NP-hard problems need not be in NP at all: the halting problem is NP-hard and not even decidable.</p>
+      </aside>
+      <p>Why would any problem be NP-hard? Because of the <b>Cook–Levin theorem</b> (1971 and 1973): SAT is NP-complete. The idea is that a computation is <em>locally checkable</em>. Write the machine's tape at each moment as a row of a table; the run is valid exactly when every small window of the table obeys the machine's rule, and each window is one small clause.</p>
+      <figure class="fig wide" id="fig-cook">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A computation is a table of legal windows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg-corrupt></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: a five-row table of a tiny machine that flips bits while moving right. A three-cell window slides across each row and checks the cell it determines below it. If one cell is corrupted, the window that decides it is marked illegal.</figcaption>
+      </figure>
+      <p>Once one problem is known to be NP-complete, others follow by reduction, and the web grows. Karp showed in 1972 that 21 classic problems are all NP-complete. Click a problem below: it lights everything that becomes easy if <em>that</em> problem had a fast algorithm.</p>
+      <figure class="fig wide" id="fig-web">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">If this problem were easy, what falls?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 620px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a directed graph of reductions. An arrow from A to B means A reduces to B. Any problem in NP reduces to SAT, SAT to 3-SAT, 3-SAT to independent set, subset sum and 3-colouring, independent set to clique and vertex cover, vertex cover to Hamiltonian cycle, and Hamiltonian cycle to TSP.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">One wall, many doors</p>
+        <p>Every NP-complete problem reduces to every other, through SAT. So a fast algorithm for <em>any one</em> of them would give a fast algorithm for <em>all</em> of NP, and P = NP. A proof that any one of them needs exponential time would settle P ≠ NP. After more than fifty years of trying, nobody has done either.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 7. THE MAP OF CLASSES -->
+    <section id="classes">
+      <h2>The map of complexity classes</h2>
+      <p>Put it all together in one picture. Hover or focus a problem to see where it sits and what is <em>proven</em> versus <em>believed</em>. Then flip the switch to see what the map would look like if P = NP.</p>
+      <figure class="fig wide" id="fig-venn">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">P, NP, NP-complete and NP-hard</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll venn-stage" data-stage style="--stage-min: 720px"></div>
+        <div class="venn-info" data-info aria-live="polite"></div>
+        <figcaption class="fig__foot">Text alternative: two overlapping regions, NP and NP-hard. P sits inside NP. The overlap of NP and NP-hard is NP-complete. Sorting and shortest path are in P; SAT, clique and TSP are NP-complete; factoring and graph isomorphism are in NP but unknown to be in P or NP-complete; the halting problem is NP-hard but outside NP. With the switch on, P grows to fill NP.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">What is proven and what is believed</p>
+        <p><b>Proven:</b> P ⊆ NP; SAT is NP-complete; the reductions in the web; the halting problem is undecidable. <b>Believed, not proven:</b> P ≠ NP (most researchers expect it, as no polynomial algorithm has surfaced for thousands of NP-complete problems); that factoring and graph isomorphism are not NP-complete. <b>Open:</b> P vs NP itself, one of the seven Clay Millennium Prize problems.</p>
+      </aside>
+      <p>"If P = NP" would not make life magically easy: an algorithm running in n<sup>1000</sup> steps would still be useless. But it would make searching for proofs, schedules and designs as cheap as checking them, and it would break most of today's cryptography.</p>
+    </section>
+
+    <!-- ============================================================ 8. COPING -->
+    <section id="coping">
+      <h2>My problem seems NP-hard. Now what?</h2>
+      <p>NP-hardness is not a verdict of "give up". It tells you to stop hunting for a fast exact algorithm that works on <em>every</em> input, and to change the deal. The cleanest change is an <b>approximation algorithm</b>: fast, with a proof that the answer is close to optimal.</p>
+      <p>Vertex cover has a beautiful one. While some edge is uncovered, take <em>both</em> its endpoints. The chosen edges never share a vertex (a <dfn>matching</dfn>), and any cover needs at least one endpoint of each, so the optimum is at least the matching size while ours is exactly twice that.</p>
+      <figure class="fig fig--lab wide" id="fig-vc">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Vertex cover: the matching 2-approximation</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a graph where the algorithm repeatedly picks an uncovered edge and adds both endpoints to the cover, then compares the result with the smallest possible cover found by trying all subsets. The star preset shows the worst case, where the approximation is exactly twice the optimum.</figcaption>
+      </figure>
+      <p>Approximation is one tool among several. Choosing among them is a decision you can walk through. Click the answers.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A decision guide for hard problems</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="btn-row" data-actions></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 640px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a decision tree. First check whether a known polynomial algorithm applies. Then ask whether the input is small, has special structure, has a small parameter, or needs a guarantee, ending in exhaustive search, a structure-specific algorithm, a fixed-parameter algorithm, an approximation algorithm, or a heuristic or solver.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 9. VARIATIONS -->
+    <section id="variations">
+      <h2>Patterns and traps</h2>
+      <p>Four ideas that come up whenever hardness does.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="param">Small parameter (FPT)</button>
+          <button data-tab="special">Special cases</button>
+          <button data-tab="pseudo">The pseudo-polynomial trap</button>
+          <button data-tab="undec">Undecidable is different</button>
+        </div>
+        <div data-tab-panel="param"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="param"></div><figcaption>Search-tree size for "vertex cover of size ≤ k".</figcaption></figure><div><p>Vertex cover of size at most k can be decided by branching: pick an uncovered edge, then either its left or its right endpoint must be in the cover. That is a binary tree of depth k, so at most 2<sup>k+1</sup> − 1 nodes, <em>whatever the size of the graph</em>.</p><p>The exponential part depends on k, not on n. Problems like this are <dfn>fixed-parameter tractable</dfn>: fine when the parameter is small.</p></div></div></div>
+        <div data-tab-panel="special"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="special"></div><figcaption>The same question, easier on special inputs.</figcaption></figure><div><p>NP-hardness is a <em>worst-case, all-inputs</em> statement. Restrict the inputs and the problem can fall into P. 2-SAT (clauses of two literals) is in P. Independent set and vertex cover are easy on trees and bipartite graphs. TSP with distances on a tree metric or a line is easy.</p><p>Ask what your real inputs look like before you fight the general problem.</p></div></div></div>
+        <div data-tab-panel="pseudo"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="pseudo"></div><figcaption>Input size counts bits, not the value.</figcaption></figure><div><p>Subset sum with target T has a dynamic programme costing O(n · T). That looks polynomial, but T is written in log T bits, so the cost is <em>exponential in the input size</em>. It is <dfn>pseudo-polynomial</dfn>, fast only when the numbers are small, which is why subset sum is still NP-complete.</p><p>The same goes for the "textbook" knapsack DP. Always ask: polynomial in what?</p></div></div></div>
+        <div data-tab-panel="undec"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="undec"></div><figcaption>Two different kinds of "cannot".</figcaption></figure><div><p>NP-complete means "believed to need exponential time, but a finite search always works". <dfn>Undecidable</dfn> means <em>no algorithm at all</em> can answer every instance, however much time it gets. Turing proved in 1936 that the halting problem ("does this program stop?") is undecidable.</p><p>The halting problem is NP-hard, but it is not in NP. Do not mix up "slow" with "impossible".</p></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 10. CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-direction"></div>
+        <div class="quiz" id="quiz-approx"></div>
+        <div class="quiz" id="quiz-pnp"></div>
+        <div class="quiz" id="quiz-hard"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 11. SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">P, NP &amp; hard problems</p></div>
+          <div class="cluster"><span class="chip chip--sm">P ⊆ NP: proven</span><span class="chip chip--sm">P = NP: open</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 12. HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1971<small>Cook's theorem</small></div>
+        <p class="history__people">Stephen Cook, Leonid Levin, Richard Karp<span>STOC 1971 · Moscow 1973 · 1972</span></p>
+        <div class="history__body">
+          <p>In March 1956 Kurt Gödel wrote to a dying John von Neumann asking whether proofs of length n could be found in time growing only like n or n². Von Neumann never answered. Stephen Cook stated the question precisely in 1971 and proved that SAT is NP-complete; Leonid Levin reached the same idea independently in Moscow. In 1972 Richard Karp showed that 21 familiar problems are all equally hard. The Clay Institute put a million-dollar price on the question in 2000, and it is still unclaimed.</p>
+        </div>
+        <p class="history__source">Sources: S. A. Cook, "The Complexity of Theorem-Proving Procedures", STOC 1971; R. M. Karp, "Reducibility Among Combinatorial Problems", 1972; L. A. Levin, "Universal Sequential Search Problems", <em>Problemy Peredachi Informatsii</em> 9(3), 1973; Gödel's letter to von Neumann, 20 March 1956.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 13. PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Write a verifier</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given a graph, an integer k and a list of vertices, write a polynomial-time check that the list is a vertex cover of size at most k. What is its running time in terms of V and E?</p></li>
+        <li><div class="practice__title">Decision to optimisation</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Suppose you have a black box that answers "is there a tour of length at most k?" in polynomial time. Show how to find the length of the shortest tour with polynomially many calls. Then show how to recover the tour itself.</p></li>
+        <li><div class="practice__title">Which way does it reduce?</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given that independent set is NP-complete, prove that clique is NP-hard. State the reduction, the direction, and why the yes and no answers are preserved.</p></li>
+        <li><div class="practice__title">Beat the 2-approximation on paper</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Draw a graph where the matching-based vertex cover is exactly twice the optimum, and another where it is optimal. Can you find a graph on 6 vertices where the ratio is strictly between 1 and 2?</p></li>
+        <li><div class="practice__title">Cheat with the triangle inequality</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">The MST tour argument used the triangle inequality. Build a small 4-city instance whose distances violate it, and show the shortcutting step can make the tour longer than twice the tree.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-20-p-np-reductions-and-np-completeness.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">P, NP, reductions &amp; NP-completeness</span><span class="deeper__text" style="display:block">Certificates, polynomial reductions, the Cook–Levin proof idea and the full 3-SAT to independent set gadget, with proofs.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,253 @@
+/* Lesson 37 · P, NP & hard problems — lesson-specific figure styles.
+   Colours come only from tokens (css/tokens.css), so light and dark themes both work. */
+
+/* viz.css sets `svg.vz.vz { min-width: 0 }`, which outranks `.fig__stage--scroll > svg { min-width }`; restore scrolling. */
+.fig__stage--scroll > svg.vz.vz { min-width: var(--stage-min, 620px); }
+.fig .seg { flex-wrap: wrap; }
+.fig__toolbar { row-gap: 10px; }
+
+/* Stages that hold HTML layouts: block flow, full width. */
+.race-stage, .sat-stage { display: block; place-items: normal; justify-items: normal; }
+
+/* ---------------------------------------------------------------- Sudoku race */
+.race-stage { padding: clamp(10px, 2vw, 18px); }
+.race { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(12px, 3vw, 28px); }
+@container fig (max-width: 620px) { .race { grid-template-columns: minmax(0, 1fr); } }
+.race-panel { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.race-panel__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.race-panel__title { margin: 0; font-size: 17px; font-weight: 750; color: var(--ink); letter-spacing: -.01em; }
+.race-panel__sub { margin: 2px 0 0; font-size: 13px; color: var(--ink-2); }
+.race-status {
+  font: 700 12px var(--font-sans); letter-spacing: .04em; text-transform: uppercase; padding: 4px 10px; border-radius: 99px;
+  background: var(--bg-sunken); color: var(--ink-2); border: 1px solid var(--line); white-space: nowrap; transition: background var(--t, 300ms), color var(--t, 300ms);
+}
+.race-status[data-state="done"] { background: color-mix(in srgb, var(--st-done) 18%, var(--bg-elev)); color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); border-color: var(--st-done); }
+.race-status[data-state="error"] { background: color-mix(in srgb, var(--st-error) 16%, var(--bg-elev)); color: color-mix(in srgb, var(--st-error) 70%, var(--ink)); border-color: var(--st-error); }
+.race-status[data-state="compare"] { background: color-mix(in srgb, var(--st-compare) 18%, var(--bg-elev)); color: color-mix(in srgb, var(--st-compare) 60%, var(--ink)); border-color: var(--st-compare); }
+.race-status[data-state="active"] { background: color-mix(in srgb, var(--st-active) 16%, var(--bg-elev)); color: color-mix(in srgb, var(--st-active) 70%, var(--ink)); border-color: var(--st-active); }
+.race-grid { display: block; width: 100%; max-width: 340px; height: auto; margin: 0 auto; border-radius: 6px; }
+.rc rect { fill: var(--el-fill); transition: fill var(--t, 300ms) var(--ease-out); }
+.rc .rc-t { font: 600 18px var(--font-sans); fill: var(--el-ink); text-anchor: middle; dominant-baseline: central; transition: fill var(--t, 300ms); }
+.rc.is-given .rc-t { font-weight: 850; fill: var(--ink); }
+.rc.is-given rect { fill: color-mix(in srgb, var(--ink) 6%, var(--el-fill)); }
+.rc-line { stroke: var(--line-strong); stroke-width: 1; }
+.rc-line.is-box { stroke: var(--ink-2); stroke-width: 2.4; }
+#race-verify .rc.is-p1 rect { fill: color-mix(in srgb, var(--st-done) 14%, var(--el-fill)); }
+#race-verify .rc.is-p2 rect { fill: color-mix(in srgb, var(--st-done) 26%, var(--el-fill)); }
+#race-verify .rc.is-p3 rect, #race-verify .rc.is-ok rect { fill: color-mix(in srgb, var(--st-done) 38%, var(--el-fill)); }
+#race-verify .rc.is-unit rect { fill: color-mix(in srgb, var(--st-compare) 42%, var(--el-fill)); }
+#race-verify .rc.is-clash rect { fill: var(--st-error); }
+#race-verify .rc.is-clash .rc-t { fill: var(--on-state); }
+#race-solve .rc.is-placed .rc-t { fill: var(--st-active); font-weight: 700; }
+#race-solve .rc.is-cur rect { fill: color-mix(in srgb, var(--st-active) 30%, var(--el-fill)); }
+#race-solve .rc.is-ok rect { fill: color-mix(in srgb, var(--st-done) 30%, var(--el-fill)); }
+#race-solve .rc.is-ok.is-placed .rc-t { fill: var(--ink); }
+.race-meter { display: grid; gap: 6px; }
+.race-meter__bar { height: 10px; border-radius: 99px; background: var(--bg-sunken); border: 1px solid var(--line); overflow: hidden; }
+.race-meter__bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--st-done); transition: width var(--t, 300ms) var(--ease-out); }
+#race-solve .race-meter__bar i { background: var(--st-active); }
+.race-meter__txt { font-size: 13.5px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.race-meter__txt b { font: 780 20px var(--font-mono); color: var(--ink); letter-spacing: -.02em; }
+.race-meter__txt span { font-size: 12.5px; color: var(--ink-3); }
+
+/* ---------------------------------------------------------------- growth clocks */
+.growth-clocks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 12px clamp(10px, 2vw, 16px) 14px; }
+@container fig (max-width: 560px) { .growth-clocks { grid-template-columns: minmax(0, 1fr); } }
+.clock {
+  --c: var(--st-active);
+  display: grid; grid-template-columns: auto 1fr; grid-template-areas: "name time" "steps steps"; gap: 2px 12px; align-items: baseline;
+  padding: 10px 14px; border: 1px solid var(--line); border-left: 5px solid var(--c); border-radius: var(--r-md); background: var(--bg-elev);
+}
+.clock[data-state="path"] { --c: var(--st-path); }
+.clock[data-state="pivot"] { --c: var(--st-pivot); }
+.clock__name { grid-area: name; font: 800 20px var(--font-sans); color: color-mix(in srgb, var(--c) 70%, var(--ink)); }
+.clock__time { grid-area: time; font: 780 20px var(--font-sans); color: var(--ink); text-align: right; letter-spacing: -.01em; }
+.clock__steps { grid-area: steps; font: 600 13px var(--font-mono); color: var(--ink-3); }
+.clock.is-wall .clock__time { color: color-mix(in srgb, var(--st-error) 75%, var(--ink)); }
+
+/* ---------------------------------------------------------------- small static drawings (minis, summary tiles) */
+.l37-mini { display: block; width: 100%; height: auto; max-height: 170px; }
+.lm-card { fill: var(--el-fill); stroke: var(--line-strong); stroke-width: 1.6; }
+.lm-card.is-ok { fill: color-mix(in srgb, var(--st-done) 18%, var(--el-fill)); stroke: var(--st-done); }
+.lm-card.is-key { fill: var(--st-key); stroke: var(--st-key); }
+.lm-t { font: 700 15px var(--font-mono); fill: var(--el-ink); }
+.lm-t.is-key { fill: var(--on-state); }
+.lm-t.is-big { font-size: 20px; }
+.lm-t.is-onbig { fill: var(--ink); font-size: 13px; }
+.lm-k { font: 600 11.5px var(--font-sans); fill: var(--ink-2); }
+.lm-dot { fill: var(--el-fill); stroke: var(--line-strong); stroke-width: 1.5; }
+.lm-dot.is-ok { fill: var(--st-done); stroke: var(--st-done); }
+.lm-tick { font: 800 14px var(--font-sans); fill: var(--on-state); }
+.lm-edge { stroke: var(--el-edge); stroke-width: 2; }
+.lm-edge.is-on { stroke: var(--st-key); stroke-width: 3; }
+.lm-node { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 2; }
+.lm-node.is-on { fill: color-mix(in srgb, var(--st-key) 25%, var(--el-fill)); stroke: var(--st-key); }
+.lm-bar { fill: var(--st-frontier); }
+.lm-bar.is-app { fill: var(--st-pivot); }
+.lm-bit { fill: var(--st-key); }
+.lm-big { fill: color-mix(in srgb, var(--st-swap) 18%, var(--bg-elev)); stroke: var(--st-swap); stroke-width: 1.5; }
+.lm-arrow { fill: none; stroke: var(--ink-2); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.lm-line { stroke: var(--st-done); stroke-width: 4; stroke-linecap: round; }
+.lm-line.is-bad { stroke: var(--st-swap); stroke-dasharray: 2 8; }
+.lm-ell.np { fill: color-mix(in srgb, var(--st-visited) 18%, transparent); stroke: var(--st-visited); stroke-width: 2; }
+.lm-ell.p { fill: color-mix(in srgb, var(--st-active) 25%, transparent); stroke: var(--st-active); stroke-width: 2; }
+.summary__viz .l37-mini { max-height: 96px; }
+
+/* ---------------------------------------------------------------- the map view (TSP) */
+.tsp-stage { display: block; place-items: normal; justify-items: normal; padding: 0; overflow-x: auto; }
+.hero__stage svg.tsp { min-width: 0; }
+.tsp { display: block; width: 100%; height: auto; touch-action: manipulation; }
+.tsp.is-editable { cursor: crosshair; }
+.tsp-e { fill: none; stroke-linecap: round; }
+.tsp-layer--ghost .tsp-e { stroke: var(--st-done); stroke-width: 11; opacity: .26; }
+.tsp-layer--tree .tsp-e { stroke: var(--st-frontier); stroke-width: 6; }
+.tsp-layer--path .tsp-e { stroke: var(--st-active); stroke-width: 4.5; }
+.tsp[data-kind="try"] .tsp-layer--path .tsp-e { stroke: var(--st-compare); stroke-width: 4; }
+.tsp[data-kind="best"] .tsp-layer--path .tsp-e, .tsp[data-kind="final"] .tsp-layer--path .tsp-e { stroke: var(--st-done); stroke-width: 5; }
+.tsp[data-kind="done"] .tsp-layer--path .tsp-e { stroke: var(--st-done); stroke-width: 5; }
+.tsp-eg.is-flash .tsp-e { stroke: var(--st-done) !important; stroke-width: 6 !important; }
+.tsp-layer--remove .tsp-e { stroke: var(--st-swap); stroke-width: 6; stroke-dasharray: 12 9; }
+.tsp-layer--add .tsp-e { stroke: var(--st-done); stroke-width: 6; stroke-dasharray: 12 9; }
+.tsp-layer--scan .tsp-e { stroke: var(--st-compare); stroke-width: 3; stroke-dasharray: 7 7; }
+.tsp-layer--scan .is-pick .tsp-e { stroke: var(--st-found); stroke-width: 6; stroke-dasharray: none; }
+.tsp-elabel { font: 750 21px var(--font-mono); fill: var(--ink); paint-order: stroke; stroke: var(--bg-elev); stroke-width: 6px; stroke-linejoin: round; }
+.tsp-city { cursor: default; outline: none; }
+.tsp.is-editable .tsp-city { cursor: pointer; }
+.tsp-city .tsp-dot { r: 15px; fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 3; transition: fill var(--t, 300ms), stroke var(--t, 300ms); }
+.tsp-name { font: 780 20px var(--font-sans); fill: var(--el-ink); dominant-baseline: central; transition: fill var(--t, 300ms); pointer-events: none; }
+.tsp-start { r: 19px; fill: none; stroke: var(--st-key); stroke-width: 3.5; opacity: 0; }
+.tsp-city.is-home .tsp-start { opacity: 1; }
+.tsp-city.is-vis .tsp-dot { fill: color-mix(in srgb, var(--st-visited) 24%, var(--el-fill)); stroke: var(--st-visited); }
+.tsp-city.is-cur .tsp-dot { fill: var(--st-active); stroke: var(--st-active); }
+.tsp-city.is-cur .tsp-name, .tsp-city.is-pick .tsp-name { fill: var(--on-state); }
+.tsp-city.is-cand .tsp-dot { stroke: var(--st-compare); stroke-width: 5; }
+.tsp-city.is-pick .tsp-dot { fill: var(--st-found); stroke: var(--st-found); }
+.tsp-city.is-skip .tsp-dot { stroke: var(--st-swap); stroke-dasharray: 5 4; stroke-width: 4; }
+.tsp-city:focus-visible .tsp-dot { stroke: var(--accent); stroke-width: 6; }
+.tsp-hud-row { font: 600 25px var(--font-sans); }
+.tsp-hud-k { fill: var(--ink-3); }
+.tsp-hud-v { fill: var(--ink); font: 780 27px var(--font-mono); letter-spacing: -.02em; }
+.tsp--hero .tsp-hud-row { font-size: 30px; }
+.tsp--hero .tsp-hud-v { font-size: 34px; }
+.tsp-toolbar { align-items: flex-start; }
+.tsp-toolbar .btn-row { flex: 1 1 320px; }
+.tsp-note { min-height: 0; margin: 0; padding: 0 clamp(10px, 2vw, 16px); font-size: 14px; color: color-mix(in srgb, var(--st-compare) 40%, var(--ink)); }
+.tsp-note:not(:empty) { padding-top: 6px; padding-bottom: 8px; }
+.compare-table { padding: 4px clamp(10px, 2vw, 16px) 14px; }
+.compare-note, .compare-empty { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- reduction playground */
+.reduce-checks { display: grid; gap: 8px; padding: 12px clamp(10px, 2vw, 16px) 14px; }
+.rchk-head { font: 650 14px var(--font-mono); color: var(--ink-2); }
+.rchk { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--bg-elev); font-size: 15px; }
+.rchk__mark { font: 800 18px var(--font-sans); width: 22px; text-align: center; line-height: 1.3; }
+.rchk.is-yes { border-color: var(--st-done); background: color-mix(in srgb, var(--st-done) 10%, var(--bg-elev)); }
+.rchk.is-yes .rchk__mark { color: var(--st-done); }
+.rchk.is-no { border-color: color-mix(in srgb, var(--st-error) 55%, var(--line)); background: color-mix(in srgb, var(--st-error) 7%, var(--bg-elev)); }
+.rchk.is-no .rchk__mark { color: var(--st-error); }
+.rchk__why { display: block; font-size: 13.5px; color: var(--ink-2); margin-top: 2px; }
+.rchk-sum { margin: 2px 0 0; font-size: 14px; color: var(--ink-2); font-weight: 600; }
+
+/* ---------------------------------------------------------------- 3-SAT playground */
+.sat-stage { padding: clamp(12px, 2vw, 18px); }
+.sat-vars { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.sat-var {
+  font: 750 15px var(--font-mono); padding: 9px 14px; min-width: 96px; border-radius: 99px; border: 2px solid var(--line-strong);
+  background: var(--bg-elev); color: var(--ink); cursor: pointer; transition: background .18s, border-color .18s, color .18s, transform .12s;
+}
+.sat-var:hover:not(:disabled) { border-color: var(--st-key); }
+.sat-var:active:not(:disabled) { transform: scale(.96); }
+.sat-var.is-on { background: var(--st-key); border-color: var(--st-key); color: var(--on-state); }
+.sat-var:disabled { cursor: default; }
+.sat-var:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.sat-clauses { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 216px), 1fr)); gap: 10px; }
+.sat-clause {
+  display: flex; align-items: center; gap: 4px 6px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--line-strong); background: var(--bg-elev);
+  transition: border-color .2s, background .2s;
+}
+.sat-clause.is-sat { border-color: var(--st-done); background: color-mix(in srgb, var(--st-done) 13%, var(--bg-elev)); }
+.sat-clause.is-unsat { border-color: color-mix(in srgb, var(--st-error) 50%, var(--line-strong)); }
+.sat-lit { font: 680 14px var(--font-mono); padding: 2px 7px; border-radius: 6px; color: var(--ink-3); }
+.sat-lit.is-true { background: var(--st-key); color: var(--on-state); }
+.sat-or { color: var(--ink-3); font-size: 13px; }
+.sat-mark { margin-left: auto; font: 800 16px var(--font-sans); color: var(--ink-3); }
+.sat-clause.is-sat .sat-mark { color: var(--st-done); }
+.sat-clause.is-unsat .sat-mark { color: var(--st-error); }
+.sat-verdict { margin-top: 14px; padding: 10px 14px; border-radius: var(--r-md); background: var(--bg-sunken); color: var(--ink-2); font-size: 15px; border: 1px solid var(--line); }
+.sat-verdict.is-sat { background: color-mix(in srgb, var(--st-done) 14%, var(--bg-elev)); border-color: var(--st-done); color: var(--ink); }
+
+/* ---------------------------------------------------------------- Cook-Levin table */
+.tab { display: block; width: 100%; max-width: 640px; height: auto; margin: 0 auto; }
+.tab-cell rect { fill: var(--el-fill); stroke: var(--line-strong); stroke-width: 1.5; }
+.tab-cell text { font: 720 22px var(--font-mono); fill: var(--el-ink); text-anchor: middle; }
+.tab-cell.is-head rect { fill: var(--st-key); stroke: var(--st-key); }
+.tab-cell.is-head text { fill: var(--on-state); }
+.tab-cell.is-edited rect { stroke: var(--st-swap); stroke-dasharray: 6 4; stroke-width: 2.5; }
+.tab-headlab { font: 700 10px var(--font-sans) !important; fill: var(--on-state) !important; letter-spacing: .06em; text-transform: uppercase; }
+.tab-editlab { font: 700 9.5px var(--font-sans) !important; fill: var(--st-swap) !important; text-transform: uppercase; letter-spacing: .05em; }
+.tab-rowlab { font: 600 13px var(--font-mono); fill: var(--ink-3); }
+.tab-win { fill: color-mix(in srgb, var(--st-compare) 14%, transparent); stroke: var(--st-compare); stroke-width: 3; }
+.tab-win.is-legal { fill: color-mix(in srgb, var(--st-done) 12%, transparent); stroke: var(--st-done); }
+.tab-win.is-illegal { fill: color-mix(in srgb, var(--st-error) 14%, transparent); stroke: var(--st-error); }
+.tab-tgt { fill: none; stroke-width: 3.5; }
+.tab-tgt.is-legal { stroke: var(--st-done); }
+.tab-tgt.is-illegal { stroke: var(--st-error); }
+.tab-arrow { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke: var(--ink-2); }
+.tab-arrow.is-legal { stroke: var(--st-done); }
+.tab-arrow.is-illegal { stroke: var(--st-error); }
+.tab-hud { font: 600 15px var(--font-sans); }
+.tab-hud-k { fill: var(--ink-3); }
+.tab-hud-v { fill: var(--ink); font: 780 17px var(--font-mono); }
+.tab-hud-v.is-bad { fill: var(--st-error); }
+
+/* ---------------------------------------------------------------- class map */
+.venn-stage { display: block; place-items: normal; justify-items: normal; padding: clamp(6px, 1.5vw, 14px); }
+.venn { display: block; width: 100%; height: auto; }
+.v-np { fill: color-mix(in srgb, var(--st-visited) 13%, transparent); stroke: var(--st-visited); stroke-width: 3; }
+.v-nph { fill: color-mix(in srgb, var(--st-compare) 11%, transparent); stroke: var(--st-compare); stroke-width: 3; }
+.v-npc { fill: color-mix(in srgb, var(--st-done) 24%, transparent); stroke: var(--st-done); stroke-width: 3; }
+.v-p { fill: color-mix(in srgb, var(--st-active) 20%, transparent); stroke: var(--st-active); stroke-width: 3.5; }
+.venn[data-hot="P"] .v-p, .venn[data-hot="NP"] .v-np, .venn[data-hot="NPC"] .v-npc, .venn[data-hot="NPH"] .v-nph { stroke-width: 6; }
+.v-lab { font: 800 26px var(--font-sans); letter-spacing: -.01em; transition: opacity .3s; pointer-events: none; }
+.v-lab--np { fill: color-mix(in srgb, var(--st-visited) 75%, var(--ink)); }
+.v-lab--nph { fill: color-mix(in srgb, var(--st-compare) 60%, var(--ink)); }
+.v-lab--npc { fill: color-mix(in srgb, var(--st-done) 70%, var(--ink)); font-size: 22px; }
+.v-lab--p { fill: color-mix(in srgb, var(--st-active) 75%, var(--ink)); }
+.v-dot { cursor: pointer; outline: none; }
+.v-dot circle { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 3; transition: r .15s, stroke-width .15s; }
+.v-dot--P circle { fill: var(--st-active); stroke: var(--st-active); }
+.v-dot--NP circle { fill: var(--st-visited); stroke: var(--st-visited); }
+.v-dot--NPC circle { fill: var(--st-done); stroke: var(--st-done); }
+.v-dot--NPH circle { fill: var(--st-compare); stroke: var(--st-compare); }
+.v-dot__t { font: 640 17px var(--font-sans); fill: var(--ink); paint-order: stroke; stroke: var(--bg-elev); stroke-width: 5px; stroke-linejoin: round; }
+.v-dot:hover circle, .v-dot.is-on circle { r: 13; stroke: var(--ink); stroke-width: 3.5; }
+.v-dot:focus-visible circle { stroke: var(--accent); stroke-width: 6; }
+.venn-info { min-height: 3.6em; margin: 0; padding: 12px clamp(12px, 2vw, 18px) 14px; font-size: 15px; line-height: 1.55; color: var(--ink-2); border-top: 1px solid var(--line); }
+.venn-info b { color: var(--ink); }
+.venn-tag { display: inline-block; font: 750 11px var(--font-sans); letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; margin-right: 4px; vertical-align: 1px; }
+.venn-tag--proven { background: color-mix(in srgb, var(--st-done) 20%, var(--bg-elev)); color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+.venn-tag--believed { background: color-mix(in srgb, var(--st-compare) 22%, var(--bg-elev)); color: color-mix(in srgb, var(--st-compare) 55%, var(--ink)); }
+
+/* web of hardness key */
+.web-key { margin: 0; padding: 10px clamp(12px, 2vw, 18px); font-size: 13.5px; line-height: 1.6; color: var(--ink-2); border-top: 1px solid var(--line); }
+.web-key b { font: 700 12.5px var(--font-mono); color: var(--ink); }
+
+.tsp--hero .tsp-name { font-size: 28px; }
+.tsp--hero .tsp-layer--path .tsp-e { stroke-width: 6px; }
+.tsp--hero .tsp-layer--ghost .tsp-e { stroke-width: 15px; }
+
+/* phones: the map is scaled down to the screen, so draw everything on it larger */
+@container fig (max-width: 640px) {
+  .tsp-city .tsp-dot { r: 24px; }
+  .tsp-start { r: 30px; }
+  .tsp-name { font-size: 31px; }
+  .tsp-elabel { font-size: 30px; }
+  .tsp-hud-row { font-size: 33px; }
+  .tsp-hud-v { font-size: 37px; }
+  .tsp-e { stroke-width: 7px; }
+  .tsp-layer--ghost .tsp-e { stroke-width: 15px; }
+}
+.venn.is-equal .v-dot--NP circle { fill: var(--st-active); stroke: var(--st-active); }
+
+/* summary card: three tiles per row on wide screens, so six tiles do not leave an orphan */
+@media (min-width: 760px) { #summary-card .summary__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

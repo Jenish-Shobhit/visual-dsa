@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Sorting arena · Visual DSA</title>
+<meta name="description" content="Race bubble, insertion, merge, quick, heap and counting sort side by side on the same input, then open any one of them with its code and variables.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/labs/sorting-arena.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/algos/14-elementary-sorts.js" defer></script>
+<script src="../js/algos/15-merge-sort.js" defer></script>
+<script src="../js/algos/16-quick-sort.js" defer></script>
+<script src="../js/algos/17-linear-time-sorts.js" defer></script>
+<script src="../js/algos/21-heaps.js" defer></script>
+<script src="../js/labs/sorting-arena-model.js" defer></script>
+<script src="../js/labs/sorting-arena.js" defer></script>
+</head>
+<body data-page="lab" data-crumb="Sorting arena">
+<main id="main" class="sa">
+
+  <header class="sa-head">
+    <div class="sa-wrap sa-head__in">
+      <div>
+        <p class="hero__eyebrow"><span class="hero__num">Lab</span><span>Sorting</span></p>
+        <h1 class="sa-title">Sorting arena</h1>
+        <p class="sa-lede">Pick two to six algorithms, hand them the same numbers and start the clock. Every comparison and every write costs one tick, so the race is fair.</p>
+      </div>
+      <div class="sa-mode" data-sa-mode role="radiogroup" aria-label="Mode"></div>
+    </div>
+  </header>
+
+  <div class="sa-wrap">
+
+    <section class="sa-panel" aria-label="Setup">
+      <fieldset class="sa-set">
+        <legend class="field-label" data-algos-legend>Racers</legend>
+        <div class="sa-algos" data-algos></div>
+        <p class="sa-hint" data-hint aria-live="polite"></p>
+      </fieldset>
+
+      <div class="sa-inputs">
+        <fieldset class="sa-set sa-set--presets">
+          <legend class="field-label">Input</legend>
+          <div class="sa-chips" data-presets role="radiogroup" aria-label="Input shape"></div>
+        </fieldset>
+        <div class="sa-n">
+          <div data-n></div>
+          <button class="btn btn--secondary btn--sm" type="button" data-shuffle>New numbers</button>
+        </div>
+        <form class="sa-custom" data-custom novalidate>
+          <label class="field-label" for="sa-custom-in">Your own numbers</label>
+          <div class="sa-custom__row">
+            <input class="field" id="sa-custom-in" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="e.g. 42, 7, 19, 3, 88 (0 to 99)">
+            <button class="btn btn--primary btn--sm" type="submit">Use them</button>
+          </div>
+          <p class="sa-error" data-custom-error role="alert"></p>
+        </form>
+        <label class="sa-pivot" data-pivot-wrap>
+          <span class="field-label">Quick sort pivot</span>
+          <select class="field" data-pivot></select>
+        </label>
+      </div>
+    </section>
+
+    <!-- ============================================================ RACE -->
+    <section class="sa-group" data-group="race" aria-labelledby="race-h">
+      <h2 class="sa-h" id="race-h">The race</h2>
+      <figure class="fig sa-arena" id="arena">
+        <header class="fig__head">
+          <div class="fig__titles"><h3 class="fig__title" data-race-title>Same input, one clock</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="sa-controls" data-controls role="group" aria-label="Race controls">
+          <div class="sa-controls__transport">
+            <button class="player__btn" type="button" data-act="restart" aria-label="Restart (Home)" title="Restart (Home)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h2.4v14H6zM20 5.5v13L9.5 12z" fill="currentColor"/></svg></button>
+            <button class="player__btn" type="button" data-act="back" aria-label="Step back (←)" title="Step back (←)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5.5v13L5 12z" fill="currentColor"/></svg></button>
+            <button class="player__btn player__play" type="button" data-act="play" aria-label="Start the race (Space)" title="Play / pause (Space)">
+              <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>
+              <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>
+            </button>
+            <button class="player__btn" type="button" data-act="fwd" aria-label="Step forward (→)" title="Step forward (→)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5v13L19 12z" fill="currentColor"/></svg></button>
+          </div>
+          <div class="sa-speed" data-speed role="radiogroup" aria-label="Speed"></div>
+          <label class="sa-scrub">
+            <span class="sa-scrub__label">Clock <output data-clock>0 / 0</output></span>
+            <input class="range" type="range" min="0" max="100" step="1" value="0" data-scrub aria-label="Race clock, in ticks">
+          </label>
+        </div>
+        <div class="sa-lanes" data-lanes></div>
+        <p class="fig__caption sa-status" data-status aria-live="polite"></p>
+        <figcaption class="fig__foot">One tick is one comparison or one write to the array. A swap costs two writes. Each lane has its own step buttons and scrubber, and follows the shared clock again when you press the circular arrow. Text alternative: the results table below lists every lane's final counts.</figcaption>
+      </figure>
+
+      <div class="sa-results">
+        <div class="sa-card">
+          <h3 class="sa-card__title">Finishing order</h3>
+          <div class="sa-podium" data-podium></div>
+        </div>
+        <div class="sa-card">
+          <h3 class="sa-card__title">Work done, in total</h3>
+          <div class="sa-chart" data-results-chart></div>
+        </div>
+      </div>
+      <div class="table-wrap sa-table">
+        <table class="table table--compact" data-table>
+          <caption class="sr-only">Final counts for each lane on this input</caption>
+          <thead><tr><th scope="col">Algorithm</th><th scope="col" class="num">Comparisons</th><th scope="col" class="num">Writes</th><th scope="col" class="num">Ticks</th><th scope="col">Stable</th><th scope="col">In place</th><th scope="col">Cost</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ DETAIL -->
+    <section class="sa-group" data-group="detail" aria-labelledby="detail-h" hidden>
+      <h2 class="sa-h" id="detail-h">One algorithm, every step</h2>
+      <figure class="fig fig--lab" id="detail-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><h3 class="fig__title" data-detail-title>Trace</h3></div>
+          <div data-detail-legend></div>
+        </header>
+        <div class="fig__toolbar sa-detail-bar">
+          <div class="sa-chips" data-view role="radiogroup" aria-label="Drawing"></div>
+          <a class="btn btn--ghost btn--sm" data-detail-learn href="#">Learn how it works</a>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot" data-detail-foot>Detail mode shows up to 40 numbers so every step stays readable. Text alternative: the caption under the figure describes every step in words.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ GROWTH -->
+    <section class="sa-group" aria-labelledby="growth-h">
+      <h2 class="sa-h" id="growth-h">How the work grows</h2>
+      <figure class="fig sa-growth" id="growth">
+        <header class="fig__head">
+          <div class="fig__titles"><h3 class="fig__title">Counts at n = 8 to 256 <span class="sa-sub" data-growth-input></span></h3></div>
+        </header>
+        <div class="fig__toolbar sa-growth__bar">
+          <div class="sa-chips" data-metric role="radiogroup" aria-label="What to count"></div>
+          <div data-log></div>
+        </div>
+        <div class="fig__stage fig__stage--plain sa-growth__stage" data-growth-chart></div>
+        <p class="fig__caption" data-growth-note aria-live="polite"></p>
+        <figcaption class="fig__foot">Counts only, no animation: every point is one full run on the input shape you chose, at that size. The lines use the racers you picked. Text alternative: hover the chart or focus it and use the arrow keys to read every value.</figcaption>
+      </figure>
+    </section>
+
+    <section class="sa-group sa-tips" aria-labelledby="tips-h">
+      <h2 class="sa-h" id="tips-h">Try this</h2>
+      <ul class="sa-tips__list">
+        <li><b>Sorted</b> input: insertion and bubble sort finish almost instantly; quick sort with the last element as pivot collapses. Change the pivot to median of three.</li>
+        <li><b>Few unique</b> values: 3-way quick sort barely works; the others do not care.</li>
+        <li><b>Reversed</b> input is the worst case for the simple sorts. Merge and heap sort do the same work whatever the order.</li>
+        <li>Counting, radix and bucket sort make almost no comparisons. Their ticks are all writes.</li>
+      </ul>
+      <p class="sa-keys"><b>Keys</b> <kbd>Space</kbd> play or pause · <kbd>←</kbd> <kbd>→</kbd> step · <kbd>Home</kbd> restart · <kbd>N</kbd> new numbers · <kbd>+</kbd> <kbd>−</kbd> speed · <kbd>?</kbd> all shortcuts. Everything in the setup is saved in the address, so you can share a link.</p>
+      <div class="sa-lessons" data-lessons></div>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

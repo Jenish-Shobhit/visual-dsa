@@ -129,7 +129,7 @@
     },
     {
       id: 'tremaux-maze', year: 1882, yearLabel: '1882', title: 'Trémaux’s rule for mazes',
-      people: [],
+      people: ['lucas'],
       summary: 'Édouard Lucas published a maze-solving rule due to the engineer Charles Pierre Trémaux: mark each passage as you use it, and retreat along your own trail when you are stuck.',
       detail: 'This is depth-first search done with chalk. Go as deep as you can, back up to the last junction with an unexplored passage, and never walk a passage more than twice. The trail of marks plays the part of the call stack.',
       lessons: ['26-bfs-and-dfs'], tags: ['graphs'], era: 'mechanical',

@@ -21,6 +21,12 @@
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&contents.open){close();summary.focus();}});
   if(location.hash==='#course-contents')contents.open=true;
   window.addEventListener('hashchange',function(){if(location.hash==='#course-contents')contents.open=true;});
+  document.querySelectorAll('[data-explain-key]').forEach(function(field){
+    var key='visual-dsa-explain-'+field.dataset.explainKey;
+    var status=field.closest('.explain-back').querySelector('[data-draft-status]');
+    try{field.value=localStorage.getItem(key)||'';}catch(_){if(status)status.textContent='Storage is unavailable. Copy your explanation if you want to keep it.';}
+    field.addEventListener('input',function(){try{localStorage.setItem(key,field.value);if(status)status.textContent='Saved on this device.';}catch(_){if(status)status.textContent='This draft could not be saved. Copy it if you want to keep it.';}});
+  });
   if(current){
     try{var visited=JSON.parse(localStorage.getItem('visual-dsa-visited')||'[]');if(!Array.isArray(visited))visited=[];var file=current.href.split('/').pop();if(!visited.includes(file))visited.push(file);localStorage.setItem('visual-dsa-visited',JSON.stringify(visited));localStorage.setItem('visual-dsa-last-lesson',file);}catch(_){}
   }

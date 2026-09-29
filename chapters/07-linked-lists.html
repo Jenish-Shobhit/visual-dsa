@@ -6,7 +6,7 @@
   <meta name="description" content="Understand linked lists by following references, inserting a node safely, and separating search cost from rewiring cost.">
   <meta name="theme-color" content="#132235">
   <title>10 · Linked lists · Visual DSA</title>
-  <link rel="stylesheet" href="../css/atlas.css?v=20260928">
+  <link rel="stylesheet" href="../css/atlas.css?v=book2">
   <style>
     .list-controls{display:flex;align-items:end;gap:.55rem;flex-wrap:wrap;margin-bottom:1rem}
     .list-controls label{font-size:.8rem;font-weight:750}
@@ -34,11 +34,12 @@
     .prediction-options{display:flex;gap:.5rem;flex-wrap:wrap;margin:.7rem 0}.prediction-feedback{min-height:1.8rem;font-weight:700}
     @media(max-width:700px){.list-stage{grid-template-columns:1fr}.memory-nodes{grid-template-columns:repeat(2,minmax(0,1fr))}}
   </style>
-<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
+<script src="../js/catalogue.js?v=book2" defer></script><script src="../js/site-shell.js?v=book3" defer></script></head>
 <body>
   <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">GUIDED PATH / 10 OF 17</span></div></header>
   <main class="site">
-    <section class="chapter-hero grid"><p class="eyebrow">After searching · Change the representation</p><h1>Linked lists.</h1><p class="lede">A sequence can be stored as a trail of references, even when its pieces are scattered.</p><p class="read-time">About 12 minutes · Rewire your own example</p></section>
+    <section class="chapter-hero grid"><p class="eyebrow">After searching · Change the representation</p><h1>Linked lists.</h1><p class="lede">How can you insert a node without losing the only link to the rest of the list?</p><p class="read-time">About 12 minutes · Rewire your own example</p></section>
+    <section class="prediction"><div class="grid"><div class="prose"><h2>Protect the suffix</h2><p>Build <code>4, 9</code>, insert 7 after index 0, and stop before the first step. Predict which reference must be copied before changing <code>4.next</code>. Then use the figure's “next links followed” and “link assignments” counters to compare insertion after index 0 with insertion after a later index.</p></div></div></section>
 
     <div class="grid"><article class="prose">
       <p>Imagine the values 4 and 9 in order. You want to put 7 between them. In an array, the order comes from positions: the next item is in the next slot. Making room may require shifting later values. A linked list stores the order another way. Each <em>node</em> holds a value and a <code>next</code> reference to another node:</p>
@@ -76,6 +77,7 @@ previous.next = newNode;</pre></div>
 
     <section class="prediction" aria-labelledby="list-prediction-title"><div class="section-head grid"><span class="number">PREDICT</span><h2 id="list-prediction-title">Why assignment order matters</h2></div><div class="grid"><div class="prose"><p>Start with <code>head → 4 → 9 → null</code> and a new node 7 whose <code>next</code> is <code>null</code>. If you change <code>4.next = 7</code> <em>first</em>, what can you reach by following links from <code>head</code> immediately afterward?</p><div class="prediction-options" role="group" aria-label="Choose the reachable chain"><button type="button" data-predict="4,7">4 → 7</button><button type="button" data-predict="4,7,9">4 → 7 → 9</button><button type="button" data-predict="4,9">4 → 9</button></div><p class="prediction-feedback" id="list-feedback" aria-live="polite"></p></div></div></section>
 
+    <section class="explain-back grid"><h2>Explain it back</h2><p>Explain the two assignments needed to insert a node after a predecessor, and why their order preserves reachability to the old successor.</p><textarea data-explain-key="linked-lists-safe-insert" aria-label="Explain safe linked-list insertion"></textarea><small>Your draft stays in this browser.</small><details><summary>Reasoning checklist</summary><p>Name the predecessor, new node, and old successor. First connect the new node to the old successor. Then redirect the predecessor. Trace the chain from <code>head</code> after each assignment and distinguish finding the predecessor from rewiring it.</p></details></section>
     <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice on paper</h2></div><ol class="grid"><li>Draw three nodes whose labels are P, Q, R but whose reachable value order is <code>8 → 3 → 5</code>. Mark <code>head</code>, each <code>next</code>, and <code>null</code>.</li><li>Given only <code>head</code> for a list of 1,000 nodes, explain the work needed to insert at index 900. How does the answer change if you already hold the node at index 899?</li><li>Remove the head from <code>head → 2 → 6 → 9</code>, then remove the new head. Write the head reference after each removal and explain what happens if the original list was empty.</li></ol></section>
   </main>
   <footer class="chapter-footer"><div class="site grid"><a class="prev" href="06-searching.html"><small>Previous · Searching</small>← Find a position</a><a class="next" href="08-stacks-and-queues.html"><small>Next · Stacks and queues</small>Restrict the exits →</a></div></footer>

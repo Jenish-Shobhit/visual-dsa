@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="See recursive calls enter, wait on the call stack, reach a base case, and return.">
-  <meta name="theme-color" content="#132235"><title>Recursion · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css?v=20260928">
+  <meta name="theme-color" content="#132235"><title>Recursion · Visual DSA</title><link rel="stylesheet" href="../css/atlas.css?v=book2">
   <style>
     .recur-inputs{display:flex;align-items:end;gap:.7rem;flex-wrap:wrap;margin:0 0 .8rem}.recur-inputs label{font-size:.8rem;font-weight:700}.recur-inputs input{display:block;width:7rem;margin-top:.25rem;padding:.5rem;border:1px solid #84938d;background:#fff;color:#172a2a}
     .recur-inputs button{min-height:2.5rem;padding:.5rem .8rem;border:1px solid #172a2a;background:transparent;color:#172a2a;cursor:pointer}.recur-inputs button:hover{border-color:#e86a33}
@@ -15,11 +15,12 @@
     .recur-note{font-size:.83rem;color:#637174;margin:.6rem 0 0}.recur-insight{border-left:4px solid #27836d;background:#e5f4ed;padding:.75rem .9rem;margin:1.1rem 0}
     @media(max-width:700px){.recur-stage{grid-template-columns:1fr}.recur-code{font-size:.8rem}}
   </style>
-<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
+<script src="../js/catalogue.js?v=book2" defer></script><script src="../js/site-shell.js?v=book3" defer></script></head>
 <body>
   <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">Guided path / 13 of 17</span></div></header>
   <main class="site">
-    <section class="chapter-hero grid"><p class="eyebrow">The next idea · After lookup</p><h1>Recursion.</h1><p class="lede">A function can pause while a smaller version of itself finishes. The waiting calls are part of the computation.</p><p class="read-time">About 10 minutes · Choose a number and follow every call</p></section>
+    <section class="chapter-hero grid"><p class="eyebrow">The next idea · After lookup</p><h1>Recursion.</h1><p class="lede">What must each call remember while it waits for the smaller call to return?</p><p class="read-time">About 10 minutes · Choose a number and follow every call</p></section>
+    <section class="prediction"><div class="grid"><div class="prose"><h2>Count waiting frames</h2><p>Set factorial to 4 and predict how many call frames exist just before the base case returns. Step to that point, then use Previous and Next around the first return to distinguish creating a call from multiplying a returned value. Repeat with 0 to test the base case.</p></div></div></section>
     <div class="grid"><article class="prose">
       <p>To multiply the whole numbers from 1 through 4, you could write <code>4 × 3 × 2 × 1</code>. Notice that the part after 4 is the same kind of task, just smaller: multiply 1 through 3. Name that task <code>factorial(3)</code>, and the larger answer becomes <code>4 × factorial(3)</code>.</p>
       <div class="example"><pre>function factorial(n) {
@@ -52,6 +53,7 @@ show(factorial(4));  // 24</pre></div>
       <p>Our input control stops at 7 to keep the trace readable. The mathematical definition works for all nonnegative integers, but large recursive inputs can exceed JavaScript's call-stack limit, and ordinary JavaScript numbers eventually lose integer precision. A correct mathematical recurrence still needs an appropriate machine representation.</p>
       <p>The accepted input domain is part of the contract. With the code above, a negative input such as <code>-1</code> moves to <code>-2</code>, then <code>-3</code>, never reaching the base case at zero. A production function should reject such an input before recursing. State the domain whenever a termination proof depends on it.</p>
     </article></div>
+    <section class="explain-back grid"><h2>Explain it back</h2><p>Explain factorial's recursive case as a contract: what does <code>factorial(n - 1)</code> return, and what does the waiting <code>factorial(n)</code> frame do with it?</p><textarea data-explain-key="recursion-factorial-contract" aria-label="Explain factorial recursion"></textarea><small>Your draft stays in this browser.</small><details><summary>Reasoning checklist</summary><p>Give the base case and its answer; name the strictly decreasing argument; state the smaller-call assumption; describe the multiplication performed on return; and connect it to the product from 1 through <code>n</code>.</p></details></section>
     <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice on paper</h2></div><ol class="grid"><li>Define <code>sumTo(n)</code> as the sum from 0 through <code>n</code>. Write a base case and recursive case, then trace the calls and returns for <code>sumTo(4)</code>.</li><li>A function stops when <code>n === 0</code> but otherwise calls itself with <code>n + 1</code>. Starting from 3, explain what happens. State a measure that a repaired version would decrease.</li><li>A naïve function computes <code>fib(n)</code> by calling <code>fib(n - 1)</code> and <code>fib(n - 2)</code>. Draw the call tree for <code>fib(4)</code>. Which input values are computed more than once, and how is that different from the maximum call-stack depth?</li></ol></section>
   </main>
   <footer class="chapter-footer"><div class="site grid"><a class="prev" href="09-hashing.html"><small>Previous · Hashing</small>← Find by key</a><a class="next" href="11-trees.html"><small>Next · Trees</small>Explore branches →</a></div></footer>

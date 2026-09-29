@@ -6,7 +6,7 @@
   <meta name="description" content="Discover why sorted order lets a search discard half its candidates, and how to find a boundary among duplicates.">
   <meta name="theme-color" content="#132235">
   <title>09 · Searching · Visual DSA</title>
-  <link rel="stylesheet" href="../css/atlas.css?v=20260928">
+  <link rel="stylesheet" href="../css/atlas.css?v=book2">
   <style>
     .search-controls,.search-modes{display:flex;align-items:end;gap:.55rem;flex-wrap:wrap;margin:0 0 .8rem}
     .search-controls label{font-size:.8rem;font-weight:750}
@@ -38,11 +38,12 @@
     .prediction-options{display:flex;gap:.5rem;flex-wrap:wrap;margin:.7rem 0}.prediction-feedback{min-height:1.8rem;font-weight:700}
     @media(max-width:700px){.search-stage{grid-template-columns:1fr}.search-code{font-size:.75rem}.search-cell b{font-size:.82rem}}
   </style>
-<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
+<script src="../js/catalogue.js?v=book2" defer></script><script src="../js/site-shell.js?v=book3" defer></script></head>
 <body>
   <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">GUIDED PATH / 09 OF 17</span></div></header>
   <main class="site">
-    <section class="chapter-hero grid"><p class="eyebrow">After sorting · A new use for order</p><h1>Searching.</h1><p class="lede">If the values are ordered, one comparison can tell you where an answer cannot be.</p><p class="read-time">About 12 minutes · Try missing values and duplicates</p></section>
+    <section class="chapter-hero grid"><p class="eyebrow">After sorting · A new use for order</p><h1>Searching.</h1><p class="lede">After reading one middle value, which half can you prove contains no answer?</p><p class="read-time">About 12 minutes · Try missing values and duplicates</p></section>
+    <section class="prediction"><div class="grid"><div class="prose"><h2>Test the boundary</h2><p>Set the values to <code>1, 4, 4, 4, 9</code>, target 4, and predict the remembered match in <em>First matching index</em> mode. Step until an equality, then predict why the trace keeps a left range instead of stopping. Switch to <em>Any matching index</em> and compare the stopping point.</p></div></div></section>
 
     <div class="grid"><article class="prose">
       <p>Find 23 in this row: <code>[3, 8, 12, 17, 23, 29, 35]</code>. A left-to-right scan will work. It checks 3, then 8, and keeps going until it reaches 23. But the row is sorted. If you look at the middle value, 17, you immediately know that 23 cannot be at the middle or anywhere to its left. Four positions disappear after one comparison.</p>
@@ -92,6 +93,7 @@ return -1;</pre></div>
 
     <section class="prediction" aria-labelledby="search-prediction-title"><div class="section-head grid"><span class="number">PREDICT</span><h2 id="search-prediction-title">A duplicate at the middle</h2></div><div class="grid"><div class="prose"><p>For <code>[1, 4, 4, 4, 9]</code>, target 4, what may the basic “any match” search return on its <em>first</em> comparison?</p><div class="prediction-options" role="group" aria-label="Choose the matching index"><button type="button" data-predict="1">Index 1</button><button type="button" data-predict="2">Index 2</button><button type="button" data-predict="3">Index 3</button></div><p class="prediction-feedback" id="search-feedback" aria-live="polite"></p></div></div></section>
 
+    <section class="explain-back grid"><h2>Explain it back</h2><p>Explain why a target smaller than the middle lets binary search discard the right half, including the middle. Do not say only “because it is sorted”; state the ordering relationship used.</p><textarea data-explain-key="searching-discard-half" aria-label="Explain why binary search discards a half"></textarea><small>Your draft stays in this browser.</small><details><summary>Reasoning checklist</summary><p>Name <code>low</code>, <code>high</code>, and <code>mid</code>; compare target and middle value; use sorted order to rule out indices; update the inclusive boundary; and state why the surviving range still contains any possible match.</p></details></section>
     <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice on paper</h2></div><ol class="grid"><li>Search <code>[2, 5, 8, 11, 14, 17, 20]</code> for 13. Record every middle index, the surviving range after each comparison, and the final result.</li><li>Adapt first-match search to find the <em>last</em> matching index in <code>[1, 4, 4, 4, 9]</code>. State what you do after seeing an equal middle value.</li><li>Suppose an array has 100,000 unsorted entries and you will answer 10,000 searches without changing it. Compare “scan every time” with “sort once, then binary search” as growing work, and list one cost the simple comparison omits.</li></ol></section>
   </main>
   <footer class="chapter-footer"><div class="site grid"><a class="prev" href="05-sorting.html"><small>Previous · Sorting</small>← Create order</a><a class="next" href="07-linked-lists.html"><small>Next · Linked lists</small>Follow connections →</a></div></footer>

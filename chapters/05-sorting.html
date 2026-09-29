@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Learn six sorting algorithms by changing the input, predicting each move, and tracing the work forward or backward.">
   <title>08 — Sorting · Visual DSA</title>
-  <link rel="stylesheet" href="../css/atlas.css?v=20260928">
+  <link rel="stylesheet" href="../css/atlas.css?v=book2">
   <style>
     .sorting-lab{--lab-ink:#172a2a;--lab-paper:#f8f5ee;--lab-orange:#e86a33;--lab-blue:#2563a6;--lab-green:#27836d;color:var(--lab-ink);background:var(--lab-paper);border:1px solid var(--lab-ink);margin:1.5rem 0 5rem;padding:clamp(1rem,3vw,2.2rem)}
     .sorting-lab *{box-sizing:border-box}
@@ -77,11 +77,12 @@
     @media(max-width:390px){.sorting-lab{padding:.85rem}.lab-input-row>button{flex:1}.algorithm-tabs button{font-size:.8rem}.lab-timeline{flex-wrap:wrap}.lab-timeline span{width:100%;text-align:left}.lab-state .metric{grid-column:span 4}}
     @media(prefers-reduced-motion:reduce){.sort-bar{transition:none}}
   </style>
-<script src="../js/catalogue.js?v=20260928" defer></script><script src="../js/site-shell.js?v=20260928" defer></script></head>
+<script src="../js/catalogue.js?v=book2" defer></script><script src="../js/site-shell.js?v=book3" defer></script></head>
 <body>
 <header class="masthead"><div class="site grid"><a class="brand" href="../index.html"><span class="brand-mark">V</span>Visual DSA</a><span class="masthead-note">08 / 17 · Sorting laboratory</span></div></header>
 <main class="site">
-  <section class="chapter-hero grid"><p class="eyebrow">Lesson 08 · After complexity</p><h1>Sorting.</h1><p class="lede">Six ways to put the same values in order. The important question is what each method knows after every move.</p><p class="read-time">Explore at your pace · 12 minutes</p></section>
+  <section class="chapter-hero grid"><p class="eyebrow">Lesson 08 · After complexity</p><h1>Sorting.</h1><p class="lede">Before a move, what can this method prove about the row—and what is still allowed to change?</p><p class="read-time">Explore at your pace · 12 minutes</p></section>
+  <section class="prediction"><div class="grid"><div class="prose"><h2>One controlled comparison</h2><p>Enter <code>5, 3, 5, 2</code>, choose merge sort, and predict the original-position labels of the two 5s before stepping. Reset, choose selection sort, and make the same prediction. Use the comparison and write counters to separate “same final values” from “same history.”</p></div></div></section>
   <div class="grid"><div class="prose">
     <p>Imagine numbered cards in a row: <code>[8, 3, 5, 3]</code>. Sorting means arranging them so each value is no greater than the next. You can solve that by trading neighbors, selecting a minimum, inserting into an ordered prefix, merging ordered runs, partitioning around a pivot, or maintaining a heap.</p>
     <p>Each method eventually makes the same ordered row, but its <strong>reason for making the next move</strong> differs. That reason is its invariant: something that stays true while the rest of the work continues. In the lab, stop before a move and predict it from the invariant.</p>
@@ -113,6 +114,7 @@
     <h2>Which method would you choose?</h2>
     <p>Insertion sort is simple and good for small or nearly sorted rows. Merge sort gives reliable <code>n log n</code> time and preserves equal-value order, while using another array. Heap sort also gives <code>n log n</code> worst-case time with constant working space, but is not stable. Quick sort often performs well, yet this pivot choice has a quadratic worst case. The right choice depends on the input, memory, and whether equal values must keep their order.</p>
   </div></div>
+  <section class="explain-back grid"><h2>Explain it back</h2><p>Describe why insertion sort can call its left prefix “sorted” before the whole row is finished. Use one held value and name the exact region that may still move.</p><textarea data-explain-key="sorting-insertion-prefix" aria-label="Explain insertion sort's sorted prefix"></textarea><small>Your draft stays in this browser.</small><details><summary>Reasoning checklist</summary><p>State the prefix boundary; say why each item left of it is ordered; identify the held value; then explain why later insertions can still move prefix items from their final positions.</p></details></section>
   <section class="problems"><div class="section-head grid"><span class="number">TRY / 03</span><h2>Practice</h2></div><ol class="grid"><li>Trace insertion sort on <code>[5, 2, 4, 1]</code>. After each insertion, name the sorted prefix. Which of those values are already guaranteed to be in their final positions?</li><li>Give an input on which selection sort reverses the original order of two equal values. Label the equal values by their original positions.</li><li>Why does this first-pivot quick sort take many more comparisons on a sorted row than a well-mixed row? Draw the partition sizes for five values.</li></ol></section>
 </main>
 <footer class="chapter-footer"><div class="site grid"><a class="prev" href="04-complexity.html"><small>Previous / 07</small>← Complexity</a><a class="next" href="06-searching.html"><small>Next / 09</small>Searching →</a></div></footer>

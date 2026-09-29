@@ -700,6 +700,8 @@
     /* Replace the diagram (instant re-layout). */
     api.setSpec = function (s) { spec = s || { nodes: [], edges: [] }; dirty = true; shownActive = null; measureCache.clear(); api.render(api.state() || {}, { duration: 0, force: true }); return api; };
     api.spec = function () { return spec; };
+    /* Light one node, e.g. as a player's `flow` target: player calls highlight(step.flow, ctx). */
+    api.highlight = function (id, c) { var st = Object.assign({}, api.state() || {}, { active: id === undefined ? null : id }); api.render(st, { duration: c && c.duration !== undefined ? c.duration : undefined }); return api; };
     /* Layout + routes in SVG units (before offset/scale): {geo, routes}. */
     api.geometry = function () { return { geo: geo, routes: routes }; };
     var baseOn = api.on;

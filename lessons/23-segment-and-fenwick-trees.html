@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Segment &amp; Fenwick trees · Visual DSA</title>
+<meta name="description" content="Answer range sums and change single values in logarithmic time: watch segment trees cover ranges with a handful of blocks, push lazy tags, and see Fenwick trees hop through indices with i &amp; −i.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/23-segment-and-fenwick-trees.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/23-segment-and-fenwick-trees.js" defer></script>
+<script src="../js/lessons/23-segment-and-fenwick-trees-views.js" defer></script>
+<script src="../js/lessons/23-segment-and-fenwick-trees-figs.js" defer></script>
+<script src="../js/lessons/23-segment-and-fenwick-trees-labs.js" defer></script>
+<script src="../js/lessons/23-segment-and-fenwick-trees.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="23-segment-and-fenwick-trees">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Segment &amp; Fenwick trees</h1>
+      <p class="hero__lede">Add up any slice of an array, and change any single number, in about log n steps. The trick: keep the sums of blocks whose sizes are powers of two, and answer every question with a handful of them.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">22 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: arrays, binary trees, bits</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: a segment tree sits above an array of eight numbers. A bracket slides over different ranges of the array, and only a few tree nodes light up green to cover each range."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">The problem: sums that keep changing</h2>
+      <p>A shop keeps its daily sales in an array. The manager keeps asking, “how much did we sell from day 3 to day 12?”, and every so often someone corrects a day’s number. Two operations, over and over.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>A <dfn>range query</dfn> asks for a summary (here the sum) of <code>a[l..r]</code>. A <dfn>point update</dfn> changes one cell, <code>a[i] = v</code>. We want both to be fast, however many of them arrive.</p>
+      </aside>
+      <p>There are two obvious answers, and each makes one operation cheap and the other slow. Press the buttons and watch what each approach has to touch. Numbers count cells read or written.</p>
+      <figure class="fig wide" id="fig-three">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Three ways to answer range sums</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l23-toolbar" data-controls-row></div>
+        <div class="fig__stage fig__stage--plain l23-three" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: three columns compare a plain array, a prefix-sum array and a segment tree on eight numbers. A query reads many cells in the plain array, two in the prefix-sum array and a few tree nodes in the segment tree. An update writes one cell in the plain array, every later cell in the prefix-sum array and only the nodes on one root-to-leaf path in the segment tree.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">The trade-off</p>
+        <p>A plain array reads up to n cells per query. A prefix-sum array answers in two reads but rewrites up to n cells per update. A tree keeps <em>partial</em> sums, so neither operation ever touches more than about log n cells.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2 data-toc="Intuition">Build the intuition: subtotals of blocks</h2>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: a company’s org chart</p>
+        <p>Every manager reports the total budget of their team. To get the budget of “everyone from team 3 to team 12”, you do not add up every employee. You add up a few managers whose teams fit exactly inside that range.</p>
+      </aside>
+      <p>Cut the array into halves, then quarters, then eighths, and keep the sum of every block. Now choose any range with the sliders. It splits into a few blocks that the tree already knows.</p>
+      <figure class="fig wide" id="fig-cover">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Any range is a few whole blocks</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l23-toolbar"><div data-slider-l class="l23-slider"></div><div data-slider-r class="l23-slider"></div><div data-stats></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 0px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a tree over sixteen cells. Green blocks are the largest blocks that fit entirely inside the chosen range; together they tile the range exactly.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>A manager’s total goes stale the moment one employee’s pay changes. Every manager <em>above</em> that person must be corrected, and that chain of managers is what an update has to walk.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ BUILD -->
+    <section id="build">
+      <h2 data-toc="Build">The segment tree: one node per segment</h2>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>segment tree</dfn> is a binary tree where every node stands for a segment <code>[lo, hi]</code> of the array and stores one summary of it. The root is the whole array, the two children are its halves, and the leaves are single cells. The thin bar under a node shows which cells it covers; dotted lines tie each leaf to its cell.</p>
+      </aside>
+      <p>Building is bottom-up: a leaf copies its cell, and every other node combines its two children, so both children must be ready first. Step through and watch the values climb.</p>
+      <figure class="fig wide" id="fig-build">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Building a sum tree over eight numbers</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 0px"></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: leaves copy the array cells one by one, then each parent is filled in with the sum of its two children until the root holds the total.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>n cells need only n − 1 more nodes, and the tree is about log₂ n levels tall. Nodes are usually stored in one array numbered like a heap: the root is 1, and node <code>k</code> has children <code>2k</code> and <code>2k + 1</code>. The lab’s variable panel shows these numbers.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ QUERY -->
+    <section id="query">
+      <h2 data-toc="Query">Answering a query: three kinds of node</h2>
+      <p>A query starts at the root and asks each node one question: how does my segment relate to the range? There are only three answers, and each has one action.</p>
+      <div class="mini-row wide l23-three-kinds" id="mini-kinds"></div>
+      <p>Pick a range and step through. A node that only partly overlaps has to ask both children. Everything else is settled on the spot, which is why the walk stays short.</p>
+      <figure class="fig wide" id="fig-query">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A range-sum query, node by node</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 0px"></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the query walks down from the root. Nodes fully inside the range turn green and return their stored sum, nodes outside turn grey and return zero, and partly overlapping nodes turn amber and combine the answers of their two children.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the walk is short</p>
+        <p>At each level at most two nodes are partly covered: the ones holding the left and the right end of the range. Each of them spawns at most two children, so a query visits at most four nodes per level, about 4 log₂ n in total, however wide the range is.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ UPDATE -->
+    <section id="update">
+      <h2 data-toc="Update">Changing one number: the path to the root</h2>
+      <p>Only the nodes whose segment contains the changed index hold a sum that included the old value. That is exactly the path from the leaf up to the root, one node per level.</p>
+      <figure class="fig wide" id="fig-update">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A point update rewrites one path</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 0px"></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the update walks down to the leaf, overwrites it, then recomputes each ancestor from its two children up to the root. Nodes off the path are never touched.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>An update rewrites <code>⌈log₂ n⌉ + 1</code> nodes, a query reads at most about <code>4 log₂ n</code>. Both are logarithmic, so a million-cell array needs about 20 steps instead of a million.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ SEGMENT LAB -->
+    <section id="lab">
+      <h2>The lab: segment tree</h2>
+      <p>Type your own numbers, pick sum, minimum or maximum, then build, query or update. Every step lights a line of code and explains why it happens. The lab pauses once to ask you to predict a step. Use <kbd>←</kbd> and <kbd>→</kbd> to step and <kbd>Space</kbd> to play.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Segment tree lab</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="tabs l23-labtabs" id="lab-tabs">
+          <div class="tabs__list">
+            <button data-tab="sum">Sum</button>
+            <button data-tab="min">Minimum</button>
+            <button data-tab="max">Maximum</button>
+          </div>
+          <div data-tab-panel="sum"><p class="l23-note"><b>Combine:</b> <code>left + right</code>. Identity for “nothing”: <code>0</code>.</p></div>
+          <div data-tab-panel="min"><p class="l23-note"><b>Combine:</b> <code>min(left, right)</code>. Identity: <code>∞</code>, so an outside node never wins.</p></div>
+          <div data-tab-panel="max"><p class="l23-note"><b>Combine:</b> <code>max(left, right)</code>. Identity: <code>−∞</code>. Only the combine and the identity change; the tree does not.</p></div>
+        </div>
+        <div class="fig__toolbar l23-labbar"><div class="l23-input" data-input></div><div class="l23-ops" data-ops></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--scroll fig__stage--tall" data-stage style="--stage-min: 0px"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a segment tree above its array. Query nodes are coloured green (fully covered), amber (partly covered) or grey (outside); an update recolours the path from the leaf to the root as each node is recomputed. The caption describes every step in words.</figcaption>
+      </figure>
+    </section>
+
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The decisions, as a flowchart</h2>
+      <p>The same logic as a map. It is wired to the lab above: choose <em>Query</em>, <em>Update</em> or <em>Build</em>, step through, and the box that is running lights up here, with a small token travelling along the path taken.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-flow-title>What one node does during a query</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 0px"></div>
+        <figcaption class="fig__foot" data-flow-alt>Text alternative: at each node, if its segment is outside the range return the identity; if it is inside, return the stored value; otherwise split, ask both children and combine their answers.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ LAZY -->
+    <section id="lazy">
+      <h2 data-toc="Lazy propagation">Range updates and lazy propagation</h2>
+      <p>What if the update is “add 3 to every cell in <code>a[2..5]</code>”? Point updates would cost one path per cell, k log n in all. A smarter tree changes the biggest fully covered nodes only, and leaves a note for the rest.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>lazy tag</dfn> on a node means “every cell below me still has to get this amount added”. The node’s own sum is already right; its children are <em>stale</em> (dashed) until the tag is pushed down.</p>
+      </aside>
+      <figure class="fig fig--lab full" id="fig-lazy">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Range add with pending tags, then a query</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l23-labbar"><div class="l23-input" data-input></div><div class="l23-ops" data-ops></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--scroll fig__stage--tall" data-stage style="--stage-min: 0px"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: an add on part of the array leaves purple “+v” tags on the largest covered nodes and marks the nodes below them as stale. A later query that must look inside a tagged node first pushes the tag to its two children, then continues.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why laziness is safe</p>
+        <p>The invariant is: <em>a node’s stored value is correct for everything at and above it; only the nodes below a tag are behind, by exactly the tag.</em> A query that stops at a node takes a correct value. A query that goes through a node pushes the tag first, so nothing stale is ever read.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ FENWICK -->
+    <section id="fenwick">
+      <h2 data-toc="Fenwick tree">Fenwick tree: the same idea in one array</h2>
+      <p>A segment tree stores about 2n nodes and uses recursion. A <dfn>Fenwick tree</dfn> (or binary indexed tree) gets prefix sums with just an array of n numbers and a bit trick. It only needs one piece of arithmetic: the value of the lowest set bit of an index.</p>
+      <figure class="fig wide" id="fig-lowbit">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The lowest set bit, i &amp; −i</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l23-toolbar"><div data-slider class="l23-slider"></div><div data-input class="l23-input"></div></div>
+        <div class="fig__stage fig__stage--plain l23-bitstage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: the number i in binary, its bitwise complement, minus i (the complement plus one) and the AND of i with minus i. The AND keeps only the lowest set bit of i.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why <code>i &amp; −i</code> works</p>
+        <p>Negative numbers are stored as “flip every bit, then add 1”. Adding 1 carries through the trailing zeros of the flipped number and stops at the lowest set bit, so below and at that bit <code>−i</code> equals <code>i</code>, and above it every bit is flipped. AND-ing the two leaves exactly that one bit.</p>
+      </aside>
+      <p>Now the structure. Index <code>i</code> (counting from 1) is <em>responsible</em> for the block of <code>lowbit(i)</code> cells ending at <code>i</code>. Index 12 is 1100 in binary, its lowest bit is 4, so it stores <code>a[9..12]</code>. Click any index to see the blocks a prefix query and an update use for it.</p>
+      <figure class="fig wide" id="fig-resp">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Each index is responsible for lowbit(i) cells</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l23-toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 0px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: sixteen indices, each with a bar as wide as its lowest set bit ending at that index. Clicking an index highlights the chain of bars a prefix query visits, or the chain an update visits.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>A prefix query starts at <code>i</code>, adds <code>T[i]</code>, then <em>strips</em> the lowest set bit (<code>i −= i &amp; −i</code>) and repeats. It adds one block per set bit of <code>i</code>. An update does the opposite: it <em>adds</em> the lowest set bit (<code>i += i &amp; −i</code>) to climb through every bigger block that contains the cell.</p>
+      </aside>
+      <h3 class="l23-h3">The lab: Fenwick tree</h3>
+      <p>Choose a prefix query, a range query or an update on up to sixteen numbers of your own. The binary strip under the figure shows each jump as bit arithmetic.</p>
+      <figure class="fig fig--lab full" id="fen-lab">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Fenwick tree lab</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l23-labbar"><div class="l23-input" data-input></div><div class="l23-ops" data-ops></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--scroll fig__stage--tall" data-stage style="--stage-min: 0px"></div>
+            <div class="l23-bitstrip" data-bits></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a Fenwick tree drawn as bars above an array. The current index moves along the axis; each visited block turns green (prefix query), amber (subtracted part of a range query) or red (updated). Arcs under the axis show the jumps, each labelled with the lowest set bit that was subtracted or added.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2 data-toc="Cost">What it costs</h2>
+      <p>Count cells read or written for one query or one update on n numbers, averaged over random ranges. The three tree-like approaches grow so slowly that the chart needs a logarithmic axis to show the naive one and the trees together. Switch between query and update, and try the log scale.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Operations per query or update as n grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l23-toolbar"><div data-seg></div><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 0px"></div>
+        <p class="fig__caption" data-note aria-live="polite"></p>
+        <figcaption class="fig__foot">Averages over 300 random ranges (or indices) per size, measured by counting real node visits. Hover or focus the chart and use the arrow keys to read exact values.</figcaption>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Approach</th><th scope="col">Range query</th><th scope="col">Point update</th><th scope="col">Build</th><th scope="col">Space</th><th scope="col">Works for</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Plain array</th><td><span class="big-o" data-o="n"></span> read r − l + 1 cells</td><td><span class="big-o" data-o="1"></span></td><td>none</td><td><span class="big-o" data-o="n"></span></td><td>anything</td></tr>
+            <tr><th scope="row">Prefix sums</th><td><span class="big-o" data-o="1"></span> two reads</td><td><span class="big-o" data-o="n"></span> rewrite the suffix</td><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="n"></span></td><td>sum, xor (needs an inverse)</td></tr>
+            <tr><th scope="row">Segment tree</th><td><span class="big-o" data-o="logn"></span> ≤ 4 nodes per level</td><td><span class="big-o" data-o="logn"></span> one path</td><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="n"></span> about 2n nodes</td><td>any associative combine: sum, min, max, gcd; lazy range updates</td></tr>
+            <tr><th scope="row">Fenwick tree</th><td><span class="big-o" data-o="logn"></span> one block per set bit</td><td><span class="big-o" data-o="logn"></span> ≤ log₂ n + 1</td><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="n"></span> exactly n</td><td>sum, xor (prefix, then subtract)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <details class="accordion">
+        <summary>Why can a Fenwick tree not answer range minimum?</summary>
+        <div class="accordion__body"><p>A range query is prefix(r) − prefix(l − 1), which needs to <em>subtract</em> a prefix. Sums have an inverse; minimum does not: knowing the minimum of a[1..r] and of a[1..l − 1] says nothing about the minimum of a[l..r]. A segment tree combines the exact blocks and never subtracts.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why an update in a Fenwick tree touches at most log₂ n + 1 blocks</summary>
+        <div class="accordion__body"><p>Adding the lowest set bit to i moves it past a run of 1 bits and turns them into a single higher 1. Every jump makes the lowest set bit strictly larger, so it can be doubled at most log₂ n times before the index passes n.</p></div>
+      </details>
+      <p>Which one should you reach for? Walk the diagram; each question narrows the choice.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Prefix sums, Fenwick or segment tree?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 0px"></div>
+        <p class="fig__caption" data-answer aria-live="polite">Click an answer to walk the diagram.</p>
+        <div class="fig__controls l23-btnbar"><button type="button" class="btn btn--sm" data-restart>Start over</button></div>
+        <figcaption class="fig__foot">Text alternative: if the array never changes, use prefix sums. If it changes and you only need sums, use a Fenwick tree. If you need minimum, maximum, gcd or range updates, use a segment tree, with lazy propagation for range updates.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The tree does not care what “combine” means, as long as it is associative and has an identity. Change those two and the same code answers other questions.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="min">Range minimum</button>
+          <button data-tab="gcd">Range gcd</button>
+          <button data-tab="diff">Range add, point query</button>
+          <button data-tab="count">Count smaller elements</button>
+        </div>
+        <div data-tab-panel="min"><div class="split"><figure class="mini"><div class="mini__stage l23-mini" data-mini="min"></div><figcaption>Every node holds the smaller of its children.</figcaption></figure><div><p>Swap <code>+</code> for <code>min</code> and the identity <code>0</code> for <code>∞</code>. A query returns the smallest value of a range, for example the cheapest day in a window, in O(log n).</p><pre data-code-block="min"></pre></div></div></div>
+        <div data-tab-panel="gcd"><div class="split"><figure class="mini"><div class="mini__stage l23-mini" data-mini="gcd"></div><figcaption>gcd(0, x) = x, so 0 is the identity.</figcaption></figure><div><p>The greatest common divisor is associative, and <code>gcd(0, x) = x</code>, so 0 plays the role of “nothing”. Point updates rewrite one path, exactly as before.</p><pre data-code-block="gcd"></pre></div></div></div>
+        <div data-tab-panel="diff"><div class="split"><figure class="mini"><div class="mini__stage l23-mini" data-mini="diff"></div><figcaption>Two point updates make a range add; a prefix query reads a cell.</figcaption></figure><div><p>Store the <em>differences</em> <code>d[i] = a[i] − a[i − 1]</code> in a Fenwick tree. Adding v to <code>a[l..r]</code> is two point updates: <code>+v</code> at l and <code>−v</code> at r + 1. The value of <code>a[i]</code> is then <code>prefix(i)</code>.</p><pre data-code-block="diff"></pre></div></div></div>
+        <div data-tab-panel="count"><div class="split"><figure class="mini"><div class="mini__stage l23-mini" data-mini="count"></div><figcaption>The Fenwick tree indexes values, not positions.</figcaption></figure><div><p>To count, for every element, how many earlier elements are smaller (or count inversions), index the tree by <em>value</em>. Read each element left to right: query how many values below it were seen, then add 1 at its own value. n queries and n updates make O(n log n) in total.</p><pre data-code-block="count"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <figure class="fig wide" id="fig-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A sum tree, ready for a query on a[2..7]</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 0px"></div>
+        <figcaption class="fig__foot">Text alternative: a segment tree over eight cells with the range 2 to 7 marked. Nodes are keyboard-focusable buttons.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-visit"></div>
+        <div class="quiz" id="quiz-fen"></div>
+        <div class="quiz" id="quiz-update"></div>
+        <div class="quiz" id="quiz-fenwhy"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Segment &amp; Fenwick trees</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="logn">O(log n)</span><span class="chip chip--sm">query and update</span><span class="chip chip--sm">O(n) to build</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1977<small>segment tree</small></div>
+        <p class="history__people">Jon Bentley · Boris Ryabko · Peter Fenwick<span>Klee’s problem (1977) · 1989 · 1994</span></p>
+        <div class="history__body">
+          <p>Jon Bentley introduced segment trees in 1977, in unpublished Carnegie Mellon notes on Klee’s problem: how much area does a set of overlapping rectangles cover?</p>
+          <p>Fenwick trees came from data compression. Peter Fenwick published them in 1994 to keep running symbol counts for arithmetic coding, not knowing that Boris Ryabko had described the same structure in 1989.</p>
+        </div>
+        <p class="history__source">Sources: P. M. Fenwick, “A New Data Structure for Cumulative Frequency Tables”, <em>Software: Practice and Experience</em> 24(3), 1994; B. Ryabko, “A fast on-line code”, <em>Soviet Math. Doklady</em> 39(3), 1989; J. L. Bentley, unpublished notes on Klee’s rectangle problem, Carnegie Mellon University, 1977.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Range sum with updates</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Implement a Fenwick tree with <code>update(i, delta)</code> and <code>rangeSum(l, r)</code>. Test it against a plain loop on random operations. What goes wrong if your indices start at 0?</p></li>
+        <li><div class="practice__title">Count inversions</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Count the pairs i &lt; j with a[i] &gt; a[j] in O(n log n) using a Fenwick tree indexed by value. What do you do when values are large or negative?</p></li>
+        <li><div class="practice__title">Range minimum with point updates</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Build a segment tree that supports “minimum of a[l..r]” and “set a[i] = v”. Show why a Fenwick tree cannot do the same, and what is different about the identity.</p></li>
+        <li><div class="practice__title">Range add, range sum</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Support “add v to a[l..r]” and “sum of a[l..r]” with a lazy segment tree. Then do it with two Fenwick trees instead, by writing prefix sums of a difference array as (i + 1) · B1(i) − B2(i).</p></li>
+        <li><div class="practice__title">Find the k-th</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Given a Fenwick tree of non-negative counts, find the smallest index whose prefix sum is at least k in O(log n) by descending the tree bit by bit, without calling prefix() repeatedly.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-10-range-queries-fenwick-and-segment-trees.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Range queries: Fenwick and segment trees</span><span class="deeper__text" style="display:block">The long-form study: invariants and proofs for both structures, the difference-array trick, non-commutative combines, and worked exercises.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

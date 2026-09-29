@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Big-O explorer · Visual DSA</title>
+<meta name="description" content="Plot every growth class from O(1) to O(n!), slide n up to a million, see how long each would take at 100 million steps a second, double n and watch the work multiply, and type your own cost formula.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/labs/big-o-explorer.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/labs/big-o-explorer-model.js" defer></script>
+<script src="../js/labs/big-o-explorer-snippets.js" defer></script>
+<script src="../js/labs/big-o-explorer.js" defer></script>
+</head>
+<body data-page="lab" data-crumb="Big-O explorer">
+<main id="main" class="bx">
+
+  <header class="hero bx-hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num">Lab</span><span>Growth rates</span></p>
+      <h1 class="hero__title">Big-O explorer</h1>
+      <p class="hero__lede">Nine growth classes, one slider. Push n toward a million and watch which algorithms survive.</p>
+      <div class="btn-row bx-hero__actions">
+        <a class="btn btn--primary btn--lg" href="#chart">Start exploring</a>
+        <a class="btn btn--secondary btn--lg" href="../lessons/05-big-o.html" data-lesson="05-big-o">Lesson: Complexity &amp; Big-O</a>
+      </div>
+    </div>
+    <div class="hero__stage bx-teaser" id="teaser" role="img" aria-label="Animation: nine curves are drawn from the same corner. The flat ones stay low, the straight line climbs steadily, and the last few shoot straight up."></div>
+  </header>
+
+  <section class="flow bx-sec" id="chart" aria-labelledby="chart-h">
+    <h2 id="chart-h" data-toc="Growth chart">Growth chart</h2>
+    <figure class="fig full bx-fig" id="fig-chart" aria-labelledby="chart-title">
+      <header class="fig__head">
+        <div class="fig__titles"><h3 class="fig__title" id="chart-title">Steps needed as n grows</h3></div>
+        <div class="bx-preset" data-shows role="group" aria-label="Which classes to show"></div>
+      </header>
+      <div class="fig__toolbar bx-tools">
+        <div class="bx-toggles" data-toggles role="group" aria-label="Growth classes shown"></div>
+        <div class="bx-row">
+          <div class="bx-ctl"><span class="field-label" id="ylab">Steps axis</span><div data-yseg></div></div>
+          <div class="bx-ctl"><span class="field-label" id="xlab">n axis</span><div data-xseg></div></div>
+          <div class="bx-ctl bx-ctl--grow"><div data-nslider></div><div class="bx-nchips" data-nchips role="group" aria-label="Jump to a value of n"></div></div>
+        </div>
+      </div>
+      <div class="fig__stage fig__stage--plain bx-chart" data-chart></div>
+      <p class="fig__caption bx-note" data-clip aria-live="polite"></p>
+      <div class="bx-values" data-values aria-live="off"></div>
+      <figcaption class="fig__foot bx-foot">
+        <span>Hover or touch the chart, or focus it and press <kbd>←</kbd> <kbd>→</kbd>, to read every class at one n. <kbd>L</kbd> switches the steps axis between linear and log.</span>
+        <span>Values above 10⁶⁰ are clipped so 2ⁿ and n! stay drawable.</span>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="flow bx-sec" id="time" aria-labelledby="time-h">
+    <h2 id="time-h" data-toc="How long?">How long would it take?</h2>
+    <p class="bx-lede">The same n, turned into a clock. Every bar is one class; the axis is logarithmic, so each tick is a thousand times longer than the last.</p>
+    <figure class="fig wide bx-fig" id="fig-time" aria-labelledby="time-title">
+      <header class="fig__head">
+        <div class="fig__titles"><h3 class="fig__title" id="time-title">Running time at <span data-rate-label>10⁸</span> steps per second, for <span data-n-label>n = 1,000</span></h3></div>
+      </header>
+      <div class="fig__toolbar bx-tools">
+        <div class="bx-row">
+          <div class="bx-ctl"><span class="field-label">Machine speed</span><div data-rateseg></div></div>
+          <p class="bx-hint">n comes from the slider above. <a href="#chart">Change it</a>.</p>
+        </div>
+      </div>
+      <div class="bx-time" data-time></div>
+      <figcaption class="fig__foot bx-foot"><span>One step is one basic operation (a comparison, an addition, an array write). Real machines vary by 10× or more, which shifts every bar by one tick but changes no class.</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="flow bx-sec" id="doubling" aria-labelledby="dbl-h">
+    <h2 id="dbl-h" data-toc="Doubling game">The doubling game</h2>
+    <p class="bx-lede">Double the input and see how much more work each class needs. Predict first to score a streak, or just press <b>Double n</b>.</p>
+    <figure class="fig wide bx-fig" id="fig-dbl" aria-labelledby="dbl-title">
+      <header class="fig__head">
+        <div class="fig__titles"><h3 class="fig__title" id="dbl-title">What happens to the work when n doubles?</h3></div>
+        <div class="bx-score" data-score aria-live="polite"></div>
+      </header>
+      <div class="bx-predict" data-predict></div>
+      <div class="bx-dbl-bar">
+        <div class="bx-dbl-n" aria-live="polite"><span class="field-label">Input size</span><output data-dbl-n>n = 4</output></div>
+        <div class="btn-row">
+          <button class="btn btn--primary" type="button" data-double>Double n <kbd>D</kbd></button>
+          <button class="btn" type="button" data-halve>Halve n</button>
+          <button class="btn btn--ghost" type="button" data-dbl-reset>Reset</button>
+        </div>
+      </div>
+      <div class="bx-cards" data-cards></div>
+      <figcaption class="fig__foot bx-foot"><span>The badge shows the change from the last doubling. The small bars are the last eight sizes on a log scale. O(log n) barely moves, O(n²) quadruples, and O(2ⁿ) squares itself.</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="flow bx-sec" id="own" aria-labelledby="own-h">
+    <h2 id="own-h" data-toc="Your own cost">Write your own cost</h2>
+    <p class="bx-lede">Type a cost formula in n, like <code>3n^2 + 5n + 100</code>. It is parsed by a small hand-written parser (nothing is evaluated as code), plotted against its dominant term, and reduced to a Big-O class.</p>
+    <figure class="fig wide bx-fig" id="fig-own" aria-labelledby="own-title">
+      <header class="fig__head">
+        <div class="fig__titles"><h3 class="fig__title" id="own-title">Your formula against its dominant term</h3></div>
+        <div class="bx-own-out" data-own-badge aria-live="polite"></div>
+      </header>
+      <div class="fig__toolbar bx-tools">
+        <div class="bx-row bx-row--top">
+          <div class="bx-ctl bx-ctl--grow">
+            <label class="field-label" for="expr">Cost as a function of n</label>
+            <div class="bx-expr">
+              <input class="field bx-expr__field" id="expr" data-expr type="text" value="3n^2 + 5n + 100" autocomplete="off" spellcheck="false" aria-describedby="expr-msg" inputmode="text">
+            </div>
+            <p class="bx-expr__msg" id="expr-msg" data-expr-msg role="status"></p>
+          </div>
+          <div class="bx-ctl"><span class="field-label">Chart</span><div data-ownseg></div></div>
+          <div class="bx-ctl"><span class="field-label">Up to n =</span><div data-ownx></div></div>
+        </div>
+        <div class="bx-examples" data-examples role="group" aria-label="Example formulas"></div>
+      </div>
+      <div class="fig__stage fig__stage--plain bx-chart bx-chart--own" data-own-chart></div>
+      <div class="bx-own-detail" data-own-detail aria-live="polite"></div>
+      <figcaption class="fig__foot bx-foot"><span>Understands <code>+ − × / ^</code> (and ², ³), parentheses, <code>n!</code>, and <code>log</code> (base 2), <code>ln</code>, <code>sqrt</code>, <code>exp</code>. Juxtaposition multiplies: <code>3n</code>, <code>n log n</code>, <code>5(n+1)</code>.</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="flow bx-sec" id="guess" aria-labelledby="guess-h">
+    <h2 id="guess-h" data-toc="Guess the class">Guess the class</h2>
+    <p class="bx-lede">Read the code, pick its growth class. The answer comes with real step counts from running the snippet.</p>
+    <figure class="fig wide bx-fig" id="fig-guess" aria-labelledby="guess-title">
+      <header class="fig__head">
+        <div class="fig__titles"><h3 class="fig__title" id="guess-title">Which growth class is this code?</h3></div>
+        <div class="bx-score" data-gscore aria-live="polite"></div>
+      </header>
+      <div class="bx-guess">
+        <div class="bx-code"><pre class="bx-code__pre" tabindex="0" aria-label="Code snippet"><code data-code></code></pre></div>
+        <div class="bx-guess__side">
+          <p class="bx-guess__q" data-q>Loading…</p>
+          <div class="bx-options" data-options role="group" aria-label="Pick a growth class"></div>
+          <div class="bx-reveal" data-reveal aria-live="polite"></div>
+          <div class="btn-row"><button class="btn btn--primary" type="button" data-next hidden>Next snippet</button><button class="btn btn--ghost" type="button" data-skip>Skip</button></div>
+        </div>
+      </div>
+    </figure>
+  </section>
+
+</main>
+</body>
+</html>

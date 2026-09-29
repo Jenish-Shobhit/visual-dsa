@@ -522,7 +522,7 @@
       S.rows.end().forEach(function (rec) { rec.to = Object.assign({}, rec.cur, { o: 0 }); rec.from = Object.assign({}, rec.cur); anim.push(rec); });
       var isEmpty = norm.held.length === 0 && norm.rows.every(function (r) { return r.n === 0; });
       if (!emptyEl) emptyEl = vz.svg('text', { class: 'vz-empty', 'text-anchor': 'middle', dy: '.35em' }, ctx.layers.rows);
-      vz.text(emptyEl, isEmpty ? (opts.emptyText || 'empty') : '');
+      vz.text(emptyEl, isEmpty ? (opts.emptyText == null ? 'empty' : opts.emptyText) : '');
       vz.set(emptyEl, 'x', vz.n2(ctx.width / 2)); vz.set(emptyEl, 'y', vz.n2(G.order[0].cellMid));
 
       /* slots: ghosts, index labels, addresses */

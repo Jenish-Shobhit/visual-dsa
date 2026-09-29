@@ -1,0 +1,279 @@
+/* Lesson 05 · Complexity & Big-O — lesson-specific figure styles.
+   Colours come only from tokens. Each growth class has one colour across the lesson (set as --cc by the scripts):
+   1 → done, log n → frontier, n → active, n log n → key, n² → compare, n³ → path, 2ⁿ → swap, n! → pivot. */
+
+.l05 { --cc: var(--st-active); }
+.l05 .fig__stage > svg.l05-svg, .l05 svg.l05-svg { max-height: none; }
+.l05 .l05-svg text, .l05 .l05-teaser text { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
+.l05 .grow-slider { flex: 1 1 220px; min-width: min(100%, 220px); }
+.l05 .chart-stage { display: block; padding: 14px 18px 10px; }
+.l05 .fig__stage--plain { background-image: none; }
+.l05 #teaser { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); }
+.l05 #teaser > svg { width: 100%; height: 100%; min-height: 0; }
+.tool-label { align-self: center; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.cls-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--cc); flex: none; }
+
+/* ------------------------------------------------------------------ hero teaser */
+.l05-teaser .t-grid { stroke: var(--line); stroke-width: 1; }
+.l05-teaser .t-axis { fill: none; stroke: var(--line-strong); stroke-width: 1.2; }
+.l05-teaser .t-axis-label { fill: var(--ink-3); font-size: 10.5px; font-weight: 600; }
+.l05-teaser .t-n { fill: var(--ink); font-size: 15px; font-weight: 760; letter-spacing: -.01em; }
+.l05-teaser .t-line { fill: none; stroke: var(--cc); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+.l05-teaser .t-head { fill: var(--cc); stroke: var(--bg-elev); stroke-width: 2; }
+.l05-teaser .t-exit { fill: none; stroke: var(--cc); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.l05-teaser .t-panel { fill: color-mix(in srgb, var(--bg-sunken) 70%, var(--bg-elev)); stroke: var(--line); }
+.l05-teaser .t-lab { fill: color-mix(in srgb, var(--cc) 72%, var(--ink)); font-size: 10.5px; font-weight: 700; }
+.l05-teaser .t-val { fill: var(--ink); font-size: 12.5px; font-weight: 720; }
+.l05-teaser .t-val.is-compact { font-size: 11.5px; }
+.l05-teaser .t-val.is-off { fill: color-mix(in srgb, var(--st-swap) 75%, var(--ink)); }
+
+/* ------------------------------------------------------------------ problem: race */
+.race-scale { display: grid; gap: 10px; padding: 14px 18px 16px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--bg-sunken) 35%, var(--bg-elev)); }
+.race-scale__head { margin: 0; font-size: 15px; color: var(--ink-2); }
+.race-scale__bars { display: grid; gap: 8px; }
+.race-bar { display: grid; grid-template-columns: 110px minmax(0, 1fr) minmax(120px, auto); align-items: center; gap: 12px; font-size: 14px; }
+.race-bar__label { font-weight: 650; color: var(--ink-2); }
+.race-bar__track { height: 14px; border-radius: 7px; background: var(--bg-sunken); border: 1px solid var(--line); overflow: hidden; }
+.race-bar__fill { display: block; height: 100%; width: 0; border-radius: 7px; background: var(--rb); transition: width var(--dur-slow) var(--ease-out); }
+.race-bar.is-linear { --rb: var(--st-compare); }
+.race-bar.is-binary { --rb: var(--st-active); }
+.race-bar__val { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.race-scale__note { margin: 0; font-size: 13px; color: var(--ink-3); }
+@media (max-width: 560px) {
+  .race-bar { grid-template-columns: 1fr auto; row-gap: 4px; }
+  .race-bar__track { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* ------------------------------------------------------------------ machines */
+.l05-mach .m-mark { stroke: var(--line); stroke-dasharray: 3 4; }
+.l05-mach .m-mark-label { fill: var(--ink-3); font-size: 11px; font-weight: 600; }
+.l05-mach .m-name { fill: var(--ink); font-size: 13.5px; font-weight: 680; }
+.l05-mach .m-sub { fill: var(--ink-3); font-size: 11.5px; }
+.l05-mach .m-track { stroke: var(--line-strong); stroke-width: 2; stroke-linecap: round; }
+.l05-mach .m-dot { fill: var(--st-active); stroke: var(--bg-elev); stroke-width: 2.5; }
+.l05-mach .m-ghost { fill: none; stroke: var(--st-muted); stroke-width: 2; stroke-dasharray: 2 2; }
+.l05-mach .m-time { fill: color-mix(in srgb, var(--st-active) 70%, var(--ink)); font-size: 12px; font-weight: 700; }
+
+/* ------------------------------------------------------------------ party */
+.party, .space-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 14px; padding: 16px 18px 18px; }
+.party__panel, .space__panel { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.party__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.party__title { font-size: 14.5px; font-weight: 680; color: var(--ink); }
+.party__stage, .space__stage { border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px; display: grid; place-items: center; }
+.party__stage > svg, .space__stage > svg { width: 100%; max-width: 230px; height: auto; }
+.party__count { margin: 0; font-size: 14px; color: var(--ink-2); }
+.party__num, .space__count { font-size: 22px; font-weight: 760; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.space__count { font-size: 17px; }
+.l05-party .p-door { stroke: var(--line-strong); stroke-width: 2; stroke-dasharray: 6 5; }
+.l05-party .p-guest circle { fill: var(--st-active); stroke: var(--bg-elev); stroke-width: 2; transition: fill var(--dur); }
+.l05-party .p-guest.is-new circle { fill: var(--st-swap); }
+.l05-party .p-hi { fill: var(--ink-3); font-size: 10px; font-weight: 700; }
+.l05-party .p-dot { fill: var(--st-active); stroke: var(--bg-elev); stroke-width: 2; transition: fill var(--dur); }
+.l05-party .p-dot.is-new { fill: var(--st-swap); }
+.l05-party .p-chord { stroke: color-mix(in srgb, var(--st-active) 45%, transparent); stroke-width: 1.4; transition: stroke var(--dur-slow); }
+.l05-party .p-chord.is-new { stroke: var(--st-swap); stroke-width: 1.8; }
+.l05-party .p-card rect { fill: var(--el-fill); stroke: var(--el-edge-strong); stroke-width: 1; transition: fill var(--dur), stroke var(--dur); }
+.l05-party .p-card-t { fill: var(--ink-2); font-size: 8.5px; font-weight: 650; }
+.l05-party .p-card.is-looked rect { fill: var(--st-compare); stroke: var(--st-compare); }
+.l05-party .p-card.is-looked .p-card-t { fill: color-mix(in srgb, var(--st-compare) 20%, black); }
+.l05-party .p-bracket path { fill: none; stroke: var(--st-compare); stroke-width: 1.8; stroke-linejoin: round; }
+
+/* ------------------------------------------------------------------ operation counter */
+.ctr-strip { display: none; }
+@container fig (max-width: 600px) {
+  .ctr-strip { position: sticky; top: var(--header-h); z-index: 3; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg-sunken) 60%, var(--bg-elev)); }
+  .ctr-strip__item { display: grid; gap: 1px; padding: 5px 7px; border-radius: 8px; background: var(--bg-elev); border: 1px solid color-mix(in srgb, var(--cc) 40%, var(--line)); font-size: 11px; color: color-mix(in srgb, var(--cc) 72%, var(--ink)); font-weight: 700; min-width: 0; }
+  .ctr-strip__item b { font-size: 16px; color: var(--ink); font-variant-numeric: tabular-nums; }
+}
+.counter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px; padding: 16px 18px; }
+.ctr { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); transition: border-color var(--dur), box-shadow var(--dur); }
+.ctr::before { content: ""; position: absolute; left: 14px; top: -1px; width: 28px; height: 3px; border-radius: 0 0 3px 3px; background: var(--cc); }
+.ctr.is-done { border-color: color-mix(in srgb, var(--cc) 55%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--cc) 25%, transparent); }
+.ctr__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ctr__title { font-size: 14.5px; font-weight: 680; }
+.ctr__code, .ctr__code.code-block { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--code-bg); font-size: 12.5px; line-height: 1.5; overflow-x: auto; min-height: 6.4em; }
+.ctr__vis { min-height: 34px; display: grid; place-items: center; }
+.ctr__vis > svg { max-width: 100%; height: auto; }
+.ctr__count { margin: 0; font-size: 13.5px; color: var(--ink-3); }
+.ctr__num { font-size: 24px; font-weight: 780; color: color-mix(in srgb, var(--cc) 70%, var(--ink)); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.ctr__bar { height: 6px; border-radius: 3px; background: var(--bg-sunken); overflow: hidden; }
+.ctr__bar > span { display: block; height: 100%; width: 0; background: var(--cc); border-radius: 3px; }
+.l05-cells .c-cell { fill: var(--el-fill); stroke: color-mix(in srgb, var(--el-stroke) 35%, var(--el-fill)); stroke-width: 1; }
+.l05-cells .c-cell.is-on { fill: var(--cc); stroke: var(--cc); }
+.l05-cells .c-cell.is-out { fill: var(--bg-sunken); stroke: color-mix(in srgb, var(--st-muted) 70%, var(--el-fill)); opacity: .6; }
+.l05-cells .c-window { fill: none; stroke: var(--cc); stroke-width: 2; stroke-linejoin: round; }
+.counter-plot, .lab-measure { padding: 12px 18px 14px; border-top: 1px solid var(--line); }
+.counter-plot__title { margin: 0 0 6px; font-size: 13.5px; font-weight: 650; color: var(--ink-2); }
+.l05-plot .pl-grid { stroke: var(--line); }
+.l05-plot .pl-axis { fill: none; stroke: var(--line-strong); }
+.l05-plot .pl-tick { fill: var(--ink-3); font-size: 11px; }
+.l05-plot .pl-line { fill: none; stroke: var(--cc); stroke-width: 1.6; stroke-opacity: .55; stroke-linejoin: round; }
+.l05-plot .pl-label { fill: color-mix(in srgb, var(--cc) 72%, var(--ink)); font-size: 12px; font-weight: 700; }
+.l05-plot .pl-dot { fill: var(--cc); stroke: var(--bg-elev); stroke-width: 1.5; }
+.l05-plot .pl-dot.is-latest { stroke: var(--ink); stroke-width: 2; }
+
+/* ------------------------------------------------------------------ growth ladder */
+.growth-tools { align-items: center; }
+.class-chips { display: flex; flex-wrap: wrap; gap: 6px; flex-basis: 100%; }
+.class-chip { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg-elev); color: var(--ink-3); font-size: 13.5px; font-weight: 650; cursor: pointer; transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast); }
+.class-chip .cls-dot { background: transparent; border: 2px solid var(--cc); }
+.class-chip[aria-pressed="true"] { color: var(--ink); border-color: color-mix(in srgb, var(--cc) 55%, var(--line)); background: color-mix(in srgb, var(--cc) 10%, var(--bg-elev)); }
+.class-chip[aria-pressed="true"] .cls-dot { background: var(--cc); }
+.class-chip:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* ------------------------------------------------------------------ doubling game */
+.doubling-n { margin: 0 0 0 auto; font-size: 15px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.doubling-n b { color: var(--ink); font-size: 17px; }
+.l05-dbl .d-tick { stroke: var(--line); stroke-dasharray: 3 4; }
+.l05-dbl .d-tick-label { fill: var(--ink-3); font-size: 11px; font-weight: 600; }
+.l05-dbl .d-head { fill: var(--ink-3); font-size: 11.5px; font-weight: 650; }
+.l05-dbl .d-label { fill: color-mix(in srgb, var(--cc) 72%, var(--ink)); font-size: 13px; font-weight: 740; }
+.l05-dbl .d-track { fill: var(--bg-sunken); stroke: var(--line); }
+.l05-dbl .d-ghost { fill: color-mix(in srgb, var(--st-muted) 60%, transparent); }
+.l05-dbl .d-bar { fill: var(--cc); }
+.l05-dbl .d-bar.is-off { fill: var(--cc); }
+.l05-dbl .d-arrow { fill: var(--cc); }
+.l05-dbl .d-val { fill: var(--ink); font-size: 12px; font-weight: 700; paint-order: stroke; stroke: var(--bg-elev); stroke-width: 3px; stroke-linejoin: round; }
+.l05-dbl .d-val.is-inside { fill: color-mix(in srgb, var(--cc) 20%, black); stroke: none; }
+.l05-dbl .d-mult { fill: color-mix(in srgb, var(--cc) 72%, var(--ink)); font-size: 15px; font-weight: 800; }
+.l05-dbl .d-mult.is-pop { animation: l05-pop 520ms var(--ease-out); transform-box: fill-box; transform-origin: left center; }
+.l05-dbl .d-time { fill: var(--ink-2); font-size: 12.5px; font-weight: 600; }
+@keyframes l05-pop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+
+/* ------------------------------------------------------------------ constants / bounds */
+.constants-tools { align-items: center; }
+
+/* ------------------------------------------------------------------ cases */
+.cases { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.cases__scan { display: flex; flex-direction: column; min-width: 0; }
+.cases__scan > .fig__stage { flex: 1; min-height: 150px; }
+.cases__hist { padding: 14px 16px; border-left: 1px solid var(--line); min-width: 0; }
+@container fig (max-width: 760px) {
+  .cases { grid-template-columns: minmax(0, 1fr); }
+  .cases__hist { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+/* ------------------------------------------------------------------ space */
+.l05-space .s-cell rect { fill: var(--st-key); stroke: var(--st-key); }
+.l05-space .s-cell.is-frontier rect { fill: color-mix(in srgb, var(--st-frontier) 22%, var(--el-fill)); stroke: var(--st-frontier); stroke-width: 1.2; }
+.l05-space .s-cell-t { fill: var(--on-state); font-size: 10.5px; font-weight: 700; }
+.l05-space .s-cell.is-frontier .s-cell-t { fill: var(--ink); font-size: 8.5px; font-weight: 650; }
+
+/* ------------------------------------------------------------------ lab */
+.lab-tools { align-items: flex-end; }
+.lab-tools__pick { display: grid; gap: 4px; flex: 1 1 250px; min-width: min(100%, 250px); }
+.lab-tools__pick .field { width: 100%; }
+.lab-tools__target { display: grid; gap: 4px; flex: 0 0 110px; }
+.lab-tools__target .field { width: 100%; }
+.lab-tools__target[hidden] { display: none; }
+.lab-tools__input { flex-basis: 100%; }
+.lab-measure { background: var(--bg-elev); }
+
+/* ------------------------------------------------------------------ flowchart */
+.flow-tools { align-items: stretch; }
+.flow-tools .lab-tools__pick { flex: 0 1 260px; align-self: flex-start; }
+.flow-code { flex: 1 1 280px; margin: 0; padding: 10px 12px; border-radius: var(--r-md); background: var(--code-bg); border: 1px solid var(--line); font-size: 13px; line-height: 1.55; overflow-x: auto; min-height: 4.8em; }
+
+/* ------------------------------------------------------------------ feasibility table */
+.feasible { padding: 12px 18px 14px; }
+.feas { display: grid; gap: 4px; }
+.feas__row { display: grid; grid-template-columns: minmax(150px, 210px) minmax(0, 1fr) minmax(96px, 170px); align-items: center; gap: 14px; padding: 6px 4px; border-bottom: 1px solid var(--hairline); }
+.feas__row:last-child { border-bottom: 0; }
+.feas__row--head { font-size: 12.5px; font-weight: 650; color: var(--ink-3); border-bottom: 1px solid var(--line); }
+.feas__cls { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.feas__name { font-size: 14px; color: var(--ink-2); }
+.feas__track { height: 14px; border-radius: 7px; background: var(--bg-sunken); border: 1px solid var(--line); overflow: hidden; }
+.feas__fill { display: block; height: 100%; width: 0; background: var(--cc); border-radius: 7px; transition: width 700ms var(--ease-out); }
+.feas__fill.is-max { background: repeating-linear-gradient(-45deg, var(--cc) 0 8px, color-mix(in srgb, var(--cc) 70%, var(--bg-elev)) 8px 14px); }
+.feas__num { text-align: right; font-size: 15px; font-weight: 720; font-variant-numeric: tabular-nums; color: var(--ink); overflow-wrap: anywhere; }
+.feas__row--head .feas__num { font-size: 12.5px; font-weight: 650; color: var(--ink-3); }
+@media (max-width: 600px) {
+  .feas__row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
+  .feas__track { grid-column: 1 / -1; grid-row: 2; }
+  .feas__name { display: none; }
+  .feas__row--head > :nth-child(2) { display: none; }
+}
+
+/* ------------------------------------------------------------------ timeline */
+.l05-tl .tl-mark { stroke: var(--line); stroke-dasharray: 3 4; }
+.l05-tl .tl-mark.is-universe { stroke: var(--st-pivot); stroke-dasharray: 5 3; stroke-width: 1.5; }
+.l05-tl .tl-mark-label { fill: var(--ink-3); font-size: 11px; font-weight: 650; }
+.l05-tl .tl-mark-label.is-universe { fill: color-mix(in srgb, var(--st-pivot) 72%, var(--ink)); }
+.l05-tl .tl-label { fill: color-mix(in srgb, var(--cc) 72%, var(--ink)); font-size: 13px; font-weight: 740; }
+.l05-tl .tl-track { stroke: var(--line); stroke-width: 1; }
+.l05-tl .tl-bar { stroke: color-mix(in srgb, var(--cc) 45%, transparent); stroke-width: 4; stroke-linecap: round; }
+.l05-tl .tl-dot { fill: var(--cc); stroke: var(--bg-elev); stroke-width: 2; }
+.l05-tl .tl-arrow { fill: var(--cc); }
+.l05-tl .tl-time { fill: var(--ink); font-size: 11.5px; font-weight: 650; paint-order: stroke; stroke: var(--bg-elev); stroke-width: 3px; stroke-linejoin: round; }
+
+/* ------------------------------------------------------------------ amortized */
+.l05-am .am-title { fill: var(--ink-2); font-size: 12px; font-weight: 650; }
+.l05-am .am-slot { fill: var(--el-fill); stroke: var(--el-edge-strong); stroke-width: 1.2; transition: fill var(--dur), stroke var(--dur); }
+.l05-am .am-slot.is-filled { fill: color-mix(in srgb, var(--st-key) 30%, var(--el-fill)); stroke: var(--st-key); }
+.l05-am .am-slot.is-new { fill: var(--st-active); stroke: var(--st-active); }
+.l05-am .am-slot.is-copied { fill: var(--st-swap); stroke: var(--st-swap); }
+.l05-am .am-grid { stroke: var(--line); }
+.l05-am .am-grid.is-three { stroke: var(--st-pivot); stroke-dasharray: 4 4; }
+.l05-am .am-tick { fill: var(--ink-3); font-size: 10.5px; }
+.l05-am .am-three { fill: color-mix(in srgb, var(--st-pivot) 72%, var(--ink)); font-size: 11px; font-weight: 700; }
+.l05-am .am-copy { fill: var(--st-swap); }
+.l05-am .am-write { fill: var(--st-active); }
+.l05-am .am-avg { fill: none; stroke: var(--st-pivot); stroke-width: 2.4; stroke-linejoin: round; }
+
+/* ------------------------------------------------------------------ pattern minis */
+.l05-mini { max-width: 280px; }
+.l05-mini .mini-cell { fill: var(--el-fill); stroke: var(--el-edge-strong); stroke-width: 1; }
+.l05-mini .mini-cell.is-a { fill: color-mix(in srgb, var(--st-active) 35%, var(--el-fill)); stroke: var(--st-active); }
+.l05-mini .mini-cell.is-b { fill: color-mix(in srgb, var(--st-frontier) 35%, var(--el-fill)); stroke: var(--st-frontier); }
+.l05-mini .mini-cell.is-c { fill: color-mix(in srgb, var(--st-compare) 35%, var(--el-fill)); stroke: var(--st-compare); }
+.l05-mini .mini-cell.is-d { fill: color-mix(in srgb, var(--st-swap) 35%, var(--el-fill)); stroke: var(--st-swap); }
+.l05-mini .mini-t { fill: var(--ink); font-size: 12px; font-weight: 700; }
+.l05-mini .mini-sub { fill: var(--ink-2); font-size: 11px; font-weight: 600; }
+
+/* ------------------------------------------------------------------ match widget */
+.match__grid { display: grid; grid-template-columns: minmax(0, 1fr) 170px; gap: 14px; align-items: start; margin-top: 12px; }
+.match__snips { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 10px; }
+.match__item { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.match__snip { position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 6px 10px; align-items: start; width: 100%; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); color: var(--ink); text-align: left; cursor: pointer; transition: border-color var(--dur-fast), box-shadow var(--dur-fast); }
+.match__snip:hover { border-color: var(--line-strong); }
+.match__snip[aria-pressed="true"] { border-color: var(--accent); box-shadow: var(--ring); }
+.match__snip:focus-visible { outline: none; box-shadow: var(--ring); }
+.match__num { grid-row: span 2; width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; background: var(--unit-soft); color: var(--unit-ink); font-size: 13px; font-weight: 750; }
+.match__code, .match__code.code-block { margin: 0; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; font-size: 12.5px; line-height: 1.5; overflow-x: auto; white-space: pre; }
+.match__slot { font-size: 12.5px; color: var(--ink-3); }
+.match__why { margin: 0; padding: 0 4px; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.match__why:empty { display: none; }
+.match__item.is-right .match__snip { border-color: var(--st-done); }
+.match__item.is-wrong .match__snip { border-color: var(--st-swap); }
+.match__bank { display: grid; gap: 8px; position: sticky; top: calc(var(--header-h) + 16px); }
+.match__cls { display: flex; align-items: center; justify-content: center; height: 40px; border: 1.5px dashed color-mix(in srgb, var(--cc) 55%, var(--line)); border-radius: var(--r-md); background: var(--bg-elev); cursor: pointer; transition: background var(--dur-fast), border-style var(--dur-fast); }
+.match__bank.is-armed .match__cls { border-style: solid; }
+.match__cls:hover, .match__cls:focus-visible { background: color-mix(in srgb, var(--cc) 10%, var(--bg-elev)); outline: none; box-shadow: var(--ring); }
+@media (max-width: 640px) {
+  .match__grid { grid-template-columns: minmax(0, 1fr); }
+  .match__bank { position: sticky; top: var(--header-h); z-index: 2; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 8px 0; background: var(--bg-elev); }
+}
+
+/* ------------------------------------------------------------------ which is biggest (click quiz figure) */
+.which { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; padding: 16px 18px; }
+.which__card { display: grid; gap: 6px; padding: 14px; border: 1.5px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); }
+.which__card::before { content: ""; width: 28px; height: 3px; border-radius: 2px; background: var(--cc); margin: -14px 0 6px; }
+.which__expr { font-size: 20px; font-weight: 760; letter-spacing: -.01em; color: var(--ink); }
+.which__note { font-size: 13px; color: var(--ink-3); }
+.which__bar { height: 10px; border-radius: 5px; background: var(--bg-sunken); overflow: hidden; margin-top: 4px; }
+.which__fill { display: block; height: 100%; width: 0; background: var(--cc); border-radius: 5px; transition: width 800ms var(--ease-out); }
+.which__val { font-size: 14px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------------------------ summary tiles */
+.l05-sum .sum-box { fill: var(--bg-elev); stroke: var(--line-strong); }
+.l05-sum .sum-t { fill: var(--ink); font-size: 14px; font-weight: 760; }
+.l05-sum .sum-s { fill: var(--ink-2); font-size: 11px; font-weight: 650; }
+.l05-sum .sum-line { fill: none; stroke: var(--cc); stroke-width: 2.4; stroke-linecap: round; }
+.l05-sum .sum-line.is-dashed { stroke-dasharray: 5 4; }
+.l05-sum .sum-ghost { fill: color-mix(in srgb, var(--st-muted) 60%, transparent); }
+.l05-sum .sum-bar { fill: var(--cc); }
+
+/* ------------------------------------------------------------------ closing */
+#summary-card .summary__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); }
+.deeper-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; margin-top: 12px; }
+.deeper-pair .deeper { margin: 0; }

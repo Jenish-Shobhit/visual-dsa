@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Complexity &amp; Big-O · Visual DSA</title>
+<meta name="description" content="Count the work, not the seconds: racing growth curves, a doubling game, operation counters, feasibility timelines and a count-the-steps lab for Big-O, Omega and Theta.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/05-big-o.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/05-big-o.js" defer></script>
+<script src="../js/lessons/05-big-o-figs.js" defer></script>
+<script src="../js/lessons/05-big-o-lab.js" defer></script>
+<script src="../js/lessons/05-big-o.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="05-big-o">
+<main id="main" class="lesson l05">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Complexity &amp; Big-O</h1>
+      <p class="hero__lede">Count the work, not the seconds, and watch what happens to the count when the input grows.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">20 min</li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li class="chip" data-icon="prereq">Needs loops (lessons 01–03)</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: seven growth curves race up a chart as n grows from 1 to 36. The constant and log n curves crawl along the bottom, n and n log n climb steadily, while n squared, 2 to the n and n factorial shoot off the top and their counters explode."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>A directory holds 8 billion names in alphabetical order, and you need to find one. You could read from the top, one name at a time. Or you could open it in the middle, see which half the name must be in, and throw the other half away.</p>
+      <p>Both methods are correct. Race them on 32 names: on every tick, each method makes <strong>one comparison</strong>.</p>
+      <figure class="fig wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Linear scan vs binary search, one comparison per tick</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><span class="tool-label">Where is the target?</span><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <div class="race-scale" data-scale></div>
+        <figcaption class="fig__foot">Text alternative: two rows of 32 sorted numbers. The top row is scanned left to right, one cell per tick. In the bottom row a window halves on every tick. The captions describe each comparison.</figcaption>
+      </figure>
+      <p>On 32 names the score is at most 32 against 6. Slide the directory up to 8 billion names: the scan may need 8 billion comparisons, binary search never more than 33. A faster computer cannot close a gap like that. Only a better algorithm can.</p>
+      <p>This lesson gives you the tools to see such gaps before you write any code: <strong>count the steps</strong>, then ask how the count <strong>grows</strong> when the input grows.</p>
+    </section>
+
+    <!-- ============================================================ COUNT, DON'T TIME -->
+    <section id="count">
+      <h2 data-toc="Count steps">Count steps, not seconds</h2>
+      <p>The obvious way to compare two programs is to time them. But a stopwatch measures the machine as much as the method. The same code runs a thousand times faster on a laptop than on a 1980s PC.</p>
+      <figure class="fig wide" id="fig-machines">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">One job, three machines</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="grow-slider"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Time runs left to right on a log scale: each tick is ten times the one before. Text alternative: three markers show how long the same job takes on a 1980s PC, a phone and a laptop; they move together when n changes.</figcaption>
+      </figure>
+      <p>Change n and watch: every marker jumps by the <em>same distance</em>. The seconds belong to the machine. The way the work <em>grows</em> belongs to the algorithm.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Three words you will use all the time</p>
+        <p>A <dfn>basic operation</dfn> is one small step that takes a fixed time: one comparison, one addition, one array read. The <dfn>input size</dfn> <em>n</em> is how much data the algorithm gets, such as the number of items in a list. The <dfn>running time</dfn> <em>T</em>(<em>n</em>) is the number of basic operations the algorithm performs on an input of size <em>n</em>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Picture a party with <em>n</em> guests and three jobs to do. Drag the slider, or add guests one at a time, and watch each job’s count.</p>
+      <figure class="fig wide" id="fig-party">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Three jobs at a party of n guests</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="grow-slider"></div><div class="btn-row"><button type="button" class="btn btn--sm btn--secondary" data-add>Add a guest</button><button type="button" class="btn btn--sm btn--ghost" data-reset>Start over</button></div></div>
+        <div class="party" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: left, a row of guests each greeted once; middle, guests on a circle with a line for every handshake; right, a sorted pile of name cards halved until one card is left.</figcaption>
+      </figure>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Three shapes of work</p>
+        <p>Greeting grows with the guest list: <b>n</b>. Handshakes grow with the number of <em>pairs</em>: each new guest shakes hands with everyone already there, <b>n(n − 1)/2</b>. Halving grows with the number of times you can cut the pile in half: about <b>log₂ n</b>.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>At a party some handshakes take longer than others. In the analysis every basic operation costs the same one unit. Real machines have caches and slow instructions, so this is a simplification, but it is the right first question.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ COUNTING IN CODE -->
+    <section id="counting">
+      <h2 data-toc="Cost of code">Read the cost off the code</h2>
+      <p>Code shows its cost through its loops. A line that runs once costs 1. A loop that runs <em>n</em> times multiplies the cost of its body by <em>n</em>. A loop whose counter halves each time runs only about log₂ <em>n</em> times.</p>
+      <p>Pick <em>n</em> and press <b>Run</b>. All four snippets share one clock: each tick, every snippet that still has work does one operation.</p>
+      <figure class="fig wide" id="fig-counter">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Four snippets, one clock</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="grow-slider"></div><div class="btn-row"><button type="button" class="btn btn--primary btn--sm" data-run>Run</button><button type="button" class="btn btn--ghost btn--sm" data-skip>Skip to end</button></div></div>
+        <div class="counter-grid" data-cards></div>
+        <div class="counter-plot">
+          <p class="counter-plot__title">Every finished run plots a dot at its n <span class="muted">(log scale)</span></p>
+          <div data-plot></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: four cards count operations as they run: a single line (1 operation), a loop over n (n), a halving loop (about log₂ n) and a nested loop (n × n). A chart below plots each finished count against n.</figcaption>
+      </figure>
+      <p>Run a few sizes and the dots trace four shapes: flat, gently rising, straight, and bending up hard. The nested loop is still counting long after the others have stopped.</p>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Loops one after another <b>add</b>. Loops inside loops <b>multiply</b>. A counter that halves or doubles gives a <b>logarithm</b>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ GROWTH LADDER -->
+    <section id="growth">
+      <h2>The growth ladder</h2>
+      <p>A handful of growth rates cover nearly every algorithm you will meet. From best to worst: <span class="big-o" data-o="1"></span> <span class="big-o" data-o="logn"></span> <span class="big-o" data-o="n"></span> <span class="big-o" data-o="nlogn"></span> <span class="big-o" data-o="n2"></span> <span class="big-o" data-o="2n"></span> <span class="big-o" data-o="nfact"></span></p>
+      <p>Switch curves on and off, slide the largest <em>n</em> up to a million, and switch the y-axis to a log scale when the tall curves flatten the rest. Hover or tab into the chart to read exact values.</p>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The growth ladder, from 1 to n!</h3></div>
+        </header>
+        <div class="fig__toolbar growth-tools"><div class="class-chips" data-chips role="group" aria-label="Curves to show"></div><div data-seg></div><div data-slider class="grow-slider"></div></div>
+        <div class="fig__stage fig__stage--plain chart-stage" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a line chart of operations against n for each growth class. The chips under the chart give every visible class’s exact value at the largest n.</figcaption>
+      </figure>
+      <p>On the linear axis, 2ⁿ and n! leave the chart almost at once. On the log axis the rungs separate cleanly, and the gaps between them are huge: at a million items, n log n is about 20 million steps while n² is a trillion.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Big-O, in one sentence</p>
+        <p><em>f</em>(<em>n</em>) = O(<em>g</em>(<em>n</em>)) means: past some size <em>n</em>₀, <em>f</em>(<em>n</em>) stays below a constant times <em>g</em>(<em>n</em>). It names the <em>shape</em> of the growth and ignores the constant.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ DOUBLING GAME -->
+    <section id="doubling">
+      <h2>The doubling game</h2>
+      <p>Here is the fastest way to feel the rungs. Double <em>n</em> and ask: how much more work? Press <b>Double n</b> a few times.</p>
+      <figure class="fig wide" id="fig-doubling">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Double n, watch the work multiply</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="btn-row"><button type="button" class="btn btn--primary btn--sm" data-double>Double n</button><button type="button" class="btn btn--secondary btn--sm" data-halve>Halve n</button><button type="button" class="btn btn--ghost btn--sm" data-reset>Reset</button></div><p class="doubling-n" data-n aria-live="polite"></p></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Bars use a log scale, so multiplying the work by 4 always adds the same length, and squaring the work doubles a bar’s length. Text alternative: each row lists a growth class, its work before and after doubling, the multiplier, and how long 2n takes if n took one second.</figcaption>
+      </figure>
+      <p>Constant work does not move. Logarithmic work gains one step. Linear work doubles, n log n a little more, and quadratic work quadruples. Exponential work <em>squares</em>: 2<sup>2n</sup> = 2ⁿ × 2ⁿ, so a job that took a second at <em>n</em> = 16 takes 18 hours at 32.</p>
+      <aside class="callout callout--insight">
+        <p class="callout__title">A test you can run on real code</p>
+        <p>Time your program at <em>n</em> and at 2<em>n</em>. If the time doubles, it is probably linear. If it quadruples, quadratic. The ratio tells you the rung even when you cannot read the code.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CONSTANTS -->
+    <section id="constants">
+      <h2 data-toc="Drop constants">Keep the biggest term</h2>
+      <p>Say you count 3<em>n</em> + 5 steps. Big-O throws away the 3 and the 5 and calls it O(<em>n</em>). Zoom out and see why that is fair.</p>
+      <figure class="fig wide" id="fig-constants">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">a·n + b against n and n²</h3></div>
+        </header>
+        <div class="fig__toolbar constants-tools"><div data-a class="grow-slider"></div><div data-b class="grow-slider"></div><div data-zoom></div><div data-loglog></div></div>
+        <div class="fig__stage fig__stage--plain chart-stage" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a chart of a·n + b, n and n². The chips give the ratio (a·n + b) / n and the point where n² overtakes a·n + b.</figcaption>
+      </figure>
+      <p>Zoom out and the + 5 vanishes: at <em>n</em> = 1,000 it is under 0.2 % of the total. The 3 never vanishes, but on the log–log view 3<em>n</em> + 5 and <em>n</em> run <strong>parallel</strong>. A constant factor <em>shifts</em> a curve. A bigger exponent <em>tilts</em> it, which is why n² passes 3<em>n</em> + 5 at <em>n</em> ≈ 4, and even 100<em>n</em> + 1000 at <em>n</em> ≈ 110.</p>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Constants still matter in practice</p>
+        <p>On small inputs a simple O(<em>n</em>²) method with a tiny constant can beat an O(<em>n</em> log <em>n</em>) one. That is why library sorts switch to insertion sort for short runs. Big-O tells you who wins as <em>n</em> grows, not who wins at <em>n</em> = 10.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ BOUNDS -->
+    <section id="bounds">
+      <h2 data-toc="O, Ω and Θ">O, Ω and Θ: ceiling, floor, tight fit</h2>
+      <p>Big-O is a ceiling. Its two siblings give a floor and a tight fit. Here <em>f</em>(<em>n</em>) = <em>n</em>²/2 + 8<em>n</em> + 20 is the exact step count of some algorithm. Move the constants and find where each bound starts to hold.</p>
+      <figure class="fig wide" id="fig-bounds">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trap f(n) between constant multiples of n²</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-c1 class="grow-slider"></div><div data-c2 class="grow-slider"></div></div>
+        <div class="fig__stage fig__stage--plain chart-stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a chart of f(n) with a ceiling c₂·n² and a floor c₁·n². A dashed guide marks n₀, the size after which the bound holds for good.</figcaption>
+      </figure>
+      <p><em>f</em>(<em>n</em>) = O(<em>n</em>²) because past <em>n</em>₀ a constant times <em>n</em>² stays above it. <em>f</em>(<em>n</em>) = Ω(<em>n</em>²) because a smaller constant times <em>n</em>² stays below it. Both hold, so <em>f</em>(<em>n</em>) = Θ(<em>n</em>²): <em>n</em>² is its true growth rate.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">The three bounds</p>
+        <p><dfn>O</dfn> (big-O) is an upper bound. <dfn>Ω</dfn> (big-Omega) is a lower bound. <dfn>Θ</dfn> (big-Theta) is both at once: <em>f</em> is trapped between <em>c</em>₁·<em>g</em> and <em>c</em>₂·<em>g</em> for every <em>n</em> ≥ <em>n</em>₀.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">A ceiling can be loose</p>
+        <p><em>f</em>(<em>n</em>) is also O(<em>n</em>³). That is true and useless. In everyday talk, and in interviews, “O(<em>n</em>²)” usually means the tight rate. When precision matters, say Θ.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CASES -->
+    <section id="cases">
+      <h2 data-toc="Best, average, worst">Best, average and worst case</h2>
+      <p>For a fixed <em>n</em>, different inputs can cost different amounts. Linear search stops as soon as it finds the target, so where the target sits decides the count.</p>
+      <figure class="fig wide" id="fig-cases">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Linear search on 10 values: where is the target?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><button type="button" class="btn btn--sm btn--ghost" data-reroll>New random target</button></div>
+        <div class="cases">
+          <div class="cases__scan">
+            <div class="fig__stage fig__stage--plain" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="cases__hist">
+            <p class="counter-plot__title">Comparisons for every target position <span class="muted">(✕ = not in the list)</span></p>
+            <div data-hist></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the scan checks values left to right. The bar chart shows 1 comparison when the target is at position 0, up to 10 at position 9, and 10 when it is missing; the dashed line marks the average, 5.5.</figcaption>
+      </figure>
+      <p><b>Best case</b>: the target is first, 1 comparison. <b>Worst case</b>: it is last or missing, <em>n</em> comparisons. <b>Average case</b>: if every position is equally likely, (<em>n</em> + 1)/2 comparisons, which is still linear.</p>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Two separate questions</p>
+        <p>“Which input?” picks the case: best, average or worst. “Which bound?” picks O, Ω or Θ. They mix freely: linear search’s worst case is Θ(<em>n</em>) and its best case is Θ(1). An average only means something when you say which inputs are likely.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ SPACE -->
+    <section id="space">
+      <h2 data-toc="Space">Space counts too</h2>
+      <p>Memory can grow with <em>n</em> as well. <dfn>Space complexity</dfn> counts the extra memory an algorithm needs beyond its input. Slide <em>n</em> and watch which memory grows.</p>
+      <figure class="fig wide" id="fig-space">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Extra memory as n grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="grow-slider"></div></div>
+        <div class="space-grid" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: four panels show extra memory: two variables for a running maximum, n cells for a copy, n stack frames for a recursion n calls deep, and an n by n table for all pairs.</figcaption>
+      </figure>
+      <p>A running maximum needs two variables whatever <em>n</em> is: O(1) extra space. A copy needs <em>n</em> cells. A recursion <em>n</em> calls deep keeps <em>n</em> stack frames alive at once, so it is O(<em>n</em>) even though it allocates no array. A table of all pairs needs <em>n</em>² cells.</p>
+    </section>
+
+    <!-- ============================================================ LAB -->
+    <section id="lab">
+      <h2 data-toc="The lab">The lab: count the steps</h2>
+      <p>Now count for yourself. Choose one of six algorithms, set <em>n</em> or type your own numbers, and step through. The counter counts one named operation, and the chart below the controls plots your count against the theory curve.</p>
+      <figure class="fig fig--lab wide" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Count the steps of six algorithms</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar lab-tools">
+          <div class="lab-tools__pick">
+            <label class="field-label" for="lab-alg">Algorithm</label>
+            <select class="field" id="lab-alg" data-alg></select>
+          </div>
+          <div data-n class="grow-slider"></div>
+          <div class="lab-tools__target" data-target-wrap>
+            <label class="field-label" for="lab-target">Target</label>
+            <input class="field" id="lab-target" type="text" inputmode="numeric" autocomplete="off" data-target value="100">
+          </div>
+          <div class="lab-tools__input" data-input></div>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall fig__stage--plain" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="lab-measure">
+              <p class="counter-plot__title" data-measure-title>Operations against n</p>
+              <div data-measure></div>
+            </div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask you to predict the total count. Dots at smaller n come from the first k of your values; the dashed curve is the formula. Text alternative: the caption describes every step in words.</figcaption>
+      </figure>
+      <p>Try the <b>Worst case</b> preset, then a lucky input, and watch which algorithms care. Find max and bubble sort always make the same count for a given <em>n</em>. Pair sum, binary search and subset sum can stop early.</p>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Find the Big-O">How to find the Big-O of code</h2>
+      <p>Most code falls into a few patterns. This diagram asks the questions in order. Pick a snippet and step through it: each decision lights up, and the caption says why.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Loops, halving, nesting, recursion</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar flow-tools"><div class="lab-tools__pick"><label class="field-label" for="flow-pick">Snippet</label><select class="field" id="flow-pick" data-pick></select></div><pre class="flow-code" data-code aria-label="The chosen snippet"></pre></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: first ask whether the code has a loop or recursion; none means O(1). For a loop: a halving counter means O(log n); a single loop over n means O(n); nested loops multiply, giving O(n log n) when the inner counter halves and O(n²) when it does not. For recursion: halving plus a linear merge gives O(n log n); two calls on n − 1 give O(2ⁿ).</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">When the diagram runs out</p>
+        <p>Write the count as a sum and simplify it. A triangle of loops (<code>j &lt; i</code>) is 0 + 1 + … + (<em>n</em> − 1) = <em>n</em>(<em>n</em> − 1)/2, still O(<em>n</em>²). For recursion, draw the tree of calls and add the work on each level.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ COST: WHAT FITS -->
+    <section id="cost">
+      <h2 data-toc="What fits in a second">What fits in a second</h2>
+      <p>Growth rates decide what is possible at all. A typical computer does around 10⁸ simple operations per second. If you have one second, how big can <em>n</em> be?</p>
+      <figure class="fig wide" id="fig-feasible">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The largest n that finishes in the budget</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-speed></div><div data-budget></div></div>
+        <div class="feasible" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Bars use a log scale of n. Text alternative: a table of the largest input size each growth class can handle within the chosen time at the chosen speed.</figcaption>
+      </figure>
+      <p>Turn it around: for a given <em>n</em>, how long does each class take? The markers sit on a time line that runs from nanoseconds to past the age of the universe.</p>
+      <figure class="fig wide" id="fig-timeline">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">How long each class takes at 10⁸ operations per second</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="grow-slider"></div></div>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 640px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Time runs left to right on a log scale from 10 nanoseconds to 10²⁴ seconds, with landmarks at a second, an hour, a year, a lifetime and the age of the universe. Text alternative: the caption lists each class’s time.</figcaption>
+      </figure>
+      <p>At <em>n</em> = 100, n² finishes in a tenth of a millisecond. 2ⁿ needs about 4 × 10¹⁴ years, some 29,000 times the age of the universe. That wall between polynomial and exponential is why computer scientists call polynomial time “efficient”.</p>
+      <h3>Growth classes at a glance</h3>
+      <div class="table-wrap">
+        <table class="table table--compact">
+          <thead><tr><th scope="col">Class</th><th scope="col">Name</th><th scope="col" class="num">n = 10</th><th scope="col" class="num">n = 1,000</th><th scope="col" class="num">n = 10⁶</th><th scope="col">Typical example</th></tr></thead>
+          <tbody data-class-table></tbody>
+        </table>
+      </div>
+      <h3>The six lab algorithms</h3>
+      <div class="table-wrap">
+        <table class="table table--compact">
+          <thead><tr><th scope="col">Algorithm</th><th scope="col">Counted operation</th><th scope="col">Best case</th><th scope="col">Worst case</th><th scope="col">Extra space</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Find the maximum</th><td>comparisons</td><td><span class="big-o" data-o="n">n − 1</span> any order</td><td><span class="big-o" data-o="n">n − 1</span> any order</td><td><span class="big-o" data-o="1"></span></td></tr>
+            <tr><th scope="row">Pair sum, brute force</th><td>pairs checked</td><td><span class="big-o" data-o="1">1</span> first pair works</td><td><span class="big-o" data-o="n2">n(n − 1)/2</span> no pair works</td><td><span class="big-o" data-o="1"></span></td></tr>
+            <tr><th scope="row">Binary search</th><td>probes</td><td><span class="big-o" data-o="1">1</span> target in the middle</td><td><span class="big-o" data-o="logn">⌊log₂ n⌋ + 1</span> target missing</td><td><span class="big-o" data-o="1"></span></td></tr>
+            <tr><th scope="row">Bubble sort</th><td>comparisons</td><td><span class="big-o" data-o="n2">n(n − 1)/2</span> even if sorted</td><td><span class="big-o" data-o="n2">n(n − 1)/2</span></td><td><span class="big-o" data-o="1"></span></td></tr>
+            <tr><th scope="row">Subset sum, every subset</th><td>subsets checked</td><td><span class="big-o" data-o="1">1</span> target 0</td><td><span class="big-o" data-o="2n">2ⁿ</span> no subset works</td><td><span class="big-o" data-o="1"></span></td></tr>
+            <tr><th scope="row">Merge sort</th><td>comparisons</td><td><span class="big-o" data-o="nlogn">≈ ½ n log₂ n</span> sorted input</td><td><span class="big-o" data-o="nlogn">≤ n log₂ n</span></td><td><span class="big-o" data-o="n"></span> buffer</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <details class="accordion">
+        <summary>Why is bubble sort n(n − 1)/2 even on sorted input?</summary>
+        <div class="accordion__body"><p>This version never stops early: pass 1 makes n − 1 comparisons, pass 2 makes n − 2, and so on down to 1. The sum is n(n − 1)/2 whatever the order. A version that stops after a pass with no swaps makes only n − 1 comparisons on sorted input, but it is still Θ(n²) in the worst case.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Where does “at most ⌊log₂ n⌋ + 1 probes” come from?</summary>
+        <div class="accordion__body"><p>Each probe leaves at most half of the remaining candidates. After k probes at most n / 2<sup>k</sup> remain, and the search must stop once fewer than one remains. So k ≤ ⌊log₂ n⌋ + 1. Doubling n adds just one probe.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ PATTERNS -->
+    <section id="patterns">
+      <h2>Variations and patterns</h2>
+      <p>A few patterns come up again and again. Each tab has a picture and the code that produces it.</p>
+      <div class="tabs wide" id="pattern-tabs">
+        <div class="tabs__list">
+          <button data-tab="add">Add or multiply</button>
+          <button data-tab="halve">Halving</button>
+          <button data-tab="divide">Divide and conquer</button>
+          <button data-tab="hidden">Hidden input size</button>
+        </div>
+        <div data-tab-panel="add"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="add"></div><figcaption>Side by side: <b>n + n</b>. Nested: <b>n × n</b>.</figcaption></figure><div><p>Two loops one after the other cost <em>n</em> + <em>n</em> = 2<em>n</em>, still O(<em>n</em>). A loop inside a loop costs <em>n</em> × <em>n</em>. With two inputs of sizes <em>n</em> and <em>m</em>, say O(<em>n</em> + <em>m</em>) or O(<em>n</em>·<em>m</em>): never merge them into one letter.</p><pre data-code-block="add"></pre></div></div></div>
+        <div data-tab-panel="halve"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="halve"></div><figcaption>16 → 8 → 4 → 2 → 1: four halvings.</figcaption></figure><div><p>A counter that halves (or doubles) reaches its end after about log₂ <em>n</em> rounds. Doubling <em>n</em> adds one round. That is why binary search on a billion items needs only about 30 probes.</p><pre data-code-block="halve"></pre></div></div></div>
+        <div data-tab-panel="divide"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="divide"></div><figcaption>log₂ n levels, n work on each: <b>n log n</b>.</figcaption></figure><div><p>Split the input in half, solve each half, and combine in linear time. The tree of calls has about log₂ <em>n</em> levels and every level does <em>n</em> work in total, so merge sort is O(<em>n</em> log <em>n</em>). You will meet the full story in the divide-and-conquer lesson.</p><pre data-code-block="divide"></pre></div></div></div>
+        <div data-tab-panel="hidden"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="hidden"></div><figcaption>One more digit, ten times the loop.</figcaption></figure><div><p>A loop that counts up to a <em>number</em> N looks linear, but the input is only the digits of N. Each extra digit multiplies the work by 10, so the loop is exponential in the size of its input. Checking whether N is prime by trying every divisor has this trap.</p><pre data-code-block="hidden"></pre></div></div></div>
+      </div>
+      <h3>Amortized cost: a rare expensive step</h3>
+      <p>Some operations are usually cheap and occasionally expensive. A dynamic array that doubles when full copies everything on those rare appends. Step through 16 appends and watch the <em>average</em> cost per append.</p>
+      <figure class="fig wide" id="fig-amortized">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Appending to a doubling array</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the top row shows the array’s capacity and filled slots; the bars below show each append’s cost (one write plus any copies) and a line shows the running average, which stays below 3.</figcaption>
+      </figure>
+      <p>The expensive appends get rarer as fast as they get bigger, so the average never climbs above 3. That is an <dfn>amortized</dfn> O(1) cost per append: a guarantee about the whole sequence, not a promise about each step. The arrays lesson proves it.</p>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz match" id="match"></div>
+      <figure class="fig wide" id="fig-which">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Four step counts at n = 1,000</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--plain which" data-stage></div>
+        <figcaption class="fig__foot">After you answer, the cards reveal each count at n = 1,000 on a log-scale bar.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-which"></div>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-triple"></div>
+        <div class="quiz" id="quiz-bound"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Complexity &amp; Big-O</p></div>
+          <div class="cluster"><span class="big-o" data-o="1"></span><span class="big-o" data-o="logn"></span><span class="big-o" data-o="n"></span><span class="big-o" data-o="nlogn"></span><span class="big-o" data-o="n2"></span><span class="big-o" data-o="2n"></span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1894<small>O is born</small></div>
+        <p class="history__people">Paul Bachmann<span><em>Die analytische Zahlentheorie</em></span></p>
+        <div class="history__body">
+          <p>Big-O is older than computers. The number theorist Paul Bachmann wrote O in 1894, the O standing for <em>Ordnung</em>, “order”, and Edmund Landau spread it in his 1909 handbook. Fifty years before that, in 1844, Gabriel Lamé proved that Euclid’s algorithm needs at most five division steps per decimal digit, perhaps the first analysis of a running time.</p>
+          <p>Computers made the question urgent. In 1965 Juris Hartmanis and Richard Stearns founded complexity theory, and in 1976 Donald Knuth proposed Ω and Θ so that lower and tight bounds had names too.</p>
+        </div>
+        <p class="history__source">Sources: D. E. Knuth, “Big Omicron and Big Omega and Big Theta”, <em>SIGACT News</em> 8(2), 1976; J. Hartmanis and R. E. Stearns, “On the Computational Complexity of Algorithms”, <em>Trans. AMS</em> 117, 1965; Lamé’s theorem (1844).</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice" class="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">A loop with a fixed inner count</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">An outer loop runs over n items and, for each one, an inner loop runs exactly 10 times. How many inner steps run in total, and what is the Big-O? Name the operation you counted.</p></li>
+        <li><div class="practice__title">Doubling, but not quadratic</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">The outer counter runs i = 1, 2, 4, 8, … while i &lt; n, and for each i an inner loop runs i times. Count the inner steps exactly for n = 16, then give the Big-O for general n.</p></li>
+        <li><div class="practice__title">The doubling detective</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">A program takes 0.2 s on 1,000 items, 0.8 s on 2,000 and 3.2 s on 4,000. Which growth class fits, and how long do you expect for 8,000 items? What else could explain the timings?</p></li>
+        <li><div class="practice__title">Beat the brute-force pair sum</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Decide whether any two of n numbers add up to a target using fewer than n(n − 1)/2 checks. Give the time and the extra space of your method, and say what you traded to get it.</p></li>
+        <li><div class="practice__title">Is trial division efficient?</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">A routine tests whether N is prime by trying every divisor up to √N. Express its worst-case steps in terms of N, then in terms of d, the number of digits of N. Is it polynomial in the size of its input?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-00-cost-of-a-computation.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">The cost of a computation</span><span class="deeper__text" style="display:block">The RAM model, formal definitions of O, Ω and Θ with proofs, the two axes of case and bound, and the traps the model hides.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+      <div class="deeper-pair">
+        <a class="deeper" href="../studies/dsa-02-amortized-cost-aggregate-accounting-potential.html">
+          <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+          <span><span class="deeper__label">Amortized cost</span><span class="deeper__title" style="display:block">Aggregate, accounting, potential</span><span class="deeper__text" style="display:block">Three proofs that doubling costs O(1) per append.</span></span>
+          <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+        </a>
+        <a class="deeper" href="../studies/dsa-03-divide-solve-combine.html">
+          <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+          <span><span class="deeper__label">Recurrences</span><span class="deeper__title" style="display:block">Divide, solve, combine</span><span class="deeper__text" style="display:block">Recursion trees and the master theorem behind n log n.</span></span>
+          <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+        </a>
+      </div>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

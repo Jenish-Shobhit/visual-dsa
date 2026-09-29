@@ -444,29 +444,27 @@ h2:hover > .anchor, h3:hover > .anchor, .anchor:focus-visible { opacity: 1; }
   .hero__stage { aspect-ratio: 16 / 10; }
 }
 
-/* On-this-page TOC: a sticky rail on wide screens, inside the drawer elsewhere. */
-.toc { display: none; }
-@media (min-width: 1280px) {
-  .lesson.has-toc {
-    display: grid;
-    grid-template-columns: 216px minmax(0, 1fr);
-    column-gap: 32px;
-    max-width: calc(var(--full) + 2 * var(--gutter));
-    margin: 0 auto;
-    padding-left: var(--gutter);
-  }
-  .lesson.has-toc > * { grid-column: 2; }
-  .lesson.has-toc > .toc {
-    grid-column: 1; grid-row: 1 / span 60;
-    display: block; align-self: start;
-    position: sticky; top: calc(var(--header-h) + 40px);
-    max-height: calc(100vh - var(--header-h) - 64px);
-    overflow-y: auto;
-    margin-top: clamp(40px, 6vw, 80px);
-    padding-right: 4px;
-  }
+/* On-this-page sidebar.
+   Narrow screens: a panel that slides in from the left over a soft backdrop, opened by a floating button.
+   Wide screens (>= 1280px): docked beside the lesson; collapses to a slim strip (main.toc-collapsed). */
+.toc {
+  position: fixed; z-index: 38; top: var(--header-h); bottom: 0; left: 0;
+  width: min(320px, 86vw);
+  padding: 18px 14px 28px 20px;
+  background: var(--bg-elev);
+  border-right: 1px solid var(--line);
+  box-shadow: var(--shadow-3);
+  overflow-y: auto; overscroll-behavior: contain;
+  transform: translateX(-105%); visibility: hidden;
+  transition: transform var(--dur) var(--ease-out), visibility 0s linear var(--dur);
 }
-.toc__title { margin: 0 0 12px; font-size: 13px; font-weight: 650; color: var(--ink-3); }
+body.toc-open .toc { transform: none; visibility: visible; transition: transform var(--dur) var(--ease-out), visibility 0s; }
+.toc__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; }
+.toc__title { margin: 0; font-size: 13px; font-weight: 650; color: var(--ink-3); }
+.toc__close { flex: none; color: var(--ink-3); }
+.toc__close:hover { color: var(--ink); }
+.toc__close svg { width: 18px; height: 18px; }
+.toc__open { display: none; }
 .toc__list { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--line); }
 .toc__link {
   display: block; margin-left: -1px; padding: 6px 0 6px 14px;
@@ -479,6 +477,74 @@ h2:hover > .anchor, h3:hover > .anchor, .anchor:focus-visible { opacity: 1; }
 .toc__link.is-active { color: var(--ink); font-weight: 600; border-left-color: var(--unit, var(--accent)); }
 .toc__mini { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
 .toc__mini .score-chip { margin-top: 2px; }
+
+.toc-backdrop {
+  position: fixed; z-index: 37; inset: var(--header-h) 0 0 0;
+  background: color-mix(in srgb, var(--bg-sunken) 55%, transparent);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--dur) var(--ease-out);
+}
+body.toc-open .toc-backdrop { opacity: 1; pointer-events: auto; }
+.toc-fab {
+  position: fixed; z-index: 30; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 42px; padding: 0 16px 0 13px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-elev) 90%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  color: var(--ink); font-size: 13.5px; font-weight: 650;
+  box-shadow: var(--shadow-2);
+  transition: opacity var(--dur-fast), transform var(--dur) var(--ease-out), border-color var(--dur-fast);
+}
+.toc-fab svg { width: 18px; height: 18px; color: var(--unit, var(--accent)); }
+.toc-fab:hover { border-color: var(--line-strong); transform: translateY(-1px); }
+body.toc-open .toc-fab { opacity: 0; pointer-events: none; }
+@media (max-width: 520px) {
+  .toc-fab { width: 44px; height: 44px; padding: 0; justify-content: center; }
+  .toc-fab__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+
+@media (min-width: 1280px) {
+  .toc-fab, .toc-backdrop { display: none; }
+  .lesson.has-toc {
+    display: grid;
+    grid-template-columns: 216px minmax(0, 1fr);
+    column-gap: 32px;
+    max-width: calc(var(--full) + 2 * var(--gutter));
+    margin: 0 auto;
+    padding-left: var(--gutter);
+    transition: grid-template-columns var(--dur-slow) var(--ease-in-out), column-gap var(--dur-slow) var(--ease-in-out);
+  }
+  .lesson.has-toc.toc-collapsed { grid-template-columns: 40px minmax(0, 1fr); column-gap: 24px; }
+  .lesson.has-toc.toc-instant { transition: none; }
+  .lesson.has-toc > * { grid-column: 2; }
+  .lesson.has-toc > .toc {
+    grid-column: 1; grid-row: 1 / span 60; align-self: start;
+    position: sticky; z-index: auto; top: calc(var(--header-h) + 40px); bottom: auto; left: auto;
+    width: auto; max-height: calc(100vh - var(--header-h) - 64px);
+    margin-top: clamp(40px, 6vw, 80px);
+    padding: 0 4px 0 0;
+    background: none; border: 0; box-shadow: none;
+    overflow-x: hidden;
+    transform: none; visibility: visible; transition: none;
+  }
+  /* Keep the panel at full width while the column grows, so opening reads as a reveal, not a reflow. */
+  .lesson.has-toc > .toc .toc__head, .lesson.has-toc > .toc .toc__panel { min-width: 200px; }
+  .lesson.has-toc:not(.toc-collapsed) > .toc .toc__panel { animation: toc-reveal var(--dur-slow) var(--ease-out); }
+  .lesson.toc-collapsed > .toc .toc__head, .lesson.toc-collapsed > .toc .toc__panel { display: none; }
+  .lesson.toc-collapsed > .toc .toc__open {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px;
+    border: 1px solid var(--line); border-radius: var(--r-md);
+    background: var(--bg-elev); color: var(--ink-2);
+    box-shadow: var(--shadow-1);
+    transition: color var(--dur-fast), border-color var(--dur-fast), transform var(--dur) var(--ease-out);
+  }
+  .lesson.toc-collapsed > .toc .toc__open:hover { color: var(--ink); border-color: var(--line-strong); transform: translateX(2px); }
+  .lesson.toc-collapsed > .toc .toc__open svg { width: 18px; height: 18px; }
+}
+@keyframes toc-reveal { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
 
 /* ================================================================== 5. Controls */
 .btn {
@@ -1288,7 +1354,7 @@ html[data-motion="reduce"] *, html[data-motion="reduce"] *::before, html[data-mo
 
 @media print {
   :root { --bg: #fff; --bg-elev: #fff; }
-  .site-header, .drawer, .modal, .toc, .fig__controls, .player, .fig__toolbar, .code-panel__head .code-panel__copy,
+  .site-header, .drawer, .modal, .toc, .toc-fab, .toc-backdrop, .fig__controls, .player, .fig__toolbar, .code-panel__head .code-panel__copy,
   .complete-card, .pager, .site-footer, .skip-link, .predict, .quiz__actions, .anchor { display: none !important; }
   body { font-size: 11pt; }
   .fig, .quiz, .callout, .summary, .history, .table-wrap, .mini { break-inside: avoid; box-shadow: none !important; }

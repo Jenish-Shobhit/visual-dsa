@@ -98,6 +98,8 @@
   var ICONS = {
     menu: '<path d="M4 6h16M4 12h16M4 18h10"/>',
     close: '<path d="M18 6 6 18M6 6l12 12"/>',
+    toc: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
+    collapse: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15.5 10 13.5 12l2 2"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
     flask: '<path d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7.5 15h9"/>',
@@ -339,7 +341,8 @@
         rows([
           [['?'], 'Show this list'],
           [['Esc'], 'Close a panel'],
-          [['T'], 'Switch light / dark theme']
+          [['T'], 'Switch light / dark theme'],
+          [['['], 'Show or hide the “On this page” sidebar (lessons)']
         ]))
     ));
     openDialog(modal);
@@ -389,11 +392,88 @@
       tocLinks[it.id] = a;
       list.appendChild(h('li', null, a));
     });
-    var nav = h('nav', { class: 'toc', 'aria-label': 'On this page' },
-      h('p', { class: 'toc__title' }, 'On this page'), list,
-      h('div', { class: 'toc__mini' }, h('span', { class: 'score-chip', 'data-quiz-score': '', hidden: true })));
-    main.insertBefore(nav, main.firstChild);
+    buildTocSidebar(main, list);
+  }
+
+  /* The "On this page" sidebar. Wide screens (>= 1280px): docked beside the lesson and
+     collapsible to a slim strip; the choice is remembered in localStorage (vdsa-toc).
+     Narrower screens: a panel that slides in from the left, opened by a floating button.
+     `[` toggles it anywhere; Esc, the backdrop or following a link closes the panel. */
+  var tocUI = null;
+  function buildTocSidebar(main, list) {
+    var wideQuery = win.matchMedia ? win.matchMedia('(min-width: 1280px)') : { matches: true };
+    var closeBtn = h('button', { type: 'button', class: 'hbtn hbtn--icon toc__close', 'aria-controls': 'vdsa-toc' }, svgIcon(ICONS.collapse));
+    var openBtn = h('button', { type: 'button', class: 'toc__open', 'aria-controls': 'vdsa-toc', 'aria-label': 'Show “On this page”', title: 'Show “On this page”  [' }, svgIcon(ICONS.toc));
+    var aside = h('aside', { class: 'toc', id: 'vdsa-toc', 'aria-label': 'On this page' },
+      openBtn,
+      h('div', { class: 'toc__head' }, h('p', { class: 'toc__title' }, 'On this page'), closeBtn),
+      h('div', { class: 'toc__panel' }, list,
+        h('div', { class: 'toc__mini' }, h('span', { class: 'score-chip', 'data-quiz-score': '', hidden: true }))));
+    var fab = h('button', { type: 'button', class: 'toc-fab', 'aria-controls': 'vdsa-toc', 'aria-expanded': 'false', title: 'On this page  [' },
+      svgIcon(ICONS.toc), h('span', { class: 'toc-fab__label' }, 'On this page'));
+    var backdrop = h('div', { class: 'toc-backdrop', 'aria-hidden': 'true' });
+    main.insertBefore(aside, main.firstChild);
     main.classList.add('has-toc');
+    body.appendChild(backdrop);
+    body.appendChild(fab);
+
+    function wide() { return !!wideQuery.matches; }
+    function collapsed() { return main.classList.contains('toc-collapsed'); }
+    function panelOpen() { return body.classList.contains('toc-open'); }
+    function sync() {
+      var visible = wide() ? !collapsed() : panelOpen();
+      [openBtn, fab].forEach(function (b) { b.setAttribute('aria-expanded', String(visible)); });
+      closeBtn.setAttribute('aria-expanded', String(visible));
+      closeBtn.setAttribute('aria-label', wide() ? 'Hide the “On this page” sidebar' : 'Close “On this page”');
+      closeBtn.title = wide() ? 'Hide sidebar  [' : 'Close  Esc';
+      var mode = wide() ? 'collapse' : 'close';
+      if (closeBtn.getAttribute('data-icon') !== mode) { VDSA.clear(closeBtn).appendChild(svgIcon(ICONS[mode])); closeBtn.setAttribute('data-icon', mode); }
+    }
+    function setCollapsed(c) {
+      main.classList.toggle('toc-collapsed', c);
+      try { localStorage.setItem('vdsa-toc', c ? 'closed' : 'open'); } catch (_) {}
+      sync();
+      // Figures re-measure on resize; nudge them once the column has finished moving.
+      win.setTimeout(function () { win.dispatchEvent(new Event('resize')); }, 650);
+      (c ? openBtn : closeBtn).focus({ preventScroll: true });
+    }
+    function openPanel() {
+      body.classList.add('toc-open');
+      sync();
+      var cur = aside.querySelector('.toc__link.is-active');
+      if (cur) aside.scrollTop = Math.max(0, cur.offsetTop - aside.clientHeight / 2);
+      closeBtn.focus({ preventScroll: true });
+    }
+    function closePanel(returnFocus) {
+      if (!panelOpen()) return;
+      body.classList.remove('toc-open');
+      sync();
+      if (returnFocus) fab.focus({ preventScroll: true });
+    }
+    function toggle() {
+      if (wide()) setCollapsed(!collapsed());
+      else if (panelOpen()) closePanel(true);
+      else openPanel();
+    }
+    closeBtn.addEventListener('click', function () { if (wide()) setCollapsed(true); else closePanel(true); });
+    openBtn.addEventListener('click', function () { setCollapsed(false); });
+    fab.addEventListener('click', openPanel);
+    backdrop.addEventListener('click', function () { closePanel(false); });
+    list.addEventListener('click', function (e) { if (e.target.closest('a') && !wide()) closePanel(false); });
+    aside.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panelOpen()) { e.stopPropagation(); closePanel(true); } });
+    var onChange = function () { body.classList.remove('toc-open'); sync(); };
+    if (wideQuery.addEventListener) wideQuery.addEventListener('change', onChange); else if (wideQuery.addListener) wideQuery.addListener(onChange);
+
+    // Restore the remembered wide-screen state without animating on first paint.
+    var saved = null;
+    try { saved = localStorage.getItem('vdsa-toc'); } catch (_) {}
+    if (saved === 'closed') {
+      main.classList.add('toc-instant', 'toc-collapsed');
+      win.requestAnimationFrame(function () { win.requestAnimationFrame(function () { main.classList.remove('toc-instant'); }); });
+    }
+    sync();
+    tocUI = { toggle: toggle, open: function () { if (wide()) setCollapsed(false); else openPanel(); }, close: function () { if (wide()) setCollapsed(true); else closePanel(false); } };
+    VDSA.shell.toc = tocUI;
   }
   function setActiveToc(id) {
     if (id === activeTocId) return;
@@ -492,6 +572,8 @@
     if (doc.querySelector('dialog[open]')) return;
     if (e.key === '?') { e.preventDefault(); showShortcuts(); }
     else if ((e.key === 't' || e.key === 'T') && !e.shiftKey) { VDSA.theme.toggle(); }
+    else if (e.key === '[' && tocUI) { e.preventDefault(); tocUI.toggle(); }
+    else if (e.key === 'Escape' && tocUI && body.classList.contains('toc-open')) { tocUI.close(); }
   });
 
   /* ---------------------------------------------------------------- boot */

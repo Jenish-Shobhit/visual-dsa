@@ -1,0 +1,154 @@
+/* Lesson 32 · Greedy algorithms — lesson-specific styles. Colours come only from tokens (--st-*, --ink*, --bg*, --line*). */
+
+.gr-grow { flex: 1 1 240px; min-width: 0; }
+.gr-block-stage, .gr-html-stage { display: block; place-items: normal; justify-items: normal; }
+.gr-hero { padding: clamp(8px, 1.6vw, 16px); }
+
+/* ---------------------------------------------------------------- timeline */
+.vz.gr-tl { user-select: none; touch-action: pan-y; }
+.gr-tl .gr-tick { stroke: var(--line); stroke-width: 1px; stroke-dasharray: 2 4; }
+.gr-tl .gr-tick__label { font: 500 10.5px var(--font-mono); fill: var(--ink-3); }
+.gr-tl .gr-axis { stroke: var(--line-strong); stroke-width: 1.25px; }
+.gr-tl .gr-rowline { stroke: var(--line); stroke-width: 1px; opacity: .55; }
+.gr-tl .gr-bar__label { font: 700 13px var(--font-sans); }
+.gr-tl .gr-bar__sub { font: 600 10.5px var(--font-mono); }
+.gr-tl .gr-bar.is-draggable { cursor: grab; }
+.gr-tl .gr-bar.is-dragging { cursor: grabbing; }
+.gr-tl .gr-bar.is-clickable { cursor: pointer; }
+.gr-tl .gr-bar.is-clickable:hover .vz-shape, .gr-tl .gr-bar.is-draggable:hover .vz-shape { stroke-width: 2.5px; }
+.gr-tl .gr-bar:focus-visible { outline: none; }
+.gr-tl .gr-bar:focus-visible .vz-shape { stroke: var(--accent); stroke-width: 3px; }
+.gr-tl .gr-bar.is-picked .vz-shape { stroke: var(--st-done); stroke-width: 3px; }
+.gr-tl .gr-grip { fill: var(--ink); opacity: 0; transition: opacity .15s; cursor: ew-resize; }
+.gr-tl .gr-bar.is-draggable .gr-grip { opacity: .16; }
+.gr-tl .gr-bar.is-draggable:hover .gr-grip, .gr-tl .gr-bar.is-dragging .gr-grip { opacity: .38; }
+.gr-tl .gr-busy rect { fill: color-mix(in srgb, var(--st-done) 15%, transparent); stroke: color-mix(in srgb, var(--st-done) 55%, transparent); stroke-width: 1px; stroke-dasharray: 4 3; }
+.gr-tl .gr-clash rect { fill: color-mix(in srgb, var(--st-error) 40%, transparent); stroke: var(--st-error); stroke-width: 1.5px; }
+.gr-tl .gr-ghost rect { fill: none; stroke: var(--st-path); stroke-width: 2.5px; stroke-dasharray: 5 4; }
+.gr-tl .gr-ghost__tag { font: 700 10px var(--font-sans); fill: color-mix(in srgb, var(--st-path) 70%, var(--ink)); letter-spacing: .04em; text-transform: uppercase; }
+.gr-tl .gr-rowlabel__main { font: 700 14px var(--font-sans); fill: var(--ink); }
+.gr-tl .gr-rowlabel__main.is-two { font-size: 13.5px; }
+.gr-tl .gr-rowlabel__sub { font: 600 10.5px var(--font-mono); fill: var(--ink-3); }
+
+/* scoreboard chips */
+.gr-score { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 0; padding: 0; list-style: none; }
+.gr-score li { display: flex; align-items: baseline; gap: 6px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-elev); font-size: 12.5px; color: var(--ink-2); transition: border-color .25s, background .25s; }
+.gr-score li b { font: 750 15px var(--font-sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+.gr-score li.is-current { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--bg-elev)); }
+.gr-score li.is-best b { color: var(--st-done); }
+.gr-score li.is-bad b { color: var(--st-error); }
+.gr-score__label { font-size: 12px; color: var(--ink-3); align-self: center; }
+.gr-hint { font-size: 13.5px; color: var(--ink-2); margin: 0; }
+.gr-toolrow { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+.gr-inputs { flex: 1 1 260px; min-width: 0; }
+.gr-presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.gr-presets__label { font-size: 12.5px; color: var(--ink-3); margin-right: 2px; }
+
+/* play-it-yourself */
+.gr-play { display: grid; gap: 10px; }
+.gr-play__status { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 8px 14px 12px; }
+.gr-play__msg { flex: 1 1 260px; margin: 0; font-size: 14.5px; color: var(--ink); min-height: 2.9em; }
+.gr-play__msg.is-bad { color: color-mix(in srgb, var(--st-error) 75%, var(--ink)); }
+.gr-play__msg.is-good { color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+
+/* coins / knapsack / forest / terrain shared */
+.gr-coins .gr-plate { fill: var(--line-strong); }
+.gr-coins .gr-coins__title { font: 700 14px var(--font-sans); fill: var(--ink); }
+.gr-coins .gr-sum { font: 600 13px var(--font-mono); fill: var(--ink-2); }
+.gr-coins .gr-meter__bg { fill: var(--bg-sunken); stroke: var(--line); }
+.gr-coins .gr-meter__fill { fill: var(--st-compare); opacity: .85; }
+.gr-coins .gr-meter__text { font: 600 12.5px var(--font-sans); fill: var(--ink-2); }
+.gr-coins .gr-coin .vz-value { font-weight: 700; }
+.gr-coins .gr-verdict__text { font: 800 20px var(--font-sans); paint-order: stroke; stroke: var(--bg-elev); stroke-width: 5px; stroke-linejoin: round; }
+.gr-coins .gr-verdict__text.is-bad { fill: var(--st-error); }
+.gr-coins .gr-verdict__text.is-ok { fill: var(--st-done); }
+
+.gr-knap .gr-col__title { font: 700 13.5px var(--font-sans); fill: var(--ink); }
+.gr-knap .gr-bag { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 2.5px; }
+.gr-knap .gr-col__free { font: 600 12px var(--font-mono); fill: var(--ink-3); }
+.gr-knap .gr-col__value { font: 800 19px var(--font-sans); fill: var(--ink); }
+.gr-knap .gr-col__value.is-bad { fill: var(--st-error); }
+.gr-knap .gr-item__id { font-size: 14px; font-weight: 750; }
+.gr-knap .gr-item__wv { font: 600 10.5px var(--font-mono); }
+.gr-knap .gr-item__ratio { font: 650 11px var(--font-mono); fill: var(--ink-2); }
+.gr-knap .gr-item.is-focus .vz-shape { stroke: var(--accent); stroke-width: 3px; }
+.gr-knap .gr-block__text { font: 700 12px var(--font-sans); }
+
+.gr-forest .gr-fnode__t { font-size: 14px; font-weight: 750; }
+.gr-forest .gr-fnode__w { font: 650 11px var(--font-mono); fill: var(--ink-2); }
+.gr-forest .gr-fnode__code { font: 750 12.5px var(--font-mono); fill: var(--ink); }
+.gr-forest .gr-fnode__code.is-active { fill: color-mix(in srgb, var(--st-path) 70%, var(--ink)); }
+.gr-forest .gr-fedge__lab circle { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1px; }
+.gr-forest .gr-fedge__lab text { font: 750 11px var(--font-mono); fill: var(--ink); }
+.gr-forest .gr-fedge__lab { transition: opacity var(--vz-dur, 300ms); }
+.gr-forest .gr-fedge.is-path .gr-fedge__lab circle { fill: var(--st-path); stroke: var(--st-path); }
+.gr-forest .gr-fedge.is-path .gr-fedge__lab text { fill: var(--on-state); }
+
+.gr-terrain .gr-terrain__area { fill: color-mix(in srgb, var(--st-visited) 12%, var(--bg-sunken)); }
+.gr-terrain .gr-terrain__ridge { fill: none; stroke: var(--line-strong); stroke-width: 3px; stroke-linejoin: round; }
+.gr-terrain .gr-terrain__trail { fill: none; stroke: var(--st-path); stroke-width: 4px; stroke-linejoin: round; stroke-linecap: round; }
+.gr-terrain .gr-terrain__nb { fill: none; stroke: var(--st-compare); stroke-width: 2.5px; }
+.gr-terrain .gr-terrain__hit { fill: transparent; cursor: pointer; }
+.gr-terrain .gr-terrain__hit:hover { fill: color-mix(in srgb, var(--accent) 22%, transparent); }
+.gr-terrain .gr-terrain__hit:focus-visible { outline: none; stroke: var(--accent); stroke-width: 3px; }
+.gr-terrain .gr-flag line { stroke: var(--ink-2); stroke-width: 2px; }
+.gr-terrain .gr-flag text { font: 750 13px var(--font-sans); fill: var(--ink); }
+.gr-terrain .gr-flag.is-ok text { fill: var(--st-done); }
+.gr-terrain .gr-flag.is-bad text { fill: var(--st-error); }
+.gr-terrain .gr-goal text { font: 650 12px var(--font-sans); fill: var(--ink-2); }
+
+/* Huffman lab: table, queue, bars */
+.gr-hf-top { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.gr-hf-queue { padding: 2px 8px 0; }
+.gr-hf-queue__label { font: 650 11.5px var(--font-sans); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); margin: 6px 0 0 6px; }
+.gr-hf-text { display: flex; flex-wrap: wrap; gap: 3px; padding: 6px 10px; }
+.gr-hf-text span { font: 600 13px var(--font-mono); min-width: 1.2em; text-align: center; padding: 1px 3px; border-radius: 5px; background: var(--bg-sunken); color: var(--ink-2); transition: background .25s, color .25s; }
+.gr-hf-text span.is-hot { background: var(--st-path); color: var(--on-state); }
+.gr-hf-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.gr-hf-table th { text-align: left; font: 650 11px var(--font-sans); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); padding: 4px 8px; border-bottom: 1px solid var(--line); }
+.gr-hf-table td { padding: 3px 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.gr-hf-table td.mono { font-family: var(--font-mono); font-weight: 650; }
+.gr-hf-table tr.is-active td { background: color-mix(in srgb, var(--st-path) 18%, transparent); }
+.gr-hf-table tr.is-pick td { background: color-mix(in srgb, var(--st-active) 16%, transparent); }
+.gr-hf-table td.code { font-family: var(--font-mono); font-weight: 750; letter-spacing: .03em; }
+.gr-hf-bars { display: grid; gap: 7px; padding: 4px 4px 2px; }
+.gr-bar-row { display: grid; grid-template-columns: 116px minmax(0, 1fr) 64px; gap: 8px; align-items: center; font-size: 12.5px; color: var(--ink-2); }
+.gr-bar-row__track { height: 16px; border-radius: 8px; background: var(--bg-sunken); overflow: hidden; }
+.gr-bar-row__fill { height: 100%; border-radius: 8px; width: 0; transition: width var(--vz-dur, 500ms) cubic-bezier(.3, .7, .2, 1); background: var(--st-muted); }
+.gr-bar-row.is-ascii .gr-bar-row__fill { background: var(--st-muted); }
+.gr-bar-row.is-fixed .gr-bar-row__fill { background: var(--st-compare); }
+.gr-bar-row.is-huff .gr-bar-row__fill { background: var(--st-done); }
+.gr-bar-row b { font: 750 13px var(--font-mono); color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+.gr-bits-out { font: 600 12.5px var(--font-mono); word-break: break-all; line-height: 1.55; padding: 6px 10px; color: var(--ink-2); margin: 0; max-height: 5.4em; overflow: auto; }
+.gr-hf-side { display: grid; gap: 10px; }
+.gr-hf-caps { margin: 0; font-size: 13px; color: var(--ink-3); }
+
+/* small blocks */
+.gr-mini { display: block; margin: 0 auto; }
+.gr-mini text { font-family: var(--font-sans); }
+.gr-note { font: 600 12.5px var(--font-sans); fill: var(--ink-2); }
+.gr-note-mono { font: 600 12px var(--font-mono); fill: var(--ink-2); }
+.gr-minis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px; padding: 6px 0 12px; align-items: start; }
+.gr-minis figure { margin: 0; display: grid; gap: 6px; }
+.gr-minis figcaption { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+.gr-minis .stage-grid { padding: 8px; border: 1px solid var(--line); border-radius: var(--radius-md, 12px); overflow-x: auto; }
+
+/* flowchart chips */
+.gr-classify { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 14px 10px; }
+.gr-classify .btn { --btn-pad-x: 12px; }
+.gr-classify .btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.gr-verdict-line { margin: 0; padding: 0 16px 12px; font-size: 14.5px; color: var(--ink); min-height: 3em; }
+.gr-verdict-line b.is-ok { color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+.gr-verdict-line b.is-bad { color: color-mix(in srgb, var(--st-error) 75%, var(--ink)); }
+
+.gr-fig-stage { padding: 6px 8px 2px; }
+.gr-chartbox { padding: 6px 8px 4px; }
+.gr-summary-svg { width: 100%; height: auto; max-width: 260px; display: block; margin: 0 auto; }
+.gr-summary-svg text { font: 600 11px var(--font-sans); fill: var(--ink-2); }
+.gr-summary-svg .gr-mono { font-family: var(--font-mono); }
+.gr-sbar { fill: var(--st-done); }
+.gr-sbar.is-muted { fill: var(--st-muted); }
+.gr-sbar.is-bad { fill: var(--st-error); }
+.gr-sbar.is-warn { fill: var(--st-compare); }
+.gr-sline { stroke: var(--line-strong); stroke-width: 1.5px; }
+.gr-scircle { fill: var(--bg-elev); stroke: var(--st-active); stroke-width: 2px; }

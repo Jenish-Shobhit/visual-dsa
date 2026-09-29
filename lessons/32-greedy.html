@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Greedy algorithms · Visual DSA</title>
+<meta name="description" content="Make the locally best choice and never look back: drag intervals to break the wrong rules, watch an exchange argument prove the right one, see coin change and 0/1 knapsack fail, and build a Huffman code by merging the two rarest symbols.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/32-greedy.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/32-greedy.js" defer></script>
+<script src="../js/lessons/32-greedy-views.js" defer></script>
+<script src="../js/lessons/32-greedy-labs.js" defer></script>
+<script src="../js/lessons/32-greedy.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="32-greedy">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Greedy algorithms</h1>
+      <p class="hero__lede">Pick the best-looking option, lock it in, never look back. It is the fastest way to solve a problem, and sometimes it is simply wrong. This lesson shows how to tell which.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">24 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: sorting, heaps, trees</li>
+      </ul>
+    </div>
+    <div class="hero__stage gr-hero" id="teaser" role="img" aria-label="Animation: eight meeting requests sit on a timeline. They re-order by finish time, then the earliest-finishing request is kept, every request that overlaps it fades out, and the next request that fits is kept, until four requests fill the room."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>One meeting room, many requests. Each request has a start and an end, and two requests cannot overlap. You want to say yes to <b>as many as possible</b>.</p>
+      <p>Try it yourself. Click requests to add them to the room. A request that overlaps one you already chose turns red.</p>
+      <figure class="fig wide" id="fig-play">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Fill the room with as many requests as you can</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain gr-html-stage gr-fig-stage" data-stage></div>
+        <div class="gr-play__status">
+          <p class="gr-play__msg" data-msg aria-live="polite"></p>
+          <div class="btn-row"><button type="button" class="btn btn--secondary btn--sm" data-clear>Clear</button><button type="button" class="btn btn--sm" data-new>New requests</button></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a timeline from 0 to 24 with one bar per request. Clicking a bar keeps it; bars that overlap a kept request cannot be added.</figcaption>
+      </figure>
+      <p>You probably went left to right, or grabbed the short ones. Which rule always works? Checking every subset takes 2<sup>n</sup> tries. A <b>greedy algorithm</b> tries for a shortcut: sort once, walk the list once.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Picture a hiker in thick fog who can see only the two steps next to them. The greedy rule is: always step to the higher neighbour, stop when neither is higher. Click the ground to choose where the hiker starts.</p>
+      <figure class="fig wide" id="fig-hill">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A greedy hiker in the fog</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-terrain></div><p class="gr-hint">Click a point on the hill to start there.</p></div>
+        <div class="fig__stage fig__stage--plain gr-html-stage gr-fig-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a landscape line. The hiker climbs to whichever neighbour is higher. On a single hill this reaches the top; on a two-hill landscape starting on the small hill ends on the small peak.</figcaption>
+      </figure>
+      <aside class="callout callout--def"><p class="callout__title">Definition</p><p>A <dfn>greedy algorithm</dfn> builds an answer one piece at a time. At each step it takes the option that looks best <em>right now</em> and never undoes it.</p></aside>
+      <p>On one hill, every local peak is the global peak, so greedy wins. On two hills it strands you. Everything in this lesson is the question: <b>which problems are one-hill problems?</b> The answer is a proof, not a hunch.</p>
+      <figure class="fig" id="fig-template">
+        <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The greedy template</h3></div></header>
+        <div class="gr-fig-stage"><pre data-code-block="template"></pre></div>
+        <figcaption class="fig__foot">Every greedy algorithm in this lesson fits this shape. Only the sort key and the “fits” test change.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ INTERVAL LAB -->
+    <section id="interval">
+      <h2>Interval scheduling: which rule?</h2>
+      <p>There are four natural greedy rules for the meeting room: earliest start, shortest, fewest conflicts, earliest finish. Only one is always right. Pick each rule, then use the presets to load an input that breaks it.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Interval scheduling lab: four rules, one input</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar">
+          <div class="gr-toolrow"><div data-strategy></div><div class="btn-row"><button type="button" class="btn btn--sm btn--soft" data-find>Find a counterexample for this rule</button></div></div>
+          <p class="gr-hint" data-find-msg aria-live="polite"></p>
+          <div data-input></div>
+          <ul class="gr-score" data-score aria-label="Requests kept by each rule"></ul>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain gr-html-stage gr-fig-stage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask which request is kept next. Text alternative: rows of bars on a time axis; the caption describes every step, and the scoreboard states how many requests each rule keeps on the current input.</figcaption>
+      </figure>
+      <p>Earliest start grabs a huge request that blocks everything. Shortest can straddle two requests that would have fit together. Fewest conflicts fails on a subtler input. <b>Earliest finish</b> never loses, because finishing early leaves the most room for whatever is next.</p>
+      <p>Test your reading of that rule. Click the request that earliest finish keeps <em>first</em>.</p>
+      <figure class="fig wide" id="fig-first">
+        <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which request does earliest finish keep first?</h3></div></header>
+        <div class="fig__stage fig__stage--plain gr-html-stage gr-fig-stage" data-stage></div>
+        <div class="quiz" id="quiz-first"></div>
+        <figcaption class="fig__foot">Text alternative: six requests A to F on a timeline; click one.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ EXCHANGE -->
+    <section id="exchange">
+      <h2>Why earliest finish is safe: the exchange argument</h2>
+      <p>Take any best schedule (bottom row) and compare it with greedy’s (top row). Greedy’s first request ends no later than the optimum’s first. So swap it in: the optimum still fits, and still has the same size. Repeat for the second request, the third, and the optimum becomes greedy without ever shrinking.</p>
+      <figure class="fig wide" id="fig-exchange">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Turn an optimal schedule into greedy’s, one swap at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain gr-html-stage gr-fig-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: two rows. Each swap removes one of the optimum’s requests to a “set aside” row and copies greedy’s request into its place; the schedule stays valid and the same size after every swap.</figcaption>
+      </figure>
+      <aside class="callout callout--insight"><p class="callout__title">The shape of every greedy proof</p><p>Show that some optimal solution agrees with greedy’s first choice (<em>exchange</em>). Then the rest of the problem is the same problem, only smaller, so the argument repeats. The other route is <em>staying ahead</em>: after k picks greedy is never behind any other solution.</p></aside>
+    </section>
+
+    <!-- ============================================================ COINS -->
+    <section id="coins">
+      <h2>When greedy is wrong: coin change</h2>
+      <p>Pay an amount with the fewest coins. The greedy rule is what every cashier does: hand over the biggest coin that fits. With US coins it is perfect. Change the coin set and watch it break.</p>
+      <figure class="fig wide" id="fig-coins">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Greedy coins against the best possible</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar">
+          <div data-input></div>
+          <div data-amount></div>
+          <p class="gr-hint" data-fail aria-live="polite"></p>
+        </div>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll gr-html-stage gr-fig-stage" data-stage style="--stage-min: 520px"></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: two stacks of coins side by side. On coins 1, 3, 4 and amount 6 greedy stacks 4 + 1 + 1 (three coins) while the best stack is 3 + 3 (two coins).</figcaption>
+      </figure>
+      <p>With coins 1, 3 and 4, greedy takes the 4 for amount 6 and is left with 2. The right answer, 3 + 3, never uses the biggest coin. The local choice <em>closed a door</em>. Finding the true minimum needs <a href="34-dynamic-programming.html">dynamic programming</a>.</p>
+      <p>For which coin sets does greedy work? The line under the coins tells you: if it ever fails, it fails below the sum of the two largest coins (a theorem of Kozen and Zaks), so checking that far is a proof.</p>
+    </section>
+
+    <!-- ============================================================ KNAPSACK -->
+    <section id="knapsack">
+      <h2>Fractional or whole: knapsack</h2>
+      <p>A bag holds a fixed weight. Take items with the best value per kilogram first. If you can <b>pour</b> part of an item (gold dust), that is provably best. If items are <b>whole</b> (gold bars), leftover space cannot be refilled and greedy loses.</p>
+      <figure class="fig full" id="fig-knap">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Liquid slices against whole items</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input></div><div data-cap></div></div>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll gr-html-stage gr-fig-stage" data-stage style="--stage-min: 640px"></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: three bags. The first is filled greedily by value per kg, with the last item poured in part; the second takes whole items and skips one that does not fit; the third shows the best whole-item choice.</figcaption>
+      </figure>
+      <p>The pouring bag is optimal because every kilogram is used by the best remaining value. The whole-item bag wastes 20 kg. Both use the same rule; only the freedom to cut changed. That is the difference between a <b>greedy-friendly</b> problem and one that needs DP.</p>
+    </section>
+
+    <!-- ============================================================ HUFFMAN -->
+    <section id="huffman">
+      <h2>Huffman coding: greedy that compresses</h2>
+      <p>Text normally spends 8 bits on every character. Give frequent characters short codes and rare ones long codes, and the same text needs fewer bits. The codes must be <b>prefix-free</b>: no code is the start of another, so a decoder never has to guess.</p>
+      <p>Huffman’s greedy rule builds the code tree from the bottom: repeatedly merge the <b>two rarest</b> trees. Type your own text.</p>
+      <figure class="fig fig--lab full" id="hf-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Huffman lab: merge the two smallest, over and over</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="gr-hf-text" data-text aria-label="The text, one chip per character"></div>
+            <p class="gr-hf-queue__label">Priority queue (smallest first)</p>
+            <div class="gr-hf-queue" data-queue></div>
+            <div class="fig__stage fig__stage--plain fig__stage--scroll gr-html-stage" data-stage style="--stage-min: 0px"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+            <div data-table class="table-wrap"></div>
+            <div class="gr-hf-bars" data-bars aria-label="Total bits: plain, fixed width, Huffman"></div>
+            <p class="gr-bits-out" data-bits style="display:none"></p>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask which two trees merge next. Text alternative: a forest of trees that merge under new parents until one code tree remains; branches are labelled 0 and 1, and the table lists each symbol’s code.</figcaption>
+      </figure>
+      <p>Frequent symbols end up near the root with short codes; rare ones sink deep. The greedy step is safe by an exchange argument too: the two rarest symbols can always be siblings at the deepest level of some optimal code.</p>
+      <figure class="fig wide" id="fig-bits">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Bits per character: fixed width against Huffman</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--plain gr-html-stage gr-chartbox" data-stage></div>
+        <figcaption class="fig__foot">Entropy is the theoretical floor: no symbol-by-symbol code can average fewer bits. Huffman always lands within one bit of it. Text alternative: grouped bars for six texts; the more uneven the letter counts, the more Huffman saves.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Is greedy safe?">Is greedy safe here?</h2>
+      <p>Before you write a greedy algorithm, ask three questions. Pick a problem below and watch the answers light the path.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A decision path for greedy</h3></div>
+        </header>
+        <div class="gr-classify" data-chips role="group" aria-label="Problems"></div>
+        <p class="gr-verdict-line" data-verdict aria-live="polite"></p>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll gr-html-stage" data-stage style="--stage-min: 520px"></div>
+        <figcaption class="fig__foot">Text alternative: ask whether some optimal answer contains the locally best pick; whether what remains is a smaller instance of the same problem; whether you can prove it by exchange, staying ahead or a matroid. Three yeses mean greedy is safe; a no sends you to dynamic programming or search.</figcaption>
+      </figure>
+      <aside class="callout callout--insight"><p class="callout__title">Matroids in one sentence</p><p>Some problems come with a guarantee: if the feasible sets are closed under taking subsets and any smaller feasible set can always borrow an element from a larger one (a <dfn>matroid</dfn>), then greedy by weight is optimal. Spanning forests, scheduling with deadlines and pouring knapsack are matroid-like; whole-item knapsack is not.</p></aside>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>Cost</h2>
+      <p>Greedy algorithms are fast because they decide once. Usually the cost is the sort or the heap; the walk itself is linear.</p>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th>Problem</th><th>Operation</th><th>Time</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Interval scheduling</td><td>Sort by finish, one pass</td><td><span class="big-o" data-o="nlogn"></span></td><td>Sort dominates; the scan is O(n).</td></tr>
+            <tr><td>Coin change (canonical coins)</td><td>k coin types, amount A</td><td><span class="big-o" data-o="n">O(k)</span></td><td>One division per coin type, coins sorted once.</td></tr>
+            <tr><td>Fractional knapsack</td><td>Sort by ratio, one pass</td><td><span class="big-o" data-o="nlogn"></span></td><td>Sort dominates.</td></tr>
+            <tr><td>Huffman coding</td><td>n symbols, binary heap</td><td><span class="big-o" data-o="nlogn"></span></td><td>n − 1 merges, each 3 heap operations of O(log n).</td></tr>
+            <tr><td>Job scheduling with deadlines</td><td>Sort by profit, latest free slot</td><td><span class="big-o" data-o="nlogn">O(n log n)</span></td><td>With union-find for the free slot; simple scan is O(n²).</td></tr>
+            <tr><td>Try every subset (the alternative)</td><td>n requests</td><td><span class="big-o" data-o="2n"></span></td><td>2<sup>n</sup> subsets to check.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Checking every subset against one greedy pass</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-scale></div></div>
+        <div class="fig__stage fig__stage--plain gr-html-stage gr-chartbox" data-stage></div>
+        <figcaption class="fig__foot">Operations to schedule n requests. Subsets: 2<sup>n</sup> candidate sets. Greedy: about n log₂ n steps to sort and scan. At n = 30 that is a billion sets against about 150 steps.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Scheduling jobs with deadlines is greedy too. Sort by profit, then put each job in the <b>latest free hour</b> before its deadline. Step through it.</p>
+      <figure class="fig wide" id="fig-jobs">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Jobs with deadlines: highest profit first</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input></div></div>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll gr-html-stage gr-fig-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Each job shows its profit; the small line says its deadline. Text alternative: jobs are placed one by one into hour slots at or before their deadlines.</figcaption>
+      </figure>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="ahead">Greedy stays ahead</button>
+          <button data-tab="matroid">Matroids</button>
+          <button data-tab="mst">Spanning trees</button>
+        </div>
+        <div data-tab-panel="ahead">
+          <div class="gr-minis"><figure><div class="stage-grid" data-mini="ahead"></div><figcaption>After k picks, greedy’s k-th request ends no later than the optimum’s k-th. Greedy is never behind, so it cannot fall short.</figcaption></figure></div>
+        </div>
+        <div data-tab-panel="matroid">
+          <div class="gr-minis"><figure><div class="stage-grid" data-mini="matroid"></div><figcaption>Independent sets: drop an element and you are still independent; a smaller set can always borrow an element from a bigger one. Here the sets are forests of a graph: a cycle is the one thing they forbid.</figcaption></figure></div>
+        </div>
+        <div data-tab-panel="mst">
+          <div class="gr-minis"><figure><div class="stage-grid" data-mini="mst"></div><figcaption>Kruskal’s minimum spanning tree: sort edges by weight, keep an edge unless it closes a cycle. The forests form a matroid, so this greedy is optimal. The minimum-spanning-tree lesson does it in full.</figcaption></figure></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-us30"></div>
+        <div class="quiz" id="quiz-huff"></div>
+        <div class="quiz" id="quiz-frac"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Greedy algorithms</p></div>
+          <div class="cluster"><span class="chip chip--sm">commit, never look back</span><span class="chip chip--sm">prove it or test it</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1951<small>a term paper</small></div>
+        <p class="history__people">David Huffman<span>“A Method for the Construction of Minimum-Redundancy Codes”, <em>Proc. IRE</em>, 1952</span></p>
+        <div class="history__body">
+          <p>In 1951 MIT professor Robert Fano let his students skip the final exam if they could find the most efficient binary code. David Huffman almost gave up, then saw that he should build the code tree from the bottom, repeatedly merging the two rarest symbols. That beat the method Fano had worked out with Claude Shannon.</p>
+          <p>Twenty years later Jack Edmonds showed that matroids are exactly the structures on which greedy choices like this are always optimal. Whitney had defined them in 1935.</p>
+        </div>
+        <p class="history__source">Sources: D. A. Huffman, <em>Proc. IRE</em> 40(9), 1952; H. Whitney, <em>Amer. J. Math.</em> 57, 1935; J. Edmonds, “Matroids and the Greedy Algorithm”, <em>Math. Programming</em> 1, 1971.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Minimum number of arrows</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Balloons are intervals on a line. One arrow bursts every balloon it passes through. Find the fewest arrows. Which sort key makes the greedy step safe, and what is the exchange argument?</p></li>
+        <li><div class="practice__title">Jump game</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Each cell tells how far you may jump. Decide whether you can reach the last cell by tracking only the farthest position reachable so far. Why is that one number enough?</p></li>
+        <li><div class="practice__title">Assign cookies</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Each child needs a cookie of at least some size; each cookie goes to at most one child. Maximise satisfied children. Sort both lists and argue why the smallest cookie that works is the right choice.</p></li>
+        <li><div class="practice__title">Break the greedy</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Find a coin set of four coins, including 1, where greedy fails at an amount below 20, and confirm with the Kozen–Zaks bound that no smaller amount can fail earlier than the bound says.</p></li>
+        <li><div class="practice__title">Optimal merge pattern</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">You must merge n sorted files; merging two costs the sum of their sizes. Which merge order minimises the total cost, and how is it the same problem as Huffman coding?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-16-when-is-greedy-optimal-exchange-arguments-and-matroids.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">When is greedy optimal? Exchange arguments and matroids</span><span class="deeper__text" style="display:block">The long-form study: the full exchange proof, the Rado–Edmonds theorem, the three canonical matroids, Kruskal as greedy on the graphic matroid, and why 0/1 knapsack is not a matroid.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

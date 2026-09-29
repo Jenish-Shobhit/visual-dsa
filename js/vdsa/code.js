@@ -209,7 +209,7 @@
               toks.splice(k, 1);
               while (toks.length && toks[toks.length - 1].t === 'plain' && toks[toks.length - 1].v.trim() === '') toks.pop();
               if (toks.length && toks[toks.length - 1].t === 'plain') toks[toks.length - 1].v = trimEnd(toks[toks.length - 1].v);
-            } else toks[k].v = trimEnd(rest);
+            } else toks[k].v = trimEnd(trimEnd(rest).replace(/\s*(\/\/|#|--)$/, ''));   // drop a marker left dangling by `// note // @label`
           }
         }
         break;

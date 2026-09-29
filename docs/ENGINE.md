@@ -1546,6 +1546,11 @@ tree.on('choose', e => {
 - **Interactive views are not models.** Editors (graph `editable`, grid `paintable`, flowchart `interactive`) emit events and show a preview; keep your own model, update it in the handler, and render the next snapshot (or regenerate the trace).
 - **Reduced motion and speed come for free.** Pass `ctx.duration` straight through: the player has already scaled it, and `VDSA.dur` turns it into 0 under reduced motion.
 - **Custom figures.** If no view fits, build on `VDSA.vz` (above) rather than raw DOM so you inherit keyed records, one animation loop, resize and the state classes.
+- **Stage display.** `.fig__stage` uses `place-items: center`. If you override a stage to `display: block` (or flex), also set `place-items: normal`, or Chrome shrink-wraps its children.
+- **Static code blocks.** Render `VDSA.codeBlock` into a `<pre>` host; a non-`<pre>` host picks up inline-code styling (borders, nowrap).
+- **Flowchart `compact: true`** can mis-route edges in a single column of nodes with different text wraps; leave it off unless the result looks right.
+- **Lazy figures and scoring.** Checkpoints and quizzes count toward the page score once registered; if a figure starts lazily, register its check ids at page load so the total doesn't jump.
+- **Screenshot scripts.** The site scrolls smoothly; automation must use `scrollIntoView({behavior: 'instant'})` or lazily started figures never start.
 
 ### Checking a figure
 

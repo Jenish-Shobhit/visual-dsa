@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Backtracking · Visual DSA</title>
+<meta name="description" content="Choose, explore, unchoose: watch queens land on a board and lift off again, a state-space tree grow and shrink, and pruning turn impossible searches into quick ones. N-Queens, subsets, permutations, Sudoku and word search.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/33-backtracking.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/33-backtracking.js" defer></script>
+<script src="../js/lessons/33-backtracking-views.js" defer></script>
+<script src="../js/lessons/33-backtracking-labs.js" defer></script>
+<script src="../js/lessons/33-backtracking.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="33-backtracking">
+<main id="main" class="lesson">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Backtracking</h1>
+      <p class="hero__lede">Make a choice, explore where it leads, and take it back when it fails. Rejecting a bad branch early turns an impossible search into a quick one.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">20 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="12-recursion.html">Needs: Recursion</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage bt-hero" id="teaser" role="img" aria-label="Animation: queens are placed on a six by six chessboard one row at a time. When a row has no safe square the last queen lifts off and moves on, until six queens sit safely."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>Place <strong>n queens</strong> on an n×n chessboard so that no two attack each other. A queen attacks along her row, her column and both diagonals. On a 6×6 board, try it yourself.</p>
+      <figure class="fig" id="fig-hand">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Six queens, six by six: place them by hand</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-shade></div><button type="button" class="btn btn--sm" data-clear>Clear the board</button><p class="bt-status" data-status aria-live="polite"></p></div>
+        <div class="fig__stage bt-stage" data-stage></div>
+        <figcaption class="fig__foot">Click a square to place or remove a queen; press Enter on a focused square. Red lines join queens that attack each other. Text alternative: a six by six board where the reader toggles queens and the page counts clashes.</figcaption>
+      </figure>
+      <p>You probably placed a queen, saw a clash coming, and moved an earlier queen instead of starting over. That habit is the algorithm. A program cannot rely on intuition, so it needs a systematic way to try, fail and undo.</p>
+      <p>Brute force would test every way to put 8 queens on 64 squares: <strong>4,426,165,368</strong> boards. Backtracking solves the same puzzle by looking at a couple of thousand partial boards.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Picture a maze made only of forks. You carry chalk and follow one rule: go as deep as you can, and when you are stuck, walk back to the last fork that still has an untried corridor.</p>
+      <figure class="fig wide" id="fig-maze">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Depth-first through a maze of forks</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--tall bt-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a tree of corridors. The walker tries the leftmost branch at every fork, marks dead ends, walks back, and finally reaches the exit.</figcaption>
+      </figure>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: chalk in a maze</p>
+        <p>Every fork is a decision, every corridor is a choice, and the chalk marks are the search remembering what failed. You never walk the same dead end twice.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>In a real maze you walk back physically. A program must <em>undo</em> its change to shared state, exactly, or the next branch starts from a corrupted position. That undo step is the heart of backtracking.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ STATE-SPACE TREE -->
+    <section id="tree">
+      <h2>Every partial solution is a node</h2>
+      <p>Fill the board one row at a time. Each way of placing the first few queens is a <strong>partial solution</strong>, and each is a node in a tree whose children add one more queen.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>The <dfn>state-space tree</dfn> has one node per partial solution. Its root is the empty solution, its children extend a node by one choice, and its leaves are complete solutions or dead ends.</p>
+      </aside>
+      <p>This is the whole tree for four queens. Click any node to see its board. The red leaves are squares that were <em>rejected</em>; the number on each is how many brute-force nodes would have hung beneath it.</p>
+      <figure class="fig wide" id="fig-explorer">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The state-space tree of four queens</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="bt-explorer">
+          <div class="fig__stage bt-stage bt-explorer__tree" data-tree></div>
+          <div class="bt-explorer__side"><div class="bt-stage" data-board></div><p class="bt-explorer__text" data-text aria-live="polite"></p></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a tree of 17 safe placements with red leaves for rejected squares. Clicking a node draws the queens it represents.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p><strong>Pruning</strong> means refusing to build the subtree under a node that already breaks a rule. Nothing below it can be a solution, so the search never looks.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ TEMPLATE -->
+    <section id="template">
+      <h2>Choose, explore, unchoose</h2>
+      <p>Every backtracking program repeats three moves. <strong>Choose</strong> one option and update the state. <strong>Explore</strong> by recursing on what is left. <strong>Unchoose</strong> by restoring the state exactly as it was.</p>
+      <div class="mini-row wide" id="mini-template"></div>
+      <p>The third move is what makes the next option start from a clean position. Without it, choices leak from one branch into the next.</p>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the recursion stack is enough</p>
+        <p>The call stack already remembers where each fork was. The state only has to change by one choice on the way down and be put back on the way up.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CONSTRAINT SETS -->
+    <section id="sets" data-toc="Checking a square fast">
+      <h2>Checking a square in one lookup</h2>
+      <p>To test a square you must know if any queen attacks it. Scanning all queens works, but three sets make it one lookup each: the used <strong>columns</strong>, and the used <strong>diagonals</strong>, named by <code>row + col</code> for “/” and <code>row − col</code> for “\”.</p>
+      <p>Every square on one “/” diagonal shares the same <code>row + col</code>; every square on one “\” diagonal shares the same <code>row − col</code>. Click a square in rows 3 to 5.</p>
+      <figure class="fig wide" id="fig-sets">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Three set lookups decide a square</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="bt-sets">
+          <div class="fig__stage bt-stage" data-board></div>
+          <div class="bt-sets__panel" data-panel aria-live="polite"></div>
+        </div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Text alternative: a board with queens at row 0 column 1, row 1 column 3 and row 2 column 5. Clicking a square shows the tested column and both diagonal keys and whether each is already in its set.</figcaption>
+      </figure>
+      <figure class="fig" id="fig-quizboard">
+        <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which square is safe?</h3></div></header>
+        <div class="fig__stage bt-stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: a four by four board with queens at row 0 column 1 and row 1 column 3.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+    </section>
+
+    <!-- ============================================================ LAB 1 -->
+    <section id="queens-lab">
+      <h2>Lab: N-Queens</h2>
+      <p>The board and the tree move together. A shaded square is attacked, a flash is a conflict, a queen lifting off is a backtrack, and a grey node is a finished branch with its size on it. Pick a board size, then press play or step with <kbd>→</kbd>.</p>
+      <figure class="fig fig--lab full" id="lab-queens">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Solve N-Queens, one square at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-n class="bt-grow"></div><div data-mode></div><div data-collapse></div></div>
+        <div class="fig__toolbar"><div class="btn-row" data-presets role="group" aria-label="Presets"></div></div>
+        <div class="lab bt-lab-wide">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall bt-duo" data-stage><div class="bt-duo__board" data-board></div><div class="bt-duo__tree" data-tree></div></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="btn-row bt-jumps" data-jumps></div>
+            <p class="bt-note" data-note></p>
+          </div>
+          <div class="lab__side"><div data-code></div><div class="bt-side-col"><div data-vars></div><div data-counters></div></div></div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses twice to ask you to predict. Try n = 3 for a search that proves there is no solution, or n = 8 with Turbo. Text alternative: captions describe every step in words.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2>The decisions, as a flowchart</h2>
+      <p>Every backtracking routine has this shape. It is wired to the N-Queens lab above: step the lab and the current box lights up here.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The backtracking template</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 460px"></div>
+        <figcaption class="fig__foot">Text alternative: if the state is complete, record it; otherwise, while a choice is left, skip it if invalid, or choose it, recurse and unchoose, then look for the next choice.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ LAB 2 -->
+    <section id="choose-lab" data-toc="Subsets and permutations">
+      <h2>Lab: subsets, permutations, combinations</h2>
+      <p>The same template generates every subset, every ordering, or every k-sized group. Watch the <strong>partial solution</strong> grow when an item is chosen and shrink when it is unchosen, while the results collect on the right.</p>
+      <figure class="fig fig--lab full" id="lab-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Recursion tree</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-kind></div><div data-kwrap class="bt-grow" hidden><div data-k></div></div></div>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab bt-lab-wide">
+          <div class="lab__main">
+            <div class="fig__stage bt-stage bt-choose" data-stage>
+              <div class="bt-choose__tree" data-tree></div>
+              <div class="bt-choose__row">
+                <div class="bt-choose__box"><p class="bt-choose__label">Partial solution (the state)</p><div data-partial></div></div>
+                <div class="bt-choose__box"><p class="bt-choose__label">Results so far: <span data-rescount></span></p><div class="bt-chips" data-results aria-live="off"></div></div>
+              </div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="btn-row bt-jumps" data-jumps></div>
+          </div>
+          <div class="lab__side"><div data-code></div><div class="bt-side-col"><div data-vars></div><div data-counters></div></div></div>
+        </div>
+        <figcaption class="fig__foot"></figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ SUDOKU -->
+    <section id="sudoku">
+      <h2>Lab: a Sudoku solver</h2>
+      <p>Sudoku is backtracking with a much bigger board. Faint digits are <strong>candidates</strong>: the digits not yet used in a cell’s row, column or box. The solver picks a cell, tries each candidate, recurses, and erases the digit if it leads nowhere.</p>
+      <p>Which cell to pick next matters enormously. Switch between <strong>reading order</strong> and <strong>most constrained first</strong> (the empty cell with the fewest candidates) and compare the counters.</p>
+      <figure class="fig fig--lab full" id="lab-sudoku">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Fill and erase, cell by cell</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-order></div><div data-marks></div></div>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage bt-stage" data-stage><div data-stage-grid></div></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="btn-row bt-jumps" data-jumps></div>
+            <p class="bt-note" data-note></p>
+          </div>
+          <div class="lab__side"><div data-code></div><div data-vars></div><div data-counters></div></div>
+        </div>
+        <figcaption class="fig__foot">Long searches are capped: the trace shows the first 2,400 steps, then summarises the rest with true totals. Text alternative: captions name every cell and digit.</figcaption>
+      </figure>
+      <p>How big is the difference? Both orders run to completion (or to a limit of one million placements) on the same puzzle.</p>
+      <figure class="fig wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Digits placed to solve the same puzzle</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage bt-stage bt-race" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Bars use a log scale: each tick is ten times the last. Text alternative: two bars comparing the number of digits each strategy placed.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ WORD SEARCH -->
+    <section id="wordsearch">
+      <h2>Lab: word search on a grid</h2>
+      <p>Backtracking is not only for boards you fill. To find a word as a path of neighbouring letters, walk from a start cell, extend the path while the letters match, and <strong>unchoose</strong> a cell when none of its neighbours can continue.</p>
+      <figure class="fig fig--lab full" id="lab-word">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A path that grows and shrinks</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage bt-stage bt-word" data-stage><div data-word class="bt-word__word"></div><div data-grid></div></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="btn-row bt-jumps" data-jumps></div>
+            <p class="bt-note" data-note></p>
+          </div>
+          <div class="lab__side"><div data-code></div><div data-vars></div><div data-counters></div></div>
+        </div>
+        <figcaption class="fig__foot">Try the worst case: a grid of A’s with a word that ends in B. Every path is a dead end at the last letter, so the search must try all of them. Text alternative: captions describe the path at every step.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Backtracking has no magic worst case: if nothing can be pruned, it walks the <em>whole</em> tree. Its power is that constraints usually cut most of it away. Compare the two trees for four queens.</p>
+      <figure class="fig wide" id="fig-trees">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Brute force against backtracking, four queens</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="bt-trees">
+          <div><p class="bt-trees__label">Brute force: every column in every row</p><div class="fig__stage bt-stage" data-full></div></div>
+          <div><p class="bt-trees__label">Backtracking: skip attacked squares</p><div class="fig__stage bt-stage" data-pruned></div></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: two trees grown level by level. The brute-force tree reaches 341 nodes; the backtracking tree explores 17, and each rejected square accounts for a cut subtree.</figcaption>
+      </figure>
+      <p>Four queens is tiny. Here is how the work grows as the board does, on a logarithmic axis where each gridline is ten times the last.</p>
+      <figure class="fig wide" id="fig-chart">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Work against board size</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="bt-grow"></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Brute-force curves count boards to test; backtracking curves count nodes visited over the full search, or until the first solution. Both are computed live for n = 1 to 12.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Problem</th><th scope="col">Search space (worst case)</th><th scope="col" class="num">Nodes visited</th><th scope="col">What pruning does</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Subsets of n items</th><td>Include or exclude each item</td><td class="num"><span class="big-o" data-o="2n">2ⁿ leaves</span></td><td>Nothing to prune: every subset is a result.</td></tr>
+            <tr><th scope="row">Permutations of n items</th><td>Every ordering</td><td class="num"><span class="big-o" data-o="nfact">n! leaves</span></td><td>The used[] array already avoids repeats.</td></tr>
+            <tr><th scope="row">N-Queens</th><td>One queen per row: nⁿ boards</td><td class="num"><span class="big-o" data-o="nfact">under n!</span></td><td>Cuts it to 2,057 nodes for n = 8, all solutions.</td></tr>
+            <tr><th scope="row">Sudoku, m empty cells</th><td>Up to 9<sup>m</sup> fillings</td><td class="num"><span class="big-o" data-o="2n">hard to bound</span></td><td>Candidates plus best-cell-first make typical puzzles trivial.</td></tr>
+            <tr><th scope="row">Word search, L letters</th><td>Paths of length L on an R×C grid</td><td class="num"><span class="big-o" data-o="2n">R·C·3<sup>L</sup></span></td><td>Each mismatch ends a path at once.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Extra space is only the recursion depth plus the current state, <span class="big-o" data-o="n"></span> for these problems, because only one root-to-node path exists at any moment.</p>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Pruning is not a guarantee</p>
+        <p>Backtracking can still be exponential, and it is only as fast as your pruning is early. The word-search worst case above (all A’s, word ends in B) prunes nothing until the very last letter.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Most interview problems that say <em>generate all</em>, <em>find any</em> or <em>count the ways</em> are this template with a different state and a different rule for pruning.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="swap">Permute by swapping</button>
+          <button data-tab="bound">Bounding (branch and bound)</button>
+          <button data-tab="dups">Skipping duplicates</button>
+        </div>
+        <div data-tab-panel="swap"><div class="split"><figure class="mini"><div class="mini__stage bt-stage" data-mini="swap"></div><figcaption>Same tree as the used[] version.</figcaption></figure><div><p>Swap item <code>j</code> into position <code>i</code>, recurse, then swap back. No used[] array is needed, because the prefix is the chosen part.</p><pre class="bt-code" data-code-block="swap"></pre></div></div></div>
+        <div data-tab-panel="bound"><div class="split"><figure class="mini"><div class="mini__stage bt-stage" data-mini="bound"></div><figcaption>Grey nodes are calls cut by the bound.</figcaption></figure><div><p>A <strong>bound</strong> is a cheap test that a branch cannot possibly succeed, like “too few items left” or “the sum already exceeds the target”. <em>Branch and bound</em> is this idea applied to optimisation: cut a branch when its best possible score cannot beat the best found so far.</p><pre class="bt-code" data-code-block="bound"></pre></div></div></div>
+        <div data-tab-panel="dups"><div class="split"><figure class="mini"><div class="mini__stage bt-stage" data-mini="dups"></div><figcaption>Sort first, then skip repeats.</figcaption></figure><div><p>With repeated items, plain search records the same result more than once. Sort the input, and skip an item equal to the previous one at the same level.</p><pre class="bt-code" data-code-block="dups"></pre></div></div></div>
+      </div>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Backtracking or dynamic programming?</p>
+        <p>If different branches keep reaching the same sub-problem, remember its answer (lesson 34). If every branch is genuinely different, as in N-Queens, backtracking with good pruning is the tool.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CHECK -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span> The labs above also pause to ask you to predict.</p>
+      <figure class="fig" id="fig-safe-board">
+        <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A partial placement</h3></div></header>
+        <div class="fig__stage bt-stage"></div>
+        <figcaption class="fig__foot">Text alternative: five by five board, queens at row 0 column 1, row 1 column 3 and row 2 column 2.</figcaption>
+      </figure>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-safe"></div>
+        <div class="quiz" id="quiz-subsets"></div>
+        <div class="quiz" id="quiz-pruning"></div>
+        <div class="quiz" id="quiz-unchoose"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Backtracking</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="2n"></span><span class="chip chip--sm">depth-first</span><span class="chip chip--sm">O(depth) extra space</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1848<small>eight queens posed</small></div>
+        <p class="history__people">Max Bezzel · D. H. Lehmer · Niklaus Wirth<span>Berliner Schachzeitung, 1848; “backtrack” in the 1950s; stepwise refinement, 1971</span></p>
+        <div class="history__body">
+          <p>Chess composer Max Bezzel published the eight queens puzzle in 1848, and Franz Nauck listed all 92 solutions in 1850. You may read that Gauss solved it; he only made a brief, incomplete attempt, and the story comes from a later mix-up.</p>
+          <p>D. H. Lehmer named the method “backtracking” in the 1950s, and eight queens became its standard example after Wirth and Dijkstra used it around 1970.</p>
+        </div>
+        <p class="history__source">Sources: J. W. L. Glaisher (1874); Campbell, <em>Historia Mathematica</em> 4 (1977); Golomb and Baumert, <em>JACM</em> 12(4) (1965); N. Wirth, <em>CACM</em> 14(4) (1971).</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Subsets with a target sum</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given positive numbers and a target, list every subset that adds up to it. Where can you prune, and what must be true about the input for that prune to be valid?</p></li>
+        <li><div class="practice__title">Generate parentheses</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">List all balanced strings of n pairs of parentheses. Which two counts make a partial string invalid, and how early can you detect it?</p></li>
+        <li><div class="practice__title">Palindrome partitioning</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Split a string into pieces so that every piece is a palindrome, listing all ways. What is the state, and what is one choice?</p></li>
+        <li><div class="practice__title">Count the N-Queens solutions with bitmasks</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Replace the three sets with three integers used as bit sets, and count the solutions for n up to 12. How do you find all free columns in one expression?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-21-living-with-hardness-approximation-and-parameterized-algorithms.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Living with hardness</span><span class="deeper__text" style="display:block">Search trees, branching and why exponential searches can still be practical.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

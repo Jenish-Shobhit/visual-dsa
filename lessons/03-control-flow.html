@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Decisions &amp; loops · Visual DSA</title>
+<meta name="description" content="How programs choose and repeat: truth tables, if/else chains, while and for loops, off-by-one errors, infinite loops, nested loops, break and continue, all traced through animated flowcharts.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/03-control-flow.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/03-control-flow.js" defer></script>
+<script src="../js/lessons/03-control-flow-figs.js" defer></script>
+<script src="../js/lessons/03-control-flow-labs.js" defer></script>
+<script src="../js/lessons/03-control-flow.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="03-control-flow">
+<main id="main" class="lesson">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Decisions &amp; loops</h1>
+      <p class="hero__lede">A program is a token walking through a map. Tests choose the road, and a road that curls back on itself is a loop. Watch the token, and you can predict any program.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">20 min</li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li><a class="chip" data-icon="prereq" href="02-bits-and-memory.html">Needs: bits &amp; memory</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: a glowing token travels down a flowchart, tests whether count is less than 3, goes round the loop adding one each time, and leaves when the test finally says no."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem: instructions that only go forward</h2>
+      <p>So far a program is a list, and the machine runs it from top to bottom. That is enough to add two numbers. It is not enough to add the numbers from 1 to 1,000,000, because you would have to write a million lines.</p>
+      <p>Drag the slider. Each line on the left is one instruction. The loop on the right stays three lines long, whatever <em>n</em> is.</p>
+      <figure class="fig wide" id="fig-lines">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Adding 1 + 2 + … + n, two ways</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 320px"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a wall of forty short instructions, each adding one number, next to a three-line loop that does the same job for any n.</figcaption>
+      </figure>
+      <p>A second problem is that the right instruction depends on the data. Show a green battery above 50 percent, amber above 20, red otherwise. The program has to <em>choose</em>.</p>
+      <p>Choosing and repeating are all it takes. Any program, however large, is built from three shapes, and each is easy to draw as a flowchart.</p>
+      <div class="mini-row wide" id="mini-blocks"></div>
+      <aside class="callout callout--fun">
+        <p class="callout__title">Three shapes are enough</p>
+        <p>In 1966 Corrado Böhm and Giuseppe Jacopini proved that sequence, choice and loop can express every computation a computer can do. The rest of this lesson takes the last two apart.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CONDITIONS -->
+    <section id="conditions">
+      <h2>Questions with yes-or-no answers</h2>
+      <p>A <strong>condition</strong> is a question the computer can answer with <code>true</code> or <code>false</code>. The simplest ones compare two numbers. Move <em>a</em> and <em>b</em> and watch all six comparisons answer at once.</p>
+      <figure class="fig wide" id="fig-compare">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Six comparisons of a and b</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-a style="flex: 1 1 200px"></div><div data-b style="flex: 1 1 200px"></div><button type="button" class="btn btn--soft btn--sm" data-equal>Make b equal a</button></div>
+        <div class="fig__stage" data-stage></div>
+        <div class="cf-chipsbox" data-chips></div>
+        <figcaption class="fig__foot">Text alternative: a number line from 0 to 10 with markers for a and b, and six boxes showing whether a &lt; b, a &lt;= b, a &gt; b, a &gt;= b, a == b and a != b are true or false.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">One equals sign or two?</p>
+        <p><code>a = b</code> is an <em>instruction</em>: put b’s value into a. <code>a == b</code> is a <em>question</em>: are they equal? Mixing them up is the oldest typo in programming.</p>
+      </aside>
+      <p>Conditions combine. <strong>AND</strong> is true only when both parts are true, <strong>OR</strong> when at least one is, and <strong>NOT</strong> flips the answer. A <dfn>truth table</dfn> lists every possible input and its result.</p>
+      <p>Long before computers, telephone engineers built these with switches. Two switches in a row (in series) behave like AND. Two side by side (in parallel) behave like OR. Flip the switches, or click a row of the table.</p>
+      <figure class="fig wide" id="fig-logic">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Switches, a lamp and a truth table</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div class="cf-toggles" data-toggles role="group" aria-label="Switches"></div></div>
+        <div class="cf-logic">
+          <div class="fig__stage fig__stage--plain" data-circuit></div>
+          <div class="cf-logic__side"><div data-table></div><p class="cf-readout" data-readout aria-live="polite"></p></div>
+        </div>
+        <p class="fig__caption" data-explain></p>
+        <figcaption class="fig__foot">Text alternative: a battery, one or two switches and a lamp. With AND the switches are in series, with OR in parallel, and with NOT one switch bypasses the lamp. The table beside it lists every input and the lamp’s state.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ BRANCHES -->
+    <section id="branches">
+      <h2>Choosing a path: if, else if, else</h2>
+      <p>An <code>if</code> sends the token down one of two roads. Chain several and the token works down the list until one test says yes. That test’s branch runs, and <em>every test below it is skipped</em>.</p>
+      <p>Drag the battery level. The token walks the flowchart and the route it took stays painted.</p>
+      <figure class="fig wide" id="fig-battery">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which branch runs?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 260px"></div><div data-seg></div><div class="btn-row" data-quick role="group" aria-label="Try a level"></div></div>
+        <div class="cf-split">
+          <div class="fig__stage" data-stage></div>
+          <div class="fig__stage fig__stage--plain" data-flow></div>
+        </div>
+        <p class="fig__caption" data-msg aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a battery icon whose colour is chosen by a chain of tests, drawn as a flowchart. With the big test first the icon is always right; with the small test first, every level from 20 up shows amber.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Order is part of the logic</p>
+        <p>Put the strictest test first. Switch the figure to “Small test first” and slide to 80%: the same three branches now give the wrong answer, because the first true test wins.</p>
+      </aside>
+      <div class="quiz" id="quiz-battery"></div>
+    </section>
+
+    <!-- ============================================================ LOOPS AS JUMPS -->
+    <section id="jumps">
+      <h2>A loop is a jump backwards</h2>
+      <p>Underneath, a machine keeps a number, the <strong>program counter</strong>, which says which instruction is next. Normally it goes up by one. A <em>jump</em> writes a different number into it. Jump backwards, and the same instructions run again.</p>
+      <p>Step through six instructions that print numbers. Watch the marker on the left and the token riding the arrow when a jump is taken.</p>
+      <figure class="fig fig--lab wide" id="fig-jumps">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The program counter at work</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side"><div data-vars></div><div data-counters></div></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: six numbered instructions, a marker showing which one runs, arrows for the jump from line 5 back to line 2 and the jump from line 2 to line 6, and a tape of printed values.</figcaption>
+      </figure>
+      <aside class="callout callout--fun">
+        <p class="callout__title">When loops were paper</p>
+        <p>The Harvard Mark I of 1944 had no jump instruction at all. To repeat a calculation, operators rewound the paper tape by hand, and sometimes glued the tape into a real loop.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ WHILE -->
+    <section id="while">
+      <h2>The while loop: test, body, repeat</h2>
+      <p>A <code>while</code> loop asks its question <em>before</em> every trip. If the answer is yes it runs the body, then asks again. When the answer is no it leaves.</p>
+      <p>The box below holds numbered tickets. Step through and watch which variable the test looks at, and when it changes.</p>
+      <figure class="fig fig--lab wide" id="fig-while">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Selling tickets with a while loop</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage" data-stage></div>
+            <div class="fig__stage fig__stage--plain" data-flow></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side"><div data-code></div><div data-vars></div><div data-counters></div></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a box of numbered tickets is emptied one ticket at a time into a tray while a flowchart token loops through the test, the body and the update. Choosing 0 tickets shows the body never running.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">The test runs one more time than the body</p>
+        <p>With 5 tickets the body runs 5 times but the test runs 6 times: the last test is the one that says “stop”. With 0 tickets the body runs zero times, and the test still runs once.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ FOR -->
+    <section id="for">
+      <h2>The for loop: three parts in one line</h2>
+      <p>A <code>for</code> loop is a <code>while</code> loop with its three loose parts gathered into the header: where the variable starts, when to keep going, and how it changes. Hover or tap each part to see where it sits on the map.</p>
+      <figure class="fig wide" id="fig-anatomy">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Anatomy of a for header</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: the header of a for loop split into start, test and update, each linked to its box in the loop’s flowchart.</figcaption>
+      </figure>
+      <p>How do you know a loop is right, not just that it ran? Find something that is true at the top of <em>every</em> trip.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Loop invariant</p>
+        <p>A <dfn>loop invariant</dfn> is a statement that is true every time the test runs: before the first trip, after each trip, and when the loop ends. For a running total it is <em>“total equals the sum of every value handled so far”</em>. When the loop ends, “so far” means “all of them”, and the invariant becomes the answer.</p>
+      </aside>
+      <figure class="fig wide" id="fig-invariant">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The invariant, trip by trip</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="cf-inv" data-inv aria-live="polite"></p>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: for i from 1 to 5 the loop adds a column of i squares each trip; the total always equals the number of squares built so far.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The loop lab</h2>
+      <p>Write your own counted loop. Pick where <em>i</em> starts, where it stops and how it steps, then press play. The token, the code, the variables and the trace table all move together. Try “Never runs” and “Countdown”.</p>
+      <figure class="fig fig--lab wide" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace a counted loop</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="cf-duo">
+              <div class="fig__stage fig__stage--plain" data-flow></div>
+              <div class="cf-trace-col">
+                <p class="cf-mini-h">Trace table: one row per test</p>
+                <div class="cf-tt-wrap"><table class="table table--compact cf-trace"><thead><tr><th scope="col">#</th><th scope="col">i</th><th scope="col">Test</th><th scope="col" data-acchead>total</th></tr></thead><tbody data-rows></tbody></table></div>
+                <p class="cf-mini-h">What each body run added</p>
+                <div class="cf-trips is-empty" data-trips aria-live="polite"></div>
+              </div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side"><div data-code></div><div data-vars></div><div data-counters></div></div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses to ask you to predict a step. Text alternative: the caption under the figure describes every step in words, and the trace table records each test.</figcaption>
+      </figure>
+      <p>A useful habit: before you press play, predict how many times the body will run. A loop from <code>a</code> up to <code>b</code> with step 1 runs <code>b − a + 1</code> times, or zero times if <code>a</code> is already bigger than <code>b</code>.</p>
+    </section>
+
+    <!-- ============================================================ OFF BY ONE -->
+    <section id="offbyone">
+      <h2>Off by one: the fence-post error</h2>
+      <p>The most common loop bug is being wrong by exactly one. It has an old name, the fence-post problem. How many posts hold up a fence with five rails? Six.</p>
+      <figure class="fig wide" id="fig-fenceposts">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Posts and rails</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 320px"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-msg aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a fence with a chosen number of posts and always one fewer rail.</figcaption>
+      </figure>
+      <p>A loop over boxes has the same trap. Boxes are numbered from 0, so <em>n</em> boxes end at <code>a[n − 1]</code>. Choose where the loop starts and whether it uses <code>&lt;</code> or <code>&lt;=</code>, then step through. The extra or missing trip is flagged in red.</p>
+      <figure class="fig fig--lab wide" id="fig-fence">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Read every box exactly once</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-start></div><div data-cmp></div><div data-n style="flex: 1 1 200px"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side"><div data-code></div><div data-vars></div><div data-counters></div></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a row of lettered boxes read by a loop. With i &lt;= n the loop reads one box past the end; starting at 1 skips the first box.</figcaption>
+      </figure>
+      <p>Two habits catch most of these bugs. Check the <em>first</em> and the <em>last</em> value the loop variable takes, and count the trips on a tiny example, n = 1 or n = 2.</p>
+      <figure class="fig wide" id="fig-fourloops">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Four loops, one correct</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: four for-loop headers that differ in their start value and their comparison.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-fourloops"></div>
+    </section>
+
+    <!-- ============================================================ INFINITE LOOPS -->
+    <section id="infinite">
+      <h2>Infinite loops: every trip must make progress</h2>
+      <p>A loop ends only if the test eventually turns false. So the body has to move something toward that. Miss this and the program runs forever, which is why the figure below gives every loop a tank of 20 units of fuel.</p>
+      <p>The bars show the <strong>distance to the exit</strong> after each trip. Choose an update line and press play. Some loops burn fuel to no end. Find the updates that reach the exit.</p>
+      <figure class="fig fig--lab wide" id="fig-fuel">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The fuel gauge</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-cond></div><div data-upd></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage" data-stage></div>
+            <p class="cf-verdict" data-verdict aria-live="polite"></p>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side"><pre class="cf-loopcode" data-loopcode></pre><div data-vars></div><div data-counters></div></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a row of twenty fuel cells that empty one per trip, and a bar per trip showing how far i is from 10. Some updates shrink the bars to zero; others leave them flat or make them grow until the fuel runs out.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The safer test</p>
+        <p><code>i != 10</code> stops only on an exact hit, so a step that jumps over 10 runs forever. <code>i &lt; 10</code> stops as soon as i is past it. Prefer a range test unless you need exactness.</p>
+      </aside>
+      <div class="quiz" id="quiz-stops"></div>
+    </section>
+
+    <!-- ============================================================ NESTED -->
+    <section id="nested">
+      <h2>Loops inside loops</h2>
+      <p>Put one loop inside another and the inner loop starts again from the top on every trip of the outer one. The pairs <code>(i, j)</code> fill a grid, one row per trip of the outer loop.</p>
+      <p>Step through and count. Then switch the inner start to <code>i + 1</code>: the loop now visits each pair once, a triangle.</p>
+      <figure class="fig fig--lab wide" id="fig-nested">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Every (i, j) in order</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-n style="flex: 1 1 180px"></div><div data-m style="flex: 1 1 180px"></div><div data-shape></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="cf-formula" data-formula aria-live="polite"></p>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side"><div data-code></div><div data-vars></div><div data-counters></div></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a grid of rows i and columns j. Cells are numbered in the order the inner loop body visits them, row by row. In the triangle version only cells right of the diagonal are visited.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Preview of n²</p>
+        <p>When both loops run to n, the body runs n × n times. Ten times the data means a hundred times the work. Lesson 05 gives that growth its name: <span class="big-o" data-o="n2"></span>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ BREAK AND CONTINUE -->
+    <section id="jumpout">
+      <h2>Leaving early: break and continue</h2>
+      <p>Two statements bend a loop. <code>break</code> leaves the whole loop at once. <code>continue</code> abandons only the current trip and moves on to the next item.</p>
+      <p>Run both on your own numbers. Watch the flowchart: <code>break</code> takes a road straight to the exit, and <code>continue</code> a road back to the top.</p>
+      <figure class="fig fig--lab wide" id="fig-break">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">break vs continue</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-mode></div><div data-input style="flex: 1 1 320px"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage" data-stage></div>
+            <div class="fig__stage fig__stage--plain" data-flow></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side"><div data-code></div><div data-vars></div><div data-counters></div></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a row of numbers scanned left to right. With break the scan stops at the first negative number and the rest are greyed; with continue negatives are skipped and the others are added.</figcaption>
+      </figure>
+      <p>Stopping early is a real saving: <code>break</code> after the first match can turn a full scan into a few trips. In the worst case, when nothing matches, it still looks at everything.</p>
+    </section>
+
+    <!-- ============================================================ FIZZBUZZ -->
+    <section id="fizzbuzz">
+      <h2>Putting it together: FizzBuzz on a flowchart</h2>
+      <p>The classic warm-up uses everything above: a loop counts, and a chain of tests decides what to print. For each number, print “FizzBuzz” if it divides by 15, else “Fizz” if it divides by 3, else “Buzz” if it divides by 5, else the number.</p>
+      <p>Play it and watch the token pick a different branch for each number. Why is the 15 test <em>first</em>?</p>
+      <figure class="fig fig--lab full" id="fig-fizz">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">FizzBuzz, one number at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-n style="flex: 1 1 260px"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain fig__stage--scroll" data-flow style="--stage-min: 560px"></div>
+            <div class="cf-out" data-out aria-label="Output so far"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side"><div data-code></div><div data-vars></div><div data-counters></div></div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a flowchart with a loop test, three divisibility tests in a chain, four print boxes and an increment. The tiles below fill in with the numbers, Fizz, Buzz and FizzBuzz as they are printed.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why 15 goes first</p>
+        <p>15 is divisible by both 3 and 5. If the 3 test came first, 15 would print “Fizz” and the chain would stop before it ever reached the 5 test. The most specific case must go first.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What loops cost</h2>
+      <p>To measure a loop, count how many times its <strong>innermost body</strong> runs as the input size <em>n</em> grows. Drag <em>n</em>, and switch to a log scale to tell the curves apart.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Body runs against n</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 260px"></div><div data-seg></div></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a line chart of body runs for four loop shapes as n goes from 2 to 30. A single loop is a straight line, the nested loop climbs fastest, the triangle is about half of it, and the halving loop barely moves.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Loop shape</th><th scope="col">Counts</th><th scope="col" class="num">Body runs (input size n)</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><code>for i in 0 … n − 1</code></th><td>every value once</td><td class="num"><span class="big-o" data-o="n">n</span></td></tr>
+            <tr><th scope="row">two nested loops to n</th><td>every pair (i, j)</td><td class="num"><span class="big-o" data-o="n2">n × n</span></td></tr>
+            <tr><th scope="row">inner starts at i + 1</th><td>every pair once</td><td class="num"><span class="big-o" data-o="n2">n(n − 1) / 2</span></td></tr>
+            <tr><th scope="row"><code>while n ≥ 1: n = n / 2</code></th><td>halvings until 0</td><td class="num"><span class="big-o" data-o="logn">⌊log₂ n⌋ + 1</span></td></tr>
+            <tr><th scope="row">a loop with no progress</th><td>trips until fuel runs out</td><td class="num"><span class="big-o" data-o="nfact">never ends</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>These counts are the same on every input of size <em>n</em>, so best, average and worst case agree. They change only when <code>break</code> can stop a loop early. Then the best case is a few trips and the worst case is still the full <span class="big-o" data-o="n"></span>.</p>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The same idea comes in many spellings. Pick the one that shows your intent, and check the first and last values of <code>i</code>.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="same">Three spellings</button>
+          <button data-tab="down">Counting down</button>
+          <button data-tab="skip">Steps of two</button>
+          <button data-tab="stop">Search and stop</button>
+        </div>
+        <div data-tab-panel="same"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="same"></div><figcaption>The same five trips.</figcaption></figure><div><p><code>for</code>, <code>while</code> and <code>for … of</code> can all do the same job. Use <code>for-of</code> when you want the items, not their positions.</p><pre data-code-block="same"></pre></div></div></div>
+        <div data-tab-panel="down"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="down"></div><figcaption>Start high, test with <code>&gt;=</code>.</figcaption></figure><div><p>Flip the test and the update together. A countdown that keeps <code>i++</code> never reaches its goal.</p><pre data-code-block="down"></pre></div></div></div>
+        <div data-tab-panel="skip"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="skip"></div><figcaption>Every second value.</figcaption></figure><div><p>A bigger step visits fewer values. The trip count becomes <code>⌊(end − start) / step⌋ + 1</code>.</p><pre data-code-block="skip"></pre></div></div></div>
+        <div data-tab-panel="stop"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="stop"></div><figcaption>The fourth value is the first over 10.</figcaption></figure><div><p>A search loop stops at its first hit. It remembers <em>where</em> it stopped, so the code after the loop can use it.</p><pre data-code-block="stop"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page, including the predictions inside the figures: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-count"></div>
+        <div class="quiz" id="quiz-truth"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Decisions &amp; loops</p></div>
+          <div class="cluster"><span class="chip chip--sm">sequence</span><span class="chip chip--sm">choice</span><span class="chip chip--sm">loop</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1944<small>no jump instruction</small></div>
+        <p class="history__people">Harvard Mark I operators<span>then Böhm, Jacopini (1966) and Dijkstra (1968)</span></p>
+        <div class="history__body">
+          <p>The Harvard Mark I had no jump instruction. When it stopped, an operator read a register and decided whether to wind the paper tape back and run the loop again. People were the control flow. John Backus recalled a tape loop on another Harvard machine that picked up a half-twist and became a Möbius strip.</p>
+          <p>In 1966 Böhm and Jacopini proved that sequence, choice and loops are enough for any program. Two years later Dijkstra’s letter, retitled by its editor “Go To Statement Considered Harmful”, argued that programs should use those three shapes and not arbitrary jumps. Most languages have followed that advice ever since.</p>
+        </div>
+        <p class="history__source">Sources: R. C. Martin, <em>We, Programmers</em> (2025), ch. 4–6; C. Böhm and G. Jacopini, “Flow Diagrams, Turing Machines and Languages with Only Two Formation Rules”, <em>CACM</em> 9(5), 1966; E. W. Dijkstra, “Go To Statement Considered Harmful”, <em>CACM</em> 11(3), 1968.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Odd sum</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Write a loop that adds the odd numbers from 1 to 99. How many times does the body run? State the invariant at the top of each trip.</p></li>
+        <li><div class="practice__title">Count the trips</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">How many times does <code>visit(i, j)</code> run in <code>for i in 0…n−1: for j in i…n−1</code>? Compare it with the loop that starts j at i + 1, and with a loop that halves n until it reaches 0.</p></li>
+        <li><div class="practice__title">Why does it never stop?</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">The loop is <code>i = 0; while (i != 100) { i += 3 }</code>. Trace a few trips, explain why it never ends, and give two different fixes.</p></li>
+        <li><div class="practice__title">Swap the tests</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">In FizzBuzz, test <code>i % 3</code> before <code>i % 15</code>. Which numbers change their output? Now write the chain so the order of tests does not matter.</p></li>
+      </ol>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

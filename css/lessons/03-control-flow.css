@@ -1,0 +1,244 @@
+/* Lesson 03 · Decisions & loops — lesson-specific styles. Colours come only from tokens (--st-*, --ink*, --el-*, --bg*),
+   so light and dark both work. SVG figures carry the .vz class, so `.is-<state>` sets --vz-c (css/viz.css) and colour
+   transitions follow --vz-dur, which each render sets to the player's step duration (0 under reduced motion). */
+
+@keyframes cf-flow { to { stroke-dashoffset: -18; } }
+@keyframes cf-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes cf-pop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+
+.cf-svg { width: 100%; height: auto; overflow: visible; }
+.cf-svg text { font-variant-numeric: tabular-nums; }
+.cf-axis { stroke: var(--line-strong); stroke-width: 2; stroke-linecap: round; }
+.cf-tick { stroke: var(--ink-3); stroke-width: 1.5; }
+.cf-stem { stroke: var(--line-strong); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.cf-total { font: 800 20px var(--font-mono); fill: var(--ink); }
+.cf-code { font: 600 14px var(--font-mono); }
+.cf-mini-h { margin: 0 0 6px !important; font-size: 12.5px !important; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+
+/* ------------------------------------------------------------ hero teaser */
+.cf-hero { width: 100%; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 112px; align-items: center; gap: 8px; }
+.cf-hero__flow { min-width: 0; display: grid; place-items: center; }
+.cf-hero__count { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: var(--r-lg); background: color-mix(in srgb, var(--bg-sunken) 70%, var(--bg-elev)); border: 1px solid var(--line); }
+.cf-hero__k { font: 700 12px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.cf-hero__n { font: 800 56px/1 var(--font-mono); color: var(--ink); display: inline-block; }
+.cf-hero__n.is-bump { animation: cf-pop .45s ease-out; }
+.cf-hero.is-done .cf-hero__n { color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+.cf-pips { display: flex; gap: 6px; }
+.cf-pip { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line-strong); transition: background .3s, border-color .3s; }
+.cf-pip.is-on { background: var(--st-done); border-color: var(--st-done); }
+@media (max-width: 520px) { .cf-hero { grid-template-columns: minmax(0, 1fr) 84px; } .cf-hero__n { font-size: 40px; } }
+
+/* ------------------------------------------------------------ the problem: a wall of lines */
+.cf-lines { width: 100%; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(14px, 3cqi, 28px); align-items: start; }
+.cf-loopcard__t { margin: 0 0 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.cf-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 5px; }
+.cf-wall__line { display: block; padding: 3px 8px; font: 500 12px var(--font-mono); color: var(--ink-2); background: var(--bg-elev); border: 1px solid var(--line-strong); border-radius: 6px; white-space: nowrap; transition: transform .25s var(--ease-out), background .25s, color .25s, border-color .25s; }
+.cf-wall__line.is-off { transform: scale(.86); background: transparent; color: var(--ink-3); border-style: dashed; border-color: var(--line); }
+.cf-loopcard { padding: 14px 16px; border-radius: var(--r-lg); background: var(--bg-elev); border: 2px solid var(--st-done); box-shadow: var(--shadow-1); }
+.cf-loopcard__code { margin: 0; padding: 0; background: none; border: 0; font: 600 15px/1.6 var(--font-mono); color: var(--ink); white-space: pre-wrap; }
+.cf-loopcard__code .k { color: var(--tok-keyword); }
+.cf-loopcard__code .cf-n { display: inline-block; min-width: 1.4ch; color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+.cf-loopcard__n { margin: 8px 0 0; font-size: 13px; color: var(--ink-3); }
+@container fig (max-width: 640px) { .cf-lines { grid-template-columns: 1fr; } }
+
+/* ------------------------------------------------------------ mini flowcharts */
+.cf-mini-flow { min-height: 210px; display: grid; place-items: center; padding: 8px; }
+
+/* ------------------------------------------------------------ comparison chips */
+.cf-chipsbox { border-top: 1px solid var(--line); background: var(--bg-elev); }
+.cf-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 14px 16px; }
+@container fig (max-width: 560px) { .cf-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cf-chip { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; align-items: baseline; column-gap: 10px; padding: 8px 12px; border-radius: var(--r-md); border: 2px solid var(--line-strong); background: var(--bg-sunken); transition: background .25s, border-color .25s, transform .25s var(--ease-out); }
+.cf-chip__t { font: 700 15px var(--font-mono); background: none; border: 0; padding: 0; }
+.cf-chip__s { grid-column: 1; grid-row: 2; font: 500 12.5px var(--font-mono); color: var(--ink-3); }
+.cf-chip__v { grid-column: 2; grid-row: 1 / span 2; justify-self: end; font: 800 14px var(--font-mono); }
+.cf-chip.is-true { border-color: var(--st-done); background: color-mix(in srgb, var(--st-done) 14%, var(--bg-elev)); }
+.cf-chip.is-true .cf-chip__v { color: color-mix(in srgb, var(--st-done) 65%, var(--ink)); }
+.cf-chip.is-false { border-color: var(--line); background: var(--bg-sunken); }
+.cf-chip.is-false .cf-chip__t, .cf-chip.is-false .cf-chip__v { color: var(--ink-3); }
+.cf-disc { font: 800 15px var(--font-mono); }
+
+/* ------------------------------------------------------------ logic: circuit, switches, table */
+.cf-logic { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: stretch; }
+.cf-logic > .fig__stage { border-right: 1px solid var(--line); }
+.cf-logic__side { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+@container fig (max-width: 720px) { .cf-logic { grid-template-columns: 1fr; } .cf-logic > .fig__stage { border-right: 0; border-bottom: 1px solid var(--line); } }
+.cf-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+.cf-tog { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; border-radius: 999px; border: 2px solid var(--line-strong); background: var(--bg-elev); color: var(--ink); cursor: pointer; font: 700 14px var(--font-mono); transition: background .2s, border-color .2s; }
+.cf-tog__k { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--bg-elev); font-size: 12px; }
+.cf-tog[aria-pressed="true"] { border-color: var(--st-done); background: color-mix(in srgb, var(--st-done) 20%, var(--bg-elev)); }
+.cf-tog:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.cf-wire { fill: none; stroke: var(--el-edge); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; transition: stroke .2s; }
+.cf-wire.is-live { stroke: var(--st-compare); stroke-dasharray: 10 8; animation: cf-flow .7s linear infinite; }
+.cf-lever { stroke: var(--ink-3); stroke-width: 5; stroke-linecap: round; transition: stroke .2s; }
+.is-closed > .cf-lever, .cf-switch .is-closed .cf-lever { stroke: var(--st-done); }
+.cf-pole { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 2; }
+.cf-hit { fill: transparent; cursor: pointer; }
+.cf-swlabel { font: 700 13px var(--font-mono); fill: var(--ink-2); }
+.cf-resistor { fill: none; stroke: var(--el-edge-strong); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.cf-battery line { stroke: var(--el-stroke); stroke-width: 4; stroke-linecap: round; }
+.cf-battery line.short { stroke-width: 6; }
+.cf-battery text { font: 700 12px var(--font-mono); fill: var(--ink-3); }
+.cf-glow { fill: var(--st-compare); opacity: 0; transition: opacity .3s; }
+.cf-lamp { fill: var(--bg-sunken); stroke: var(--el-stroke); stroke-width: 3; transition: fill .3s, stroke .3s; }
+.cf-fil { fill: none; stroke: var(--ink-3); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: stroke .3s; }
+.cf-bulb.is-lit .cf-glow { opacity: .3; }
+.cf-bulb.is-lit .cf-lamp { fill: var(--st-compare); stroke: var(--st-compare); }
+.cf-bulb.is-lit .cf-fil { stroke: color-mix(in srgb, var(--st-compare) 30%, black); }
+.cf-tt { width: 100%; }
+.cf-tt th, .cf-tt td { text-align: center; }
+.cf-tt__row { cursor: pointer; }
+.cf-tt__row:hover td { background: var(--bg-sunken); }
+.cf-tt__row:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.cf-tt__row.is-current td { background: color-mix(in srgb, var(--st-active) 16%, var(--bg-elev)); font-weight: 700; }
+.cf-tt__out { border-left: 1px solid var(--line); }
+.cf-tv { font: 700 13px var(--font-mono); }
+.cf-tv.is-t { color: color-mix(in srgb, var(--st-done) 62%, var(--ink)); }
+.cf-tv.is-f { color: color-mix(in srgb, var(--st-error) 55%, var(--ink)); }
+p.cf-readout { margin: 0; padding: 10px 12px; text-align: center; font-size: 17px; border: 1px dashed var(--line-strong); border-radius: var(--r-md); background: var(--bg-elev); }
+.cf-arrow { color: var(--ink-3); }
+
+/* ------------------------------------------------------------ battery */
+.cf-split { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr); }
+.cf-split > .fig__stage:first-child { border-right: 1px solid var(--line); }
+@container fig (max-width: 720px) { .cf-split { grid-template-columns: 1fr; } .cf-split > .fig__stage:first-child { border-right: 0; border-bottom: 1px solid var(--line); } }
+.cf-battery-svg { max-width: 300px; }
+.cf-bat__body { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 3; }
+.cf-bat__cap { fill: var(--el-stroke); }
+.cf-bat__fill { fill: var(--vz-c); transition: fill var(--vz-dur) var(--vz-ease); }
+.cf-bat__pct { font: 800 24px var(--font-mono); fill: var(--ink); paint-order: stroke; stroke: var(--bg-elev); stroke-width: 5px; stroke-linejoin: round; }
+.cf-bat__verdict { font: 700 15px var(--font-sans); fill: var(--ink-2); }
+.cf-bat__verdict.is-wrong { fill: color-mix(in srgb, var(--st-error) 70%, var(--ink)); }
+.fig__caption.is-wrong { background: color-mix(in srgb, var(--st-error) 9%, var(--bg-elev)); }
+
+/* ------------------------------------------------------------ program counter */
+.cf-jump { fill: none; stroke: var(--el-edge); stroke-width: 2.2; stroke-dasharray: 5 4; transition: stroke .25s; }
+.cf-jump.is-active { stroke: var(--st-active); stroke-width: 3.2; stroke-dasharray: none; }
+.cf-arrowhead { fill: var(--el-edge); }
+.cf-arrowhead.is-active { fill: var(--st-active); }
+.cf-pc path { fill: var(--st-active); }
+.cf-pc text { fill: var(--st-active); font: 800 12px var(--font-mono); }
+.cf-token { fill: var(--st-active); stroke: var(--bg-elev); stroke-width: 2.5; }
+.cf-tape { fill: var(--bg-sunken); stroke: var(--line); }
+
+/* ------------------------------------------------------------ tickets */
+.cf-box { fill: color-mix(in srgb, var(--bg-sunken) 70%, var(--el-fill)); stroke: var(--line-strong); stroke-width: 2.5; }
+.cf-tray { fill: none; stroke: var(--line-strong); stroke-width: 2; stroke-dasharray: 7 6; }
+.cf-tnum { font: 800 20px var(--font-mono); }
+.cf-notch { fill: color-mix(in srgb, var(--bg-sunken) 70%, var(--el-fill)); }
+.cf-tickets .cf-readout { font: 800 20px var(--font-mono); fill: var(--ink); }
+
+/* ------------------------------------------------------------ for anatomy */
+.cf-anat { width: 100%; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(16px, 3cqi, 32px); align-items: center; }
+.cf-anat__left { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.cf-anat__head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.cf-anat__kw { font: 600 17px var(--font-mono); background: none; border: 0; padding: 0; color: var(--ink); }
+.cf-anat__body { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-left: 8px; }
+.cf-anat__body code { font: 600 16px var(--font-mono); background: none; border: 0; padding: 0; }
+.cf-anat__tag { font-size: 13px; color: var(--ink-3); }
+.cf-anat__say { margin: 10px 0 0 !important; padding: 10px 14px; font-size: 15.5px !important; line-height: 1.55 !important; border-left: 4px solid var(--st-active); background: var(--bg-elev); border-radius: 0 var(--r-md) var(--r-md) 0; min-height: 4.6em; }
+.cf-part { display: inline-flex; gap: 8px; align-items: center; padding: 6px 12px 6px 8px; border-radius: 12px; border: 2px solid var(--line-strong); background: var(--bg-elev); cursor: pointer; color: var(--ink); transition: border-color .2s, background .2s; }
+.cf-part code { font: 700 16px var(--font-mono); background: none; border: 0; padding: 0; }
+.cf-part__n { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: var(--bg-elev); font: 700 11px var(--font-sans); }
+.cf-part[aria-pressed="true"] { border-color: var(--st-active); background: color-mix(in srgb, var(--st-active) 12%, var(--bg-elev)); }
+.cf-part:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.cf-anat__flow { min-width: 0; display: grid; place-items: center; }
+@container fig (max-width: 640px) { .cf-anat { grid-template-columns: 1fr; } }
+
+/* ------------------------------------------------------------ invariant staircase */
+.cf-sq { fill: var(--vz-fill); stroke: var(--vz-stroke); stroke-width: 1.5; transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease); }
+.cf-inv { margin: 0 !important; padding: 10px 18px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--st-done) 7%, var(--bg-elev)); font-size: 15px !important; line-height: 1.5 !important; }
+.cf-ok { color: color-mix(in srgb, var(--st-done) 62%, var(--ink)); font-weight: 700; margin-left: 6px; }
+
+/* ------------------------------------------------------------ lab toolbar, trace table, trips */
+.cf-toolbar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; width: 100%; }
+.cf-field { display: flex; flex-direction: column; gap: 3px; }
+.cf-field__l { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.cf-num { width: 5.4em; font-family: var(--font-mono); }
+.cf-presets { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 100%; }
+.cf-err { flex: 1 1 100%; margin: 0 !important; min-height: 0; font-size: 14px !important; color: color-mix(in srgb, var(--st-error) 70%, var(--ink)); }
+.cf-err:empty { display: none; }
+.cf-duo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); flex: 1; }
+.cf-duo > .fig__stage { border-right: 1px solid var(--line); }
+.cf-trace-col { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+@container fig (max-width: 680px) { .cf-duo { grid-template-columns: 1fr; } .cf-duo > .fig__stage { border-right: 0; border-bottom: 1px solid var(--line); } }
+.cf-tt-wrap { max-height: 250px; overflow: auto; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); }
+.cf-trace { width: 100%; margin: 0; }
+.cf-trace th, .cf-trace td { padding: 6px 10px; text-align: left; }
+.cf-trace td.num, .cf-trace th:nth-child(1), .cf-trace th:nth-child(2), .cf-trace th:nth-child(4) { text-align: right; }
+.cf-trace tr.is-new { animation: cf-in .35s ease-out; }
+.cf-trace tr.is-current td { background: color-mix(in srgb, var(--st-active) 14%, var(--bg-elev)); }
+.cf-trace tr.is-stop td { color: var(--ink-2); }
+.cf-trace td code { background: none; border: 0; padding: 0; font-size: .92em; }
+.cf-acc.is-bump { animation: cf-pop .45s ease-out; font-weight: 800; }
+.cf-trips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 36px; }
+.cf-tchip { display: inline-block; padding: 3px 10px; border-radius: 999px; font: 700 13px var(--font-mono); background: color-mix(in srgb, var(--st-done) 24%, var(--bg-elev)); border: 1.5px solid var(--st-done); color: var(--ink); }
+.cf-tchip.is-new { animation: cf-pop .45s ease-out; }
+.cf-tchip--total { background: color-mix(in srgb, var(--st-key) 22%, var(--bg-elev)); border-color: var(--st-key); }
+.cf-tchip.is-off { display: none; }
+.cf-trips__none { display: none; font-size: 13.5px; font-style: italic; color: var(--ink-3); }
+.cf-trips.is-empty .cf-trips__none { display: inline; }
+
+/* ------------------------------------------------------------ fuel gauge */
+.cf-cell { fill: var(--st-done); stroke: none; transition: fill var(--vz-dur) var(--vz-ease); }
+.cf-cell.is-burnt { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1; }
+.cf-cell.is-low { fill: var(--st-compare); }
+.cf-cell.is-empty { fill: var(--st-error); }
+.cf-bar { fill: var(--vz-c); transition: fill var(--vz-dur) var(--vz-ease); }
+.cf-barv { fill: var(--ink-2); font: 700 11px var(--font-mono); }
+p.cf-verdict { margin: 0; padding: 10px 18px; min-height: 2.7em; border-top: 1px solid var(--line); font-size: 15.5px; background: var(--bg-elev); color: var(--ink-2); }
+.cf-verdict.is-good { background: color-mix(in srgb, var(--st-done) 10%, var(--bg-elev)); color: var(--ink); }
+.cf-verdict.is-bad { background: color-mix(in srgb, var(--st-error) 10%, var(--bg-elev)); color: var(--ink); }
+.cf-loopcode { margin: 0; padding: 12px 14px; border-radius: var(--r-md); background: var(--code-bg); color: var(--code-ink); font: 500 14px/1.6 var(--font-mono); overflow-x: auto; }
+
+/* ------------------------------------------------------------ nested formula, fizz tiles, four loops */
+p.cf-formula { margin: 0; padding: 10px 18px; border-top: 1px solid var(--line); font-size: 16px; background: var(--bg-elev); }
+.cf-f__k { color: var(--ink-3); margin-right: 6px; }
+.cf-f__v { color: color-mix(in srgb, var(--st-done) 62%, var(--ink)); font-size: 1.15em; }
+#fig-nested.is-tri [data-m] { opacity: .4; pointer-events: none; }
+.cf-out { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px; border-top: 1px solid var(--line); background: var(--bg-elev); min-height: 60px; }
+.cf-tile { min-width: 40px; padding: 5px 8px; border-radius: 8px; border: 1.5px dashed var(--line-strong); font: 700 13px var(--font-mono); color: var(--ink-3); text-align: center; transition: background .25s, border-color .25s, color .25s; }
+.cf-tile.is-printed { border-style: solid; color: var(--ink); border-color: var(--line-strong); background: var(--bg-sunken); }
+.cf-tile.is-fizz { background: color-mix(in srgb, var(--st-compare) 28%, var(--bg-elev)); border-color: var(--st-compare); }
+.cf-tile.is-buzz { background: color-mix(in srgb, var(--st-frontier) 24%, var(--bg-elev)); border-color: var(--st-frontier); }
+.cf-tile.is-fizzbuzz { background: color-mix(in srgb, var(--st-pivot) 22%, var(--bg-elev)); border-color: var(--st-pivot); }
+.cf-tile.is-current { outline: 3px solid var(--st-active); outline-offset: 1px; }
+.cf-tile.is-pop { animation: cf-pop .4s ease-out; }
+.cf-four { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .cf-four { grid-template-columns: 1fr; } }
+.cf-four__card { display: flex; flex-direction: column; padding: 12px 14px; border-radius: var(--r-md); border: 2px solid var(--line-strong); background: var(--bg-elev); font-family: var(--font-mono); }
+.cf-four__card code { background: none; border: 0; padding: 0; font: 600 14px/1.55 var(--font-mono); white-space: pre-wrap; }
+.cf-four__h { font-weight: 700 !important; }
+
+/* ------------------------------------------------------------ variations chips */
+.cf-vchips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 16px 12px; }
+.cf-vchips__k { font: 700 14px var(--font-mono); color: var(--ink-3); margin-right: 4px; }
+.cf-vchip { display: inline-grid; place-items: center; min-width: 34px; height: 34px; padding: 0 6px; border-radius: 9px; border: 2px solid var(--line-strong); background: var(--bg-elev); font: 700 14px var(--font-mono); }
+.cf-vchip.is-visited { border-color: var(--st-visited); background: color-mix(in srgb, var(--st-visited) 16%, var(--bg-elev)); }
+.cf-vchip.is-found { border-color: var(--st-found); background: var(--st-found); color: var(--on-state); }
+.cf-vchip.is-muted { border-style: dashed; color: var(--ink-3); background: transparent; }
+
+/* ------------------------------------------------------------ summary icons */
+.cf-icon { width: 100%; height: 100%; max-height: 72px; }
+.cf-ic-shape { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 2; }
+.cf-ic-shape.is-a { fill: color-mix(in srgb, var(--st-active) 26%, var(--el-fill)); stroke: var(--st-active); }
+.cf-ic-edge { fill: none; stroke: var(--el-edge-strong); stroke-width: 2.5; stroke-linecap: round; }
+.cf-ic-head { fill: var(--el-edge-strong); }
+.cf-ic-tok { fill: var(--st-active); }
+.cf-ic-cell { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1.5; }
+.cf-ic-cell.is-on { fill: color-mix(in srgb, var(--st-done) 50%, var(--el-fill)); stroke: var(--st-done); }
+.cf-ic-t { font: 800 12px var(--font-mono); fill: var(--ink-2); }
+.cf-ic-bar { fill: var(--st-compare); }
+.cf-ic-post { fill: var(--st-key); }
+.cf-ic-rail { fill: color-mix(in srgb, var(--st-visited) 55%, var(--el-fill)); }
+
+/* ------------------------------------------------------------ reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .cf-wire.is-live, .cf-trace tr.is-new, .cf-tchip.is-new, .cf-acc.is-bump, .cf-tile.is-pop, .cf-hero__n.is-bump { animation: none; }
+  .cf-wall__line, .cf-chip { transition: none; }
+}
+:root[data-motion="reduce"] .cf-wire.is-live, :root[data-motion="reduce"] .cf-trace tr.is-new, :root[data-motion="reduce"] .cf-tchip.is-new,
+:root[data-motion="reduce"] .cf-acc.is-bump, :root[data-motion="reduce"] .cf-tile.is-pop, :root[data-motion="reduce"] .cf-hero__n.is-bump { animation: none; }
+
+/* labs with two stages stacked in the main column: let each keep its own height */
+#fig-while .lab__main > .fig__stage, #fig-break .lab__main > .fig__stage, #fig-fizz .lab__main > .fig__stage { flex: none; }

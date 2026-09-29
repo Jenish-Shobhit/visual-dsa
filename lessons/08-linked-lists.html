@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Linked lists · Visual DSA</title>
+<meta name="description" content="A linked list stores order in pointers instead of positions. Watch arrows re-route as you insert, delete and reverse, see why the wrong order loses the tail, and race a tortoise and a hare around a cycle.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/08-linked-lists.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/list.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/08-linked-lists.js" defer></script>
+<script src="../js/lessons/08-linked-lists-figs.js" defer></script>
+<script src="../js/lessons/08-linked-lists.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="08-linked-lists">
+<main id="main" class="lesson ll">
+
+  <!-- ============================================================ 1. HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Linked lists</h1>
+      <p class="hero__lede">Store order in pointers instead of positions. Splicing a node in costs two pointer writes; reaching the 500th node costs 500 hops.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">18 min</li>
+        <li class="chip" data-icon="level">Beginner → intermediate</li>
+        <li class="chip" data-icon="prereq">Needs lesson 06: arrays</li>
+      </ul>
+    </div>
+    <div class="hero__stage ll-teaser" id="teaser" role="img" aria-label="Animation: a linked list of five nodes reverses itself. The pointers prev and curr walk along the list, and each arrow flips to point backwards, one by one. Then the nodes re-line up in their new order and the list reverses back."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ 2. THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>A music app keeps your queue in an array. Every time you press “play next”, the new song has to go at the front, so every song already queued slides one slot to the right.</p>
+      <p>Press the button a few times and watch the two counters. The top row is the array; the bottom row stores the same songs as a linked list.</p>
+      <figure class="fig wide" id="fig-problem">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Insert at the front: shift everything, or re-point two arrows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar">
+          <div class="btn-row">
+            <button class="btn btn--primary" type="button" data-act="insert">Play next: insert at the front</button>
+            <button class="btn btn--ghost" type="button" data-act="reset">Reset</button>
+          </div>
+        </div>
+        <div class="fig__stage fig__stage--plain ll-twin" data-stage>
+          <div class="ll-twin__row"><p class="ll-twin__label">Array: songs in consecutive slots</p><div class="ll-twin__view" data-array></div></div>
+          <div class="ll-twin__row"><p class="ll-twin__label">Linked list: each song knows the next one</p><div class="ll-twin__view" data-list></div></div>
+        </div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: each insert into the array moves every existing song one slot right, so the count of moves grows with the queue. The linked list creates one node and changes two pointers, whatever the length.</figcaption>
+      </figure>
+      <p>The array pays one move per song already queued, and the bill grows with the queue. The list pays two pointer writes, every time. This lesson is about that second structure: what it is, why the order of those two writes matters, and what it gives up in return.</p>
+    </section>
+
+    <!-- ============================================================ 3. INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Think of a scavenger hunt. You hold one clue. It tells you where the second clue is hidden, the second tells you where the third is, and the last one says “the end”.</p>
+      <figure class="fig wide" id="fig-hunt">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A scavenger hunt is a linked list</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain ll-hunt" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: five spots in a park, visited in the order the clues give: mailbox, oak tree, bench, fountain, lamp post. Each clue names only the next spot.</figcaption>
+      </figure>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: clues that point to clues</p>
+        <p>The spots are scattered anywhere in the park, and the order lives only on the cards. To reach the fourth clue you must read the first three. That is exactly how a linked list trades speed of access for freedom of placement.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>A hunt is fixed once it is hidden. In a list you can rewrite a card at any time: point it somewhere new and you have inserted or removed a stop, without moving anything else.</p>
+      </aside>
+      <p>Memory is the park. Each node sits wherever the allocator found room, and its <code>next</code> field holds the address of the next node. Shuffle the nodes to new addresses: the arrows follow, the stored addresses change, and the order stays the same.</p>
+      <figure class="fig wide" id="fig-memory">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Scattered in memory, ordered by pointers</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar">
+          <div data-seg></div>
+          <button class="btn btn--secondary btn--sm" type="button" data-act="shuffle">Move nodes to new addresses</button>
+        </div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: memory drawn as rows of 8-byte cells with addresses. The list 4, 7, 9, 12, 15 occupies five two-cell nodes at unrelated addresses; each node’s second cell stores the address of the next node, and the last stores null.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-memory"></div>
+    </section>
+
+    <!-- ============================================================ 4. ANATOMY -->
+    <section id="anatomy">
+      <h2>Nodes, next and null</h2>
+      <p>Every box-and-arrow drawing in this lesson is the memory picture above with the addresses replaced by arrows. Tap a term to light up its part of the list.</p>
+      <figure class="fig wide" id="fig-anatomy">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The parts of a singly linked list</h3></div>
+        </header>
+        <div class="ll-terms" role="group" aria-label="Parts of a linked list" data-terms></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: head points at the node holding 4; 4 points at 7; 7 points at 9; 9 is the tail and its next is null.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>A <dfn>node</dfn> is a small record: a <dfn>value</dfn> plus a <dfn>next</dfn> pointer, the address of the following node. <dfn>head</dfn> is a variable holding the address of the first node. The last node, the <dfn>tail</dfn>, has <code>next = null</code>: “no next node”. An empty list is <code>head = null</code>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 5. WALKING -->
+    <section id="walk">
+      <h2>Walking the list</h2>
+      <p>An array finds index <em>i</em> with arithmetic: base address plus <em>i</em> times the element size. A list has no such formula, because the nodes’ addresses are unrelated. The address of node <em>i</em> is written inside node <em>i</em> − 1, so you have to read your way there.</p>
+      <figure class="fig wide" id="fig-walk">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Reaching index i costs i hops</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 260px"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>The loop <code>curr = curr.next</code> is the only way to move. Reading index <em>i</em> costs <em>i</em> hops, so random access is <span class="big-o" data-o="n">O(n)</span> in the worst case, against <span class="big-o" data-o="1"></span> for an array.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 6. INSERT -->
+    <section id="insert">
+      <h2>Insert: two writes, in the right order</h2>
+      <p>To put a new node after a node you hold, called <code>prev</code>, you change two pointers: the new node’s <code>next</code>, and <code>prev.next</code>. Nothing else moves. Inserting at the front is the same idea with <code>head</code> playing the role of <code>prev.next</code>.</p>
+      <p>The two writes are not interchangeable. <code>prev.next</code> is the only pointer to the rest of the list, so if you overwrite it first, the rest of the list is gone. Watch it happen, then switch to the right order.</p>
+      <figure class="fig wide" id="fig-order">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The wrong order loses the tail</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: inserting 8 after 7 in 4, 7, 9, 12, 15. In the wrong order, 7 is pointed at 8 first; 9, 12 and 15 become unreachable and drift away, then 8 is pointed at itself. In the right order, 8 is pointed at 9 first, then 7 at 8.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Keep your grip</p>
+        <p>Before you overwrite a pointer, make sure something else already holds the address it stored. Copy first (<code>node.next = prev.next</code>), redirect second (<code>prev.next = node</code>).</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The “O(1) insert” half-truth</p>
+        <p>The two writes cost O(1) only once you hold <code>prev</code>. Given an index, you first walk <em>i</em> − 1 hops to find it, so insert-at-index is O(<em>i</em>), just like the array’s shifting.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 7. DELETE + FLOWCHART -->
+    <section id="delete">
+      <h2 data-toc="Delete, as a flowchart">Delete: bypass, then let go</h2>
+      <p>To remove a node, make its predecessor skip over it: <code>prev.next = prev.next.next</code>. One write. The skipped node is still in memory with its arrow intact, but nothing points to it, so it is unreachable and gets reclaimed.</p>
+      <p>The head has no predecessor, so deleting it moves <code>head</code> instead. That special case is why the decision flowchart has two branches. Pick a case and step through: the list and the flowchart move together.</p>
+      <figure class="fig wide" id="fig-delete">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Delete by value, decision by decision</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="ll-split">
+          <div class="fig__stage" data-stage></div>
+          <div class="fig__stage fig__stage--plain ll-split__flow" data-flow></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: if head is null, return false. If the head holds x, set head to head.next and return true. Otherwise walk with prev: while prev.next is not null, if prev.next holds x, set prev.next to prev.next.next and return true; else move prev along. If the walk ends, return false.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why prev, and not curr?</p>
+        <p>In a singly linked list a node cannot see who points at it. So the walk keeps <code>prev</code> one step behind the candidate: when the candidate matches, <code>prev</code> is exactly the node whose pointer must change.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 8. LAB -->
+    <section id="lab">
+      <h2>The lab: every operation</h2>
+      <p>Build your own list, pick an operation and press play. The code panel lights the line that runs, the variables show where each pointer is, and the counters separate the two costs: hops to find the spot, and pointer writes to change it. Press <kbd>←</kbd> and <kbd>→</kbd> to step.</p>
+      <figure class="fig fig--lab wide" id="lab-ops">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Linked-list operations lab</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar ll-labbar">
+          <div data-input class="ll-labbar__list"></div>
+          <div class="ll-labbar__op">
+            <label class="field-label" for="ll-op">Operation</label>
+            <select class="field" id="ll-op" data-op>
+              <option value="insertHead">Insert at head</option>
+              <option value="insertAt" selected>Insert at index</option>
+              <option value="appendWalk">Append (walk to the end)</option>
+              <option value="appendTail">Append (with a tail pointer)</option>
+              <option value="delete">Delete value</option>
+              <option value="search">Search</option>
+            </select>
+          </div>
+          <div class="ll-labbar__arg">
+            <label class="field-label" for="ll-x">Value x</label>
+            <input class="field" id="ll-x" data-x type="number" inputmode="numeric" value="8" min="-99" max="99">
+          </div>
+          <div class="ll-labbar__arg" data-iwrap>
+            <label class="field-label" for="ll-i">Index i</label>
+            <input class="field" id="ll-i" data-i type="number" inputmode="numeric" value="2" min="0" max="8">
+          </div>
+          <div class="ll-labbar__run"><button class="btn btn--primary" type="button" data-run>Run</button></div>
+          <p class="input-row__error ll-labbar__err" data-err role="alert" hidden></p>
+        </div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall fig__stage--scroll" data-stage style="--stage-min: 440px"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="ll-result" data-result></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once, before the first pointer write of an insert, to ask which write comes first. Text alternative: the caption describes every step in words.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 9. DOUBLY -->
+    <section id="doubly">
+      <h2>Doubly linked lists</h2>
+      <p>Give every node a second pointer, <code>prev</code>, to the node before it. Now a node can reach both neighbours, so you can walk backwards, and you can delete a node you hold without searching for its predecessor.</p>
+      <p>The price is one more pointer per node, and twice the surgery: an insert rewires four pointers, a delete two. The order rule still applies: wire the new node first, then the neighbours, and overwrite your route last.</p>
+      <figure class="fig wide" id="fig-doubly">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Both arrows re-route</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: in 2, 5, 11, 14, inserting 8 after 5 sets 8.prev, 8.next, 11.prev and 5.next; deleting 11 sets 5.next to 14 and 14.prev to 5.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 10. REVERSAL LAB -->
+    <section id="reverse">
+      <h2>Reverse a list in place</h2>
+      <p>Reversal is the classic pointer workout. Walk the list once with three pointers: <code>prev</code> (the reversed part so far), <code>curr</code> (the node being flipped) and <code>next</code> (your grip on the rest). Each step flips one arrow.</p>
+      <p>Nothing is copied and no node moves. Only arrows change, so the extra space is <span class="big-o" data-o="1"></span> and the time is <span class="big-o" data-o="n"></span>.</p>
+      <figure class="fig fig--lab wide" id="lab-reverse">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Reversal lab: prev, curr, next</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall fig__stage--scroll" data-stage style="--stage-min: 420px"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses twice to ask you to predict. Text alternative: the caption describes each pointer change.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The one line you cannot drop</p>
+        <p>Without <code>next = curr.next</code>, the flip overwrites the only pointer to the rest of the list, and the loop has nowhere to go. It is the same “keep your grip” rule as insertion.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 11. FAST & SLOW -->
+    <section id="fast-slow">
+      <h2>Two speeds: fast and slow pointers</h2>
+      <p>Send two pointers down the list together, one taking a step per turn and the other two. When the fast one reaches the end, the slow one has covered half the distance: it stands on the middle node, found in one pass without knowing the length.</p>
+      <figure class="fig wide" id="fig-middle">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Find the middle in one pass</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+      </figure>
+      <p>Now suppose a bug made the last node point back into the middle of the list. A walk would never meet <code>null</code>; it would circle forever. The list has the shape of the letter ρ: a tail of μ nodes leading into a loop of λ nodes.</p>
+      <p>Put a tortoise (1 step per turn) and a hare (2 steps) at the head. If there is no loop, the hare hits the end. If there is one, both end up circling it, and the hare, gaining one step per turn, must land on the tortoise. Predict first.</p>
+      <figure class="fig" id="fig-predict">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Predict: where do they meet?</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: a tail of 2 nodes (0, 1) leads into a loop of 5 nodes (2 to 6); node 6 points back to node 2. Both animals start at node 0.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-meet"></div>
+      <figure class="fig wide" id="fig-floyd">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Floyd’s tortoise and hare</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar ll-floydbar">
+          <div data-mu style="flex: 1 1 180px"></div>
+          <div data-lambda style="flex: 1 1 180px"></div>
+          <div class="ll-floydbar__presets" data-presets></div>
+        </div>
+        <div class="fig__stage fig__stage--plain fig__stage--scroll ll-rho" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: phase 1, the tortoise moves one node per turn and the hare two until they share a node. Phase 2, the tortoise restarts at the head and both move one node per turn; they meet at the first node of the loop.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why they must meet, and why phase 2 finds the entry</p>
+        <p>Once both are on the loop, say the hare is <em>g</em> steps behind. Each turn the tortoise adds 1 and the hare adds 2, so the gap becomes <em>g</em> − 1. It counts down 3, 2, 1, 0: the hare cannot jump over, because the gap never skips a number.</p>
+        <p>At the meeting the tortoise has walked μ + <em>k</em> steps (μ to reach the loop, <em>k</em> more inside it) and the hare 2(μ + <em>k</em>). The hare’s extra μ + <em>k</em> steps were whole laps. So from the meeting point, μ more steps completes a lap and lands on the entry, exactly where a walker starting μ steps away at the head arrives.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 12. COST -->
+    <section id="cost">
+      <h2>What it costs: array vs linked list</h2>
+      <p>Same values, two layouts, one operation at a time. Each frame is one basic operation: a shift, a write or a hop. Pick an operation and let them race.</p>
+      <figure class="fig wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The race: array vs singly linked list</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain ll-twin" data-stage>
+          <div class="ll-twin__row"><p class="ll-twin__label">Array (one spare slot)<span class="ll-done" data-adone hidden>finished</span></p><div class="ll-twin__view" data-array></div></div>
+          <div class="ll-twin__row"><p class="ll-twin__label">Singly linked list, head pointer only<span class="ll-done" data-ldone hidden>finished</span></p><div class="ll-twin__view" data-list></div></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table" id="cost-table">
+          <caption>Cost of each operation on n items (worst case unless noted). Click a row to race it above.</caption>
+          <thead><tr><th scope="col">Operation</th><th scope="col">Array</th><th scope="col">Singly linked</th><th scope="col">Doubly linked</th><th scope="col">Why</th></tr></thead>
+          <tbody>
+            <tr data-race="access"><th scope="row">Read index i</th><td><span class="big-o" data-o="1">O(1)</span></td><td><span class="big-o" data-o="n">O(i)</span></td><td><span class="big-o" data-o="n">O(i)</span></td><td>address arithmetic vs walking</td></tr>
+            <tr data-race="insertFront"><th scope="row">Insert at front</th><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="1">O(1)</span></td><td><span class="big-o" data-o="1">O(1)</span></td><td>shift everything vs re-point head</td></tr>
+            <tr data-race="insertMiddle"><th scope="row">Insert at index i</th><td><span class="big-o" data-o="n">O(n − i)</span></td><td><span class="big-o" data-o="n">O(i)</span></td><td><span class="big-o" data-o="n">O(i)</span></td><td>the list must walk to find prev</td></tr>
+            <tr><th scope="row">Insert after a node you hold</th><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="1">O(1)</span></td><td><span class="big-o" data-o="1">O(1)</span></td><td>two (or four) pointer writes</td></tr>
+            <tr data-race="append"><th scope="row">Append</th><td><span class="big-o" data-o="1">O(1)*</span></td><td><span class="big-o" data-o="1">O(1)†</span></td><td><span class="big-o" data-o="1">O(1)†</span></td><td>* amortized; † with a tail pointer, else O(n)</td></tr>
+            <tr data-race="deleteLast"><th scope="row">Delete the last item</th><td><span class="big-o" data-o="1">O(1)</span></td><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="1">O(1)†</span></td><td>singly: the tail cannot see its predecessor</td></tr>
+            <tr><th scope="row">Delete a node you hold</th><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="1">O(1)</span></td><td>the doubly linked superpower</td></tr>
+            <tr><th scope="row">Search (unsorted)</th><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="n">O(n)</span></td><td>must look at every item</td></tr>
+            <tr><th scope="row">Extra memory per item</th><td>none (+ spare slots)</td><td>1 pointer</td><td>2 pointers</td><td>8 bytes each on a 64-bit machine</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Two operations show the trade most clearly. Reading the last item is one step for the array and <em>n</em> − 1 hops for the list. Inserting at the front is <em>n</em> + 1 steps for the array and 2 writes for the list. Drag <em>n</em> and watch the gap open.</p>
+      <figure class="fig wide" id="fig-chart">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Steps as the list grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider style="flex: 1 1 240px"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: reading the last item costs 1 step for an array and n − 1 hops for a list; inserting at the front costs n + 1 steps for an array and 2 writes for a list.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The hidden charge: cache misses</p>
+        <p>Big-O says a full scan costs O(<em>n</em>) for both. Real hardware disagrees. Memory arrives in 64-byte cache lines, so an array scan gets about 16 integers per fetch, while each list hop jumps to an unrelated address and often waits for main memory, about 50 times slower. A list scan is commonly 10 times slower or worse. Choose a linked list for cheap splicing of nodes you already hold, not for speed of traversal.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ 13. VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Real code rarely uses the bare singly linked list. These small changes remove special cases or unlock new tricks.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="dummy">Dummy head node</button>
+          <button data-tab="circular">Circular list</button>
+          <button data-tab="copy">Delete the node you hold</button>
+        </div>
+        <div data-tab-panel="dummy">
+          <div class="ll-var">
+            <figure class="fig fig--plain ll-var__fig" id="fig-dummy">
+              <div class="fig__toolbar"><div data-seg></div></div>
+              <div class="fig__stage" data-stage></div>
+              <p class="fig__caption" data-caption></p>
+              <div class="fig__controls" data-controls></div>
+            </figure>
+            <div class="ll-var__text">
+              <p>A <dfn>dummy</dfn> (or <dfn>sentinel</dfn>) node sits in front of the first real node and is never deleted. Every real node now has a predecessor, so deleting or inserting at the front uses the same line as anywhere else.</p>
+              <p>Compare the two runs: both delete the first value, but only one needs the <code>head = head.next</code> branch. Many interview solutions start with <code>dummy = new Node(0, head)</code> and return <code>dummy.next</code>.</p>
+            </div>
+          </div>
+        </div>
+        <div data-tab-panel="circular">
+          <div class="ll-var">
+            <figure class="fig fig--plain ll-var__fig" id="fig-circular">
+              <div class="fig__stage" data-stage></div>
+              <p class="fig__caption" data-caption></p>
+              <div class="fig__controls" data-controls></div>
+            </figure>
+            <div class="ll-var__text">
+              <p>In a <dfn>circular list</dfn> the tail points back to the head, so there is no null to stop at. You stop when you come back to where you started: <code>do { visit(curr); curr = curr.next } while (curr != head)</code>.</p>
+              <p>Round-robin schedulers and music players on repeat use this shape. A doubly linked circular list with one dummy node is how many standard libraries implement their list type: no null checks anywhere.</p>
+            </div>
+          </div>
+        </div>
+        <div data-tab-panel="copy">
+          <div class="ll-var">
+            <figure class="fig fig--plain ll-var__fig" id="fig-copy">
+              <div class="fig__toolbar"><div data-seg></div></div>
+              <div class="fig__stage" data-stage></div>
+              <p class="fig__caption" data-caption></p>
+              <div class="fig__controls" data-controls></div>
+            </figure>
+            <div class="ll-var__text">
+              <p>Given only a pointer <code>p</code> into a singly linked list, you cannot unlink <code>p</code>: its predecessor is unknown. The trick is to copy the successor’s value into <code>p</code>, then unlink the successor instead.</p>
+              <p>It fails on the tail, which has no successor, and it quietly moves a value between nodes, so any other pointer to the old successor now dangles. A classic interview answer and a classic source of bugs.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 14. CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-first"></div>
+        <div class="quiz" id="quiz-tail"></div>
+        <div class="quiz" id="quiz-o1"></div>
+        <div class="quiz" id="quiz-cycle"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 15. SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Linked lists</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="1">O(1) splice</span><span class="big-o big-o--lg" data-o="n">O(i) to reach</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 16. HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1955<small>IPL and the Logic Theorist</small></div>
+        <p class="history__people">Allen Newell, Cliff Shaw, Herbert Simon<span>RAND Corporation and Carnegie Tech</span></p>
+        <div class="history__body">
+          <p>Linked lists were built for artificial intelligence. In 1955–56 Newell, Shaw and Simon needed data that could grow and change shape while their Logic Theorist program searched for proofs, so their language IPL joined memory cells with links, drawn, as you still see them, as boxes and arrows. Newell and Simon later shared the 1975 Turing Award.</p>
+          <p>In 1958 John McCarthy’s LISP made the two-part cell, a value and a pointer to the rest, the building block of a whole language. The tortoise-and-hare cycle test is credited to Robert Floyd by Donald Knuth, who set it as an exercise in <em>The Art of Computer Programming</em>; no paper by Floyd describing it is known. Richard Brent published a faster variant in 1980.</p>
+        </div>
+        <p class="history__source">Sources: “Information Processing Language”, Wikipedia; D. E. Knuth, <em>The Art of Computer Programming</em>, Vol. 2, §3.1, exercise 6 (Floyd’s cycle-finding); R. Brent, “An improved Monte Carlo factorization algorithm”, <em>BIT</em> 20 (1980).</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 17. PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Merge two sorted lists</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given the heads of two sorted singly linked lists, splice their nodes into one sorted list without allocating new nodes. Which variation from this lesson removes the special case for the first node?</p></li>
+        <li><div class="practice__title">Remove the k-th node from the end</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Delete the k-th node from the end in a single pass, without first counting the length. What should happen when k equals the length?</p></li>
+        <li><div class="practice__title">Palindrome list in O(1) space</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Decide whether a singly linked list reads the same forwards and backwards, using O(n) time and O(1) extra space. You may modify the list temporarily, but restore it before returning.</p></li>
+        <li><div class="practice__title">Length of the cycle</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Extend Floyd’s algorithm to return λ, the number of nodes in the loop, still with O(1) extra space. Then return μ as well.</p></li>
+        <li><div class="practice__title">LRU cache</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Design a cache of fixed capacity with get(key) and put(key, value) in O(1), evicting the least recently used entry when full. Which operation from the cost table forces the list to be doubly linked?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-01-linear-layouts-and-access-disciplines.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Linear layouts and access disciplines</span><span class="deeper__text" style="display:block">The full cost table derived from the two memory layouts, the cache-locality argument, and exercises on in-place reversal.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

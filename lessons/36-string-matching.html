@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>String matching · Visual DSA</title>
+<meta name="description" content="Find a pattern inside a text without re-reading it: watch naive search waste work, then KMP's failure table, Rabin–Karp's rolling hash and the Z-algorithm's Z-box make it linear.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/36-string-matching.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/36-string-matching.js" defer></script>
+<script src="../js/lessons/36-string-matching-view.js" defer></script>
+<script src="../js/lessons/36-string-matching-labs.js" defer></script>
+<script src="../js/lessons/36-string-matching-more.js" defer></script>
+<script src="../js/lessons/36-string-matching.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="36-string-matching">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">String matching</h1>
+      <p class="hero__lede">Find a short pattern inside a long text. The obvious way re-reads the same characters again and again; three clever ways (KMP, Rabin–Karp and the Z-algorithm) read each character about once.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">25 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="07-strings-and-two-pointers.html">Needs: strings, arrays</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: a pattern slides along a line of text. Matching characters turn green, a mismatch turns one red, and the pattern then jumps several places to the right at once instead of sliding one place. Finished matches stay solid green."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">Finding a needle in a haystack of letters</h2>
+      <p>Every time you press <kbd>Ctrl</kbd> + <kbd>F</kbd>, an editor finds every place where a short <dfn>pattern</dfn> occurs inside a long <dfn>text</dfn>. Genome tools search for a gene inside billions of letters, and plagiarism checkers look for copied phrases. The text has <em>n</em> characters and the pattern has <em>m</em>, and the question is how many comparisons it takes.</p>
+      <p>Try the obvious method by hand. Slide the pattern along the text. At each alignment, compare left to right until the first mismatch. Green means the characters agree, red means they do not.</p>
+      <figure class="fig wide" id="fig-slide">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Slide the pattern yourself</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div class="sm-slide"><button type="button" class="btn btn--sm" data-left aria-label="Slide the pattern one place left">← Left</button><button type="button" class="btn btn--sm btn--primary" data-right aria-label="Slide the pattern one place right">Right →</button><button type="button" class="btn btn--sm btn--ghost" data-reset>Start over</button></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption sm-msg" data-msg aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a row of letters with the pattern under it. Each click slides the pattern one place; the figure compares characters left to right up to the first mismatch and counts every new alignment and comparison.</figcaption>
+      </figure>
+      <p>With ordinary text, most alignments die on the first character. With repetitive text such as <code>aaaaaaaaab</code>, every alignment matches almost all the way before it fails. That is the trap: in the worst case naive search makes about <em>n</em> × <em>m</em> comparisons.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2 data-toc="Intuition">A mismatch is also information</h2>
+      <p>When the pattern fails after matching five characters, you did not just learn that this alignment is wrong. You also learned what the last five text characters <em>are</em>: they equal the start of the pattern. Naive search throws that away. KMP uses it.</p>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Reading a name aloud</p>
+        <p>You are scanning a page for “ABABAC”. You have read “ABABA” and the next letter is “B”, not “C”. You do not go back to the second letter and start over: you already know the last three letters were “ABA”, which is the start of your pattern, so you carry on as if you had just read those three.</p>
+      </aside>
+      <p>Step through one search. The text is <code>abababac</code> and the pattern is <code>ababac</code>. The blue-bordered row is the pattern, and the small table under it, π, says how many characters survive a failure.</p>
+      <figure class="fig wide" id="fig-idea">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">One mismatch, one jump</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: after five matching characters the sixth pair mismatches. The table entry π[4] = 3 says the last three matched characters are also the pattern's first three, so the pattern slides two places right and the comparison continues at pattern index 3 without re-reading the text.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>A person notices “ABA” by eye. A program must know it in advance, and it cannot look at the text to find out. So all the knowledge has to come from the <em>pattern alone</em>, computed once before the search starts. That precomputed knowledge is the failure table.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ BORDERS -->
+    <section id="borders">
+      <h2 data-toc="Borders">The failure table: what survives a failure</h2>
+      <p>The table is built from <em>borders</em>. Slide the length below and watch which start of the pattern is also an end of the same prefix.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>border</dfn> of a string is a proper prefix that is also a suffix. <code>aba</code> is a border of <code>ababa</code> because the string both starts and ends with it. The <dfn>failure table</dfn> <code>π</code> stores, for each prefix of the pattern, the length of its <em>longest</em> border.</p>
+      </aside>
+      <figure class="fig wide" id="fig-border">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The longest border of each prefix</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="sm-slider"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: the pattern is drawn twice. The top copy shows a prefix; its last k letters are outlined green. The lower copy is shifted right so its first k letters sit exactly under them: the same letters, so those k letters are a border. The table below the top copy shows π for every prefix up to the chosen length.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the table is the jump distance</p>
+        <p>If the pattern fails after matching <em>j</em> characters, the text holds the first <em>j</em> pattern letters. Any smaller alignment that could still match must line the pattern's start up with a suffix of those letters, and that is a border. The <em>longest</em> border is the smallest slide that could work, so no alignment is skipped that could have matched.</p>
+      </aside>
+      <p>How do you fill the table quickly? Compare the pattern <strong>against itself</strong>. That is the KMP idea applied to the pattern, and it costs at most 2<em>m</em> comparisons.</p>
+    </section>
+
+    <!-- ============================================================ TABLE BUILDER LAB -->
+    <section id="build">
+      <h2 data-toc="Build the table">Building the table, step by step</h2>
+      <p>The top row is the pattern as text, the lower row is a second copy. Each step asks whether the border can grow by one letter. When it cannot, the lower copy falls back to the next-longest border, which is already in the table. Type your own pattern and watch the table fill.</p>
+      <figure class="fig fig--lab full" id="lab-build">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Build the failure table π</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="sm-input"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the pattern is compared against a copy of itself. Each step compares p[i] with p[k]; a match grows the border and writes π[i] = k; a mismatch falls back to k = π[k − 1] or writes 0. The caption explains every step.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Amortised, not nested</p>
+        <p>The inner “fall back” loop looks like it could make this quadratic. It cannot: <em>k</em> goes up by at most one per letter, and every fall-back makes it smaller, so the falls can never outnumber the rises. Total work: at most 2<em>m</em> comparisons.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE SEARCH LAB -->
+    <section id="lab">
+      <h2>The lab: naive against KMP</h2>
+      <p>The same text and pattern under both algorithms. Switch tabs to compare the comparison counts. Press <kbd>←</kbd> and <kbd>→</kbd> to step and <kbd>Space</kbd> to play. The lab pauses a few times to ask what happens next. Try the <em>aaa…ab</em> preset, then switch tabs.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace naive search and KMP</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="tabs sm-labtabs" id="lab-tabs">
+          <div class="tabs__list">
+            <button data-tab="naive">Naive<span class="sm-wide-only"> search</span></button>
+            <button data-tab="kmp">KMP<span class="sm-wide-only"> (Knuth–Morris–Pratt)</span></button>
+          </div>
+          <div data-tab-panel="naive"><p class="sm-note"><b>Rule:</b> after any mismatch, slide the pattern one place and restart at <code>pat[0]</code>. <b>Cost:</b> up to n × m comparisons.</p></div>
+          <div data-tab-panel="kmp"><p class="sm-note"><b>Rule:</b> after a mismatch, slide the pattern so its longest border stays aligned, using π. The text pointer never moves left. <b>Cost:</b> at most 2n comparisons plus at most 2m for the table.</p></div>
+        </div>
+        <div class="fig__toolbar"><div data-input class="sm-input"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the caption explains every step. The pattern row slides under the text row; the link between two compared cells shows = or ≠; under KMP a dashed outline marks where the pattern was and an arrow from the π table shows the jump.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The logic as a flowchart</h2>
+      <p>The same decisions as a map. It is wired to the lab above: step the lab and the box that is running lights up here. The tab you choose in either place switches both.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-flow-title>KMP search as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><p class="sm-toolbar-note">Switching here also switches the lab.</p></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 420px"></div>
+        <figcaption class="fig__foot" data-flow-alt>Text alternative: while the text pointer i is before the end, compare text[i] with pat[j]. If equal, move both pointers, and after a full match report and fall back with π. If different and j is above zero, set j = π[j − 1] and compare again; if j is zero, move i.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ RABIN-KARP -->
+    <section id="rabin-karp">
+      <h2 data-toc="Rabin–Karp">Rabin–Karp: compare numbers, not letters</h2>
+      <p>A different idea: give every window of the text a <dfn>hash</dfn>, a single small number, and compare that with the pattern's hash. Read letters as digits (<code>a = 1</code>, <code>b = 2</code>, …) in base <em>B</em>, so the window <code>abc</code> is the number <code>1·100 + 2·10 + 3 = 123</code>. Work modulo a prime <em>q</em> to keep it small.</p>
+      <p>The trick is the <dfn>rolling hash</dfn>: when the window slides one letter, you do not recompute. You subtract the leading digit, multiply by the base to shift every digit up one place, and add the trailing letter. Three small operations replace <em>m</em>.</p>
+      <figure class="fig fig--lab full" id="lab-rk">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Roll the hash along the text</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="sm-input"></div><div><span class="field-label">Modulus q</span><div data-mod></div></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <div data-hash aria-live="off"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a window of m letters slides along the text. The strip under it shows the rolling update in three steps (subtract the leading letter, multiply by the base, add the trailing letter) and the comparison with the pattern's hash. Equal hashes lead to a character-by-character check that either confirms the match or flags a spurious hit.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Equal hashes are not equal strings</p>
+        <p>There are far more strings than small numbers, so different strings can share a hash: a <dfn>spurious hit</dfn>. Rabin–Karp therefore always <em>verifies</em> a hit character by character. Pick the tiny modulus 7 above and spurious hits appear often; a large modulus makes them rare. Different hashes, on the other hand, always prove the strings differ.</p>
+      </aside>
+      <p>Because a hash test is a plain number comparison, the same loop can look for <em>many</em> patterns of equal length at once: keep their hashes in a set and test each window against it.</p>
+    </section>
+
+    <!-- ============================================================ Z ALGORITHM -->
+    <section id="z">
+      <h2 data-toc="Z-algorithm">The Z-algorithm: how far does the start repeat?</h2>
+      <p>A third route measures matches with the start of the string directly. For a string <em>s</em>, <code>Z[i]</code> is the length of the longest stretch starting at <em>i</em> that equals the beginning of <em>s</em>. To search, glue the pattern and the text together as <code>s = pattern + "#" + text</code>: any position with <code>Z[i] = m</code> is a match.</p>
+      <p>The speed comes from the <dfn>Z-box</dfn> <code>[l, r)</code>: the stretch found so far that reaches furthest right, which equals a piece of the prefix. A new position inside the box can copy the answer from its mirror position, and only characters beyond <code>r</code> are ever compared.</p>
+      <figure class="fig fig--lab full" id="lab-z">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Fill the Z-array with a sliding Z-box</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="sm-input"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the string s = pattern + # + text is drawn twice. The lower copy of the prefix is compared with the text starting at i. The tinted band is the Z-box [l, r); an arrow in the Z row shows a value copied from its mirror position. Positions where Z equals the pattern length are matches.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Same trick as KMP, seen from the other side</p>
+        <p><code>r</code> never moves left and every comparison either extends <code>r</code> or is the one failing comparison of that position. So there are at most about 2<em>n</em> comparisons in total. KMP remembers borders of the pattern; the Z-algorithm remembers the last box.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ RACE -->
+    <section id="race">
+      <h2 data-toc="Race">Race them on the worst input</h2>
+      <p>Same text, same pattern, three lanes, one clock. One tick pays for one character comparison, or for one rolling-hash update. The <em>aaa…ab</em> input is the naive method's nightmare: every alignment matches until the last letter.</p>
+      <figure class="fig full" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Naive vs KMP vs Rabin–Karp</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider-n class="sm-slider"></div><div data-slider-m class="sm-slider"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage><div class="sm-race" data-lanes></div></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: three lanes search the same text. Each lane shows its own alignment, tick count and character comparisons, and its finishing place when done. KMP's ticks include building its table; Rabin–Karp's include hashing the pattern and the first window.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What they cost</h2>
+      <p>The chart counts real runs for each text length. On the repetitive input the naive line climbs steeply while the other two stay close to straight. Switch to random letters and all three look alike: the worst case only shows up on inputs that punish it.</p>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Work against text length</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-case></div><div data-scale></div><div data-slider class="sm-slider"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Hover or focus the chart and use the arrow keys to read exact values. Work = character comparisons, plus KMP's table building, plus Rabin–Karp's hash updates; random inputs are averaged over 12 runs.</figcaption>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Algorithm</th><th scope="col">Preprocessing</th><th scope="col">Search, best</th><th scope="col">Search, worst</th><th scope="col">Extra space</th><th scope="col">Worst input</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Naive</th><td>none</td><td><span class="big-o" data-o="n">O(n)</span> first letter always differs</td><td><span class="big-o" data-o="nk">O(nm)</span></td><td><span class="big-o" data-o="1"></span></td><td><code>aaaa…a</code> vs <code>aa…ab</code></td></tr>
+            <tr><th scope="row">KMP</th><td><span class="big-o" data-o="n">O(m)</span> table</td><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="n">O(n + m)</span> at most 2n comparisons</td><td><span class="big-o" data-o="n">O(m)</span></td><td>none: linear on every input</td></tr>
+            <tr><th scope="row">Rabin–Karp</th><td><span class="big-o" data-o="n">O(m)</span> hash</td><td><span class="big-o" data-o="n">O(n + m)</span> expected</td><td><span class="big-o" data-o="nk">O(nm)</span> if many hits or collisions</td><td><span class="big-o" data-o="1"></span></td><td><code>aaaa…a</code> vs <code>a…a</code> (every window is a real match)</td></tr>
+            <tr><th scope="row">Z-algorithm</th><td>none (Z is the search)</td><td><span class="big-o" data-o="n">O(n + m)</span></td><td><span class="big-o" data-o="n">O(n + m)</span></td><td><span class="big-o" data-o="n">O(n + m)</span> Z-array</td><td>none: linear on every input</td></tr>
+            <tr><th scope="row">Boyer–Moore, bad character</th><td><span class="big-o" data-o="n">O(m + σ)</span> table</td><td><span class="big-o" data-o="n">O(n / m)</span> skips text</td><td><span class="big-o" data-o="nk">O(nm)</span> (with the good-suffix rule: O(n + m))</td><td><span class="big-o" data-o="1">O(σ)</span></td><td>repetitive text</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>So KMP and the Z-algorithm guarantee <span class="big-o" data-o="n">O(n + m)</span> on every input, and Rabin–Karp gets it in expectation. Here σ is the alphabet size, the number of different characters that can occur.</p>
+      <details class="accordion">
+        <summary>Why is KMP's search at most 2n comparisons?</summary>
+        <div class="accordion__body"><p>Every comparison ends in one of two ways. A match moves <em>i</em> right, which can happen at most <em>n</em> times. A mismatch with <em>j</em> &gt; 0 makes <em>j</em> smaller, and <em>j</em> only ever grows by matches, so mismatches cannot outnumber matches. A mismatch with <em>j</em> = 0 moves <em>i</em> right, which is also at most <em>n</em> times in all. Together: fewer than 2<em>n</em> comparisons.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>How likely is a spurious hit?</summary>
+        <div class="accordion__body"><p>If the hash behaves like a random number modulo <em>q</em>, a window that differs from the pattern collides with probability about 1 / <em>q</em>. With <em>q</em> around a billion, the expected number of false alarms in a million-letter text is about a thousandth. Real implementations use a large prime, or a random base, so that no fixed input can force collisions.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The same ideas show up in tools you use every day.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="bm">Boyer–Moore</button>
+          <button data-tab="multi">Many patterns</button>
+          <button data-tab="use">Where it is used</button>
+        </div>
+        <div data-tab-panel="bm">
+          <p>Boyer–Moore compares the pattern <strong>right to left</strong>. A mismatch on a letter that does not occur in the pattern lets the whole pattern jump past it, so on ordinary text it often skips most of the characters without reading them. This figure shows the bad-character rule only.</p>
+          <figure class="fig fig--plain" id="fig-bm">
+            <div class="fig__stage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="fig__stats" data-counters></div>
+            <div class="sm-legend-row" data-legend></div>
+          </figure>
+        </div>
+        <div data-tab-panel="multi">
+          <div class="split"><figure class="mini"><div class="mini__stage sm-mini-stage" data-mini="multi" role="img" aria-label="A text with two different patterns marked at their positions."></div><figcaption>One pass, two patterns: each window hash is looked up in a set.</figcaption></figure>
+          <div><p>To look for a whole dictionary, keep the hashes of all patterns of the same length in a set, and test every rolling window against it. This is how plagiarism checkers fingerprint documents. For patterns of different lengths, the <strong>Aho–Corasick automaton</strong> combines a trie (lesson 22) with KMP-style failure links and finds every pattern in one pass over the text.</p></div></div>
+        </div>
+        <div data-tab-panel="use">
+          <ul class="sm-uses">
+            <li><b>Editors and terminals.</b> Find-in-page uses a fast library search, often a Boyer–Moore variant. <code>grep</code> grew out of the same line of work.</li>
+            <li><b>Genomes.</b> A four-letter alphabet with huge texts. Exact search is the base, and index structures such as suffix arrays answer repeated queries.</li>
+            <li><b>Detecting repeats and periods.</b> The failure table tells you a string's shortest repeating period: <code>n − π[n − 1]</code> when it divides <code>n</code>.</li>
+            <li><b>Competitive programming.</b> KMP and Z are the standard tools for counting borders, prefixes that reappear, and rotations.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ WHICH ALGORITHM -->
+    <section id="choose">
+      <h2 data-toc="Which one?">Which string algorithm should you use?</h2>
+      <p>Answer the questions to walk the diagram. In everyday code the answer is almost always “the language's built-in search”; this is for when you have to choose.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Choosing a string-matching method</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 360px"></div>
+        <p class="fig__caption" data-answer aria-live="polite"></p>
+        <div class="fig__controls sm-btnbar"><button type="button" class="btn btn--sm" data-restart>Start over</button></div>
+        <figcaption class="fig__foot">Text alternative: many patterns at once call for Aho–Corasick, or Rabin–Karp with a hash set when they share a length; a text searched again and again calls for an index; a worst-case guarantee calls for KMP or Z; otherwise Boyer–Moore or a library search.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-pi"></div>
+        <div class="quiz" id="quiz-roll"></div>
+        <div class="quiz" id="quiz-cost"></div>
+        <div class="quiz" id="quiz-hit"></div>
+      </div>
+      <figure class="fig" id="fig-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">KMP has just hit a mismatch</h3></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: text abababac, pattern ababac aligned at index 0. Five characters matched and the sixth pair, text[5] = b against pat[5] = c, is a mismatch.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">String matching</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="n">O(n + m)</span><span class="chip chip--sm">KMP and Z: worst case</span><span class="chip chip--sm">Naive: O(nm)</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1969<small>found in a text editor</small></div>
+        <p class="history__people">James Morris, Donald Knuth and Vaughan Pratt<span>SIAM Journal on Computing 6(2), 1977</span></p>
+        <div class="history__body">
+          <p>James Morris found the idea in summer 1969 while writing a text editor for Berkeley's CDC 6400. His code was so subtle that other programmers, not understanding it, damaged it with well-meant “fixes” within months. Knuth found the same algorithm independently in 1970, by working backwards from a theorem about automata that Stephen Cook had proved. Vaughan Pratt removed its dependence on the alphabet, and the three published together in 1977.</p>
+          <p>Boyer and Moore's method, which reads the pattern backwards and can skip most of the text, appeared in the same year, and Rabin and Karp's rolling hash in 1987. Ken Thompson's 1968 regular-expression search, in the editor <code>ed</code>, is where the tool <code>grep</code> comes from.</p>
+        </div>
+        <p class="history__source">Sources: D. E. Knuth, J. H. Morris and V. R. Pratt, “Fast Pattern Matching in Strings”, <em>SIAM J. Comput.</em> 6(2), 1977; R. S. Boyer and J. S. Moore, <em>CACM</em> 20(10), 1977; R. M. Karp and M. O. Rabin, <em>IBM J. Res. Dev.</em> 31(2), 1987; K. Thompson, <em>CACM</em> 11(6), 1968.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Count overlapping occurrences</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Return how many times a pattern occurs in a text, counting overlaps (<code>aa</code> occurs three times in <code>aaaa</code>). Write it with KMP and check it on inputs where naive search is slow.</p></li>
+        <li><div class="practice__title">Longest happy prefix</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Find the longest non-empty proper prefix of a string that is also a suffix of it. Which array from this lesson already contains the answer?</p></li>
+        <li><div class="practice__title">Repeated substring pattern</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Decide whether a string is made by repeating a shorter string several times. Use <code>π[n − 1]</code> and the length <code>n</code> to answer in linear time, and explain why the trick works.</p></li>
+        <li><div class="practice__title">Is it a rotation?</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Two strings have the same length. Show that one is a rotation of the other exactly when it occurs inside the other written twice, and give a linear-time check.</p></li>
+        <li><div class="practice__title">Shortest palindrome by prepending</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">You may add characters only to the front of a string. Find the shortest palindrome you can make. Hint: build <code>s + "#" + reverse(s)</code> and look at the last entry of its failure table.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-18-linear-time-exact-matching.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Linear-time exact matching</span><span class="deeper__text" style="display:block">The prefix function, the Z-algorithm and Rabin–Karp fingerprints, with KMP's O(n) bound proved as an amortised argument.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

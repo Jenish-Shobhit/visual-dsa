@@ -95,7 +95,7 @@
   };
 
   // Lessons that are published. Keep in sync with lessons/*.html (tests/site_integrity.py checks this).
-  api.markLive(['01-algorithms', '02-bits-and-memory', '03-control-flow', '04-functions-and-the-stack', '05-big-o', '06-arrays', '07-strings-and-two-pointers', '08-linked-lists', '09-stacks', '10-queues', '11-hash-tables', '12-recursion', '13-binary-search', '14-elementary-sorts', '15-merge-sort', '16-quick-sort', '17-linear-time-sorts', '18-trees', '19-binary-search-trees', '20-balanced-trees', '21-heaps', '22-tries', '23-segment-and-fenwick-trees', '24-union-find', '25-graphs', '26-bfs-and-dfs', '27-topological-sort', '28-dijkstra-and-a-star', '29-bellman-ford-and-floyd-warshall', '30-minimum-spanning-trees', '31-network-flow', '32-greedy', '33-backtracking', '34-dynamic-programming', '35-dynamic-programming-2d']);
+  api.markLive(['01-algorithms', '02-bits-and-memory', '03-control-flow', '04-functions-and-the-stack', '05-big-o', '06-arrays', '07-strings-and-two-pointers', '08-linked-lists', '09-stacks', '10-queues', '11-hash-tables', '12-recursion', '13-binary-search', '14-elementary-sorts', '15-merge-sort', '16-quick-sort', '17-linear-time-sorts', '18-trees', '19-binary-search-trees', '20-balanced-trees', '21-heaps', '22-tries', '23-segment-and-fenwick-trees', '24-union-find', '25-graphs', '26-bfs-and-dfs', '27-topological-sort', '28-dijkstra-and-a-star', '29-bellman-ford-and-floyd-warshall', '30-minimum-spanning-trees', '31-network-flow', '32-greedy', '33-backtracking', '34-dynamic-programming', '35-dynamic-programming-2d', '36-string-matching']);
 
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.VDSA_CURRICULUM = api;

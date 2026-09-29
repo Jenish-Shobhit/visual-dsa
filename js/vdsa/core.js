@@ -111,7 +111,7 @@
       var v = attrs[k];
       if (v === undefined || v === null || v === false) return;
       if (k === 'class' || k === 'className') { el.setAttribute('class', v); }
-      else if (k === 'style' && typeof v === 'object') { Object.assign(el.style, v); }
+      else if (k === 'style' && typeof v === 'object') { Object.keys(v).forEach(function (sk) { if (sk.slice(0, 2) === '--') el.style.setProperty(sk, v[sk]); else el.style[sk] = v[sk]; }); }
       else if (k === 'dataset' && typeof v === 'object') { Object.assign(el.dataset, v); }
       else if (k.slice(0, 2) === 'on' && typeof v === 'function') { el.addEventListener(k.slice(2).toLowerCase(), v); }
       else if (k === 'text') { el.textContent = v; }

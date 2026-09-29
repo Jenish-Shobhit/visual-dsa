@@ -1,0 +1,199 @@
+/* Lesson 13 — Binary search. Lesson-specific styles only; colours come from tokens (light and dark). */
+
+/* ---------------------------------------------------------------- lab tabs + toolbar */
+.l13-labtabs { padding: 4px 18px 0; border-bottom: 1px solid var(--line); }
+.l13-labtabs .tabs__list { border-bottom: 0; }
+.l13-labtabs .tabs__tab { font-weight: 650; }
+.l13-labtabs .tabs__panel { padding: 8px 0 12px; }
+.l13-invariant { margin: 0; font-size: 14.5px !important; line-height: 1.5 !important; color: var(--ink-2); }
+.l13-invariant b { color: var(--ink); font-weight: 650; }
+.l13-invariant code { font-size: .92em; }
+.l13-toolbar { align-items: flex-start; }
+.l13-input { flex: 1 1 460px; min-width: 0; }
+.l13-target { flex: 0 1 230px; min-width: 0; }
+.l13-target__row { display: flex; gap: 8px; align-items: center; }
+.l13-target__field { width: 112px; }
+.l13-target__err { margin: 4px 0 0; font-size: 13px; color: var(--st-error); }
+.l13-target__err:empty { display: none; }
+.l13-presets { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 2px 18px 12px; }
+.l13-presets__label { font-size: 13px; font-weight: 650; color: var(--ink-3); margin-right: 2px; }
+.l13-presets-inline { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.l13-warn { margin: 0 18px 12px; padding: 8px 12px; border-radius: var(--r-md); font-size: 14px !important; line-height: 1.5 !important; background: color-mix(in srgb, var(--st-compare) 13%, var(--bg-elev)); border: 1px solid color-mix(in srgb, var(--st-compare) 45%, var(--line)); color: var(--ink); }
+.l13-warn[hidden] { display: none; }
+.l13-slider { flex: 1 1 200px; max-width: 340px; min-width: 0; }
+.l13-slider-slot { flex: 1 1 200px; min-width: 0; }
+.l13-toolbar-note { margin: 0; align-self: center; font-size: 13px; color: var(--ink-3); }
+.l13-toolbar-toggle { display: flex; align-items: center; }
+.l13-btnbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.l13-select { display: flex; flex-direction: column; gap: 4px; }
+.l13-select .field { max-width: 100%; }
+.l13-gap-swatch { display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; border-radius: 50%; border: 1.5px solid var(--st-muted); color: var(--ink-3); font-size: .85em; line-height: 1; vertical-align: -.15em; }
+.fig__caption[data-state="done"] { background: color-mix(in srgb, var(--st-done) 9%, var(--bg-elev)); }
+.fig__caption[data-state="compare"] { background: color-mix(in srgb, var(--st-compare) 11%, var(--bg-elev)); }
+.fig__caption[data-state="error"] { background: color-mix(in srgb, var(--st-error) 9%, var(--bg-elev)); }
+
+/* ---------------------------------------------------------------- range bar (guess game, halving, race lanes) */
+.l13-rb { display: block; width: 100%; height: auto; overflow: visible; }
+.l13-rb-track { fill: color-mix(in srgb, var(--st-muted) 15%, var(--bg-sunken)); stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+.l13-rb-live { fill: color-mix(in srgb, var(--st-active) 28%, var(--bg-elev)); stroke: var(--st-active); stroke-width: 1.5; }
+.l13-rb-scan { fill: color-mix(in srgb, var(--st-visited) 34%, var(--bg-elev)); stroke: var(--st-visited); stroke-width: 1.25; }
+.l13-rb-hit { fill: var(--st-found); stroke: var(--bg-elev); stroke-width: 1.5; }
+.l13-rb-note { fill: var(--ink); font: 700 13px var(--font-sans); pointer-events: none; transition: opacity var(--t, 300ms); }
+.l13-rb-tick { stroke: var(--line-strong); stroke-width: 1; }
+.l13-rb-ticktext { fill: var(--ink-3); font: 500 11px var(--font-sans); }
+.l13-rb-mark { --c: var(--st-default); transition: opacity .3s; }
+.l13-rb-mark.is-gone { opacity: 0; pointer-events: none; }
+.l13-rb-stem { stroke: var(--c); stroke-width: 1.5; }
+.l13-rb-pill { fill: var(--c); }
+.l13-rb-pilltext { fill: color-mix(in srgb, var(--c) 16%, black); font: 700 12px var(--font-sans); pointer-events: none; }
+.l13-rb-mark.is-default .l13-rb-pilltext { fill: var(--bg-elev); }
+.l13-rb-mark.is-compare { --c: var(--st-compare); }
+.l13-rb-mark.is-found { --c: var(--st-found); }
+.l13-rb-mark.is-active { --c: var(--st-active); }
+.l13-rb-mark.is-muted { --c: var(--st-muted); }
+.l13-rb-mark.is-muted .l13-rb-pill { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1; }
+.l13-rb-mark.is-muted .l13-rb-pilltext { fill: var(--ink-3); }
+.l13-rb-mark.is-muted .l13-rb-stem { stroke: var(--line-strong); stroke-dasharray: 3 3; }
+
+/* ---------------------------------------------------------------- guess game */
+.l13-guess { display: grid; gap: 16px; align-content: start; place-items: stretch; padding: 14px 10px 10px; }
+.l13-guess__bar { min-width: 0; }
+.l13-guess__play { display: grid; gap: 8px; justify-items: start; padding: 0 8px; }
+.l13-guess__play[hidden] { display: none; }
+.l13-guess__row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.l13-guess__row .field { width: 110px; font-variant-numeric: tabular-nums; }
+.l13-guess__log { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
+.l13-chip { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; background: var(--bg-sunken); color: var(--ink-2); border: 1px solid var(--line); }
+.l13-chip[data-verdict="hit"] { background: color-mix(in srgb, var(--st-found) 16%, var(--bg-elev)); border-color: color-mix(in srgb, var(--st-found) 55%, var(--line)); color: color-mix(in srgb, var(--st-found) 75%, var(--ink)); }
+.l13-halving { display: grid; gap: 14px; place-items: stretch; align-content: start; padding: 14px 10px 12px; }
+.l13-ladder { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 0 6px; }
+.l13-ladder__chip { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 650; font-variant-numeric: tabular-nums; background: var(--bg-sunken); color: var(--ink-3); border: 1px solid var(--line); transition: background var(--dur, 200ms), color var(--dur, 200ms), border-color var(--dur, 200ms); }
+.l13-ladder__chip.is-past { background: color-mix(in srgb, var(--st-active) 12%, var(--bg-elev)); color: var(--ink-2); border-color: color-mix(in srgb, var(--st-active) 35%, var(--line)); }
+.l13-ladder__chip.is-now { background: var(--st-active); border-color: var(--st-active); color: var(--on-state); }
+
+/* ---------------------------------------------------------------- race lanes */
+.l13-race { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 14px; }
+.l13-lane { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); transition: border-color var(--dur), box-shadow var(--dur); min-width: 0; }
+.l13-lane.is-finished { border-color: color-mix(in srgb, var(--st-done) 55%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--st-done) 30%, transparent); }
+.l13-lane__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.l13-lane__name { font-weight: 700; font-size: 14.5px; }
+.l13-lane__status { font-size: 12.5px; font-weight: 650; padding: 2px 9px; border-radius: 999px; background: var(--bg-sunken); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.l13-lane.is-finished .l13-lane__status { background: color-mix(in srgb, var(--st-done) 14%, var(--bg-elev)); color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+.l13-lane__status[data-rank="1"] { background: var(--st-done) !important; color: color-mix(in srgb, var(--st-done) 20%, black) !important; }
+.l13-lane__bar { min-width: 0; }
+.l13-lane__stats .stats { gap: 6px; }
+.l13-lane__stats .stat { min-width: 0; flex: 1 1 110px; padding: 6px 9px 7px; }
+.l13-lane__stats .stat__value { font-size: 17px; }
+
+/* ---------------------------------------------------------------- scale explorer */
+.l13-scale { display: grid; gap: 14px; align-content: center; place-items: stretch; padding: 18px 14px; }
+.l13-scale__row { display: grid; grid-template-columns: minmax(130px, 220px) minmax(0, 1fr) minmax(70px, auto); align-items: center; gap: 10px 14px; }
+.l13-scale__name { font-size: 14px; font-weight: 650; color: var(--ink-2); }
+.l13-scale__bar { position: relative; height: 22px; border-radius: 6px; background: var(--bg-sunken); border: 1px solid var(--line); overflow: hidden; }
+.l13-scale__bar i { position: absolute; inset: 0 auto 0 0; width: 10%; border-radius: 5px; transition: width .35s var(--ease, ease-out); }
+.l13-scale__row[data-row="linear"] i { background: var(--st-path); }
+.l13-scale__row[data-row="binary"] i { background: var(--st-done); }
+.l13-scale__num { font-size: 17px; font-variant-numeric: tabular-nums; text-align: right; }
+@container fig (max-width: 560px) {
+  .l13-scale__row { grid-template-columns: minmax(0, 1fr) auto; }
+  .l13-scale__bar { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* ---------------------------------------------------------------- strip: candidate answers */
+.l13-answer { padding: 10px 6px 4px; place-items: stretch; align-content: center; }
+.l13-strip { display: block; width: 100%; height: auto; overflow: visible; --t: 400ms; }
+.l13-cell rect { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1.25; transition: fill var(--t), stroke var(--t); }
+.l13-cell-text { fill: var(--ink-2); font: 700 13px var(--font-mono); pointer-events: none; }
+.l13-cell-label { fill: var(--ink-3); font: 500 11px var(--font-sans); }
+.l13-cell-label.is-hidden { display: none; }
+.l13-cell.is-f rect { fill: color-mix(in srgb, var(--st-muted) 20%, var(--bg-sunken)); stroke: color-mix(in srgb, var(--st-muted) 55%, var(--bg-elev)); }
+.l13-cell.is-t rect { fill: color-mix(in srgb, var(--st-done) 20%, var(--bg-elev)); stroke: color-mix(in srgb, var(--st-done) 55%, var(--bg-elev)); }
+.l13-cell.is-q rect { fill: color-mix(in srgb, var(--st-active) 8%, var(--bg-elev)); stroke: var(--st-active); stroke-width: 1; }
+.l13-cell.is-eval.is-f rect { fill: color-mix(in srgb, var(--st-muted) 60%, var(--bg-elev)); stroke: var(--st-muted); stroke-dasharray: none; }
+.l13-cell.is-eval.is-t rect { fill: color-mix(in srgb, var(--st-done) 65%, var(--bg-elev)); stroke: var(--st-done); }
+.l13-cell.is-eval .l13-cell-text { fill: var(--ink); }
+.l13-cell.is-probe rect { stroke: var(--st-compare); stroke-width: 3.25; stroke-dasharray: none; }
+.l13-cell.is-probe.is-q rect { fill: color-mix(in srgb, var(--st-compare) 20%, var(--bg-elev)); }
+.l13-cell.is-probe.is-ptrue rect { fill: color-mix(in srgb, var(--st-done) 55%, var(--bg-elev)); }
+.l13-cell.is-probe.is-pfalse rect { fill: color-mix(in srgb, var(--st-muted) 55%, var(--bg-elev)); }
+.l13-cell.is-first rect { stroke-width: 3; stroke: var(--st-found); }
+.l13-strip-boundary { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 4 3; transition: opacity var(--t); }
+.l13-strip-btext { fill: var(--ink); font: 700 12px var(--font-sans); transition: opacity var(--t); }
+.l13-flag { --c: var(--st-active); transition: opacity var(--t); }
+.l13-flag.is-mid { --c: var(--st-compare); }
+.l13-flag-arrow { fill: var(--c); }
+.l13-flag-text { fill: var(--c); font: 700 12px var(--font-sans); }
+.l13-flag.is-lo .l13-flag-text, .l13-flag.is-hi .l13-flag-text { fill: color-mix(in srgb, var(--c) 82%, var(--ink)); }
+
+/* ---------------------------------------------------------------- overflow gauge */
+.l13-over { padding: 10px 6px 6px; place-items: stretch; align-content: center; }
+.l13-over__svg { display: block; width: 100%; height: auto; overflow: visible; }
+.l13-ov-track { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1.25; }
+.l13-ov-zero { stroke: var(--ink-3); stroke-width: 1.25; stroke-dasharray: 3 3; }
+.l13-ov-small { fill: var(--ink-3); font: 500 11.5px var(--font-sans); }
+.l13-ov-small.is-err { fill: var(--st-error); font-weight: 700; font-size: 12.5px; }
+.l13-ov-cap { fill: var(--ink-2); font: 700 12.5px var(--font-sans); }
+.l13-ov-sum { fill: color-mix(in srgb, var(--st-active) 40%, var(--bg-elev)); stroke: var(--st-active); stroke-width: 1.25; }
+.l13-ov-sum.is-over { fill: color-mix(in srgb, var(--st-error) 30%, var(--bg-elev)); stroke: var(--st-error); }
+.l13-ov-sum.is-wrap { fill: color-mix(in srgb, var(--st-error) 30%, var(--bg-elev)); stroke: var(--st-error); stroke-dasharray: 5 3; }
+.l13-ov-mk { --c: var(--st-default); }
+.l13-ov-stem { stroke: var(--c); stroke-width: 1.5; }
+.l13-ov-pill { fill: var(--c); }
+.l13-ov-pilltext { fill: color-mix(in srgb, var(--c) 16%, black); font: 700 12px var(--font-sans); pointer-events: none; }
+.l13-ov-mk.is-active { --c: var(--st-active); }
+.l13-ov-mk.is-active .l13-ov-pilltext { fill: var(--on-state); }
+.l13-ov-mk.is-compare { --c: var(--st-compare); }
+.l13-ov-mk.is-done { --c: var(--st-done); }
+.l13-ov-mk.is-error { --c: var(--st-error); }
+.l13-ov-mk.is-error .l13-ov-pilltext { fill: var(--on-state); }
+
+/* ---------------------------------------------------------------- static minis (summary tiles) */
+.vz.l13m, svg.l13m { margin: 0 auto; display: block; }
+.l13m-cell { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1.25; }
+.l13m-cell.is-muted { fill: color-mix(in srgb, var(--st-muted) 22%, var(--bg-sunken)); stroke: var(--st-muted); }
+.l13m-cell.is-compare { fill: var(--st-compare); stroke: var(--st-compare); }
+.l13m-cell.is-default { fill: var(--bg-elev); stroke: var(--st-active); }
+.l13m-cell.is-active { fill: color-mix(in srgb, var(--st-active) 28%, var(--bg-elev)); stroke: var(--st-active); }
+.l13m-cell.is-done { fill: color-mix(in srgb, var(--st-done) 40%, var(--bg-elev)); stroke: var(--st-done); }
+.l13m-cell.is-found { fill: var(--st-found); stroke: var(--st-found); }
+.l13m-cell.is-error { fill: color-mix(in srgb, var(--st-error) 35%, var(--bg-elev)); stroke: var(--st-error); }
+.l13m-tag { --c: var(--st-active); }
+.l13m-tag rect { fill: var(--c); }
+.l13m-tag text { fill: color-mix(in srgb, var(--c) 18%, black); font: 700 9.5px var(--font-mono); }
+.l13m-tag.is-active text, .l13m-tag.is-error text { fill: var(--on-state); }
+.l13m-tag.is-compare { --c: var(--st-compare); }
+.l13m-tag.is-done { --c: var(--st-done); }
+.l13m-tag.is-pivot { --c: var(--st-pivot); }
+.l13m-tag.is-error { --c: var(--st-error); }
+#summary-card .summary__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+#summary-card .summary__viz { height: 96px; }
+
+/* ---------------------------------------------------------------- misc */
+#fig-growth .fig__caption, #fig-scale .fig__caption { font-size: 14.5px; color: var(--ink-2); }
+#fig-choose .fig__caption { min-height: calc(1.55em * 3 + 26px); }
+#fig-guess .fig__stats, #fig-halving .fig__stats { padding-top: 4px; }
+
+/* Workaround (engine): css/viz.css sets `.vz .vz-region { --vz-c: var(--st-active) }` and the same for pointers after the
+   `.vz .is-<state>` rules with equal specificity, so every band and pointer draws blue whatever its state. Restore it. */
+.vz .vz-region.is-done { --vz-c: var(--st-done); }
+.vz .vz-region.is-found { --vz-c: var(--st-found); }
+.vz .vz-region.is-compare { --vz-c: var(--st-compare); }
+.vz .vz-region.is-key { --vz-c: var(--st-key); }
+.vz .vz-region.is-error { --vz-c: var(--st-error); }
+.vz .vz-region.is-muted { --vz-c: var(--st-muted); }
+.vz .vz-pointer.is-compare { --vz-c: var(--st-compare); }
+.vz .vz-pointer.is-key { --vz-c: var(--st-key); }
+.vz .vz-pointer.is-found { --vz-c: var(--st-found); }
+.vz .vz-pointer.is-done { --vz-c: var(--st-done); }
+.vz .vz-pointer.is-pivot { --vz-c: var(--st-pivot); }
+.vz .vz-pointer.is-error { --vz-c: var(--st-error); }
+.vz .vz-pointer.is-muted { --vz-c: var(--st-muted); }
+
+/* Narrow figures: let segmented controls wrap and shorten the lab tab labels. */
+@container fig (max-width: 560px) {
+  .fig__toolbar .seg { flex-wrap: wrap; }
+  .l13-wide-only { display: none; }
+  .l13-labtabs { padding: 2px 10px 0; }
+  .l13-presets, .l13-warn { padding-left: 10px; padding-right: 10px; }
+  .l13-warn { margin-left: 10px; margin-right: 10px; }
+}

@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Binary search · Visual DSA</title>
+<meta name="description" content="Halve the search space with every comparison: play the guess-the-number game, watch lo, mid and hi slide, race binary search against a linear scan, and use the same idea to find boundaries and answers.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/13-binary-search.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/13-binary-search.js" defer></script>
+<script src="../js/lessons/13-binary-search-views.js" defer></script>
+<script src="../js/lessons/13-binary-search-figs.js" defer></script>
+<script src="../js/lessons/13-binary-search-lab.js" defer></script>
+<script src="../js/lessons/13-binary-search-more.js" defer></script>
+<script src="../js/lessons/13-binary-search.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="13-binary-search">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Binary search</h1>
+      <p class="hero__lede">In sorted data, one comparison with the middle rules out half of what is left. Twenty comparisons are enough to find one value among a million, and the same trick finds boundaries and even answers.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">25 min</li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li class="chip" data-icon="prereq">Needs: arrays, Big-O</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: thirty-one bars in increasing height. One bar in the middle is checked; the half that cannot contain the target fades out, and the check repeats on the half that remains until a single bar is found and turns green."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">Finding one value among many</h2>
+      <p>You have a list of values and one you are looking for. The obvious plan is to start at the front and check every value until you hit it. That is <dfn>linear search</dfn>, and it works on any list, sorted or not.</p>
+      <figure class="fig wide" id="fig-linear">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Linear search checks values one by one</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: sixteen sorted numbers in a row. A pointer moves from the left, and every value it passes is marked as checked and rejected, until it meets the target or runs off the end.</figcaption>
+      </figure>
+      <p>The cost is one <strong>comparison</strong> per value, so up to <em>n</em> comparisons for <em>n</em> values. For a million values that is a million looks. But the row above is sorted, and linear search ignores that. Can order buy us something?</p>
+      <p>Play a game to find out. I am thinking of a whole number from 1 to 100. After each guess I tell you “higher” or “lower”. Try to find it in as few guesses as you can.</p>
+      <figure class="fig wide" id="fig-guess">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Guess the number from 1 to 100</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain l13-guess" data-stage>
+          <div class="l13-guess__bar" data-bar></div>
+          <div class="l13-guess__play" data-play>
+            <label class="field-label" for="guess-input">Your guess</label>
+            <div class="l13-guess__row">
+              <input id="guess-input" class="field" type="number" inputmode="numeric" min="1" max="100" step="1" value="50" data-input>
+              <button type="button" class="btn btn--primary" data-guess>Guess</button>
+              <button type="button" class="btn btn--ghost" data-newgame>New number</button>
+            </div>
+            <div class="l13-guess__log" data-log aria-label="Your guesses"></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__controls" data-controls hidden></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a bar from 1 to 100. Numbers that your guesses have ruled out are dimmed; the bright part is what is still possible. You can type a guess, press Enter, or click the bar. In watch mode the halving strategy plays the same number and needs at most seven guesses.</figcaption>
+      </figure>
+      <p>Whatever number was picked, guessing the <em>middle</em> of the remaining range every time finds it in at most 7 guesses. Each answer crosses out half of the numbers still standing, and 100 can only be halved about seven times before one number is left. Press <em>Watch halving play</em> to see it.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2 data-toc="Intuition">Halving is very, very fast</h2>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: the dictionary</p>
+        <p>To find a word you do not read from page one. You open the dictionary near the middle, see whether your word comes before or after the words on that page, and throw away the half that cannot contain it. Repeat on what is left. Each look halves the pages that could still hold your word.</p>
+      </aside>
+      <p>How much is that worth? Watch what halving does to a million candidates. The bright bar is what could still hold the target, in the worst case.</p>
+      <figure class="fig wide" id="fig-halving">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Halving a million candidates</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain l13-halving" data-stage>
+          <div data-bar></div>
+          <div class="l13-ladder" data-ladder aria-hidden="true"></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a bar that represents all candidates shrinks to half its length with every comparison. After ten comparisons a thousand candidates remain, and after twenty, none: the value has been found or ruled out.</figcaption>
+      </figure>
+      <p>Two things stand out. The first ten comparisons take a million down to about a thousand, and the next ten finish the job. And going from a million to a <em>billion</em> candidates costs only ten more comparisons, because a thousand times more data is just ten more halvings.</p>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>You flip a dictionary to roughly the right page because you know the alphabet. A computer only learns order from comparisons, one pair at a time. Binary search also needs <em>random access</em>: jumping straight to index <code>mid</code>. A linked list cannot do that, so binary search works on arrays, not on linked lists.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ MECHANISM -->
+    <section id="mechanism">
+      <h2 data-toc="How it works">One comparison, half the array gone</h2>
+      <p>Why does sorted order let you discard half? Probe any item. If it is smaller than your target, then everything to its left is smaller still and cannot be the target. If it is bigger, everything to its right is bigger still. Click an item below and see what one probe rules out.</p>
+      <figure class="fig wide" id="fig-probe">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Where should you probe? Click any value</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-toggle></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: fifteen sorted numbers. Choosing a value to probe dims the side that cannot contain the target. The badge above each value is the most values that could remain if you probed there; it is smallest for the middle value, 7.</figcaption>
+      </figure>
+      <p>You do not know the target’s position, so plan for the unlucky answer. Probing near an end can leave almost everything behind. Probing the middle guarantees that no more than half is left. That is why binary search always probes the middle.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>Binary search keeps three indexes. <dfn>lo</dfn> and <dfn>hi</dfn> mark the range that could still contain the target. <dfn>mid</dfn> is the item it compares next, halfway between them. The comparison moves <code>lo</code> up or <code>hi</code> down, and the range shrinks.</p>
+      </aside>
+      <figure class="fig wide" id="fig-walk">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">One search, step by step</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the caption describes each step. Dimmed values have been ruled out; the labelled bands say what is known about them (smaller than the target on the left, bigger on the right).</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">The invariant</p>
+        <p>After every round, <strong>if the target is in the array, it is inside <code>a[lo..hi]</code></strong>. It is true before the first round (the range is everything), and every comparison throws away only values that provably cannot be the target. When the range is empty, the target is not there.</p>
+      </aside>
+      <p>Pick <em>Unsorted (breaks it)</em> above. The search follows the same rules, but “everything to the left is smaller” is now false, so it throws the target away. <strong>Sorted order is the whole trick</strong>: without it the halving argument has nothing to stand on.</p>
+      <p>The loop must also end. Each round moves <code>lo</code> to <code>mid + 1</code> or <code>hi</code> to <code>mid − 1</code>, so the range loses at least the item just compared. It shrinks every round, and it can only shrink so many times.</p>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Binary search on your own numbers, in five flavours. <strong>Exact</strong> looks for a match. The <strong>bounds</strong> and <strong>occurrence</strong> tabs find boundaries, which matter when values repeat; the tab text says what each promises. Press <kbd>←</kbd> and <kbd>→</kbd> to step and <kbd>Space</kbd> to play. The lab pauses a few times to ask what happens next.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace binary search, and its boundary variants</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="tabs l13-labtabs" id="lab-tabs">
+          <div class="tabs__list">
+            <button data-tab="exact">Exact</button>
+            <button data-tab="lower">Lower<span class="l13-wide-only"> bound</span></button>
+            <button data-tab="upper">Upper<span class="l13-wide-only"> bound</span></button>
+            <button data-tab="first">First<span class="l13-wide-only"> occurrence</span></button>
+            <button data-tab="last">Last<span class="l13-wide-only"> occurrence</span></button>
+          </div>
+          <div data-tab-panel="exact"><p class="l13-invariant" data-invariant="exact"></p></div>
+          <div data-tab-panel="lower"><p class="l13-invariant" data-invariant="lower"></p></div>
+          <div data-tab-panel="upper"><p class="l13-invariant" data-invariant="upper"></p></div>
+          <div data-tab-panel="first"><p class="l13-invariant" data-invariant="first"></p></div>
+          <div data-tab-panel="last"><p class="l13-invariant" data-invariant="last"></p></div>
+        </div>
+        <div class="fig__toolbar l13-toolbar">
+          <div data-input class="l13-input"></div>
+          <div class="l13-target" data-target-row>
+            <label class="field-label" for="lab-target">Target x</label>
+            <div class="l13-target__row"><input id="lab-target" class="field l13-target__field" type="text" inputmode="numeric" autocomplete="off" data-target><button type="button" class="btn btn--sm" data-target-apply>Search</button></div>
+            <p class="l13-target__err" role="alert" data-target-err></p>
+          </div>
+        </div>
+        <div class="l13-presets" data-presets role="group" aria-label="Example inputs"></div>
+        <p class="l13-warn" data-warn role="status" hidden></p>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the caption under the figure explains every step in words; the code panel highlights the line that runs and the variables panel shows lo, hi, mid, a[mid] and the target.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The logic as a flowchart</h2>
+      <p>The same decisions as a map. It is wired to the lab: step the lab and the box that is running lights up here, and a token travels along the arrow that was taken. Notice that the comparison box has three exits in the exact search, and two in the bound variants.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-flow-title>Binary search as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><p class="l13-toolbar-note">Switching here also switches the lab.</p></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 340px"></div>
+        <figcaption class="fig__foot" data-flow-alt>Text alternative: start with lo = 0 and hi = n − 1. While lo ≤ hi, compute mid, compare a[mid] with x; return mid on a match, move lo up on “less”, move hi down on “greater”. When lo passes hi, return −1.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ DECISION TREE -->
+    <section id="tree">
+      <h2 data-toc="Decision tree">Every search, drawn as one tree</h2>
+      <p>Binary search never looks at the target and then decides what to do; its probes are fixed in advance by the array size. So you can draw every comparison it could ever make as a tree. The root is the middle item. Smaller targets go left, bigger targets go right, and a search falls off the bottom into one of the <span class="l13-gap-swatch" aria-hidden="true">∅</span> gaps when the target is absent.</p>
+      <figure class="fig wide" id="fig-tree">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The comparison tree for a sorted array</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div class="l13-select"><label class="field-label" for="tree-target">Search for</label><select id="tree-target" class="field" data-target></select></div><button type="button" class="btn btn--sm" data-random>Random target</button></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: a balanced binary tree whose nodes are the array values and whose leaves are gaps. The number on each gap is how many comparisons a search takes to fall into it. Choosing a target lights the path from the root.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Why the tree is short</p>
+        <p>Seven values fit in a tree of three levels, so every search finishes in at most 3 comparisons. In general a tree with <em>k</em> levels holds 2<sup><em>k</em></sup> − 1 values, so <em>n</em> values need only about log<sub>2</sub>(<em>n</em> + 1) levels. The tree has <em>n</em> + 1 leaves, one gap per absent outcome, and any method that only compares needs about log<sub>2</sub> of the number of outcomes in yes/no answers to tell them apart.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ RACE -->
+    <section id="race">
+      <h2 data-toc="Race">Race: linear against binary</h2>
+      <p>Same sorted array, same target, one clock. Each tick pays for one comparison. The blue band is what linear search has checked; the bright band is what binary search has not yet ruled out.</p>
+      <figure class="fig full" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Linear search vs binary search</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg-n></div><div data-seg-t></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage><div class="l13-race" data-lanes></div></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: two lanes represent the same sorted array. The linear lane fills from the left one comparison per tick; the binary lane shrinks its bright band by half per tick. Each lane shows its comparison count and finishes with its result.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Count comparisons, the way the race did. Linear search needs up to <em>n</em> of them, so its worst case grows as a straight line. Binary search needs at most ⌊log<sub>2</sub> <em>n</em>⌋ + 1, which grows in a slow staircase: the count goes up by one each time <em>n</em> passes a power of two.</p>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Worst-case comparisons as n grows</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-range></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Binary search counts are measured by running the search on every possible target; hover the chart or focus it and use the arrow keys to read exact values.</figcaption>
+      </figure>
+      <p>The staircase is so flat that a billion values need only 30 comparisons. Slide <em>n</em> to see how the two plans scale.</p>
+      <figure class="fig wide" id="fig-scale">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">How many looks for n values?</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="l13-slider"></div></div>
+        <div class="fig__stage fig__stage--plain l13-scale" data-stage>
+          <div class="l13-scale__row" data-row="linear"><span class="l13-scale__name">Linear search, worst case</span><span class="l13-scale__bar"><i data-fill></i></span><b class="l13-scale__num" data-num></b></div>
+          <div class="l13-scale__row" data-row="binary"><span class="l13-scale__name">Binary search, worst case</span><span class="l13-scale__bar"><i data-fill></i></span><b class="l13-scale__num" data-num></b></div>
+        </div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: for the chosen n, the number of comparisons linear search and binary search need in the worst case, with the time it would take at one billion comparisons per second. The bars are drawn on a logarithmic scale so both stay visible.</figcaption>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Search</th><th scope="col">Best case</th><th scope="col">Average</th><th scope="col">Worst case</th><th scope="col">Extra space</th><th scope="col">Needs</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Linear search</th><td><span class="big-o" data-o="1"></span> target is first</td><td><span class="big-o" data-o="n"></span> about n/2 comparisons</td><td><span class="big-o" data-o="n"></span> n comparisons</td><td><span class="big-o" data-o="1"></span></td><td>Nothing: any list</td></tr>
+            <tr><th scope="row">Binary search</th><td><span class="big-o" data-o="1"></span> target is the first middle</td><td><span class="big-o" data-o="logn"></span> about log<sub>2</sub> n − 1</td><td><span class="big-o" data-o="logn"></span> ⌊log<sub>2</sub> n⌋ + 1 comparisons</td><td><span class="big-o" data-o="1"></span> loop, <span class="big-o" data-o="logn"></span> if recursive</td><td>Sorted, with random access</td></tr>
+            <tr><th scope="row">Sort, then binary search</th><td colspan="2">Sorting costs <span class="big-o" data-o="nlogn"></span> once</td><td><span class="big-o" data-o="logn"></span> per query after that</td><td><span class="big-o" data-o="1"></span> to <span class="big-o" data-o="n"></span></td><td>Many queries on the same data</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">When it does not pay off</p>
+        <p>Sorting costs <span class="big-o" data-o="nlogn"></span>, so sorting just to answer <em>one</em> query is slower than a single linear scan. Binary search wins when you search the same data many times, or when the data arrives already sorted (a leaderboard, a log by timestamp, a phone book).</p>
+      </aside>
+      <details class="accordion">
+        <summary>Why ⌊log₂ n⌋ + 1 exactly?</summary>
+        <div class="accordion__body"><p>After <em>k</em> comparisons at most ⌊<em>n</em>/2<sup><em>k</em></sup>⌋ candidates remain. The search must stop once none remain, that is, when 2<sup><em>k</em></sup> &gt; <em>n</em>. The smallest such <em>k</em> is ⌊log<sub>2</sub> <em>n</em>⌋ + 1. For <em>n</em> = 7 that gives 3, and for <em>n</em> = 8 it gives 4: the tree above grows a new level exactly at powers of two.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ BOUNDS -->
+    <section id="bounds">
+      <h2 data-toc="Boundaries">Duplicates and boundaries</h2>
+      <p>With repeated values, “find <em>x</em>” has more than one right answer. Exact search returns any match, whichever probe lands on one first. Usually you want a well-defined position, so binary search is bent to find a <em>boundary</em> instead.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Lower and upper bound</p>
+        <p>The <dfn>lower bound</dfn> of <em>x</em> is the first index whose value is <code>≥ x</code>. The <dfn>upper bound</dfn> is the first index whose value is <code>&gt; x</code>. Copies of <em>x</em> fill exactly the indexes from lower bound up to, but not including, the upper bound.</p>
+      </aside>
+      <figure class="fig wide" id="fig-bounds">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Two boundaries around the copies of x</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="l13-slider"></div><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a sorted row with repeated values. Two pointers mark the lower and upper bound of the chosen x; values equal to x sit between them. The readout gives the first occurrence, the last occurrence, the count, and the position where x would be inserted.</figcaption>
+      </figure>
+      <p>From these two numbers everything else follows: the <strong>first occurrence</strong> is the lower bound (if that item equals <em>x</em>), the <strong>last occurrence</strong> is the upper bound minus one, the <strong>count</strong> is upper minus lower, and the <strong>insert position</strong> that keeps the array sorted is the lower bound. Move the slider to a value that is missing: the two bounds meet, and the count is zero.</p>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Half-open ranges avoid off-by-one bugs</p>
+        <p>The bound loops use <code>hi = n</code> and <code>lo &lt; hi</code>. The range <code>[lo, hi)</code> includes <code>lo</code> but not <code>hi</code>, and <code>hi</code> may equal <em>n</em>, which means “past the end”. That extra position is what lets them answer “insert at the very end”.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ ANSWER -->
+    <section id="answer">
+      <h2 data-toc="On the answer">Binary search on the answer</h2>
+      <p>Nothing here needs an array. Binary search works on any question with a <dfn>monotonic</dfn> yes/no test: false, false, …, false, then true, true, …, true, and never back. Then the first “true” is a boundary, and halving finds it.</p>
+      <p>Example: a ship must carry parcels in the given order within <em>D</em> days. What is the smallest capacity that works? A capacity that works for a given <em>D</em> also works for any bigger capacity, so “can we ship with capacity <em>c</em>?” flips from false to true exactly once. Test the middle capacity, and halve.</p>
+      <figure class="fig fig--lab full" id="fig-answer">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Search the answer, not an array</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="tabs l13-labtabs" id="answer-tabs">
+          <div class="tabs__list"><button data-tab="ship">Shipping capacity</button><button data-tab="sqrt">Integer square root</button></div>
+          <div data-tab-panel="ship"><p class="l13-invariant"><b>Question:</b> smallest ship capacity that moves every parcel, in order, within D days. <b>Test:</b> greedy packing needs at most D days.</p></div>
+          <div data-tab-panel="sqrt"><p class="l13-invariant"><b>Question:</b> the largest whole m with m² ≤ x, without a square-root function. <b>Test:</b> is m² &gt; x? The first true is one too far.</p></div>
+        </div>
+        <div class="fig__toolbar l13-toolbar"><div data-input class="l13-input"></div><div data-slider class="l13-slider"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain l13-answer" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a strip of candidate answers. Candidates known to be false are grey, those known to be true are green, and the ones not yet decided are outlined. Only a handful of candidates are ever tested; monotonic order settles all the rest.</figcaption>
+      </figure>
+      <p>Look at the strip when the search ends. Only a few of the candidates were ever tested; monotonicity decided all the others for free. That is the same halving as before, on an array that never has to exist.</p>
+      <p>The idea reaches into continuous problems too. If a continuous function is negative at one end of an interval and positive at the other, it crosses zero somewhere inside. <strong>Bisection</strong> halves the interval around the sign change, and each probe gains one more correct binary digit.</p>
+      <figure class="fig wide" id="fig-bisect">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Bisection finds the square root of 2</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the curve y = x² − 2 between x = 1 and x = 2, crossing zero near 1.414. Two guide lines mark the current interval, and each probe halves it toward the crossing.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ BUGS -->
+    <section id="bugs">
+      <h2 data-toc="Classic bugs">The bugs everyone writes</h2>
+      <p>The idea takes a minute to grasp and a surprising amount of care to write. In the 1980s Jon Bentley gave professional programmers a couple of hours to code binary search from a description; about nine in ten of them got it wrong. Three bugs cause most of the damage.</p>
+      <p><strong>Bug 1: the middle overflows.</strong> The line <code>mid = (lo + hi) / 2</code> looks harmless. But with 32-bit integers, <code>lo + hi</code> can pass 2,147,483,647 and wrap around to a negative number. Drag the sliders and watch the sum spill out of the number line.</p>
+      <figure class="fig wide" id="fig-overflow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">(lo + hi) / 2 in a 32-bit integer</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l13-toolbar"><div data-slider-lo class="l13-slider"></div><div data-slider-hi class="l13-slider"></div><div data-presets class="l13-presets-inline"></div></div>
+        <div class="fig__stage fig__stage--plain l13-over" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a number line for 32-bit integers from −2,147,483,648 to 2,147,483,647. The markers lo and hi sit inside it. Their sum can extend beyond the right end, where the machine wraps it to a large negative number, giving a negative mid. The safe formula lo + (hi − lo) / 2 never leaves the line.</figcaption>
+      </figure>
+      <p>In 2006 Joshua Bloch reported that this bug had sat in Java’s own library for about nine years. It needs an array of more than a billion items, which was rare when the code was written and ordinary by 2006. The fix is <code>lo + (hi − lo) / 2</code>, where <code>hi − lo</code> can never overflow.</p>
+      <p><strong>Bugs 2 and 3: the loop that never ends, and the candidate that never gets looked at.</strong> Both come from being off by one. Switch each to the fixed code and compare.</p>
+      <figure class="fig fig--lab full" id="fig-bugs">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Two off-by-one bugs, buggy and fixed</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg-bug></div><div data-seg-fix></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: with the buggy code the pointers stop moving and the counter climbs forever, or the search ends with an untested value left over and reports “not found”. With the fixed code the range shrinks every round and the search returns the right answer.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">A checklist that prevents most bugs</p>
+        <p>Decide first whether the range is closed <code>[lo, hi]</code> or half-open <code>[lo, hi)</code>, and keep the loop test, the starting <code>hi</code> and both updates consistent with that choice. Write the invariant in a comment. Check that every branch shrinks the range. Test on empty, one item, two items, a target smaller than everything and larger than everything.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CHOOSE -->
+    <section id="choose">
+      <h2 data-toc="Can I use it?">Can I binary search this?</h2>
+      <p>Answer the questions to walk the diagram. The test that matters is never “is this an array?” but “does a yes/no question flip exactly once?”.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Can I binary search this?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 360px"></div>
+        <p class="fig__caption" data-answer aria-live="polite"></p>
+        <div class="fig__controls l13-btnbar"><button type="button" class="btn btn--sm" data-restart>Start over</button></div>
+        <figcaption class="fig__foot">Text alternative: first ask whether you can jump to any position in constant time; if not, binary search is not available. Then ask for a yes/no test that is false up to a point and true after it. If the test is “is this value at least x?”, use the lower bound; if the goal is the last value that passes, use the upper bound; if you only want a match, use exact search; if nothing flips once, you cannot halve.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-lohi"></div>
+        <div class="quiz" id="quiz-million"></div>
+        <div class="quiz" id="quiz-dups"></div>
+      </div>
+      <figure class="fig" id="fig-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Binary search, frozen after one round</h3></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: eleven sorted values 4, 9, 15, 21, 28, 34, 41, 52, 60, 77, 90. The search for 60 compared 34 (index 5) first and discarded indexes 0 to 5.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Binary search</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="logn">O(log n)</span><span class="chip chip--sm">Sorted + random access</span><span class="chip chip--sm">⌊log₂ n⌋ + 1 comparisons</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1946<small>first described</small></div>
+        <p class="history__people">John Mauchly<span>Moore School Lectures · Bentley’s <em>Programming Pearls</em> · Bloch, 2006</span></p>
+        <div class="history__body">
+          <p>John Mauchly described binary search in 1946, at the Moore School Lectures on electronic computing. Yet by Donald Knuth’s count, the first published version that worked for arrays of every length appeared only in 1960, and the first bug-free one in 1962. The early versions assumed the length was one less than a power of two.</p>
+          <p>When Jon Bentley set the task to professional programmers, about nine in ten got it wrong. In 2006 Joshua Bloch showed that even the version proved correct in Bentley’s book, and the one in Java’s standard library, failed on huge arrays: <code>(low + high) / 2</code> overflows.</p>
+        </div>
+        <p class="history__source">Sources: Knuth, <em>The Art of Computer Programming</em>, Vol. 3, §6.2.1 (history of binary search); J. Bentley, <em>Programming Pearls</em> (1986); J. Bloch, “Extra, Extra — Read All About It: Nearly All Binary Searches and Mergesorts are Broken”, Google Research Blog, 2 June 2006.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Search insert position</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given a sorted array of distinct integers and a target, return the index where the target is, or where it would be inserted to keep the array sorted. Use O(log n) time.</p></li>
+        <li><div class="practice__title">Count occurrences</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">In a sorted array with duplicates, count how many times <em>x</em> appears in O(log n) time. Which two bounds do you need?</p></li>
+        <li><div class="practice__title">Search in a rotated sorted array</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">A sorted array was rotated at an unknown pivot, for example 6, 7, 9, 1, 2, 4. Find a target in O(log n). Which half is always sorted, and how does that tell you where to go?</p></li>
+        <li><div class="practice__title">Split array, minimise the largest sum</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Split an array of positive integers into <em>k</em> contiguous parts so that the largest part sum is as small as possible. Binary search on the answer: what is the monotonic test, and what are the search limits?</p></li>
+        <li><div class="practice__title">Find the peak</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">An array increases and then decreases (no ties). Find the maximum in O(log n) without sorting. What yes/no test flips once, and why is this not a sorted array?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-06-sorting-and-the-comparison-barrier.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Sorting and the comparison barrier</span><span class="deeper__text" style="display:block">The decision-tree argument in full: why searching needs log n comparisons, why sorting needs n log n, and how far the argument stretches.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

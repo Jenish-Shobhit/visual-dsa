@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Stacks · Visual DSA</title>
+<meta name="description" content="Last in, first out. Watch plates drop and lift, match brackets, evaluate postfix expressions with a growing tree, undo and redo with two stacks, and settle next-greater-element with a monotonic stack.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/09-stacks.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/list.js" defer></script>
+<script src="../js/vdsa/views/stack.js" defer></script>
+<script src="../js/vdsa/views/callstack.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/09-stacks.js" defer></script>
+<script src="../js/lessons/09-stacks-views.js" defer></script>
+<script src="../js/lessons/09-stacks-labs.js" defer></script>
+<script src="../js/lessons/09-stacks.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="09-stacks">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Stacks</h1>
+      <p class="hero__lede">Touch only one end, and the last thing in is the first thing out. That single rule powers undo, nested brackets, expression evaluation and the call stack, and every operation costs O(1).</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">16 min</li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li><a class="chip" data-icon="prereq" href="06-arrays.html">Needs: arrays</a></li>
+        <li><a class="chip" data-icon="prereq" href="08-linked-lists.html">linked lists</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: plates labelled with letters drop onto a pile one at a time and lift off the top again, always the newest plate first."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>Unfinished business</h2>
+      <p>You are writing an essay and need a date, so you open a browser tab. The search result is an article. The article links to a video. Four things are now in progress, and only the newest one is on your screen.</p>
+      <p>Step through what happens when you finish each one. The figure pauses once to ask you a question.</p>
+      <figure class="fig" id="fig-problem">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Tasks waiting, newest on top</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: four tasks are started in this order: write essay, look up a date, read article, watch video. They are then finished in exactly the reverse order.</figcaption>
+      </figure>
+      <p>You resumed everything in the reverse of the order you interrupted it. The rule is <strong>the newest unfinished thing goes first</strong>. It shows up in nested brackets, function calls, the undo button and the browser’s back button. A structure that follows it exactly is a stack.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Plates in a dispenser</h2>
+      <p>Think of the spring-loaded plate stack in a canteen. You can only add a plate to the top and only take a plate from the top. The plate at the bottom has been there longest and comes out last.</p>
+      <div class="mini-row wide" id="mini-intuition"></div>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>stack</dfn> is a collection that you change at one end only, the <em>top</em>. <code>push(x)</code> puts x on top, <code>pop()</code> removes and returns the top, <code>peek()</code> reads the top without removing it, and <code>isEmpty()</code> asks whether anything is left. The order is <dfn>LIFO</dfn>: last in, first out.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>A canteen dispenser is never empty when you reach for a plate, and it never overflows. A program’s stack can do both, and the next figure lets you trigger each on purpose.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ PLAYGROUND -->
+    <section id="playground">
+      <h2>Push, pop, peek</h2>
+      <p>Press the buttons. In the fixed version the stack lives in an array of five slots, so a sixth push has nowhere to go. In both versions, <code>pop()</code> on an empty stack has nothing to return.</p>
+      <figure class="fig wide" id="fig-playground">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A stack you can poke</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l9-toolbar">
+          <div data-seg></div>
+          <div class="btn-row">
+            <button type="button" class="btn btn--primary" data-push>push</button>
+            <button type="button" class="btn" data-pop>pop()</button>
+            <button type="button" class="btn" data-peek>peek()</button>
+            <button type="button" class="btn btn--ghost" data-clear>Clear</button>
+          </div>
+        </div>
+        <div class="fig__stage fig__stage--tall l9-shakeable" data-stage></div>
+        <p class="fig__caption l9-msg" data-msg aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a tray of plates with values on them. Buttons push a random value, pop the top or peek at it. With five slots, a sixth push is rejected and the tray turns red.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Overflow (push on a full stack) and underflow (pop on an empty one) are the only ways a stack operation can fail. Real code checks <code>isEmpty()</code> before it pops.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ TWO WAYS TO BUILD ONE -->
+    <section id="layouts">
+      <h2>Two ways to build one</h2>
+      <p>An <strong>array-backed</strong> stack keeps its values in slots and one number, <code>top</code>. A <strong>linked</strong> stack keeps a chain of nodes and one pointer, <code>head</code>. Both do every operation in a constant number of steps, because both only ever touch the top.</p>
+      <figure class="fig wide" id="fig-layouts">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The same pushes and pops, two layouts</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage l9-lanes" data-stage>
+          <div class="l9-lane"><p class="l9-lane__title">Array-backed <span>fixed slots and a <code>top</code> index</span></p><div data-array></div></div>
+          <div class="l9-lane"><p class="l9-lane__title">Linked <span>nodes anywhere in memory and a <code>head</code> pointer</span></p><div data-list></div></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a row of six array slots and a chain of linked nodes hold the same stack. A push writes a slot or allocates a node; a pop moves top down or head forward.</figcaption>
+      </figure>
+      <p>A pop does not erase the array slot. It only moves <code>top</code>, and the old value sits there until a later push overwrites it. The array wins on memory: no pointer per value, and neighbouring values share cache lines. For a plain stack, prefer the array.</p>
+      <p>An array is fixed in size, so a stack that must grow copies itself into a bigger array when it fills up. How much bigger decides everything. Compare the two policies below and watch the price of each push.</p>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">What each push costs in a growable array</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="l9-slider"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a bar chart of the cost of each push. Most pushes cost one step. Whenever the array is full, one push also copies every existing value, so its bar is tall. Doubling makes the tall bars rare.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why doubling works</p>
+        <p>With doubling, the copies cost 4, then 8, then 16, and so on: the total never exceeds about twice the number of pushes, so the <em>average</em> push is O(1). Adding a fixed 4 slots copies far more often, and the total grows like n². Lesson 06 met doubling growth; the study linked at the end proves the bound.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CALL STACK -->
+    <section id="calls">
+      <h2>The stack you already use</h2>
+      <p>Every program is already running on a stack. Each function call pushes a <dfn>frame</dfn> holding its arguments and local variables; each return pops one. Step through three nested calls.</p>
+      <figure class="fig wide" id="fig-calls">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">main calls average, which calls sum</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--tall" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: three function frames stack up, main then average then sum. sum returns 12 and is popped, average returns 6 and is popped, and main receives 6.</figcaption>
+      </figure>
+      <p>Lesson 04 opened this stack up, and lesson 12 uses it to run recursion. Too many frames and the stack overflows, exactly like the fixed array above.</p>
+    </section>
+
+    <!-- ============================================================ LAB 1: BRACKETS -->
+    <section id="brackets">
+      <h2>Lab: matching brackets</h2>
+      <p>Is <code>{[()]}</code> well-formed? Is <code>([)]</code>? Every opener must be closed by the right closer, and the <em>most recent</em> unclosed opener must close first. That is a stack: push each opener; when a closer arrives, it must match the top.</p>
+      <p>Type your own text or pick a preset. Step forward with <kbd>→</kbd> or press <kbd>Space</kbd> to play. The lab pauses to ask you what happens next.</p>
+      <figure class="fig fig--lab full" id="lab-brackets">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Balanced or not? Trace the matcher</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain l9-stage" data-stage>
+              <div data-chars></div>
+              <div class="l9-lower">
+                <div class="l9-col"><p class="l9-col__title">Stack <span>newest opener on top</span></p><div data-stack></div></div>
+                <div class="l9-verdict" data-verdict data-state="run" aria-hidden="true"><span class="l9-verdict__big" data-big>…</span><div><p class="l9-verdict__title" data-title>Checking</p><p class="l9-verdict__text" data-text></p></div></div>
+              </div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the characters of the text are read left to right. Each opener is pushed on a stack; each closer is compared with the top and either pops it or ends the check with an error. The caption under the figure narrates every step.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Three ways to fail</p>
+        <p><strong>Mismatch:</strong> the closer meets the wrong opener on top, as in <code>(]</code>. <strong>Underflow:</strong> a closer arrives with nothing on the stack, as in <code>)(</code>. <strong>Leftovers:</strong> the text ends with openers still waiting, as in <code>((()</code>. The matcher passes only when the stack is empty at the end.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The matcher as a flowchart</h2>
+      <p>The same logic as a map. It is wired to the lab above: step the lab and the box that runs lights up here, with a token travelling along the arrow that was taken.</p>
+      <figure class="fig wide" id="fig-flow-brackets">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Bracket matcher decision flow</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <figcaption class="fig__foot">Text alternative: while characters remain, an opener is pushed, a non-bracket is skipped, and a closer first checks that the stack is not empty and then that the top pairs with it; failing either check ends with “not balanced”. When the text ends, the result is “balanced” only if the stack is empty.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ POSTFIX -->
+    <section id="postfix">
+      <h2>Evaluating expressions</h2>
+      <p>Normally we write the operator between its numbers: <code>3 + 4</code>. In <dfn>postfix</dfn> (reverse Polish) notation it comes after: <code>3 4 +</code>. Then <code>(3 + 4) × 2</code> becomes <code>3 4 + 2 ×</code>, with no parentheses at all, because the order of the tokens already says what happens first.</p>
+      <p>A stack evaluates it in one pass. A number is pushed. An operator pops the two newest numbers, combines them, and pushes the result. Watch the tree on the right: it is the expression, growing as the stack works.</p>
+      <figure class="fig fig--lab full" id="lab-postfix">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Evaluate a postfix expression</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain l9-stage" data-stage>
+              <div data-tokens></div>
+              <div class="l9-postfix-lower">
+                <div class="l9-col"><p class="l9-col__title">Stack <span>values</span></p><div data-stack></div>
+                  <div class="l9-verdict l9-verdict--small" data-verdict data-state="run" aria-hidden="true"><span class="l9-verdict__big" data-big>…</span><div><p class="l9-verdict__title" data-title>Evaluating</p><p class="l9-verdict__text" data-text></p></div></div>
+                </div>
+                <div class="l9-col l9-col--forest"><p class="l9-col__title">Expression trees <span>one per stack entry, left to right</span></p><div data-forest></div></div>
+              </div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: tokens are read left to right. Numbers are pushed on a stack and drawn as single-node trees. An operator pops two entries, becomes the parent of their trees, and pushes the result, so the stack entries and the trees are always the same things.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Order matters for − and ÷</p>
+        <p>The first value popped is the <em>right</em> operand, because it arrived last. So <code>9 3 −</code> is 9 − 3 = 6, not 3 − 9. Try <em>Too few operands</em> and <em>Leftover value</em> to see how a bad expression shows up as an underflow or a stack that does not end with one value.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ SHUNTING YARD -->
+    <section id="shunting">
+      <h2>From infix to postfix</h2>
+      <p>People write <code>3 + 4 × 2</code>. To get postfix, use a second stack for operators. Numbers go straight to the output. An operator waits on the stack until nothing on the stack binds more tightly than it, and only then does the waiting operator move to the output. Parentheses are walls on the stack.</p>
+      <p>Dijkstra called this the <dfn>shunting-yard algorithm</dfn>, after a railway yard that sorts train cars. This version handles + − × ÷ and parentheses, left to right.</p>
+      <figure class="fig wide" id="fig-shunting">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Operators waiting by precedence</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__stage fig__stage--plain l9-shunt" data-stage>
+          <div data-rows></div>
+          <div class="l9-col"><p class="l9-col__title">Operator stack</p><div data-stack></div></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <div class="l9-send"><button type="button" class="btn btn--sm btn--soft" data-send disabled>Evaluate this output in the postfix lab</button></div>
+        <figcaption class="fig__foot">Text alternative: an input row of tokens, an output row and an operator stack. Numbers move to the output; operators are pushed after any operator of equal or higher precedence has been released to the output; a closing parenthesis releases everything back to its opening parenthesis.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ UNDO / REDO -->
+    <section id="undo">
+      <h2>Undo and redo</h2>
+      <p>Undo needs the most recent action first, then the one before it. That is a stack of actions. But an undone action must not be lost: redo needs it back. So <strong>undo pops from one stack and pushes onto a second</strong>, and redo does the reverse.</p>
+      <figure class="fig wide" id="fig-undo">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A tiny drawing app with two stacks</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l9-toolbar">
+          <div class="btn-row" role="group" aria-label="Draw">
+            <button type="button" class="btn" data-act="circle"><span aria-hidden="true">●</span> Circle</button>
+            <button type="button" class="btn" data-act="square"><span aria-hidden="true">■</span> Square</button>
+            <button type="button" class="btn" data-act="triangle"><span aria-hidden="true">▲</span> Triangle</button>
+            <button type="button" class="btn btn--ghost" data-act="clear">Clear all</button>
+          </div>
+          <div class="btn-row" role="group" aria-label="History">
+            <button type="button" class="btn btn--primary" data-do-undo>↶ Undo</button>
+            <button type="button" class="btn btn--primary" data-do-redo>Redo ↷</button>
+          </div>
+        </div>
+        <div class="fig__stage fig__stage--plain l9-two-stacks" data-stage>
+          <div class="l9-doc" data-doc></div>
+          <div class="l9-col"><p class="l9-col__title">Undo stack <span>most recent on top</span></p><div data-undo></div></div>
+          <div class="l9-col" data-flash><p class="l9-col__title">Redo stack <span>next to redo on top</span></p><div data-redo></div></div>
+        </div>
+        <p class="fig__caption l9-msg" data-msg aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a canvas of shapes, an undo stack of the actions that made them and a redo stack of undone actions. Undo moves the top action from the undo stack to the redo stack; any new action empties the redo stack.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Try this</p>
+        <p>Draw three shapes, undo twice, then draw a new one. The two undone shapes are gone for good: a new action starts a new future, so the redo stack is emptied. Every editor you use behaves this way.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ MONOTONIC STACK -->
+    <section id="monotonic">
+      <h2>The monotonic stack</h2>
+      <p>Given daily temperatures, how many days until a warmer one? The obvious method scans right from every day. The faster method keeps a stack of days still <em>waiting</em> for a warmer day, and lets each new day settle every colder day on top of the stack.</p>
+      <p>The stack stays <dfn>monotonic</dfn>: the values never increase from bottom to top. So the first value on top that is not smaller stops the popping. Each day is pushed once and popped at most once, which is why the whole pass is O(n).</p>
+      <figure class="fig fig--lab full" id="lab-mono">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Next greater element with a monotonic stack</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l9-toolbar"><div class="l9-input" data-input></div><div class="l9-mode"><span class="field-label">Question</span><div data-mode></div></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain l9-stage" data-stage>
+              <div data-bars></div>
+              <div class="l9-mono-lower">
+                <div class="l9-col"><p class="l9-col__title">Stack of indices <span>bottom to top</span></p><div data-stack></div></div>
+                <div class="l9-invariant" data-invariant data-ok="true"><p class="l9-invariant__title">Invariant</p><p class="l9-invariant__now" data-inv></p><p class="l9-invariant__rule">Values never increase from bottom to top.</p></div>
+              </div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: bars show the values. When a new bar is larger than the bar on top of the stack, that bar is popped and an arrow is drawn from it to the new bar, and its answer cell is filled in. Bars left on the stack at the end have no larger value to their right.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why popping is safe</p>
+        <p>When index i beats the top t, nothing between t and i was larger (or t would have been popped earlier), so i is t’s answer. And every later value is farther away than i, so t can never get a better one. That is why t can leave the stack for good.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CHOOSER -->
+    <section id="chooser">
+      <h2 data-toc="Does it want a stack?">Does this problem want a stack?</h2>
+      <p>Answer the questions on the chart, or press a situation to watch it find its own path.</p>
+      <figure class="fig wide" id="fig-chooser">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Stack, queue or something else?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="btn-row" data-scenarios role="group" aria-label="Situations"></div><button type="button" class="btn btn--sm btn--ghost" data-restart>Start over</button></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 460px"></div>
+        <p class="fig__caption l9-msg" data-note aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: a decision chart. Nesting, undo or going back, and reversing the order all lead to a stack. Needing the next larger or smaller value leads to a monotonic stack. Needing the oldest item first leads to a queue. Anything else is not a job for an end-only structure.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Every stack operation touches only the top, so its cost does not depend on how many values are stored. The algorithms built on it make a single left-to-right pass.</p>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Operation</th><th scope="col">Fixed array</th><th scope="col">Growable array</th><th scope="col">Linked list</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><code>push(x)</code></th><td><span class="big-o" data-o="1"></span> or overflow</td><td><span class="big-o" data-o="1">O(1)</span> amortized; one push can cost <span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="1"></span> worst case</td></tr>
+            <tr><th scope="row"><code>pop()</code>, <code>peek()</code>, <code>isEmpty()</code></th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td></tr>
+            <tr><th scope="row">Extra memory per value</th><td>none</td><td>none, plus up to half the array spare</td><td>one pointer</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Algorithm on n items</th><th scope="col">Time</th><th scope="col">Extra space (worst case)</th><th scope="col">Why</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Bracket matching</th><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="n"></span> (all openers)</td><td>Each character is pushed at most once and popped at most once.</td></tr>
+            <tr><th scope="row">Postfix evaluation</th><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="n"></span> (all numbers first)</td><td>One push or one pop-pop-push per token.</td></tr>
+            <tr><th scope="row">Shunting-yard</th><td><span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="n"></span> (deeply nested operators)</td><td>Each token enters the stack once and leaves once.</td></tr>
+            <tr><th scope="row">Next greater, scan right from each value</th><td><span class="big-o" data-o="n2"></span> worst case</td><td><span class="big-o" data-o="1"></span></td><td>A decreasing input forces every scan to reach the end.</td></tr>
+            <tr><th scope="row">Next greater, monotonic stack</th><td><span class="big-o" data-o="n"></span> (at most 2n comparisons)</td><td><span class="big-o" data-o="n"></span></td><td>Each index is pushed once and popped at most once.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The last two rows are worth seeing. Count the comparisons each method makes as the input grows.</p>
+      <figure class="fig wide" id="fig-cost-mono">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Comparisons to find every next greater value</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-log></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Counts come from running both methods on real arrays; random input is averaged over 10 runs per size. Hover or focus the chart and use the arrow keys to read exact values.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Change what the stack holds, or add a second stack, and the same idea answers other questions.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="browser">Browser history</button>
+          <button data-tab="min">Min stack</button>
+          <button data-tab="dfs">Explicit stack (DFS)</button>
+          <button data-tab="rev">Reverse</button>
+        </div>
+        <div data-tab-panel="browser">
+          <p>Back and forward are the same two-stack trick as undo and redo. The page you leave goes on the back stack; going back pushes the page you left onto the forward stack.</p>
+          <figure class="fig wide fig--plain" id="fig-browser">
+            <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Back and forward buttons</h3></div><div data-legend></div></header>
+            <div class="fig__toolbar l9-toolbar">
+              <div class="btn-row" role="group" aria-label="Follow a link"><span class="field-label">Go to</span>
+                <button type="button" class="btn" data-act="News">News</button><button type="button" class="btn" data-act="Video">Video</button><button type="button" class="btn" data-act="Shop">Shop</button><button type="button" class="btn" data-act="Mail">Mail</button>
+              </div>
+              <div class="btn-row" role="group" aria-label="History"><button type="button" class="btn btn--primary" data-do-undo>◀ Back</button><button type="button" class="btn btn--primary" data-do-redo>Forward ▶</button></div>
+            </div>
+            <div class="fig__stage fig__stage--plain l9-two-stacks" data-stage>
+              <div class="l9-doc" data-doc></div>
+              <div class="l9-col"><p class="l9-col__title">Back stack <span>most recent on top</span></p><div data-undo></div></div>
+              <div class="l9-col" data-flash><p class="l9-col__title">Forward stack</p><div data-redo></div></div>
+            </div>
+            <p class="fig__caption l9-msg" data-msg aria-live="polite"></p>
+            <div class="fig__stats" data-stats></div>
+          </figure>
+        </div>
+        <div data-tab-panel="min">
+          <div class="split">
+            <figure class="mini"><div class="mini__stage l9-pair" ><div data-mini="min-a"></div><div data-mini="min-b"></div></div><figcaption>Left: the values. Right: the smallest value at or below each position.</figcaption></figure>
+            <div><p>Keep a second stack of “smallest so far”. Each push records the new minimum, each pop removes it with its value, and <code>getMin()</code> is just a peek: O(1).</p><pre data-code-block="min"></pre></div>
+          </div>
+        </div>
+        <div data-tab-panel="dfs">
+          <div class="split">
+            <figure class="mini"><div class="mini__stage" data-mini="dfs"></div><figcaption>Nodes still to visit; the top is next.</figcaption></figure>
+            <div><p>Recursion uses the call stack. You can use your own instead: push the start, then repeatedly pop a node, mark it seen and push its neighbours. That is depth-first search, and it avoids stack overflow on deep graphs. Lesson 26 draws it.</p><pre data-code-block="dfs"></pre></div>
+          </div>
+        </div>
+        <div data-tab-panel="rev">
+          <div class="split">
+            <figure class="mini"><div class="mini__stage l9-pair"><div data-mini="rev-a"></div><div data-mini="rev-b"></div></div><figcaption>Push h, e, l, l, o; then pop until empty.</figcaption></figure>
+            <div><p>Push every character, then pop every character: they come out in the opposite order. Reversal is what LIFO does for free.</p><pre data-code-block="rev"></pre></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-sequence"></div>
+        <figure class="fig fig--plain" id="fig-click">
+          <div class="fig__stage fig__stage--plain l9-clickrow" data-stage><div class="l9-chars" id="click-brackets" role="group" aria-label="The text ( [ ) ]"></div></div>
+        </figure>
+        <div class="quiz" id="quiz-click"></div>
+        <div class="quiz" id="quiz-postfix"></div>
+        <div class="quiz" id="quiz-count"></div>
+        <div class="quiz" id="quiz-fit"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Stacks</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="1">O(1)</span><span class="chip chip--sm">push · pop · peek</span><span class="chip chip--sm">LIFO</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1957<small>patent filed</small></div>
+        <p class="history__people">Friedrich Bauer &amp; Klaus Samelson<span>the “cellar principle”</span></p>
+        <div class="history__body">
+          <p>The stack was invented at least three times. Alan Turing sketched one for return addresses in 1945. In Munich, Bauer and Samelson patented a “cellar principle” for translating formulas in 1957, and that same year in Australia Charles Hamblin built a reverse-Polish language around a push-down list. By 1961, Dijkstra’s shunting-yard algorithm and the Burroughs B5000’s hardware stack had made it standard.</p>
+        </div>
+        <p class="history__source">Source: Bauer and Samelson, patent DE1094019 (filed 30 March 1957); Hamblin, GEORGE (1957); Dijkstra, Mathematisch Centrum report MR 34/61 (1961).</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Min stack</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Design a stack with <code>push</code>, <code>pop</code>, <code>top</code> and <code>getMin</code>, all O(1). What must happen on a tie, when you push a value equal to the current minimum?</p></li>
+        <li><div class="practice__title">Simplify a file path</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Turn <code>/a/./b/../../c/</code> into its canonical form with a stack of folder names. What do <code>..</code> at the root and repeated slashes mean?</p></li>
+        <li><div class="practice__title">Queue from two stacks</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Build a first-in, first-out queue using only two stacks. A single dequeue can take O(n); argue that n operations still take O(n) in total.</p></li>
+        <li><div class="practice__title">Decode a string</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Expand <code>3[a2[c]]</code> into <code>accaccacc</code>. What do you push when you meet <code>[</code>, and what do you pop at <code>]</code>?</p></li>
+        <li><div class="practice__title">Largest rectangle in a histogram</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Find the biggest rectangle under a bar chart in O(n). Hint: for each bar, you need the nearest smaller bar on each side, which is next-greater in disguise.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-01-linear-layouts-and-access-disciplines.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Linear layouts &amp; access disciplines</span><span class="deeper__text" style="display:block">Why restricting an interface buys an O(1) guarantee, the ring buffer, and the worked bracket-matching proof.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

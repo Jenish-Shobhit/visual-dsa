@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Binary search trees · Visual DSA</title>
+<meta name="description" content="Smaller keys to the left, larger keys to the right: watch search, insert, successor and the three cases of delete animate, then see why insertion order decides everything.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/19-binary-search-trees.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/19-binary-search-trees.js" defer></script>
+<script src="../js/lessons/19-binary-search-trees-view.js" defer></script>
+<script src="../js/lessons/19-binary-search-trees.js" defer></script>
+<script src="../js/lessons/19-binary-search-trees-lab.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="19-binary-search-trees">
+<main id="main" class="lesson">
+
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Binary search trees</h1>
+      <p class="hero__lede">Keep every smaller key to the left and every larger key to the right, and finding anything becomes one walk down a single path: as fast as the tree is short.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">18 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li class="chip" data-icon="prereq">Needs: trees and binary search</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: a key drops into a binary search tree, turning left at larger keys and right at smaller ones, until it lands in an empty spot and becomes a new leaf. Then the next key drops."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem: a sorted list that will not sit still</h2>
+      <p>A game server keeps a live leaderboard. Every second new scores arrive, players leave, and each player asks “who is just above me?”. The scores have to stay in order while they keep changing.</p>
+      <p>A sorted array finds any score fast: binary search needs about log₂&nbsp;n comparisons. But inserting a score means shifting every larger score one place to the right. A hash table inserts instantly, but it scatters keys on purpose, so it cannot tell you who is next in line.</p>
+      <p>Watch both structures take the same three new scores. Count the moves.</p>
+      <figure class="fig wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Insert the same keys into a sorted array and into a binary search tree</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="bst-stack">
+          <div class="bst-pane">
+            <div class="bst-pane__head"><span class="bst-pane__title">Sorted array</span><span>binary search, then shift</span></div>
+            <div class="fig__stage fig__stage--plain bst-arr-stage" data-stage="array"></div>
+            <div class="fig__stats" data-stats="array"></div>
+          </div>
+          <div class="bst-pane">
+            <div class="bst-pane__head"><span class="bst-pane__title">Binary search tree</span><span>walk down, then hang a leaf</span></div>
+            <div class="fig__stage fig__stage--plain" data-stage="tree"></div>
+            <div class="fig__stats" data-stats="tree"></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Moves count array cells that had to shift. Comparisons count keys checked against the new key. The tree never moves an existing key.</figcaption>
+      </figure>
+      <p>The tree finds the spot with the same handful of comparisons, then hangs one new node. Nothing shifts. That is the promise of a binary search tree: ordered like a sorted array, as cheap to change as a linked list.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition: binary search, frozen into a tree</h2>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: write down every question</p>
+        <p>Binary search on a sorted array always asks about the middle key first, then the middle of whichever half is left. Write each possible question under the one before it, and you have drawn a binary search tree.</p>
+      </aside>
+      <p>Step through the figure. The middles rise out of the array level by level. Then one search runs on the array and the tree at the same time, asking the same questions.</p>
+      <figure class="fig wide" id="fig-fold">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A sorted array folds into a tree</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the picture breaks</p>
+        <p>A real binary search tree is not built from the middle outwards. It grows one insert at a time, and its shape depends on the order the keys arrive in. Feed it keys in sorted order and it folds into one long stick. You will watch that happen below.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE RULE -->
+    <section id="rule">
+      <h2>One rule, for whole subtrees</h2>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>A node’s <dfn>subtree</dfn> is the node together with everything below it. A <dfn>binary search tree</dfn> (BST) is a binary tree where, at every node, every key in the left subtree is smaller than the node’s key and every key in the right subtree is larger.</p>
+      </aside>
+      <p>Click any node. The two shaded regions are its left and right subtrees. The rule holds for every key in each region, all the way down, not just for the two children.</p>
+      <figure class="fig wide" id="fig-rule">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Click a node to see its two subtrees</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-toggle></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">The range under a node is the open interval its key must fall in. Its ancestors set it: going left tightens the upper end, going right tightens the lower end.</figcaption>
+      </figure>
+      <p>Because the rule is about whole subtrees, a tree can pass every parent–child check and still be broken. Exactly one key below is in the wrong place. Find it.</p>
+      <figure class="fig" id="fig-fake">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Every child is on the correct side of its parent. Is this a BST?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Check each key against every ancestor, not only its parent.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-fake"></div>
+    </section>
+
+    <!-- ============================================================ SEARCH -->
+    <section id="search">
+      <h2>Search: every comparison throws away a subtree</h2>
+      <p>To find a key, start at the root and compare. Equal: found. Smaller: it can only be in the left subtree. Larger: only in the right. Repeat until you find it or step onto an empty link.</p>
+      <p>Watch the grey regions. Each comparison rules out a whole subtree without looking at one key inside it, and the <em>candidates</em> counter drops.</p>
+      <figure class="fig wide" id="fig-search">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Search, with the ruled-out subtrees greyed</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><span class="field-label" style="margin:0 0 6px;align-self:center">Find</span><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>A search visits one node per level, so at most <em>height</em>&nbsp;+&nbsp;1 nodes. Its cost depends on how tall the tree is, not on how many keys it holds.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ INSERT -->
+    <section id="insert">
+      <h2>Insert: search until you fall off</h2>
+      <p>Insertion is a search that is allowed to fail. Walk down as if you were looking for the new key. When you step onto an empty link, that spot is the only place the key can go without breaking the rule. Hang a new leaf there.</p>
+      <p>Every empty link below is a dashed circle. Where does <b>7</b> go? Click the spot, then press play to watch the key drop.</p>
+      <figure class="fig wide" id="fig-insert">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Insert 7</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+      </figure>
+      <div class="quiz" id="quiz-insert"></div>
+      <p>No existing link changed. An insert adds exactly one link, and the new key is always a leaf. (The drawing spreads out to make room, but the tree itself only grew.)</p>
+    </section>
+
+    <!-- ============================================================ MIN, MAX, SUCCESSOR -->
+    <section id="neighbours">
+      <h2 data-toc="Min, max, successor">Minimum, maximum and successor</h2>
+      <p>The smallest key is as far left as you can go: follow left links until there are none. The largest is as far right as you can go.</p>
+      <p>The <dfn>successor</dfn> of a key is the next larger key in sorted order. If the node has a right subtree, the successor is the smallest key in it: step right once, then left as far as possible. If it has no right subtree, the successor is the nearest ancestor you reached by going left. The <dfn>predecessor</dfn> is the mirror image.</p>
+      <figure class="fig wide" id="fig-nav">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Walking to the neighbours</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><p class="muted" data-pick style="margin:0;font-size:13.5px"></p></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Click a node to choose the key whose successor or predecessor you want.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-succ"></div>
+    </section>
+
+    <!-- ============================================================ DELETE -->
+    <section id="delete">
+      <h2>Delete: three cases</h2>
+      <p>Removing a key is the one operation with real cases, because a node may be holding up two subtrees. First find the node, then count its children:</p>
+      <ul>
+        <li><b>No children (a leaf).</b> Remove it. Nothing hangs below it.</li>
+        <li><b>One child.</b> The child’s whole subtree moves up into its place.</li>
+        <li><b>Two children.</b> Copy in the key of its successor, then delete the successor, which has at most one child.</li>
+      </ul>
+      <figure class="fig full" id="fig-delete">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The three cases of delete, with the decision lit</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="bst-split">
+          <div class="bst-split__tree"><div class="fig__stage fig__stage--tall" data-stage></div></div>
+          <div class="bst-split__flow"><div class="fig__stage fig__stage--plain" data-flow></div></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">In the two-children case the node keeps its place and only its key changes; the node that disappears is the old successor.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the successor fits</p>
+        <p>The successor is the smallest key larger than the one you delete. So it is larger than everything in the left subtree and smaller than everything else in the right subtree: it fits exactly in the hole. The predecessor, the largest key on the left, works too by mirror symmetry. Thomas Hibbard showed this method in 1962.</p>
+      </aside>
+      <div class="quiz bst-quiz-trees" id="quiz-delete"></div>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Build any tree and run every operation on it. Type keys and press Build, or pick a preset (try <em>Sorted</em> to watch the tree collapse into a stick). Then type a key, or click a node, and choose an operation. Press <kbd>←</kbd> and <kbd>→</kbd> to step and <kbd>Space</kbd> to play.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">BST lab: build, search, insert, delete</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__toolbar" data-ops></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Keys are whole numbers from −99 to 99; the lab holds up to 24 of them. It stores a set: inserting a key that is already there changes nothing. Comparisons count one three-way comparison per node visited.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2>The decisions, as a flowchart</h2>
+      <p>The same logic as a map of decisions. It follows the lab: run an operation there and its flowchart appears here with the current step lit. Delete is the one with a three-way branch.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-flow-title>Flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--scroll fig__stage--plain" data-stage style="--stage-min: 480px"></div>
+        <figcaption class="fig__foot" data-flow-foot>Pick an operation above, or run one in the lab.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ IN-ORDER -->
+    <section id="inorder">
+      <h2>In-order: the tree, read left to right</h2>
+      <p>Walk the tree <dfn>in-order</dfn>: left subtree, then the node, then the right subtree. Everything on the left is smaller and everything on the right is larger, so the keys come out sorted.</p>
+      <p>Each node sits directly above its place on the number line, so the walk looks like the tree being flattened.</p>
+      <figure class="fig wide" id="fig-inorder">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">An in-order walk flattens the tree into sorted order</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">A sort for free</p>
+        <p>Insert n keys, then walk in-order, and you have sorted them. That is <em>tree sort</em>: about n log n comparisons on a random order, but n²/2 on sorted input, for the reason in the shape section below.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ RANGE -->
+    <section id="range">
+      <h2>Range queries: every key between lo and hi</h2>
+      <p>A hash table cannot answer “every score between 40 and 60” without checking every key. A BST can skip whole subtrees. At each node: if its key is greater than lo, the left subtree may hold answers; if it is less than hi, the right subtree may. Otherwise the subtree is skipped.</p>
+      <p>Drag the sliders. The grey regions are skipped without a single comparison inside them.</p>
+      <figure class="fig wide" id="fig-range">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Range query [lo, hi]</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-lo style="flex: 1 1 220px"></div><div data-hi style="flex: 1 1 220px"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+      </figure>
+      <p>The walk touches the nodes on the two boundary paths plus the answers, so it costs about O(<em>h</em>&nbsp;+&nbsp;<em>k</em>) for <em>k</em> answers: fast when the tree is short.</p>
+    </section>
+
+    <!-- ============================================================ SHAPE -->
+    <section id="shape">
+      <h2>Insertion order decides the shape</h2>
+      <p>Every insert lands at the bottom of a search path, so the order the keys arrive in decides the shape. The same 15 keys can build a tree of height 3 or a stick of height 14.</p>
+      <figure class="fig full" id="fig-shape">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Same 15 keys, two insertion orders</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><button type="button" class="btn btn--sm" data-shuffle>Shuffle the random order</button></div>
+        <div class="bst-pair">
+          <div class="bst-pane">
+            <div class="bst-pane__head"><span class="bst-pane__title">Random order</span><span class="bst-meter" data-meter="a"><span>height</span><span class="bst-meter__bar"><i></i></span><b data-h>0</b></span></div>
+            <div class="fig__stage fig__stage--plain" data-stage="a"></div>
+            <div class="fig__stats" data-stats="a"></div>
+          </div>
+          <div class="bst-pane">
+            <div class="bst-pane__head"><span class="bst-pane__title" data-title-b>Sorted order</span><span class="bst-meter" data-meter="b"><span>height</span><span class="bst-meter__bar"><i></i></span><b data-h>0</b></span></div>
+            <div class="fig__stage fig__stage--plain" data-stage="b"></div>
+            <div class="fig__stats" data-stats="b"></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Each step drops one key into each tree. The height bars fill toward n − 1 = 14, the worst possible height for 15 keys.</figcaption>
+      </figure>
+      <p>The <dfn>height</dfn> of a tree is the number of links on its longest root-to-leaf path. Sorted input makes every new key the largest so far, so each one hangs off the right end: height n&nbsp;−&nbsp;1, and a search can cost n comparisons. It is a linked list wearing a tree’s clothes.</p>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Every operation walks one root-to-leaf path, so it costs O(<em>h</em>). And <em>h</em> sits between ⌊log₂&nbsp;n⌋, for a full tree, and n&nbsp;−&nbsp;1, for a stick. Random insertion orders land near the bottom of that range: the average depth of a key grows like 1.39&nbsp;log₂&nbsp;n, and the height stays a small multiple of log₂&nbsp;n.</p>
+      <figure class="fig wide" id="fig-depth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">How deep is the average key? Simulated insertion orders</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <figcaption class="fig__foot">Random: the mean over many shuffled insertion orders (200 per point for n ≤ 64, fewer for larger n). Sorted: one stick, depths 0, 1, …, n − 1. Depth counts links from the root, so a search for a key at depth d makes d + 1 comparisons.</figcaption>
+      </figure>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Operation (n keys, height h)</th><th scope="col" class="num">Best</th><th scope="col" class="num">Random insertion order</th><th scope="col" class="num">Worst (sorted input)</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Search, insert, delete</th><td class="num"><span class="big-o" data-o="1">O(1)</span><div class="bst-case">key at the root</div></td><td class="num"><span class="big-o" data-o="logn"></span><div class="bst-case">expected</div></td><td class="num"><span class="big-o" data-o="n"></span><div class="bst-case">a stick: h = n − 1</div></td></tr>
+            <tr><th scope="row">Minimum, maximum</th><td class="num"><span class="big-o" data-o="1">O(1)</span><div class="bst-case">the root is the answer</div></td><td class="num"><span class="big-o" data-o="logn"></span></td><td class="num"><span class="big-o" data-o="n"></span></td></tr>
+            <tr><th scope="row">Successor, predecessor</th><td class="num"><span class="big-o" data-o="1">O(1)</span><div class="bst-case">answer one link away</div></td><td class="num"><span class="big-o" data-o="logn"></span></td><td class="num"><span class="big-o" data-o="n"></span></td></tr>
+            <tr><th scope="row">Range query, k answers</th><td class="num"><span class="big-o" data-o="nk">O(1 + k)</span><div class="bst-case">h is small</div></td><td class="num"><span class="big-o" data-o="nk">O(log n + k)</span></td><td class="num"><span class="big-o" data-o="n"></span></td></tr>
+            <tr><th scope="row">In-order walk (sorted output)</th><td class="num" colspan="3"><span class="big-o" data-o="n"></span> <span class="bst-case">every node once, whatever the shape</span></td></tr>
+            <tr><th scope="row">Space</th><td class="num" colspan="3"><span class="big-o" data-o="n"></span> <span class="bst-case">one node with two links per key</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <details class="accordion">
+        <summary>Why is the height between ⌊log₂ n⌋ and n − 1?</summary>
+        <div class="accordion__body"><p>Level 0 holds at most 1 node, level 1 at most 2, level d at most 2<sup>d</sup>. A tree of height h therefore holds at most 2<sup>h+1</sup>&nbsp;−&nbsp;1 nodes, so n keys need h ≥ ⌊log₂&nbsp;n⌋. At the other end, nothing stops each level from holding a single node: that is a stick of height n&nbsp;−&nbsp;1.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Where does 1.39 log₂ n come from?</summary>
+        <div class="accordion__body"><p>Building a BST from a random order makes the same comparisons as quicksort with the first key as pivot: the root splits the other keys into smaller and larger, and each side repeats. Quicksort’s expected comparisons, about 2n&nbsp;ln&nbsp;n, are the total depth of all nodes. Divide by n: the average depth is about 2&nbsp;ln&nbsp;n ≈ 1.39&nbsp;log₂&nbsp;n, minus a small constant (for 1024 keys the chart shows about 11). The height, the deepest node, is larger but still O(log n): about 21 for 1024 random keys, and 4.3&nbsp;ln&nbsp;n in the limit.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Can you guarantee the short tree?</summary>
+        <div class="accordion__body"><p>Not with a plain BST: the insertion order decides, and real data often arrives sorted (timestamps, auto-increment ids, the output of a previous sort). Self-balancing trees, the next lesson, repair the shape after each update with rotations and guarantee O(log n) height for every input.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The same walk answers many questions. Each tab changes what you remember on the way down.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="dup">Duplicates</button>
+          <button data-tab="floor">Floor and ceiling</button>
+          <button data-tab="kth">k-th smallest</button>
+          <button data-tab="valid">Validate a BST</button>
+          <button data-tab="lca">Lowest common ancestor</button>
+        </div>
+        <div data-tab-panel="dup"><div class="split"><figure class="mini"><div class="mini__stage bst-var-stage" data-mini="dup"></div><figcaption>A count per node: inserting 30 again makes it ×2.</figcaption></figure><div><p>What should insert do with a key that is already there? Pick a policy and state it. <b>Reject</b> it (a set, like this lesson). <b>Count</b> it in the node, so the shape never changes. Or always send equal keys to one side; that works, but repeated keys pile up into a stick and delete must choose which copy goes.</p><pre data-code-block="dup"></pre></div></div></div>
+        <div data-tab-panel="floor"><div class="split"><figure class="mini"><div class="mini__stage bst-var-stage" data-mini="floor"></div><figcaption>Floor of 47: the walk remembers 45, the best key ≤ 47 seen so far.</figcaption></figure><div><p>The <b>floor</b> of x is the largest key ≤ x. Walk down as in a search. Every time you step right, the node you leave is ≤ x: remember it as the best so far. When the walk falls off, the last remembered key is the floor. The <b>ceiling</b> is the mirror image.</p><pre data-code-block="floor"></pre></div></div></div>
+        <div data-tab-panel="kth"><div class="split"><figure class="mini"><div class="mini__stage bst-var-stage" data-mini="kth"></div><figcaption>Badges are subtree sizes. The 6th smallest: 3 keys on the left plus the root make 4, so find the 2nd smallest on the right: 70.</figcaption></figure><div><p>An in-order walk finds the k-th smallest key in O(h + k). To do it in O(h), store in each node the size of its subtree. At a node whose left subtree holds L keys: if k ≤ L go left; if k = L + 1 this is it; otherwise go right looking for the (k − L − 1)-th.</p><pre data-code-block="kth"></pre></div></div></div>
+        <div data-tab-panel="valid"><div class="split"><figure class="mini"><div class="mini__stage bst-var-stage" data-mini="valid"></div><figcaption>Pass the allowed range down: 55 must lie in (30, 50), and it does not.</figcaption></figure><div><p>Checking each node against its two children is the classic bug. Pass an open range (lo, hi) down instead: going left sets hi to the node’s key, going right sets lo. Every key must fall inside its range. An in-order walk that is strictly increasing is an equivalent test.</p><pre data-code-block="valid"></pre></div></div></div>
+        <div data-tab-panel="lca"><div class="split"><figure class="mini"><div class="mini__stage bst-var-stage" data-mini="lca"></div><figcaption>LCA of 35 and 60: at 50 the two keys split, one left and one right.</figcaption></figure><div><p>The lowest common ancestor of two keys is where their search paths split. From the root, if both keys are smaller go left, if both are larger go right; otherwise the current node is the answer. O(h) time and no extra space, which a general binary tree cannot match.</p><pre data-code-block="lca"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-order"></div>
+        <div class="quiz" id="quiz-cost"></div>
+        <div class="quiz" id="quiz-inorder"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Binary search trees</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="logn">O(h)</span><span class="chip chip--sm">random input: average depth ≈ 1.39 log₂ n</span><span class="chip chip--sm">sorted input: h = n − 1</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1960<small>first published</small></div>
+        <p class="history__people">P. F. Windley; A. D. Booth and A. J. T. Colin; Thomas N. Hibbard<span>Several inventors in the 1950s; first papers in 1960; deletion by successor in 1962</span></p>
+        <div class="history__body">
+          <p>Several people invented binary search trees independently in the 1950s. The first papers appeared in 1960: P. F. Windley’s “Trees, Forests and Rearranging” in <em>The Computer Journal</em>, and Andrew Booth and Andrew Colin’s study of building dictionaries in <em>Information and Control</em>.</p>
+          <p>In 1962 Thomas Hibbard analysed the trees and showed how to delete a node with two children by replacing it with its successor: the method in this lesson. The trees are fast on random data and slow on sorted data, the problem the next lesson solves.</p>
+        </div>
+        <p class="history__source">Sources: D. E. Knuth, <em>The Art of Computer Programming</em>, Vol. 3, §6.2.2; T. N. Hibbard, “Some Combinatorial Properties of Certain Trees With Applications to Searching and Sorting”, <em>Journal of the ACM</em> 9(1), 1962.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice" class="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Validate a binary search tree</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given the root of a binary tree, return whether it is a valid BST with strictly increasing keys. Explain why comparing each node only with its children fails on the tree 5 → right 7 → left 3, and give an O(n) method that works.</p></li>
+        <li><div class="practice__title">Lowest common ancestor in a BST</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given a BST and two keys that are both in it, return their lowest common ancestor in O(h) time and O(1) extra space. A node counts as an ancestor of itself.</p></li>
+        <li><div class="practice__title">k-th smallest key, under updates</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Return the k-th smallest key of a BST. Then suppose keys are inserted and deleted often and you must answer many such queries: what would you store in each node so that each query takes O(h), and how do insert and delete keep it correct?</p></li>
+        <li><div class="practice__title">From a sorted array to a short tree</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given a sorted array of n distinct keys, build a BST of minimum height. What is that height, and in what order would you have to insert the keys one by one into an empty BST to get the same tree?</p></li>
+        <li><div class="practice__title">Trim a BST to a range</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given a BST and a range [lo, hi], remove every key outside the range and return the new root, keeping the relative structure of the keys that remain. Aim for O(n) time without building a new tree.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-07-balanced-search-trees.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Balanced search trees and the logarithmic ideal</span><span class="deeper__text" style="display:block">The dictionary problem, the height bounds with proofs, rotations, AVL and red-black trees, and B-trees for disks.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

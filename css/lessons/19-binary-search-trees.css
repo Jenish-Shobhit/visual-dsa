@@ -1,0 +1,123 @@
+/* Lesson 19 · Binary search trees — styles for the lesson's BST view (js/lessons/19-binary-search-trees-view.js)
+   and a few layout helpers. Colours come only from tokens (--st-*, --ink, --el-*), so both themes work. */
+
+/* ------------------------------------------------------------ BST view extras */
+.bst .bst-float .vz-shape { --vz-sw: 2px; }
+.bst .bst-probe { filter: drop-shadow(0 2px 3px color-mix(in srgb, var(--st-key) 30%, transparent)); }
+.bst .bst-note rect { fill: var(--bg-elev); stroke: color-mix(in srgb, var(--st-key) 70%, var(--line)); stroke-width: 1.25px; }
+.bst .bst-note text { fill: color-mix(in srgb, var(--st-key) 72%, var(--ink)); font: 700 11.5px var(--font-mono); }
+
+.bst .bst-hull-shape {
+  fill: color-mix(in srgb, var(--vz-c) 10%, transparent);
+  stroke: color-mix(in srgb, var(--vz-c) 50%, transparent);
+  stroke-width: 1.25px; stroke-dasharray: 5 4;
+  transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease);
+}
+.bst .bst-hull.is-muted .bst-hull-shape { fill: color-mix(in srgb, var(--st-muted) 18%, transparent); stroke: color-mix(in srgb, var(--st-muted) 90%, var(--ink-3)); }
+.bst .bst-hull.is-error .bst-hull-shape { fill: color-mix(in srgb, var(--st-error) 9%, transparent); }
+.bst .bst-hull-label { fill: var(--vz-text); font: 650 11px var(--font-mono); }
+.bst .bst-hull.is-muted .bst-hull-label { fill: var(--ink-3); }
+
+.bst .bst-slot { --vz-c: var(--line-strong); }
+.bst .bst-slot-stub { fill: none; stroke: var(--line-strong); stroke-width: 1.25px; stroke-dasharray: 3 3; }
+.bst .bst-slot-ring { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1.25px; stroke-dasharray: 3 2.5; transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease); }
+.bst .bst-slot-text { fill: var(--ink-3); font: 600 10px var(--font-mono); pointer-events: none; }
+.bst .bst-slot:not(.is-default) .bst-slot-ring { stroke: var(--vz-c); stroke-width: 2px; fill: color-mix(in srgb, var(--vz-c) 14%, var(--bg-elev)); }
+.bst .bst-slot:not(.is-default) .bst-slot-stub { stroke: var(--vz-c); }
+.bst .bst-slot:not(.is-default) .bst-slot-text { fill: var(--vz-text); }
+.bst .bst-slot-hit[data-id], .bst .bst-slot-hit.is-clickable { cursor: pointer; }
+.bst .bst-slot-hit:hover .bst-slot-ring { stroke: var(--accent); stroke-width: 2px; }
+.bst .bst-slot-hit:focus-visible { outline: none; }
+.bst .bst-slot-hit:focus-visible .bst-slot-ring { stroke: var(--accent); stroke-width: 2.5px; }
+.bst .bst-slot-hit.is-pick-right .bst-slot-ring { stroke: var(--st-done); stroke-width: 2.5px; fill: color-mix(in srgb, var(--st-done) 18%, var(--bg-elev)); }
+.bst .bst-slot-hit.is-pick-wrong .bst-slot-ring { stroke: var(--st-swap); stroke-width: 2.5px; fill: color-mix(in srgb, var(--st-swap) 14%, var(--bg-elev)); }
+.bst .vz-node.is-pick-right .vz-shape { stroke: var(--st-done); stroke-width: 3.5px; }
+.bst .vz-node.is-pick-wrong .vz-shape { stroke: var(--st-swap); stroke-width: 3.5px; }
+
+.bst .bst-strip-line { fill: none; stroke: var(--line-strong); stroke-width: 1.5px; }
+.bst .bst-strip-slots .vz-slot { fill: color-mix(in srgb, var(--bg-sunken) 70%, transparent); }
+.bst .bst-strip-label { fill: var(--ink-3); font: 600 11px var(--font-sans); letter-spacing: .04em; }
+.bst .bst-cell .vz-shape { --vz-sw: 1.25px; }
+.bst .bst-node-sub, .bst-mini .bst-node-sub { fill: var(--ink-2); font: 600 10px var(--font-mono); }
+.bst .bst-node-badge text, .bst-mini .bst-node-badge text { font-size: 9.5px; }
+
+/* pointer chips take their state colour (viz.css gives every .vz-pointer the active colour at equal specificity) */
+.bst .vz-pointer.is-compare { --vz-c: var(--st-compare); }
+.bst .vz-pointer.is-swap { --vz-c: var(--st-swap); }
+.bst .vz-pointer.is-found { --vz-c: var(--st-found); }
+.bst .vz-pointer.is-visited { --vz-c: var(--st-visited); }
+.bst .vz-pointer.is-pivot { --vz-c: var(--st-pivot); }
+.bst .vz-pointer.is-done { --vz-c: var(--st-done); }
+.bst .vz-pointer.is-key { --vz-c: var(--st-key); }
+
+/* static mini trees (quiz options, summary tiles, variation minis) */
+.bst-mini.vz { display: block; width: auto; max-width: 100%; height: auto; margin: 0 auto; }
+.bst-mini .vz-node .vz-shape { --vz-sw: 1.5px; }
+.bst-mini .bst-drop { stroke: var(--line-strong); stroke-width: 1px; stroke-dasharray: 2 2.5; }
+.bst-mini .bst-strip-line { fill: none; stroke: var(--line-strong); stroke-width: 1px; }
+.bst-mini .bst-hull-shape { fill: color-mix(in srgb, var(--st-active) 10%, transparent); stroke: color-mix(in srgb, var(--st-active) 50%, transparent); stroke-width: 1.25px; stroke-dasharray: 4 3; }
+.bst-mini .bst-hull.is-muted .bst-hull-shape { fill: color-mix(in srgb, var(--st-muted) 18%, transparent); stroke: var(--st-muted); }
+
+/* ------------------------------------------------------------ figure layout helpers */
+/* segmented controls wrap instead of hiding options off the edge on phones */
+.lesson-body .fig__toolbar .seg { flex-wrap: wrap; overflow: visible; }
+.bst-ops { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; width: 100%; }
+.bst-ops__key { display: flex; flex-direction: column; }
+.bst-ops__key .field { width: 88px; }
+.bst-ops__btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.bst-ops__err { flex-basis: 100%; margin: -2px 0 0; font-size: 13.5px; color: var(--st-error); min-height: 0; }
+.bst-ops__err:empty { display: none; }
+.bst-ops__hint { flex-basis: 100%; margin: -4px 0 0; font-size: 13px; color: var(--ink-3); }
+
+/* two stages side by side (race figures); stacks in narrow figures */
+.bst-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bst-pair > .bst-pane { min-width: 0; display: flex; flex-direction: column; }
+.bst-pair > .bst-pane + .bst-pane { border-left: 1px solid var(--line); }
+.bst-pane__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: 13.5px; font-weight: 650; color: var(--ink-2); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); }
+.bst-pane__head .bst-pane__title { color: var(--ink); }
+.bst-pane .fig__stage { flex: 1; }
+.bst-pane .fig__stats { border-top: 1px solid var(--line); }
+@container fig (max-width: 700px) {
+  .bst-pair { grid-template-columns: minmax(0, 1fr); }
+  .bst-pair > .bst-pane + .bst-pane { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+/* problem figure: array on top, tree below */
+.bst-stack > .bst-pane + .bst-pane { border-top: 1px solid var(--line); }
+.bst-stack .fig__stage.bst-arr-stage { min-height: 120px; }
+/* shape race: trees hang from the top of their panes */
+#fig-shape .bst-pane .fig__stage { place-items: start center; }
+
+/* the delete figure: tree + flowchart side by side */
+.bst-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.bst-split > * { min-width: 0; }
+.bst-split > .bst-split__flow { border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+.bst-split__flow .fig__stage { flex: 1; }
+@container fig (max-width: 760px) {
+  .bst-split { grid-template-columns: minmax(0, 1fr); }
+  .bst-split > .bst-split__flow { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+/* height meter used in the shape race */
+.bst-meter { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.bst-meter__bar { flex: 1; height: 8px; min-width: 80px; border-radius: 8px; background: color-mix(in srgb, var(--ink) 9%, transparent); overflow: hidden; }
+.bst-meter__bar > i { display: block; height: 100%; width: var(--p, 0%); border-radius: inherit; background: var(--st-done); transition: width var(--dur-slow) var(--ease-out), background var(--dur) var(--ease-out); }
+.bst-meter.is-bad .bst-meter__bar > i { background: var(--st-error); }
+
+/* quiz options that are pictures of trees */
+.quiz__text .bst-mini.vz { width: 100%; max-width: 200px; margin: 4px 0 2px; }
+.quiz__q .bst-mini.vz { width: 100%; max-width: 230px; margin: 14px 0 4px; }
+.bst-quiz-trees .quiz__opts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+.bst-quiz-trees .quiz__opt { align-items: flex-start; }
+
+/* variation minis */
+.bst-var-stage { min-height: 150px; }
+.bst-var-stage .bst-mini.vz { width: 100%; max-width: 300px; }
+
+/* summary tiles: tiny trees */
+#summary-card .summary__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+#summary-card .summary__viz { height: 118px; }
+#summary-card .summary__viz > svg.bst-mini { width: auto; height: 100%; max-width: 100%; }
+
+/* cost table: case notes */
+.bst-case { font-size: 13.5px; color: var(--ink-3); }

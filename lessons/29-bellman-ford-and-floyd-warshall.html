@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Bellman-Ford &amp; Floyd-Warshall · Visual DSA</title>
+<meta name="description" content="Shortest paths with negative edges, animated: Bellman-Ford relaxes every edge in rounds and catches negative cycles; Floyd-Warshall fills a distance matrix for every pair. Labs, currency arbitrage and cost charts.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/29-bellman-ford-and-floyd-warshall.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/graph.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/29-bellman-ford-and-floyd-warshall.js" defer></script>
+<script src="../js/lessons/29-bellman-ford-and-floyd-warshall.js" defer></script>
+<script src="../js/lessons/29-bellman-ford-and-floyd-warshall-labs.js" defer></script>
+<script src="../js/lessons/29-bellman-ford-and-floyd-warshall-more.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="29-bellman-ford-and-floyd-warshall">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Bellman-Ford &amp; Floyd-Warshall</h1>
+      <p class="hero__lede">Relax every edge again and again and negative weights stop being a problem. Loop over stopovers, and you get the distance between every pair of vertices at once.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">20 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="26-bfs-and-dfs.html">Needs: BFS &amp; DFS</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: a table of distances between five places. One row and one column light up at a time, and the numbers in the rest of the table drop as routes are allowed to stop over at that place."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem: a discount greedy cannot see</h2>
+      <p>Most route finding pretends every road costs something. Real networks are messier. A toll refund, a trade that pays you, a flight that is cheap only because of a costly connection: an edge can have a <strong>negative</strong> weight.</p>
+      <p>That breaks the greedy habit behind Dijkstra’s algorithm: finish the closest place, and never touch its number again. Step through what goes wrong.</p>
+      <figure class="fig wide" id="fig-greedy">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Greedy locks a distance, then a rebate arrives</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: from S, greedy locks A at 2 before it examines B. The edge B to A has weight −2, so the true cost of A is 3 − 2 = 1, and of T is 5, but greedy reports 2 and 6.</figcaption>
+      </figure>
+      <p>This lesson has two answers. <strong>Bellman-Ford</strong> never finishes a vertex early: it keeps lowering distances until nothing can be lowered, and it notices when that will never happen. <strong>Floyd-Warshall</strong> answers a bigger question, the cheapest route between <em>every</em> pair, with three nested loops.</p>
+    </section>
+
+    <!-- ============================================================ RELAXATION -->
+    <section id="relax">
+      <h2>One move: relax an edge</h2>
+      <p>An edge <code>u → v</code> with weight <code>w</code> is an offer: if you can reach <em>u</em> for <code>d[u]</code>, you can reach <em>v</em> for <code>d[u] + w</code>. Compare the offer with the number you already hold for <em>v</em>, and keep the smaller one.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>To <dfn>relax</dfn> the edge u → v is to set <code>d[v] = min(d[v], d[u] + w)</code>. The edge is <em>relaxable</em> when <code>d[u] + w &lt; d[v]</code>.</p>
+      </aside>
+      <p>Drag the sliders. The last one goes all the way up to ∞, a vertex nobody has reached yet.</p>
+      <figure class="fig wide" id="fig-relax">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Relax one edge</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar bf-sliders" data-sliders></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption bf-out" data-out aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: two vertices u and v joined by an edge of weight w. If d[u] + w is smaller than d[v], the number on v drops to d[u] + w; otherwise nothing changes.</figcaption>
+      </figure>
+      <p>Every number in this lesson is an <strong>upper bound</strong>: the cost of a route you have really found. Relaxing can only lower it, and it can never drop below the truth. Bellman-Ford is nothing more than “relax everything, until nothing changes”.</p>
+    </section>
+
+    <!-- ============================================================ ROUNDS -->
+    <section id="rounds">
+      <h2>Rounds: paths with at most k edges</h2>
+      <p>Do it in <strong>rounds</strong>. One round relaxes every edge once. After round 1 the numbers are the cheapest routes that use at most <em>one</em> edge. After round 2, at most two. After round <em>k</em>, at most <em>k</em>.</p>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: news travelling town to town</p>
+        <p>Each round, every town tells its neighbours the cheapest price it has heard about. After <em>k</em> rounds, news has travelled <em>k</em> roads. The analogy breaks in one place: news never gets <em>cheaper</em> by going round a loop. A negative loop does exactly that.</p>
+      </aside>
+      <figure class="fig full" id="fig-layers">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">After round k: the cheapest route with at most k edges</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="bf-split">
+          <div class="fig__stage fig__stage--plain" data-stage></div>
+          <div class="fig__stage bf-table" data-table></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: the table lists the distance of S, T, X, Y and Z after each round 0 to 4. S is 0 throughout. T goes ∞, 6, 6, 2, 2. X goes ∞, ∞, 4, 4, 4. Y goes ∞, 7, 7, 7, 7. Z goes ∞, ∞, 2, 2, −2.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Why V − 1 rounds are enough</p>
+        <p>A cheapest path never visits a vertex twice: a repeat means a loop, and a loop that does not lower the cost can simply be cut out. A path through V different vertices has at most <strong>V − 1 edges</strong>, and round k settles every path of k edges. So after V − 1 rounds every cheapest path is found.</p>
+      </aside>
+      <p>Look at the last two columns. Round 4 still changed Z, and here V − 1 is 4. Round 5 would change nothing. Keep that in mind: it is how Bellman-Ford knows the answer is final.</p>
+    </section>
+
+    <!-- ============================================================ BELLMAN-FORD LAB -->
+    <section id="bf-lab">
+      <h2>The Bellman-Ford lab</h2>
+      <p>Now the real thing, one edge at a time. The <strong>edge tape</strong> under the graph lists the edges in the order they are scanned, and a cursor moves along it. The round strip counts rounds, ending with the <em>check</em> round that looks for a negative cycle. Type your own graph, drag vertices, and try the presets.</p>
+      <p>Three presets are worth a look: <em>lucky order</em> finishes early, <em>unlucky order</em> needs every round, and <em>negative cycle</em> lights the loop red in round V.</p>
+      <figure class="fig fig--lab full" id="lab-bf">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace Bellman-Ford on your own graph</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar bf-toolbar">
+          <div data-order></div>
+          <label class="bf-select"><span class="field-label">Source</span><select class="field" data-source aria-label="Source vertex"></select></label>
+        </div>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain" data-stage></div>
+            <div class="bf-panel">
+              <div class="bf-panel__head">
+                <p class="bf-panel__title">Edges, in scan order</p>
+                <div class="bf-rounds" data-rounds></div>
+              </div>
+              <div class="bf-tape" data-tape></div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask you to predict a step. Text alternative: the caption under the graph explains every step in words. Each vertex shows its current distance in a badge and, under it, the vertex its best route comes from.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ BF FLOWCHART -->
+    <section id="flow-bf">
+      <h2>Bellman-Ford as a flowchart</h2>
+      <p>The same algorithm as a map of decisions. It is wired to the lab above: step the lab and the box that is running lights up here.</p>
+      <figure class="fig wide" id="fig-flow-bf">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Bellman-Ford decision flow</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <figcaption class="fig__foot">Text alternative: set the source to 0 and everything else to ∞. While the round number is at most V − 1, look at each edge in turn and relax it when d[u] + w is smaller than d[v]. If a whole round relaxed nothing, stop: the distances are final. After V − 1 rounds, check once more: an edge that still relaxes means a negative cycle, otherwise return the distances.</figcaption>
+      </figure>
+      <p>Two exits, two meanings. “Nothing relaxed” inside the loop is <strong>early exit</strong>: the answer is final and you saved rounds. “Something still relaxes in round V” is a <strong>negative cycle</strong>: there is no answer to return.</p>
+    </section>
+
+    <!-- ============================================================ NEGATIVE CYCLES -->
+    <section id="negative-cycles">
+      <h2>When there is no answer: negative cycles</h2>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>negative cycle</dfn> is a loop of edges whose weights add up to less than zero. Walk around it once and you are cheaper than when you started, so walk around again, and again. The cheapest route to anything the cycle can reach does not exist.</p>
+      </aside>
+      <p>Change the total weight of the loop A → B → C → A and watch two distances round after round. With a negative loop they never settle. With a loop that costs 0 or more they stop after a few rounds.</p>
+      <figure class="fig wide" id="fig-cycle-chart">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Do the distances settle?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="bf-split bf-split--chart">
+          <div class="fig__stage fig__stage--plain" data-stage></div>
+          <div class="fig__stage fig__stage--plain" data-chart></div>
+        </div>
+        <p class="fig__caption" data-note aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: with the loop weighing −1, d[A] falls by 1 every three rounds and keeps falling; with weight 0 or +1 it stays at 2. d[D], hanging off the cycle, falls in step with it.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Two ways to be surprised</p>
+        <p>An <strong>undirected</strong> edge with a negative weight is a negative cycle all by itself: walk u → v → u and you gain twice. And Bellman-Ford only reports cycles the source can <em>reach</em>. A negative loop in a far corner is invisible to it (the lab has a “cycle out of reach” preset). To search the whole graph, start every distance at 0, as if a hidden vertex pointed at everything.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ ARBITRAGE -->
+    <section id="arbitrage">
+      <h2>Negative cycles are money: currency arbitrage</h2>
+      <p>Exchange rates multiply along a chain of trades: 100 USD becomes 100 × 0.92 EUR, then × 0.86 GBP, then × 1.28 USD. If the product of the rates around a loop exceeds 1, you end with more than you began: <strong>arbitrage</strong>.</p>
+      <p>Bellman-Ford adds weights; it does not multiply. The bridge is the logarithm. Give each trade the weight <code>−ln(rate)</code>. Then a product above 1 becomes a sum below 0, so <strong>profit is exactly a negative cycle</strong>. Move the sliders until the sum flips sign.</p>
+      <figure class="fig fig--lab wide" id="fig-arb">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Rates in, negative cycle out</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar bf-sliders" data-sliders></div>
+        <div class="fig__toolbar"><span class="field-label">Try</span><div class="btn-row" data-presets></div></div>
+        <div class="bf-arb">
+          <div class="fig__stage fig__stage--plain" data-stage></div>
+          <div class="bf-arb__side">
+            <div class="table-wrap" data-weights></div>
+            <p class="bf-verdict" data-verdict role="status"></p>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: three currencies in a triangle with an exchange rate on each arrow. Starting from 100 USD, the walk-through multiplies by each rate around the loop USD to EUR to GBP to USD and compares the result with 100. The table shows each rate’s weight −ln(rate) and their sum.</figcaption>
+      </figure>
+      <p>The three fixed “return” quotes include a 1 % spread, like a real exchange, so a fair market shows no profit. Real arbitrage windows last milliseconds, but the detection method is exactly this.</p>
+    </section>
+
+    <!-- ============================================================ FLOYD-WARSHALL -->
+    <section id="floyd-warshall">
+      <h2>All pairs at once: Floyd-Warshall</h2>
+      <p>Bellman-Ford answers “from S to everywhere”. Running it from every vertex answers “from everywhere to everywhere”, at V times the cost. Floyd-Warshall takes a different road: keep a <strong>matrix</strong>, <code>d[i][j]</code> = cheapest known cost from <em>i</em> to <em>j</em>, and improve the whole matrix in V passes.</p>
+      <h3>The idea: allow one more stopover at a time</h3>
+      <p>Number the vertices. A <em>stopover</em> is a vertex a route passes through between its start and its end. Let the entry <code>d[i][j]</code> after pass <em>k</em> be the cheapest route from i to j whose stopovers all come from the first k vertices. Before pass 1 no stopover is allowed: only direct edges. After pass V, everything is allowed, and that is the true answer.</p>
+      <p>Pick a pair and step through the passes. Watch the cost drop only when the newest stopover helps.</p>
+      <figure class="fig wide" id="fig-idea">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">One pair, one more stopover at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar bf-toolbar">
+          <label class="bf-select"><span class="field-label">From</span><select class="field" data-from aria-label="Start vertex"></select></label>
+          <label class="bf-select"><span class="field-label">To</span><select class="field" data-to aria-label="End vertex"></select></label>
+        </div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="bf-stops" data-stops></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: for the chosen pair, the row of chips shows the cheapest cost after allowing no stopovers, then S, then T, and so on. The cost only ever goes down.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">The update rule</p>
+        <p>Going from pass k − 1 to pass k asks one question about each pair: is it cheaper to go <em>through k</em>? A route through k splits into a piece from i to k and a piece from k to j, and both pieces only need the earlier stopovers. So <code>d[i][j] = min(d[i][j], d[i][k] + d[k][j])</code>, and only row k and column k are ever read.</p>
+      </aside>
+      <p>That is the whole algorithm: for each k, for each i, for each j, apply the rule. Alongside the distances it keeps a <code>next[i][j]</code> matrix, the first step of the best route, updated whenever a distance is. Here is everything at once. The graph is on the left and the matrix on the right; each update shows the two cells that were added and lights the route through k.</p>
+    </section>
+
+    <!-- ============================================================ FLOYD-WARSHALL LAB -->
+    <section id="fw-lab">
+      <h2>The Floyd-Warshall lab</h2>
+      <p>Start with “improvements only” to see the ripple: a pass is a highlighted cross (row k and column k), and cells inside the matrix drop. Switch to “every cell check” to watch all V³ comparisons. The presets include a negative cycle, where a diagonal cell turns red.</p>
+      <figure class="fig fig--lab full" id="lab-fw">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace Floyd-Warshall on your own graph</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar bf-toolbar"><div data-mode></div></div>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="bf-split bf-split--fw">
+              <div class="fig__stage fig__stage--plain" data-graph></div>
+              <div class="fig__stage bf-table" data-matrix></div>
+            </div>
+            <div class="bf-eq" data-eq aria-hidden="true"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask you to predict a step. Text alternative: the caption explains every step; the strip under the matrix shows the two cells that were added and the cell they were compared with.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FW FLOWCHART + NEXT HOPS -->
+    <section id="flow-fw">
+      <h2>Floyd-Warshall as a flowchart</h2>
+      <p>Three loops, drawn as decisions. It is wired to the lab above. In “improvements only” mode the check box stays dark on purpose: the lab skips cells that do not change, and counts them.</p>
+      <figure class="fig wide" id="fig-flow-fw">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Floyd-Warshall decision flow</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <figcaption class="fig__foot">Text alternative: for each stopover k, for each cell (i, j): if d[i][k] + d[k][j] is smaller than d[i][j], set d[i][j] to it and copy next[i][k] into next[i][j]. When all stopovers are done, the matrix is the answer.</figcaption>
+      </figure>
+    </section>
+
+    <section id="next-hops">
+      <h2>Getting the route back: next hops</h2>
+      <p>The matrix tells you how much a trip costs, not which way to go. That is what <code>next[i][j]</code> is for: the <em>first step</em> of a cheapest route from i to j. When d[i][j] improves by going through k, the route starts the way the route to k starts, so <code>next[i][j] = next[i][k]</code>. To read a route, hop: go to next[i][j], then look up next from there, until you arrive.</p>
+      <figure class="fig wide" id="fig-next">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Rebuild a route hop by hop</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar bf-toolbar">
+          <label class="bf-select"><span class="field-label">From</span><select class="field" data-from aria-label="Start vertex"></select></label>
+          <label class="bf-select"><span class="field-label">To</span><select class="field" data-to aria-label="End vertex"></select></label>
+        </div>
+        <div class="bf-split bf-split--fw">
+          <div class="fig__stage fig__stage--plain" data-graph></div>
+          <div class="fig__stage bf-table" data-matrix></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: the next-hop matrix of the lesson graph. Starting at the chosen vertex, the walk reads one cell of the destination column, moves along that edge, and repeats until it reaches the destination.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The negative diagonal</p>
+        <p>Every <code>d[i][i]</code> starts at 0: the empty route from a vertex to itself. If it ever turns <strong>negative</strong>, there is a route from i back to i that costs less than nothing: a negative cycle. Floyd-Warshall needs no extra check, just a look at the diagonal. When one is negative, the other entries are not real distances and next hops can loop, so do not trust them. Try the “negative cycle” preset in the lab above.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Count <strong>edge relaxations</strong> for Bellman-Ford and <strong>cell updates</strong> for Floyd-Warshall. Both are worst-case counts, and constant factors are ignored.</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Algorithm</th><th scope="col">Answers</th><th scope="col">Negative edges</th><th scope="col" class="num">Time</th><th scope="col" class="num">Extra space</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Bellman-Ford</th><td>One source, worst case: V rounds of E edges</td><td>Yes, and finds negative cycles</td><td class="num"><span class="big-o" data-o="n2">O(V·E)</span></td><td class="num"><span class="big-o" data-o="n">O(V)</span></td></tr>
+            <tr><th scope="row">Bellman-Ford, early exit</th><td>One source, best case: one round changes nothing</td><td>Yes</td><td class="num"><span class="big-o" data-o="n">O(E)</span></td><td class="num"><span class="big-o" data-o="n">O(V)</span></td></tr>
+            <tr><th scope="row">Floyd-Warshall</th><td>Every pair, always V³ cell checks</td><td>Yes, and negative diagonal</td><td class="num"><span class="big-o" data-o="n3">O(V³)</span></td><td class="num"><span class="big-o" data-o="n2">O(V²)</span></td></tr>
+            <tr><th scope="row">Dijkstra from every vertex</th><td>Every pair, binary heap</td><td>No</td><td class="num"><span class="big-o" data-o="nlogn">O(V(V + E) log V)</span></td><td class="num"><span class="big-o" data-o="n">O(V)</span></td></tr>
+            <tr><th scope="row">Johnson</th><td>Every pair on a sparse graph</td><td>Yes</td><td class="num"><span class="big-o" data-o="nlogn">O(VE + V(V + E) log V)</span></td><td class="num"><span class="big-o" data-o="n">O(V + E)</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Which is cheapest depends on the graph. Sparse graphs (E about 3V) favour many Dijkstras or Johnson. Dense graphs (E about V²/2) favour Floyd-Warshall. Bellman-Ford from every vertex loses either way. Drag the slider and flip between sparse and dense.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Operations for all-pairs shortest paths</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-log></div><div data-slider style="flex: 1 1 240px"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Worst-case operation models: Floyd-Warshall V³; Dijkstra from every vertex V·(E + V)·log₂V; Bellman-Ford from every vertex V·(V − 1)·E; Johnson V·E + V·(E + V)·log₂V. Sparse means E = 3V, dense means E = V(V − 1)/2. Text alternative: on a sparse graph the Dijkstra and Johnson lines sit below Floyd-Warshall; on a dense graph Floyd-Warshall sits below both, and Bellman-Ford from every vertex is highest in both cases.</figcaption>
+      </figure>
+      <details class="accordion">
+        <summary>Why V³ and never less?</summary>
+        <div class="accordion__body"><p>Three nested loops over V values each. The loops do not look at the data: even a graph with no edges runs all V³ checks. Floyd-Warshall has no best case, but it also has no bad case, and its inner loop is one addition and one comparison.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why can Floyd-Warshall update the matrix in place?</summary>
+        <div class="accordion__body"><p>During pass k, only row k and column k are read. Without a negative cycle they do not change in that pass, because <code>d[k][j]</code> would have to beat <code>d[k][k] + d[k][j]</code> with d[k][k] = 0. So one V × V matrix is enough: no need for a fresh copy per pass. It is also why the space is O(V²), not O(V³).</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Bellman-Ford: are V − 1 rounds ever really needed?</summary>
+        <div class="accordion__body"><p>Yes, when the edges happen to be listed against the direction of the path. A chain of V vertices with its edges listed backwards needs a full round for every edge. That is what the lab’s “unlucky order” preset shows, and the same chain listed forwards finishes in two rounds.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ WHICH ONE -->
+    <section id="choose">
+      <h2>Which shortest-path algorithm?</h2>
+      <p>Answer the questions from the top. The magenta boxes are this lesson’s branch.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Choose a shortest-path algorithm</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 640px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__controls"><button type="button" class="btn btn--secondary btn--sm" data-restart>Start over</button></div>
+        <figcaption class="fig__foot">Text alternative: unweighted graphs use BFS. Weighted graphs without negative edges use Dijkstra or A* from one source, and Floyd-Warshall or many Dijkstras for every pair. With negative edges: Floyd-Warshall or Johnson for every pair; from one source, topological-order DP on a DAG, otherwise Bellman-Ford.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Three ideas that grow out of the same two algorithms.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="johnson">Johnson: reweight, then Dijkstra</button>
+          <button data-tab="closure">Transitive closure</button>
+          <button data-tab="report">Print the negative cycle</button>
+        </div>
+        <div data-tab-panel="johnson">
+          <p>On a sparse graph V Dijkstras beat V³, but Dijkstra hates negative edges. <strong>Johnson’s algorithm</strong> removes them first: one Bellman-Ford gives every vertex a potential h(v), and each edge is reweighted to w + h(u) − h(v), which is never negative. Every route between the same two vertices shifts by the same amount, so cheapest routes stay cheapest.</p>
+          <figure class="fig" id="fig-johnson">
+            <header class="fig__head">
+              <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Reweighting removes the negative edges</h3></div>
+              <div data-legend></div>
+            </header>
+            <div class="fig__toolbar"><div data-seg></div></div>
+            <div class="fig__stage fig__stage--plain" data-stage></div>
+            <p class="fig__caption" data-caption aria-live="polite"></p>
+            <figcaption class="fig__foot">Text alternative: the lesson graph with each vertex’s potential h, first with its original weights, then with the reweighted ones, which are all zero or more.</figcaption>
+          </figure>
+        </div>
+        <div data-tab-panel="closure">
+          <p>Change the question from “how far?” to “can I get there at all?”. <strong>Warshall’s transitive closure</strong> uses the same three loops with “or” and “and” in place of “min” and “+”: <code>reach[i][j] ||= reach[i][k] &amp;&amp; reach[k][j]</code>. Still O(V³), and the result answers every “is there a route?” question in O(1).</p>
+          <figure class="fig wide" id="fig-closure">
+            <header class="fig__head">
+              <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Who can reach whom</h3></div>
+              <div data-legend></div>
+            </header>
+            <div class="bf-split bf-split--fw">
+              <div class="fig__stage fig__stage--plain" data-graph></div>
+              <div class="fig__stage bf-table" data-matrix></div>
+            </div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <figcaption class="fig__foot">Text alternative: a reachability matrix of five vertices. Each pass may switch a 0 to a 1 when i reaches k and k reaches j.</figcaption>
+          </figure>
+        </div>
+        <div data-tab-panel="report">
+          <p>Knowing a negative cycle exists is one thing; showing it is better. When round V relaxes an edge into v, step back through <code>parent</code> V times. That is guaranteed to land on the cycle, because a walk of V steps has to repeat a vertex. Then follow parents until you come back to where you were.</p>
+          <figure class="fig" id="fig-report">
+            <header class="fig__head">
+              <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Walk the parent pointers back</h3></div>
+            </header>
+            <div class="fig__stage fig__stage--plain" data-stage></div>
+            <pre class="bf-code" data-code-block></pre>
+            <p class="fig__caption" data-note></p>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <figure class="fig" id="fig-quiz-layers">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Cheapest routes from S</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: the lesson graph with final distances S 0, T 2, X 4, Y 7, Z −2. The cheapest routes are S to Y to X to T to Z.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-layers"></div>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-vminus1"></div>
+        <div class="quiz" id="quiz-roundv"></div>
+        <div class="quiz" id="quiz-log"></div>
+        <div class="quiz" id="quiz-fwneg"></div>
+        <div class="quiz" id="quiz-choose"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Bellman-Ford &amp; Floyd-Warshall</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="n2">O(V·E)</span><span class="big-o big-o--lg" data-o="n3">O(V³)</span><span class="chip chip--sm">negative edges OK</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1958<small>published</small></div>
+        <p class="history__people">Shimbel, Ford, Bellman, Moore · Floyd, Warshall<span>rounds of relaxation, 1954–1959 · the matrix passes, 1962</span></p>
+        <div class="history__body">
+          <p>Bellman-Ford was found at least four times in five years, by Alfonso Shimbel, Lester Ford, Richard Bellman and Edward Moore. Bellman’s 1958 paper “On a Routing Problem” gave it the name most people use. A distributed version later routed packets across the ARPANET, and its descendants still run inside network routers.</p>
+          <p>Floyd-Warshall has several parents too. Bernard Roy described it in 1959. In January 1962 Stephen Warshall published the boolean version, transitive closure, and in June Robert Floyd published the shortest-path version as “Algorithm 97”. Warshall reportedly bet a colleague a bottle of rum on who could first settle whether his method always works. He proved it overnight and shared the rum with the loser. In 2022 Bernstein, Nanongkai and Wulff-Nilsen showed that negative-weight shortest paths can be found in near-linear time.</p>
+        </div>
+        <p class="history__source">Sources: R. Bellman, “On a Routing Problem”, <em>Quarterly of Applied Mathematics</em> 16 (1958); L. R. Ford, “Network Flow Theory”, RAND P-923 (1956); R. W. Floyd, “Algorithm 97: Shortest Path”, <em>CACM</em> 5(6) (1962); S. Warshall, “A Theorem on Boolean Matrices”, <em>JACM</em> 9(1) (1962); Bernstein, Nanongkai, Wulff-Nilsen, FOCS 2022. See docs/research/HISTORY.md.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Transitive closure of a relation</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given “a is a prerequisite of b” pairs for n courses, build the matrix that says whether course a is needed, directly or indirectly, for course b. What is the running time, and how would a course that is its own prerequisite show up?</p></li>
+        <li><div class="practice__title">Cheapest flights within K stops</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Flights have prices. Find the cheapest trip from a source to a destination using at most K stops. Explain why exactly K + 1 rounds of Bellman-Ford answer this, and why each round must read the previous round’s distances rather than update in place.</p></li>
+        <li><div class="practice__title">City with the fewest neighbours within a threshold</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given n cities, weighted roads and a distance threshold, return the city that can reach the fewest other cities within the threshold (the largest number if tied). Compute all distances with Floyd-Warshall and count.</p></li>
+        <li><div class="practice__title">Print the negative cycle</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Return the vertices of some negative cycle in a directed graph, or report that there is none, even for cycles no single source can reach. Start every distance at 0 and use the parent pointers.</p></li>
+        <li><div class="practice__title">Detect currency arbitrage</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Given a table of exchange rates for n currencies, decide whether some sequence of trades ends with more than it started with, and print the sequence. Convert rates to weights, and say what precision problem you must guard against when a cycle is only barely profitable.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-14-all-pairs-shortest-paths-floyd-warshall-johnson.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">All-pairs shortest paths: Floyd-Warshall &amp; Johnson</span><span class="deeper__text" style="display:block">The long-form study: the DP over allowed stopovers, the in-place collapse, a worked four-vertex example, path reconstruction, Johnson’s reweighting proof and common mistakes.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

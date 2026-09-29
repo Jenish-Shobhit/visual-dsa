@@ -1,0 +1,90 @@
+/* Lesson 29 · Bellman-Ford & Floyd-Warshall — lesson-specific layout and figure styles (tokens only). */
+
+.fig__stage > .vz-grid-host, .hero__stage > .vz-grid-host { width: 100%; justify-self: stretch; }
+.fig__stage--scroll > svg.vz.vz { min-width: var(--stage-min, 620px); }
+
+/* hero */
+.bf-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: clamp(10px, 2vw, 18px); }
+.bf-hero__label { font-size: 15px; color: var(--ink-2); min-height: 22px; text-align: center; }
+.bf-hero__label b { color: var(--st-pivot); }
+.bf-hero__grid { width: 100%; }
+.bf-hero__grid > .vz-grid-host { width: 100%; }
+
+/* side-by-side panes */
+.bf-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; align-items: stretch; }
+.bf-split > .fig__stage { border-radius: 0; min-height: 0; }
+.bf-split--fw { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+.bf-table { display: block; place-items: normal; padding: 10px; align-self: center; }
+@container fig (max-width: 720px) { .bf-split, .bf-split--fw { grid-template-columns: minmax(0, 1fr); } }
+
+/* toolbar bits */
+.bf-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 18px; }
+.bf-select { display: inline-flex; flex-direction: column; gap: 4px; }
+.bf-sliders { display: flex; flex-wrap: wrap; gap: 10px 24px; }
+.bf-slider { flex: 1 1 200px; min-width: 180px; }
+.bf-out { font-family: var(--font-mono); font-size: 14px; }
+.bf-yes { color: color-mix(in srgb, var(--st-done) 75%, var(--ink)); font-weight: 700; }
+.bf-no { color: var(--ink-3); font-weight: 700; }
+
+/* Bellman-Ford panels */
+.bf-panel { padding: 12px 16px 14px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--bg-sunken) 35%, var(--bg-elev)); min-width: 0; }
+.bf-panel__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
+.bf-panel__title { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.bf-rounds { display: flex; flex-wrap: wrap; gap: 5px; }
+.bf-round { font: 700 12px var(--font-mono); padding: 3px 9px; border-radius: 999px; border: 1.5px solid var(--line-strong); color: var(--ink-3); background: var(--bg-elev); transition: background var(--t-fast, 200ms), border-color 200ms, color 200ms; }
+.bf-round.is-cur { border-color: var(--st-active); color: var(--st-active); background: color-mix(in srgb, var(--st-active) 14%, var(--bg-elev)); }
+.bf-round.is-done { border-color: var(--st-done); color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); background: color-mix(in srgb, var(--st-done) 14%, var(--bg-elev)); }
+.bf-round.is-flat { border-color: var(--st-done); border-style: dashed; color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+.bf-round.is-skip { opacity: .45; border-style: dashed; text-decoration: line-through; }
+.bf-round.is-bad { border-color: var(--st-error); color: var(--st-error); background: color-mix(in srgb, var(--st-error) 14%, var(--bg-elev)); }
+.bf-tape { position: relative; display: flex; flex-wrap: wrap; gap: 8px; padding: 4px; }
+.bf-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1.5px solid var(--line-strong); border-radius: 10px; background: var(--bg-elev); font: 600 13px var(--font-mono); color: var(--ink); transition: background 200ms, border-color 200ms; }
+.bf-chip__pos { font-size: 10px; color: var(--ink-3); }
+.bf-chip__w { padding: 0 6px; border-radius: 6px; background: var(--bg-sunken); color: var(--ink-2); }
+.bf-chip__m { min-width: 12px; text-align: center; font-weight: 800; }
+.bf-chip.is-yes { border-color: var(--st-done); background: color-mix(in srgb, var(--st-done) 16%, var(--bg-elev)); }
+.bf-chip.is-yes .bf-chip__m { color: color-mix(in srgb, var(--st-done) 75%, var(--ink)); }
+.bf-chip.is-no { color: var(--ink-3); }
+.bf-chip.is-skip { border-style: dashed; color: var(--ink-3); }
+.bf-chip.is-cycle { border-color: var(--st-error); background: color-mix(in srgb, var(--st-error) 16%, var(--bg-elev)); }
+.bf-cursor { position: absolute; pointer-events: none; border: 2.5px solid var(--st-compare); border-radius: 13px; opacity: 0; transition: left var(--bf-dur, 300ms) var(--ease-out), top var(--bf-dur, 300ms) var(--ease-out), width var(--bf-dur, 300ms), height var(--bf-dur, 300ms), opacity 200ms; box-shadow: 0 0 0 3px color-mix(in srgb, var(--st-compare) 20%, transparent); }
+.bf-cursor.is-cycle { border-color: var(--st-error); box-shadow: 0 0 0 3px color-mix(in srgb, var(--st-error) 25%, transparent); }
+
+/* Floyd-Warshall equation strip */
+.bf-eq { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 46px; padding: 8px 16px; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 14px; }
+.bf-eq__hint { font-family: var(--font-sans); color: var(--ink-2); font-size: 14px; }
+.bf-eq__op { color: var(--ink-3); font-weight: 700; }
+.bf-eq__chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border-radius: 8px; border: 1.5px solid var(--line-strong); background: var(--bg-elev); font-weight: 700; }
+.bf-eq__chip i { font-style: normal; font-size: 11px; font-weight: 600; color: var(--ink-3); }
+.bf-eq__chip.is-a, .bf-eq__chip.is-b { border-color: var(--st-key); background: color-mix(in srgb, var(--st-key) 14%, var(--bg-elev)); }
+.bf-eq__chip.is-sum { border-color: var(--st-compare); background: color-mix(in srgb, var(--st-compare) 16%, var(--bg-elev)); }
+.bf-eq__chip.is-new { border-color: var(--st-found); background: color-mix(in srgb, var(--st-found) 18%, var(--bg-elev)); }
+
+/* stopover chips */
+.bf-stops { display: flex; flex-direction: column; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--line); overflow-x: auto; }
+.bf-stops__row { display: flex; align-items: center; gap: 6px; }
+.bf-stops__cap { flex: 0 0 130px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.bf-stop { flex: 0 0 auto; min-width: 46px; text-align: center; padding: 4px 8px; border-radius: 8px; border: 1.5px solid var(--line); font: 700 13px var(--font-mono); color: var(--ink-3); transition: background 300ms, color 300ms, border-color 300ms; }
+.bf-stops__row:first-child .bf-stop.is-on { border-color: var(--st-pivot); color: color-mix(in srgb, var(--st-pivot) 75%, var(--ink)); background: color-mix(in srgb, var(--st-pivot) 10%, var(--bg-elev)); }
+.bf-stops__row:first-child .bf-stop.is-cur { background: var(--st-pivot); color: var(--on-state); }
+.bf-stop--cost { color: var(--ink); }
+.bf-stop--cost:empty { border-style: dashed; }
+.bf-stop--cost.is-cur { border-color: var(--st-active); background: color-mix(in srgb, var(--st-active) 14%, var(--bg-elev)); }
+.bf-stop--cost.is-drop { border-color: var(--st-done); background: color-mix(in srgb, var(--st-done) 16%, var(--bg-elev)); }
+
+/* arbitrage */
+.bf-arb { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 0; align-items: stretch; }
+.bf-arb__side { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px; justify-content: center; min-width: 0; }
+@container fig (max-width: 720px) { .bf-arb { grid-template-columns: minmax(0, 1fr); } }
+.bf-wtable .num { font-family: var(--font-mono); }
+.bf-neg { color: var(--st-error); font-weight: 700; }
+.bf-pos { color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); font-weight: 700; }
+.bf-wtable tfoot th, .bf-wtable tfoot td { border-top: 2px solid var(--line-strong); font-weight: 700; }
+.bf-verdict { margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 14px; line-height: 1.5; border: 1.5px solid var(--line-strong); }
+.bf-verdict.is-bad { border-color: var(--st-error); background: color-mix(in srgb, var(--st-error) 10%, var(--bg-elev)); }
+.bf-verdict.is-ok { border-color: var(--st-done); background: color-mix(in srgb, var(--st-done) 10%, var(--bg-elev)); }
+
+.bf-code { margin: 0; padding: 12px 16px; font-size: 13px; overflow-x: auto; border-top: 1px solid var(--line); }
+
+/* long formulas in prose wrap instead of pushing the page wider on phones */
+.lesson-body p code, .lesson-body .callout code, .lesson-body .practice__text code { white-space: normal; overflow-wrap: anywhere; }

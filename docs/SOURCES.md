@@ -1,6 +1,6 @@
 # Sources, models, and scope
 
-The [guided lessons](../index.html) are original explanations and interactive figures written for this project. The [deep studies](../studies/index.html) adapt the author's local 24-lecture DSA study notes into public, navigable pages. Those notes are a starting point for the advanced track; they are not a substitute for testing proofs, examples, and edge cases. Corrections are welcome through repository issues.
+The [lessons](../index.html), labs, figures and code are original work written for this project. The [deep studies](../studies/index.html) adapt the author's local 24-lecture DSA study notes into public, navigable pages. Those notes are a starting point for the advanced track; they are not a substitute for testing proofs, examples, and edge cases. Corrections are welcome through repository issues.
 
 The teaching approach also draws on the following reading in the author's Computer Science library:
 
@@ -16,4 +16,4 @@ Published book text and figures are not reproduced here. The examples, traces, a
 - An array is often introduced through contiguous storage. JavaScript arrays are flexible language objects and should not be assumed to have a fixed contiguous machine representation.
 - JavaScript string indexing reads UTF-16 code units, not necessarily a whole visible character. Text algorithms must choose the unit they mean.
 - Big O is an asymptotic upper bound. It is not a synonym for worst case; a complexity claim must state the case and measured operation separately.
-- The graph route explorer uses non-negative weights for Dijkstra. Negative weights require a different argument and possibly a different algorithm.
+- Dijkstra is taught with non-negative weights (lesson 28); lesson 29 covers negative weights. Negative weights require a different argument and possibly a different algorithm.

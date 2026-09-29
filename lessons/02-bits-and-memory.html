@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Bits, bytes &amp; memory · Visual DSA</title>
+<meta name="description" content="How a computer stores numbers, text, colours and variables as bits in numbered memory cells: binary, hexadecimal, two's complement, overflow and addresses, with interactive figures and a code-synced memory lab.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/02-bits-and-memory.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/memory.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/02-bits-and-memory.js" defer></script>
+<script src="../js/lessons/02-bits-and-memory.js" defer></script>
+<script src="../js/lessons/02-bits-and-memory-lab.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="02-bits-and-memory">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Bits, bytes &amp; memory</h1>
+      <p class="hero__lede">Everything a computer holds is a row of switches in numbered boxes. Learn to read them as numbers, letters, colours and variables.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">18 min</li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li><a class="chip" data-icon="prereq" href="01-algorithms.html">Needs: lesson 01</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: eight light bulbs count upward in binary. Each bulb is worth 128, 64, 32, 16, 8, 4, 2 or 1, and the decimal value beside them ticks up. Carries ripple from right to left, and at 255 every bulb rolls over to 0."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>A program keeps a score, a letter grade, a temperature, a name and a colour. The machine underneath has none of those things. It has one long row of tiny boxes, and each box holds eight on/off switches.</p>
+      <p>Below are the sixteen boxes where that program keeps its data, written the way programmers write raw memory. Can you tell which box is the grade?</p>
+      <figure class="fig wide" id="fig-problem">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Sixteen bytes of a running program</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <div class="decode-row" data-decoded aria-live="polite"></div>
+        <figcaption class="fig__foot">Text alternative: sixteen bytes in hexadecimal: 41 00 00 00 41 FB FF 9C 42 6F 62 00 FF 88 00 3D. With the program’s map, the first four are the int score = 65, the fifth is the char grade = 'A', the next two are the short temp = −5, byte 8 is a leftover, the next four are the text "Bob", three bytes are an orange colour, and the last byte is a leftover.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-meaning"></div>
+      <p>The byte <code>41</code> appears twice. In one place it is part of the number 65; in the other it is the letter A. Nothing inside the box says which. This lesson shows how switches become numbers, how numbers become letters and colours, and how a program remembers <em>where</em> each thing lives.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Picture a street of identical lockers. Each locker has a number painted on the door and holds a panel of eight light switches. To remember something, you set the switches in some locker and write down its number.</p>
+      <div class="mini-row wide" id="mini-intuition"></div>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: a street of numbered lockers</p>
+        <p>The locker number is an <strong>address</strong>. The switch panel is a <strong>byte</strong>. A name in your program, like <code>score</code>, is a sticky note that says “locker 256”.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>A real locker can be empty. A byte never is: its switches are always in <em>some</em> position, even before your program touches it. Memory you have not written still holds leftover patterns from earlier.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ BITS -->
+    <section id="bits">
+      <h2>Counting with switches</h2>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>bit</dfn> (binary digit) is one switch: 0 for off, 1 for on. Eight bits make a <dfn>byte</dfn>.</p>
+      </aside>
+      <p>In decimal, each place is worth ten times the place to its right: ones, tens, hundreds. Binary works the same way with two. Each switch is worth double its right-hand neighbour: 1, 2, 4, 8, up to 128.</p>
+      <p>To read a byte, add up the places whose switch is on. Flip the switches below and watch every reading change at once.</p>
+      <figure class="fig wide" id="fig-switches">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Eight switches, five readings</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain sw-stage" data-stage></div>
+        <div class="sw-challenge" data-challenge></div>
+        <figcaption class="fig__foot">Each switch is a button: press it (or Tab to it and press Space) to flip that bit. Text alternative: the readings panel lists the value as a decimal number, hexadecimal, a signed number, an ASCII character and a shade of grey.</figcaption>
+      </figure>
+      <aside class="callout callout--fun">
+        <p class="callout__title">Try this</p>
+        <p>Set the switches to 65, which ASCII reads as <code>A</code>. Now flip the <b>32</b> switch. You get 97, lowercase <code>a</code>. Upper and lower case differ by exactly one bit.</p>
+      </aside>
+      <h3>Counting up, and the carry</h3>
+      <p>Adding 1 in binary follows one rule. Find the rightmost 0, turn it into a 1, and turn every 1 to its right into a 0. Those 1s roll over like an odometer, each passing a <strong>carry</strong> to its left.</p>
+      <figure class="fig wide" id="fig-odometer">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A binary odometer: watch the carries ripple</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar">
+          <div class="btn-row" data-jumps role="group" aria-label="Jump to"></div>
+          <div data-speed style="flex: 1 1 220px"></div>
+        </div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: eight digit wheels show the counter in binary. The caption says which bits flip on each +1 and why.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the average is 2</p>
+        <p>Half of all increments flip one bit, a quarter flip two, an eighth flip three, and so on. Watch the “average flips” counter settle near 2: a long carry is expensive but rare. Lesson 06 calls this idea <em>amortised cost</em>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ PATTERNS -->
+    <section id="patterns">
+      <h2 data-toc="2ⁿ patterns">How many patterns fit in n bits?</h2>
+      <p>One bit can say two things. Add a second bit and each of those two splits into two more. Every extra bit doubles the count, so <em>n</em> bits give 2<sup><em>n</em></sup> patterns.</p>
+      <figure class="fig wide" id="fig-tree">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Each new bit doubles the patterns</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: a tree that starts from one point and splits into 0 and 1 at every level: 2 leaves for one bit, 4 for two, 8 for three and 16 for four.</figcaption>
+      </figure>
+      <p>Doubling grows fast. A byte holds 256 patterns, two bytes 65,536, and four bytes about 4.3 billion. That is why a program’s choice of size decides the largest number it can store.</p>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">How many values fit in n bits</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <figcaption class="fig__foot">Text alternative: a bar chart of 2 to the n. For 1 to 8 bits: 2, 4, 8, 16, 32, 64, 128, 256. For 8, 16, 24 and 32 bits: 256, 65,536, 16.8 million and 4.29 billion.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ HEX -->
+    <section id="hex">
+      <h2>Bytes and hexadecimal</h2>
+      <p>Eight 0s and 1s are hard to read and easy to mistype. Programmers write bytes in <strong>hexadecimal</strong>, base 16, which uses the digits 0–9 and then A–F for ten to fifteen.</p>
+      <p>Hex fits bytes perfectly. Four bits make exactly 16 patterns, one hex digit. So a byte is always two hex digits, and you convert it half by half without any long arithmetic.</p>
+      <figure class="fig wide" id="fig-hex">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">From eight bits to two hex digits</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: the byte splits into two groups of four bits; each group’s place values 8, 4, 2, 1 add up to one hex digit, found in the 0–F strip below.</figcaption>
+      </figure>
+      <p>You will see the prefix <code>0x</code> in front of hex numbers, as in <code>0x2A</code>. It marks the base, just like <code>0b</code> marks binary: <code>0b101010</code>, <code>0x2A</code> and <code>42</code> are the same number.</p>
+    </section>
+
+    <!-- ============================================================ MEANING -->
+    <section id="meaning">
+      <h2>Meaning is an agreement</h2>
+      <p>A byte holds a pattern, not a meaning. Meaning comes from an agreement between whoever writes the bytes and whoever reads them.</p>
+      <p><strong>ASCII</strong> is one such agreement for text. It assigns a number to each character: 65 is <code>A</code>, 97 is <code>a</code>, 48 is the digit <code>0</code>, and 32 is a space. Colours use another: three bytes for red, green and blue, often a fourth for opacity.</p>
+      <figure class="fig wide" id="fig-meaning">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A byte doesn’t know what it means</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div class="btn-row" data-presets role="group" aria-label="Presets"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <div class="readings" data-readings></div>
+        <figcaption class="fig__foot">Text alternative: four bytes are shown once, then read three ways at the same time: as one little-endian int, as four ASCII characters, and as a red-green-blue-alpha colour. The chosen reading draws brackets over the bytes it groups together.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>The same bits can be a number, text or a colour. A program’s <em>types</em>, like <code>int</code> and <code>char</code>, are how it records which agreement to use for each location.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ NEGATIVE -->
+    <section id="negative">
+      <h2 data-toc="Negative numbers">Negative numbers: two’s complement</h2>
+      <p>With a fixed number of bits, counting eventually wraps around: add 1 to the largest pattern and you land back on zero. Two’s complement uses that wrap. It keeps the patterns just below zero, on the far side of the circle, for the negative numbers.</p>
+      <p>On the 4-bit wheel below, <code>1111</code> is one step before <code>0000</code>, so it means −1. The top bit acts as a sign: patterns starting with 1 are negative.</p>
+      <figure class="fig wide" id="fig-wheel">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The 4-bit number wheel</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar">
+          <div class="btn-row" data-buttons role="group" aria-label="Wheel controls"></div>
+          <div data-seg></div>
+        </div>
+        <div class="fig__stage wheel-stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: sixteen 4-bit patterns around a circle. Outside each pattern is its unsigned value, 0 to 15; inside is its signed value, 0 to 7 then −8 to −1. A hand points at the current pattern. Signed overflow happens between 7 and −8; unsigned wrap-around happens between 15 and 0.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">The range is lopsided</p>
+        <p>An 8-bit signed number runs from −128 to 127, not −127 to 127. Zero takes one of the non-negative patterns, so negatives get one extra. That is why negating −128 in 8 bits gives −128 back.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ ADDING -->
+    <section id="adding">
+      <h2>Adding in binary</h2>
+      <p>Binary addition is decimal column addition with a tiny table: 0+0 = 0, 0+1 = 1, and 1+1 = 10, which writes 0 and carries 1. The hardware does exactly this, one column at a time, with the same circuit for signed and unsigned numbers.</p>
+      <p>Pick two numbers and step through. Watch what happens when the answer needs a ninth bit.</p>
+      <figure class="fig fig--lab wide" id="lab-add">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">8-bit addition, column by column</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar" data-input></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The trace stops once to ask you to predict a column. Text alternative: the caption narrates each column’s sum and carry.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Two kinds of overflow</p>
+        <p><strong>Unsigned overflow</strong> means a carry fell off the top: the true sum needed more bits. <strong>Signed overflow</strong> means two numbers with the same sign produced the opposite sign, like 100 + 50 = −106. The bits are identical; only the reading differs.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ MEMORY -->
+    <section id="memory">
+      <h2>Memory: a street of addresses</h2>
+      <p>Main memory, or <strong>RAM</strong>, is a long row of bytes. Each byte has an <strong>address</strong>, its position in the row, usually written in hex. A laptop with 16 GB of RAM has about 17 billion addresses.</p>
+      <p>“Random access” means the machine can jump straight to any address in the same time. It does not walk past the bytes before it, as a tape would. Click any byte below and race the two.</p>
+      <figure class="fig wide" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Tape versus RAM: reading one byte</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div class="btn-row" data-buttons role="group" aria-label="Read an address"></div></div>
+        <div class="fig__stage fig__stage--scroll race-stage" data-stage style="--stage-min: 560px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Click or tap a byte in either row (or use the buttons) to read that address. Text alternative: the tape head moves one cell per step from wherever it stopped; the RAM selects the address in one step.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>variable</dfn> is a name for an address, plus a type that says how many bytes live there and how to read them. <code>int a</code> means “four bytes starting at a’s address, read as a signed whole number”.</p>
+      </aside>
+      <p>A value bigger than one byte spreads over neighbouring addresses. Most computers store the <em>lowest</em> byte first, an order called <strong>little-endian</strong>. So 1,000,000 = <code>0x000F4240</code> sits in memory as <code>40 42 0F 00</code>.</p>
+      <p>Arrays put their elements side by side, which makes finding one pure arithmetic. If <code>arr</code> starts at address <em>base</em> and each element takes <em>size</em> bytes, then <code>arr[i]</code> starts at <em>base</em> + <em>i</em> × <em>size</em>. You will lean on that formula in lesson 06.</p>
+    </section>
+
+    <!-- ============================================================ LAB -->
+    <section id="lab">
+      <h2>The memory lab</h2>
+      <p>Write a tiny C-style program and watch memory change byte by byte. Each line reserves bytes, reads bytes or writes bytes, and the code panel shows the same program three more ways. The JavaScript and Python tabs use raw byte arrays, so every name turns into its address.</p>
+      <p>The lab understands <code>int</code> (4 bytes), <code>short</code> (2) and <code>char</code> (1), arrays like <code>int arr[4] = {1, 2};</code>, text like <code>char s[4] = "hi!";</code> and pointers like <code>int* p = &amp;a;</code>. Press <kbd>←</kbd> and <kbd>→</kbd> to step, <kbd>Space</kbd> to play.</p>
+      <figure class="fig fig--lab full" id="lab-mem">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Run a program, watch the bytes</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar lab-editor" data-editor></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="lab-view-bar"><div data-seg></div></div>
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses twice to ask for a prediction. Real compilers may reorder variables or add padding between them; this lab packs them in order so the pattern is easy to see. Text alternative: the caption narrates every allocation, read and write.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">What happens for each line</h2>
+      <p>Every statement in the lab follows the same small map. A declaration reserves bytes and binds a name to an address. Any line that stores a value evaluates the right side first, then wraps it to fit and writes the bytes. Step the lab and the path lights up here.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">One statement, from source to bytes</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 560px"></div>
+        <figcaption class="fig__foot">Text alternative: while statements remain, check whether the line declares a variable. If so, reserve its bytes and bind the name to an address; if it has a starting value, continue. Otherwise work out the target address. Then evaluate the right side, wrap the result to fit the type, and write its bytes.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>In the RAM model every read or write of one memory cell costs one step, whatever its address. Fixed-size values like an <code>int</code> take a fixed number of bytes, so reading one is constant work too. Costs grow only when the number of bytes or bits grows.</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th scope="col">Operation</th><th scope="col">Cost</th><th scope="col">Why</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Read or write a byte at a known address</th><td><span class="big-o" data-o="1"></span></td><td>Random access: every address is one step away.</td></tr>
+            <tr><th scope="row">Read or write an <code>int</code> (4 bytes)</th><td><span class="big-o" data-o="1"></span></td><td>Always 4 bytes, whatever the value.</td></tr>
+            <tr><th scope="row">Find the address of <code>arr[i]</code></th><td><span class="big-o" data-o="1"></span></td><td><em>base</em> + <em>i</em> × <em>size</em>: one multiply, one add.</td></tr>
+            <tr><th scope="row">Find a value when you do not know its address</th><td><span class="big-o" data-o="n"></span></td><td>You may have to look at all <em>n</em> bytes.</td></tr>
+            <tr><th scope="row">+1 on a <em>b</em>-bit counter, worst case</th><td><span class="big-o" data-o="n">O(b)</span></td><td><code>0111…1</code> + 1 flips every bit.</td></tr>
+            <tr><th scope="row">+1 averaged over many increments</th><td><span class="big-o" data-o="1"></span></td><td>Fewer than 2 flips per increment on average.</td></tr>
+            <tr><th scope="row">Bits needed to store a number <em>N</em></th><td><span class="big-o" data-o="logn"></span></td><td>⌊log₂ <em>N</em>⌋ + 1: each bit doubles the range.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The odometer showed a surprise: some increments are expensive, yet the average stays tiny. The chart counts the flips made by each +1 starting from zero, with the running average beside them.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Bits flipped by each +1</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider style="flex: 1 1 260px"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Text alternative: a spiky line of flips per increment (1, 2, 1, 3, 1, 2, 1, 4 …) peaks at every power of two, while the average line levels off just under 2.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>A few bit-level ideas show up again and again, in interviews and in real systems.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="endian">Byte order</button>
+          <button data-tab="shift">Shifts</button>
+          <button data-tab="mask">Masks and flags</button>
+          <button data-tab="utf8">Beyond ASCII</button>
+        </div>
+        <div data-tab-panel="endian"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="endian"></div><figcaption data-mini-cap="endian">0x12345678 in four bytes.</figcaption></figure><div><p>Little-endian machines (most laptops and phones) store the lowest byte at the lowest address. Big-endian stores the highest byte first, and network protocols use that order. Same number, reversed bytes: data moving between the two must be swapped.</p><div class="btn-row" data-mini-btn="endian"></div></div></div></div>
+        <div data-tab-panel="shift"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="shift"></div><figcaption data-mini-cap="shift">Shift left: every bit moves one place up.</figcaption></figure><div><p>Shifting every bit one place left doubles a number, just as adding a 0 in decimal multiplies by ten. Shifting right halves it and drops the remainder. <code>x &lt;&lt; 3</code> is <code>x × 8</code>, as long as no 1 falls off the top.</p><div class="btn-row" data-mini-btn="shift"></div><pre data-code-block="shift"></pre></div></div></div>
+        <div data-tab-panel="mask"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="mask"></div><figcaption data-mini-cap="mask">A mask picks out bits.</figcaption></figure><div><p>A byte can hold eight yes/no <strong>flags</strong>, such as file permissions. AND with a mask tests or clears bits; OR sets them; XOR flips them. One byte replaces eight separate variables.</p><div class="btn-row" data-mini-btn="mask"></div><pre data-code-block="mask"></pre></div></div></div>
+        <div data-tab-panel="utf8"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="utf8"></div><figcaption>UTF-8: one character, one to four bytes.</figcaption></figure><div><p>ASCII covers only 128 characters. <strong>UTF-8</strong>, the encoding of almost every web page, keeps ASCII as single bytes and spells every other character with two to four bytes. The first bits of each byte say how many bytes belong together.</p><div class="btn-row" data-mini-btn="utf8"></div></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-signed"></div>
+        <div class="quiz" id="quiz-bits10"></div>
+      </div>
+      <figure class="fig wide" id="fig-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title"><code>int arr[4]</code> starting at 0x100</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: twenty bytes from address 0x100 to 0x113; the first sixteen belong to arr, an array of four 4-byte ints.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+      <div class="quiz" id="quiz-overflow"></div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Bits, bytes &amp; memory</p></div>
+          <div class="cluster"><span class="chip chip--sm">8 bits = 1 byte</span><span class="chip chip--sm">2 hex digits = 1 byte</span><span class="big-o" data-o="1">O(1) access</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1703<small>binary published</small></div>
+        <p class="history__people">Leibniz, Shannon, Tukey and Buchholz<span>From a paper on arithmetic to the words “bit” and “byte”</span></p>
+        <div class="history__body">
+          <p>Gottfried Leibniz published arithmetic using only 0 and 1 in 1703, but binary took over only after Claude Shannon showed, in his 1937 master’s thesis, that relay circuits follow Boole’s algebra of true and false. John Tukey coined the word “bit” in 1947, and Werner Buchholz coined “byte” at IBM in 1956.</p>
+          <p>On 21 June 1948 the Manchester “Baby” ran the first program stored in the same electronic memory as its data: 17 instructions, held as dots of charge on the face of a cathode-ray tube.</p>
+        </div>
+        <p class="history__source">Sources: C. Petzold, <em>Code</em>, 2nd ed. (2022), ch. 8 and 10; C. E. Shannon, “A Symbolic Analysis of Relay and Switching Circuits” (1938); R. C. Martin, <em>We, Programmers</em> (2025), ch. 3. See <code>docs/research/HISTORY.md</code>.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice" class="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Three ways to write a byte</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Convert <code>1011 0110</code> to decimal and to hex, then convert 200 to binary. Which conversion is fastest by hand, and why?</p></li>
+        <li><div class="practice__title">The range of a short</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">A <code>short</code> has 16 bits. Give its smallest and largest values as a signed number and as an unsigned number, and explain why the signed range is not symmetric.</p></li>
+        <li><div class="practice__title">Lay out the bytes</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Starting at address 0x100 on a little-endian machine, write every byte (with its address) after <code>short s = -2;</code> <code>char c = 'z';</code> <code>int n = 258;</code>. Then check your answer in the lab.</p></li>
+        <li><div class="practice__title">Detect signed overflow</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Write a function that adds two 8-bit signed numbers and reports whether the result overflowed, looking only at the sign bits of the two inputs and of the 8-bit result.</p></li>
+        <li><div class="practice__title">The cost of counting</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Prove that counting from 0 up to <em>n</em> on a binary counter flips fewer than 2<em>n</em> bits in total. Hint: how often does bit <em>k</em> flip?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-00-cost-of-a-computation.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">The cost of a computation</span><span class="deeper__text" style="display:block">The RAM model in full: unit-cost memory access, word size, and where the model stops matching real hardware.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

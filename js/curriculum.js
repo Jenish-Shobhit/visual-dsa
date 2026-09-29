@@ -16,7 +16,7 @@
 
   // [id, unit, title, subtitle, minutes, keywords, study (deep reference) or null]
   var rows = [
-    ['01-algorithms', 'u1', 'What is an algorithm?', 'Precise steps, a changing state, and a flowchart you can follow.', 15, 'algorithm steps instructions flowchart state program recipe', null],
+    ['01-algorithms', 'u1', 'What is an algorithm?', 'Precise steps, a changing state, and a flowchart you can follow.', 25, 'algorithm steps instructions flowchart state program recipe', null],
     ['02-bits-and-memory', 'u1', 'Bits, bytes & memory', 'How a machine stores numbers, text and variables in addressed cells.', 18, 'binary bits bytes hexadecimal memory address RAM variable encoding ASCII two\'s complement', 'dsa-00-cost-of-a-computation'],
     ['03-control-flow', 'u1', 'Decisions & loops', 'Branches choose, loops repeat, and every loop must make progress.', 15, 'if else while for loop condition branch iteration termination', null],
     ['04-functions-and-the-stack', 'u1', 'Functions & the call stack', 'Stack frames, the heap, references, and what happens on return.', 18, 'function call stack frame heap reference pointer parameter return scope', null],
@@ -95,7 +95,7 @@
   };
 
   // Lessons that are published. Keep in sync with lessons/*.html (tests/site_integrity.py checks this).
-  api.markLive(['01-algorithms', '14-elementary-sorts']);
+  api.markLive(['01-algorithms', '02-bits-and-memory', '14-elementary-sorts']);
 
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.VDSA_CURRICULUM = api;

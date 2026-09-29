@@ -15,6 +15,18 @@
     return out.sort(function (a, b) { return a - b; });
   }
 
+  /* an input may arrive as text where numbers are expected (or the reverse) after a tab switch or preset:
+     convert it, or return null so the caller can show a friendly message */
+  function coerce(vals, numeric, cfg) {
+    if (numeric) {
+      if (Array.isArray(vals)) return vals.filter(function (x) { return typeof x === 'number' && isFinite(x); });
+      var r = V.parseNumbers(String(vals == null ? '' : vals), { min: -20, max: 60, maxCount: 14, minCount: 0, integers: true });
+      return r.error ? null : r.values;
+    }
+    if (Array.isArray(vals)) return vals.join('');
+    return vals == null ? '' : String(vals);
+  }
+
   /* ================================================================== lab 1: two pointers */
   var TP_TITLE = { palindrome: 'Palindrome', twosum: 'Two-sum (sorted)', reverse: 'Reverse in place', dedupe: 'Remove duplicates' };
   var TP_LEGEND = {
@@ -35,10 +47,12 @@
     var slider, input;
 
     function generate() {
-      if (tab === 'palindrome') return A().palindrome(inputs.palindrome);
-      if (tab === 'twosum') return A().twoSum(inputs.twosum, target);
-      if (tab === 'reverse') return A().reverse(inputs.reverse);
-      return A().dedupe(inputs.dedupe);
+      var t = coerce(inputs.twosum, true), d = coerce(inputs.dedupe, true);
+      t = t ? t.slice().sort(function (a, b) { return a - b; }) : []; d = d ? d.slice().sort(function (a, b) { return a - b; }) : [];
+      if (tab === 'palindrome') return A().palindrome(coerce(inputs.palindrome, false));
+      if (tab === 'twosum') return A().twoSum(t, target);
+      if (tab === 'reverse') return A().reverse(coerce(inputs.reverse, false));
+      return A().dedupe(d);
     }
     var steps = generate();
     view.prepare(steps);
@@ -105,7 +119,10 @@
         label: cfg.label, value: inputs[tab], parse: cfg.parse, presets: cfg.presets, hint: cfg.hint,
         onApply: function (vals) {
           setNote('');
-          if (tab === 'twosum' || tab === 'dedupe') {
+          var numeric = tab === 'twosum' || tab === 'dedupe';
+          vals = coerce(vals, numeric, cfg);
+          if (vals === null) { input.setError(numeric ? 'Type whole numbers separated by commas.' : 'Type some text.'); return; }
+          if (numeric) {
             var sorted = sortedCopy(vals);
             if (sorted.join() !== vals.join()) { input.set(sorted, false); setNote('Sorted for you: ' + sorted.join(', ') + '.'); }
             vals = sorted;
@@ -254,7 +271,12 @@
       }
     };
 
-    function generate() { return tab === 'longest' ? A().windowLongest(inputs.longest) : A().windowFixed(inputs.fixed, Math.min(k, inputs.fixed.length), { flow: true }); }
+    function fixedValues() { var v = coerce(inputs.fixed, true); return v && v.length ? v : [2, 1, 5, 1, 3, 2, 8, 4]; }
+    function generate() {
+      if (tab === 'longest') return A().windowLongest(coerce(inputs.longest, false));
+      var v = fixedValues();
+      return A().windowFixed(v, Math.max(1, Math.min(k, v.length)), { flow: true });
+    }
     var steps = generate();
     view.prepare(steps.map(function (x) { return { rows: x.rows }; }));
     var player = V.player({
@@ -315,6 +337,8 @@
       input = V.inputRow(inputHost, {
         label: cfg.label, value: inputs[tab], parse: cfg.parse, presets: cfg.presets, hint: cfg.hint,
         onApply: function (vals) {
+          vals = coerce(vals, tab === 'fixed', cfg);
+          if (vals === null || (tab === 'fixed' && !vals.length)) { input.setError('Type at least one whole number.'); return; }
           inputs[tab] = vals;
           if (tab === 'fixed') { slider.input.max = String(vals.length); if (k > vals.length) { k = vals.length; slider.set(k); } }
           reload();
@@ -335,7 +359,7 @@
       code.setSource(A().CODE[tab === 'longest' ? 'longest' : 'fixed']);
       V.legend(legendEl, WIN_LEGEND[tab]);
       kHost.hidden = tab !== 'fixed';
-      if (tab === 'fixed') slider.input.max = String(inputs.fixed.length);
+      if (tab === 'fixed') { var fv = fixedValues(); slider.input.max = String(fv.length); if (k > fv.length) { k = fv.length; slider.set(k); } }
       flowView.setSpec(FLOWS[tab]);
       var ft = flowFig.querySelector('[data-flow-title]'); if (ft) ft.textContent = WIN_TITLE[tab] + ' as a flowchart';
       var alt = flowFig.querySelector('[data-flow-alt]'); if (alt) alt.textContent = WIN_ALT[tab];

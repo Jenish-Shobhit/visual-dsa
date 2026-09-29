@@ -1,0 +1,113 @@
+/* Lesson 14 — Bubble, selection & insertion sort. Lesson-specific styles only; colours come from tokens. */
+
+/* ---------------------------------------------------------------- lab tabs + toolbar */
+.l14-labtabs { padding: 4px 18px 0; border-bottom: 1px solid var(--line); }
+.l14-labtabs .tabs__list { border-bottom: 0; }
+.l14-labtabs .tabs__tab { font-weight: 650; }
+.l14-labtabs .tabs__panel { padding: 8px 0 12px; }
+.l14-invariant { margin: 0; font-size: 14.5px !important; line-height: 1.5 !important; color: var(--ink-2); }
+.l14-invariant b { color: var(--ink); font-weight: 650; }
+.l14-input { flex: 1 1 520px; min-width: 0; }
+.l14-mode { display: flex; flex-direction: column; gap: 6px; }
+.l14-slider { flex: 1 1 200px; max-width: 320px; }
+.l14-toolbar-note { margin: 0; align-self: center; font-size: 13px; color: var(--ink-3); }
+.l14-btnbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.fig__caption.l14-msg[data-state="done"] { background: color-mix(in srgb, var(--st-done) 9%, var(--bg-elev)); }
+.fig__caption.l14-msg[data-state="compare"] { background: color-mix(in srgb, var(--st-compare) 10%, var(--bg-elev)); }
+
+/* ---------------------------------------------------------------- intuition minis */
+.l14-mini-title { margin: 0; padding: 9px 12px 0; font-size: 13px; font-weight: 700; color: var(--unit-ink); }
+.l14-mini-stage { min-height: 150px; }
+
+/* ---------------------------------------------------------------- tokenRow custom view (boxes, cards, arcs, swap buttons) */
+.l14-tokens .l14-tok .vz-shape { --vz-sw: 1.75px; }
+.l14-card .l14-face {
+  fill: var(--el-fill);
+  stroke: color-mix(in srgb, var(--el-stroke) 55%, var(--el-fill));
+  stroke-width: 1.5px;
+  transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease);
+}
+.l14-card .l14-ring { fill: none; stroke: var(--vz-c); stroke-width: 3px; stroke-opacity: 0; transition: stroke var(--vz-dur) var(--vz-ease), stroke-opacity var(--vz-dur) var(--vz-ease); }
+.l14-card:not(.is-default) .l14-ring { stroke-opacity: 1; }
+.l14-card:not(.is-default) .l14-face { fill: color-mix(in srgb, var(--vz-c) 10%, var(--el-fill)); stroke: var(--vz-c); }
+.l14-card .l14-rank { fill: var(--el-ink); font-weight: 760; letter-spacing: -.02em; }
+.l14-card .l14-suit { fill: var(--el-ink); }
+.l14-card .l14-corner { fill: var(--ink-3); font-weight: 650; }
+.l14-card.is-red .l14-suit, .l14-card.is-red .l14-rank, .l14-card.is-red .l14-corner { fill: color-mix(in srgb, var(--st-error) 82%, var(--ink)); }
+.vz .l14-arc {
+  fill: none; stroke: var(--vz-c); stroke-width: 2px; stroke-linecap: round;
+  transition: stroke var(--vz-dur) var(--vz-ease), stroke-width var(--vz-dur) var(--vz-ease);
+}
+.vz .l14-arc.is-error { stroke: color-mix(in srgb, var(--st-error) 70%, var(--bg-elev)); stroke-width: 1.75px; }
+.vz .l14-arc.is-compare { stroke-width: 3px; }
+.vz .l14-arc.is-done, .vz .l14-arc.is-dashed { stroke-dasharray: 5 4; stroke-width: 2.5px; }
+.vz .l14-gap circle { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1.5px; transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease); }
+.vz .l14-gap text { fill: var(--ink-3); font: 700 13px var(--font-sans); pointer-events: none; }
+.vz .l14-gap.is-swap circle { fill: var(--st-swap); stroke: var(--st-swap); }
+.vz .l14-gap.is-swap text { fill: color-mix(in srgb, var(--st-swap) 20%, black); }
+.vz .l14-gap.is-clickable:hover circle, .vz .l14-gap.is-clickable:focus-visible circle { stroke: var(--accent); stroke-width: 3px; }
+.vz .l14-gap.is-clickable { cursor: pointer; }
+
+/* ---------------------------------------------------------------- static minis */
+.vz.l14m { margin: 0 auto; }
+.l14m .l14m-tag rect { fill: var(--vz-c); }
+.l14m .l14m-tag text { fill: var(--on-state); font: 700 9.5px var(--font-mono); }
+.l14m .l14m-tag:is(.is-compare, .is-swap, .is-done) text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
+
+/* ---------------------------------------------------------------- stability figure */
+.l14-stab { display: grid; gap: 14px; align-content: start; place-items: stretch; }
+.l14-stab__row { display: grid; grid-template-columns: 128px minmax(0, 1fr) 230px; align-items: center; gap: 8px 16px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); }
+.l14-stab__label { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); }
+.l14-stab__cards { min-width: 0; }
+.l14-stab__checks { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.l14-check { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border-radius: 999px; font-size: 13px; font-weight: 600; background: color-mix(in srgb, var(--sw) 12%, var(--bg-elev)); color: color-mix(in srgb, var(--sw) 72%, var(--ink)); }
+.l14-check__mark { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--sw); color: color-mix(in srgb, var(--sw) 20%, black); font-size: 11px; font-weight: 800; }
+@container fig (max-width: 700px) {
+  .l14-stab__row { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------------------------------------------------------------- race */
+.l14-race { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; }
+.l14-lane { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); transition: border-color var(--dur), box-shadow var(--dur); }
+.l14-lane.is-finished { border-color: color-mix(in srgb, var(--st-done) 55%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--st-done) 30%, transparent); }
+.l14-lane__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.l14-lane__name { font-weight: 700; font-size: 14.5px; }
+.l14-lane__status { font-size: 12.5px; font-weight: 650; padding: 2px 9px; border-radius: 999px; background: var(--bg-sunken); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.l14-lane.is-finished .l14-lane__status { background: color-mix(in srgb, var(--st-done) 14%, var(--bg-elev)); color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+.l14-lane__status[data-rank="1"] { background: var(--st-done) !important; color: color-mix(in srgb, var(--st-done) 20%, black) !important; }
+.l14-lane__stage { min-height: 140px; display: grid; align-items: end; }
+.l14-lane__stats .stats { gap: 6px; }
+.l14-lane__stats .stat { min-width: 0; flex: 1 1 70px; padding: 6px 9px 7px; }
+.l14-lane__stats .stat__value { font-size: 17px; }
+.l14-lane__stats { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---------------------------------------------------------------- misc */
+#fig-bars .fig__caption, #fig-growth .fig__caption { font-size: 14.5px; color: var(--ink-2); }
+#fig-choose .fig__caption { min-height: calc(1.55em * 3 + 26px); }
+
+/* Workaround (engine): css/viz.css sets `.vz .vz-region { --vz-c: var(--st-active) }` after the `.vz .is-<state>`
+   rules with the same specificity, so every region band draws blue whatever its state. Restore the state colour. */
+.vz .vz-region.is-done { --vz-c: var(--st-done); }
+.vz .vz-region.is-visited { --vz-c: var(--st-visited); }
+.vz .vz-region.is-compare { --vz-c: var(--st-compare); }
+.vz .vz-region.is-key { --vz-c: var(--st-key); }
+.vz .vz-region.is-swap { --vz-c: var(--st-swap); }
+.vz .vz-region.is-error { --vz-c: var(--st-error); }
+
+/* Summary: six tiles as a 3 × 2 grid on wide screens */
+#summary-card .summary__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+#summary-card .summary__viz { height: 96px; }
+/* Same engine issue for pointers: `.vz .vz-pointer { --vz-c: var(--st-active) }` beats `.vz .is-compare` etc. */
+.vz .vz-pointer.is-compare { --vz-c: var(--st-compare); }
+.vz .vz-pointer.is-key { --vz-c: var(--st-key); }
+.vz .vz-pointer.is-swap { --vz-c: var(--st-swap); }
+.vz .vz-pointer.is-done { --vz-c: var(--st-done); }
+.vz .vz-pointer.is-pivot { --vz-c: var(--st-pivot); }
+
+/* Narrow figures: let long segmented controls wrap instead of hiding options; shorten the lab tab labels. */
+@container fig (max-width: 560px) {
+  .fig__toolbar .seg { flex-wrap: wrap; }
+  .l14-wide-only { display: none; }
+  .l14-labtabs { padding: 2px 10px 0; }
+  .l14-lane__stage { min-height: 110px; }
+}

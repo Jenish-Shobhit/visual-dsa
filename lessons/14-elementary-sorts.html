@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Bubble, selection &amp; insertion sort · Visual DSA</title>
+<meta name="description" content="Three simple sorts, three invariants: watch bubble, selection and insertion sort move values, race them, and see why insertion sort shines on nearly sorted data.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/14-elementary-sorts.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/14-elementary-sorts.js" defer></script>
+<script src="../js/lessons/14-elementary-sorts-views.js" defer></script>
+<script src="../js/lessons/14-elementary-sorts-lab.js" defer></script>
+<script src="../js/lessons/14-elementary-sorts.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="14-elementary-sorts">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Bubble, selection &amp; insertion sort</h1>
+      <p class="hero__lede">Three simple ways to put values in order. Each one keeps a different promise as it runs, all three are quadratic in the worst case, and one of them is surprisingly hard to beat on nearly sorted data.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">20 min</li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li class="chip" data-icon="prereq">Needs: arrays, Big-O</li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: eleven bars of different heights. Neighbouring bars that are out of order trade places, so the tallest bars drift to the right and turn green as they become final, until all bars stand in order."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">Why put things in order?</h2>
+      <p>A shuffled list answers questions slowly. To find a name you must look at every entry; to find duplicates you must compare every pair. Sort it once, and binary search finds any name in about 20 looks out of a million, and duplicates sit side by side.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>An array is <dfn>sorted</dfn> when every value is at most its right neighbour: <code>a[0] ≤ a[1] ≤ … ≤ a[n − 1]</code>. So a single out-of-order neighbour pair is proof that the array is not sorted yet.</p>
+      </aside>
+      <p>Try it by hand. You may only swap two neighbours. Red buttons sit between neighbours that are out of order; the array is sorted when none are left.</p>
+      <figure class="fig wide" id="fig-pairs">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Sort it yourself, one neighbour swap at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-toggle></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption l14-msg" data-msg aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <div class="fig__controls l14-btnbar"><button type="button" class="btn btn--sm" data-reset>Start over</button><button type="button" class="btn btn--sm" data-shuffle>New numbers</button></div>
+        <figcaption class="fig__foot">Text alternative: six numbers in a row with a swap button between each pair of neighbours. Swapping an out-of-order pair always removes exactly one out-of-order pair.</figcaption>
+      </figure>
+      <p>Every sorting algorithm in this lesson does what you just did, but by a fixed rule. To compare them we count two operations: <strong>comparisons</strong> (“is <code>a[j] &gt; a[j + 1]</code>?”) and <strong>moves</strong> (swaps or shifts that write values into the array).</p>
+      <aside class="callout callout--key">
+        <p class="callout__title">The cost model</p>
+        <p>We measure a sort by how many comparisons and moves it makes on an array of <em>n</em> values, and how that number grows with <em>n</em>. Time on a real machine follows these counts closely.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2 data-toc="Intuition">Three ways people sort</h2>
+      <p>You already know all three algorithms. Each one is a habit people use without thinking: let big things rise, keep picking the smallest, or slide each new item into place.</p>
+      <div class="mini-row wide" id="mini-intuition"></div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogies break</p>
+        <p>A person sees the whole row at once and jumps a card straight to its slot. An algorithm sees only the two values it is comparing. It learns the order one comparison at a time, and that limit is what the cost counts.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ BUBBLE -->
+    <section id="bubble">
+      <h2 data-toc="Bubble sort">Bubble sort: neighbours trade places</h2>
+      <p>Walk from left to right and compare each pair of neighbours. If the left one is larger, swap them. Whatever the largest value is, every comparison it meets carries it one step right, so one pass parks it at the end.</p>
+      <figure class="fig wide" id="fig-bubble">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Bubble sort, one pass at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the caption under the figure describes each comparison and swap. The green region at the right is the part that is final.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Invariant</p>
+        <p>After pass <em>k</em>, the last <em>k</em> positions hold the <em>k</em> largest values in their <dfn>final</dfn> places: no later swap will ever touch them. So each pass can stop one position earlier than the last.</p>
+      </aside>
+      <p>Pick <em>Sorted input</em> in the figure. The first pass finds no pair out of order, and a pass with no swaps proves the array is sorted. This <strong>early exit</strong> turns bubble sort’s best case into n − 1 comparisons.</p>
+      <div class="quiz" id="quiz-pass1"></div>
+    </section>
+
+    <!-- ============================================================ SELECTION -->
+    <section id="selection">
+      <h2 data-toc="Selection sort">Selection sort: pick the smallest</h2>
+      <p>Scan the whole unsorted part and remember where its smallest value is. Then make one swap to put that value at the front of the unsorted part. The front grows by one final value per pass.</p>
+      <figure class="fig wide" id="fig-selection">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Selection sort scans, then swaps once</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the min marker above the row moves each time the scan finds a smaller value; at the end of the pass one swap puts that value at index i.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Invariant</p>
+        <p>After pass <em>k</em>, the first <em>k</em> positions hold the <em>k</em> smallest values in their final places. The rest is untouched except for the one value each swap sent away.</p>
+      </aside>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Few swaps, many comparisons</p>
+        <p>Selection sort makes at most one swap per pass, so at most n − 1 swaps in total. But it cannot know a value is the smallest without looking at every other one, so it always makes n(n − 1)/2 comparisons, even on sorted input.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ INSERTION -->
+    <section id="insertion">
+      <h2 data-toc="Insertion sort">Insertion sort: slide into place</h2>
+      <p>Treat the left part as a sorted hand of cards. Lift the next value, the <dfn>key</dfn>, out of the array, leaving a hole. Shift every larger value in the hand one slot right, then drop the key into the hole.</p>
+      <figure class="fig wide" id="fig-insertion">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Insertion sort lifts a key and shifts larger values right</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the key floats above the row over a dashed hole; each larger value slides one slot right, and the key drops into the hole.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Invariant</p>
+        <p>After round <em>k</em>, the first <em>k</em> + 1 values are sorted among themselves. They are <em>not</em> final: a small key still to come will push them all one slot right. That is why the prefix is purple, not green.</p>
+      </aside>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Adaptive</p>
+        <p>A key stops as soon as it meets a value no larger than itself. On sorted input every key stops at once, so insertion sort makes only n − 1 comparisons. Pick <em>Sorted input</em> to watch it. A sort whose cost shrinks when the input is already partly ordered is called <dfn>adaptive</dfn>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ INVARIANTS SIDE BY SIDE -->
+    <section id="invariants">
+      <h2 data-toc="Three invariants">Three invariants, side by side</h2>
+      <p>Freeze all three sorts after the same number of rounds on the same input, and compare what each has promised. Step through the rounds and watch where the green and purple regions grow.</p>
+      <figure class="fig wide" id="fig-spotlight">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">What each sort guarantees after k rounds</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: three rows show the same eight values after k rounds of each sort. Bubble sort's final region grows from the right, selection sort's from the left, and insertion sort's sorted prefix grows from the left but is not final.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>An invariant is the promise a loop keeps after every round. Bubble sort promises a final suffix, selection sort a final prefix, and insertion sort only a sorted prefix. When the loop ends, each promise covers the whole array, and that is the proof the sort is correct.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ STABILITY -->
+    <section id="stability">
+      <h2>Stability: equal keys keep their order</h2>
+      <p>Often you sort records by one field while they carry others, such as cards by rank while each has a suit. If two cards share a rank, should their order survive the sort? A good sort promises that it does.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definitions</p>
+        <p>A sort is <dfn>stable</dfn> if values with equal keys come out in the same order they went in. A sort is <dfn>in place</dfn> if it needs only a constant amount of extra memory; all three sorts here are.</p>
+      </aside>
+      <figure class="fig wide" id="fig-stability">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The same hand, sorted by rank two ways</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain l14-stab" data-stage>
+          <div class="l14-stab__row" data-row="selection">
+            <p class="l14-stab__label">Selection sort</p>
+            <div class="l14-stab__cards" data-cards></div>
+            <div class="l14-stab__checks" data-check aria-live="polite"></div>
+          </div>
+          <div class="l14-stab__row" data-row="insertion">
+            <p class="l14-stab__label">Insertion sort</p>
+            <div class="l14-stab__cards" data-cards></div>
+            <div class="l14-stab__checks" data-check aria-live="polite"></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__controls l14-btnbar"><button type="button" class="btn btn--sm" data-deal>Deal another hand</button><button type="button" class="btn btn--sm btn--ghost" data-reset>Back to the first hand</button></div>
+        <figcaption class="fig__foot">Text alternative: two rows of five playing cards, 5 of spades, 8 of diamonds, 5 of hearts, 2 of clubs and 8 of clubs, sorted by rank one round at a time. Selection sort ends with the 5 of hearts before the 5 of spades; insertion sort keeps the 5 of spades first.</figcaption>
+      </figure>
+      <p>Selection sort’s swap sends <code>a[i]</code> on a long jump to wherever the minimum was, and that jump can carry it past an equal card. Bubble and insertion sort only ever move a value past a <em>strictly</em> larger or smaller neighbour, so equal cards never cross.</p>
+    </section>
+
+    <!-- ============================================================ INVERSIONS -->
+    <section id="inversions">
+      <h2>Inversions: a measure of disorder</h2>
+      <p>How unsorted is an array? Count the pairs that are in the wrong order. A sorted array has none; a reversed array of <em>n</em> values has all n(n − 1)/2 of them.</p>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>An <dfn>inversion</dfn> is a pair of positions <em>i</em> &lt; <em>j</em> with <code>a[i] &gt; a[j]</code>. In the figure, each inversion is an arc joining the two values.</p>
+      </aside>
+      <figure class="fig wide" id="fig-inversions">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Every move removes exactly one arc</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div class="input-row__presets" data-presets role="group" aria-label="Inputs"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: values in a row with an arc above every out-of-order pair; each shift or swap trades two neighbouring values and removes exactly one arc.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why shifts equal inversions</p>
+        <p>Moving a value past one neighbour changes the order of exactly that one pair. When the pair was inverted, the move fixes it and touches no other pair. So insertion sort makes exactly one shift per inversion, and bubble sort exactly one swap per inversion. Insertion sort costs about n + (number of inversions), which is why it flies on nearly sorted data.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>All three sorts, on your own numbers. Switch tabs to change the algorithm; the code, variables, counters and the flowchart below follow along. Press <kbd>←</kbd> and <kbd>→</kbd> to step and <kbd>Space</kbd> to play. The lab pauses a few times to ask what happens next.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace bubble, selection and insertion sort</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="tabs l14-labtabs" id="lab-tabs">
+          <div class="tabs__list">
+            <button data-tab="bubble">Bubble<span class="l14-wide-only"> sort</span></button>
+            <button data-tab="selection">Selection<span class="l14-wide-only"> sort</span></button>
+            <button data-tab="insertion">Insertion<span class="l14-wide-only"> sort</span></button>
+          </div>
+          <div data-tab-panel="bubble"><p class="l14-invariant"><b>Invariant:</b> after pass k, the last k values are final. <b>Stops early</b> when a pass makes no swap.</p></div>
+          <div data-tab-panel="selection"><p class="l14-invariant"><b>Invariant:</b> after pass k, the first k values are the k smallest, final. <b>One swap</b> per pass at most.</p></div>
+          <div data-tab-panel="insertion"><p class="l14-invariant"><b>Invariant:</b> after round k, the first k + 1 values are sorted, but not final. <b>One shift</b> per inversion.</p></div>
+        </div>
+        <div class="fig__toolbar"><div data-input class="l14-input"></div><div class="l14-mode"><span class="field-label">View</span><div data-mode></div></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the caption under the figure explains every step in words; the code panel highlights the line that runs and the variables panel shows i, j and the values being compared.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The logic as a flowchart</h2>
+      <p>The same decisions as a map. It is wired to the lab: step the lab and the box that is running lights up here, while a token travels along the arrow that was taken.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-flow-title>Bubble sort as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><p class="l14-toolbar-note">Switching here also switches the lab.</p></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 320px"></div>
+        <figcaption class="fig__foot" data-flow-alt>Text alternative: start with i = 0. While i &lt; n − 1, set swapped to false and walk j from 0; whenever a[j] &gt; a[j + 1], swap them and set swapped to true. When the pass ends, stop if nothing was swapped; otherwise increase i and sweep again.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ RACE -->
+    <section id="race">
+      <h2 data-toc="Race">Race them</h2>
+      <p>Same input, three lanes, one clock. Each tick pays for one comparison or one move. Try <em>Nearly sorted</em>, then <em>Reversed</em>: the winner changes.</p>
+      <figure class="fig full" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Bubble vs selection vs insertion sort</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="l14-slider"></div><button type="button" class="btn btn--sm" data-shuffle>New numbers</button></div>
+        <div class="fig__stage fig__stage--plain" data-stage><div class="l14-race" data-lanes></div></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: three lanes of bars sort the same values; each lane counts its comparisons, moves and ticks, and shows its finishing place when done.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What they cost</h2>
+      <p>Counting by hand gives the formulas; the charts below count real runs. Change the input order and watch the bars. Selection sort’s comparison bar never moves, while insertion sort’s collapses on sorted input.</p>
+      <figure class="fig wide" id="fig-bars">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Comparisons and moves for one input size</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="l14-slider"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-readout></p>
+        <figcaption class="fig__foot">Counts come from running the three sorts on real arrays; random-like inputs are averaged over 24 runs.</figcaption>
+      </figure>
+      <figure class="fig wide" id="fig-growth">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">How the work grows with n</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-case></div><div data-metric></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Hover or focus the chart and use the arrow keys to read exact values.</figcaption>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Algorithm</th><th scope="col">Best case</th><th scope="col">Average</th><th scope="col">Worst case</th><th scope="col">Moves (worst)</th><th scope="col">Extra space</th><th scope="col">Stable</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Bubble sort</th><td><span class="big-o" data-o="n">O(n)</span> n − 1 comparisons, already sorted (early exit)</td><td><span class="big-o" data-o="n2"></span> about n²/2 comparisons</td><td><span class="big-o" data-o="n2"></span> n(n − 1)/2, reversed</td><td>n(n − 1)/2 swaps</td><td><span class="big-o" data-o="1"></span></td><td>Yes</td></tr>
+            <tr><th scope="row">Selection sort</th><td><span class="big-o" data-o="n2"></span> n(n − 1)/2 comparisons, any input</td><td><span class="big-o" data-o="n2"></span> n(n − 1)/2</td><td><span class="big-o" data-o="n2"></span> n(n − 1)/2</td><td>n − 1 swaps</td><td><span class="big-o" data-o="1"></span></td><td>No</td></tr>
+            <tr><th scope="row">Insertion sort</th><td><span class="big-o" data-o="n">O(n)</span> n − 1 comparisons, already sorted</td><td><span class="big-o" data-o="n2"></span> about n²/4 comparisons</td><td><span class="big-o" data-o="n2"></span> n(n − 1)/2, reversed</td><td>n(n − 1)/2 shifts</td><td><span class="big-o" data-o="1"></span></td><td>Yes</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>So all three are <span class="big-o" data-o="n2"></span> in the worst case: on a reversed array of 1,000 values, each makes 499,500 comparisons. Insertion sort’s cost is really <span class="big-o" data-o="n">O(n + inversions)</span>, which is why real libraries use it for short or nearly sorted runs.</p>
+      <details class="accordion">
+        <summary>Where does n(n − 1)/2 come from?</summary>
+        <div class="accordion__body"><p>Bubble sort’s first pass compares n − 1 pairs, the next n − 2, and so on down to 1. Selection sort’s passes scan n − 1, n − 2, …, 1 values. Both add up to 1 + 2 + … + (n − 1) = n(n − 1)/2, the number of pairs among n values.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why is the average about n²/4 for insertion sort?</summary>
+        <div class="accordion__body"><p>Each of the n(n − 1)/2 pairs is inverted with probability 1/2 in a random order, so a random array has about n(n − 1)/4 inversions on average. Insertion sort makes one shift per inversion and about one comparison per shift.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Small changes to these loops show up everywhere, from library sorts to interview questions.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="early">Early exit</button>
+          <button data-tab="cocktail">Cocktail shaker</button>
+          <button data-tab="binary">Binary insertion</button>
+          <button data-tab="shell">Shell sort</button>
+          <button data-tab="topk">Top k by selection</button>
+        </div>
+        <div data-tab-panel="early"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="early"></div><figcaption>A pass with zero swaps proves the array sorted.</figcaption></figure><div><p>Remember where the last swap happened. Everything after it is already in order, so the next pass can stop there, and a pass with no swap at all ends the sort. The same one-pass check is the cheapest way to test “is this array sorted?”.</p><pre data-code-block="early"></pre></div></div></div>
+        <div data-tab-panel="cocktail"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="cocktail" role="img" aria-label="Cocktail shaker sort on 2, 3, 4, 5, 6, 1: the 1 rides from the end to the front in one backward sweep."></div><figcaption data-cocktail-note></figcaption></figure><div><p>Bubble sort moves a large value to the end in one pass, but a small value near the end creeps left only one step per pass. Sweeping right and then left fixes both ends. It is still quadratic in the worst case.</p><pre data-code-block="cocktail"></pre></div></div></div>
+        <div data-tab-panel="binary"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="binary"></div><figcaption>Binary search finds the slot in about log₂ i comparisons.</figcaption></figure><div><p>The prefix is sorted, so binary search can find the key’s slot with far fewer comparisons. The shifts stay the same, so the sort is still quadratic, but it helps when comparisons are expensive, such as long strings.</p><pre data-code-block="binary"></pre></div></div></div>
+        <div data-tab-panel="shell"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="shell"></div><figcaption>With gap 4, values four apart are sorted first.</figcaption></figure><div><p>Insertion sort is slow when a value is far from home, because it moves one slot per shift. Shell sort runs insertion sort on values a large gap apart first, then smaller gaps, and finally gap 1. Donald Shell published it in 1959.</p><pre data-code-block="shell"></pre></div></div></div>
+        <div data-tab-panel="topk"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="topk"></div><figcaption>Stop selection sort after k passes.</figcaption></figure><div><p>Selection sort’s prefix is final after every pass, so stopping after k passes gives the k smallest values in order, for about k · n comparisons. For small k this beats sorting everything.</p><pre data-code-block="topk"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ WHICH SORT -->
+    <section id="choose">
+      <h2 data-toc="Which sort?">Which simple sort should you use?</h2>
+      <p>Answer the questions to walk the diagram. In practice the answer is almost always insertion sort, or a faster sort from the next lessons.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Choosing a simple sort</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 340px"></div>
+        <p class="fig__caption" data-answer aria-live="polite"></p>
+        <div class="fig__controls l14-btnbar"><button type="button" class="btn btn--sm" data-restart>Start over</button></div>
+        <figcaption class="fig__foot">Text alternative: thousands of items call for merge sort or quicksort; nearly sorted data calls for insertion sort; if writes are expensive and stability does not matter, use selection sort; otherwise insertion sort.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-reversed"></div>
+        <div class="quiz" id="quiz-stable"></div>
+        <div class="quiz" id="quiz-inversions"></div>
+      </div>
+      <figure class="fig" id="fig-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Selection sort, frozen after two passes</h3></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: seven values 1, 2, 8, 5, 9, 4, 7; the first two are final.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Bubble, selection &amp; insertion sort</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="n2">O(n²) worst</span><span class="chip chip--sm">In place</span><span class="chip chip--sm">Insertion: O(n) on sorted input</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1956<small>“sorting by exchange”</small></div>
+        <p class="history__people">Edward Friend and Kenneth Iverson<span>JACM survey (1956) · <em>A Programming Language</em> (1962)</span></p>
+        <div class="history__body">
+          <p>Bubble sort was analysed in 1956 by Edward Friend as “sorting by exchange”, in one of the first surveys of sorting on electronic computers. It got its catchy name from Kenneth Iverson’s 1962 book. Donald Knuth later judged that it has little to recommend it beyond that name and some interesting theory.</p>
+          <p>In 2007 Google’s Eric Schmidt asked presidential candidate Barack Obama for the most efficient way to sort a million 32-bit integers. Obama answered that “the bubble sort would be the wrong way to go”. Insertion sort lives on inside fast library sorts, and in 1959 Donald Shell turned it into Shellsort by inserting over long distances first.</p>
+        </div>
+        <p class="history__source">Sources: E. H. Friend, “Sorting on Electronic Computer Systems”, <em>JACM</em> 3(3), 1956; O. Astrachan, “Bubble Sort: An Archaeological Algorithmic Analysis” (SIGCSE 2003); D. E. Knuth, <em>The Art of Computer Programming</em>, Vol. 3, §5.2.2; D. L. Shell, <em>CACM</em> 2(7), 1959.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Count the inversions</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Write a function that counts the inverted pairs of an array in O(n²) time. Then check on random arrays that insertion sort’s shift count always equals it.</p></li>
+        <li><div class="practice__title">Minimum adjacent swaps</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given an array, return the minimum number of swaps of neighbouring elements needed to sort it. Explain why no strategy can use fewer.</p></li>
+        <li><div class="practice__title">Sort a k-sorted array</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Every element is at most k positions away from its place in sorted order. Show that insertion sort sorts it in O(nk) time, and find an input where that bound is tight.</p></li>
+        <li><div class="practice__title">A stable selection sort</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Change selection sort so that it is stable, without extra memory. How many moves does your version make in the worst case?</p></li>
+        <li><div class="practice__title">How many passes?</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Bubble sort with the early exit stops after some number of passes. Predict that number for any input without running the sort. Hint: how far must each value travel to the left?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-06-sorting-and-the-comparison-barrier.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Sorting and the comparison barrier</span><span class="deeper__text" style="display:block">Why no comparison sort can beat n log n comparisons in the worst case, and how counting and radix sort step around that wall.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

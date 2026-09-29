@@ -1,0 +1,99 @@
+/* Lesson 35 · Dynamic programming II — lesson-specific styles.
+   Colours come only from tokens (--st-*, --ink*, --bg*, --line*), so light and dark themes both work.
+   Figure elements reuse viz.css classes (.vz-item/.vz-shape/.vz-ink/.vz-edge) wherever possible. */
+
+.dp2-grow { flex: 1 1 240px; min-width: 0; }
+.dp2-hint { font-size: 13.5px; color: var(--ink-3); }
+.dp2-aside { margin: 0; font-size: 15px; color: var(--ink-2); }
+
+/* Stages that hold HTML layouts or grid renderers: block flow, full width. (.fig__stage centres with place-items,
+   and Chromium applies justify-items to block layout, which would shrink-wrap these children.) */
+.dp2-stage { display: block; place-items: normal; justify-items: normal; padding: clamp(6px, 1.4cqi, 14px) clamp(6px, 1.4cqi, 14px) 4px; }
+.dp2-stage .vz-grid-host { width: 100%; }
+
+/* ---------------------------------------------------------------- hero */
+.dp2-hero { padding: clamp(8px, 1.6vw, 16px); display: grid; place-items: center; }
+.dp2-hero .vz-grid-host { width: 100%; }
+
+/* ---------------------------------------------------------------- strips above the tables */
+.dp2-top { padding: 10px clamp(8px, 2cqi, 18px) 0; }
+.dp2-top > svg, .dp2-top .vz-array-host, .dp2-top .vz { display: block; margin: 0 auto; }
+.vz.dp35-strip, .vz.dp35-knap { overflow: visible; }
+.vz .dp35-rowname { font: 650 12px var(--font-sans); fill: var(--ink-2); }
+.vz .dp35-rowname.is-sub { fill: var(--ink-3); font-weight: 600; }
+.vz .dp35-slot.is-empty .vz-shape { fill: none; stroke: var(--line-strong); stroke-dasharray: 3 3; }
+.vz .dp35-slot .vz-shape { stroke-width: 2px; }
+.vz .dp35-link .vz-line { stroke-width: 3px; opacity: .92; }
+
+.vz .dp35-bag { fill: color-mix(in srgb, var(--ink) 4%, var(--bg-elev)); stroke: var(--line-strong); stroke-width: 1.5px; }
+.vz .dp35-tick { stroke: var(--line-strong); stroke-width: 1px; }
+.vz .dp35-bagstat { font: 700 13px var(--font-mono); fill: var(--ink-2); }
+.vz .dp35-card { cursor: default; }
+.vz .dp35-card .dp35-c1 { font: 760 14px var(--font-sans); }
+.vz .dp35-card .dp35-c2 { font: 600 11px var(--font-mono); }
+.vz .dp35-card.is-clickable, .vz .dp35-card[tabindex] { cursor: pointer; }
+
+/* ---------------------------------------------------------------- the candidate cards under a table */
+.dp2-cands {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch;
+  padding: 10px clamp(10px, 2cqi, 18px); min-height: 92px;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg-sunken) 45%, var(--bg-elev));
+}
+.dp2-cands__hint { margin: auto 0; font: italic 500 13.5px var(--font-sans); color: var(--ink-3); }
+.dp2-cands__hint[hidden] { display: none; }
+.dp2-cand {
+  flex: 1 1 150px; min-width: 0; display: grid; gap: 2px; align-content: center;
+  padding: 8px 12px; border-radius: var(--r-md); border: 1.5px solid var(--line-strong); background: var(--bg-elev);
+  transition: border-color var(--dur), background var(--dur), box-shadow var(--dur), opacity var(--dur);
+  animation: dp2-in 260ms var(--ease-out) both;
+}
+.dp2-cand__title { font: 650 12.5px var(--font-sans); color: var(--ink-2); }
+.dp2-cand__expr { font: 500 12.5px var(--font-mono); color: var(--ink-2); overflow-wrap: anywhere; }
+.dp2-cand__val { font: 780 20px var(--font-sans); color: var(--ink); min-height: 1.3em; }
+.dp2-cand.is-win {
+  border-color: var(--st-key);
+  background: color-mix(in srgb, var(--st-key) 10%, var(--bg-elev));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--st-key) 16%, transparent);
+}
+.dp2-cand.is-win .dp2-cand__val { color: color-mix(in srgb, var(--st-key) 70%, var(--ink)); }
+.dp2-cand.is-off { border-style: dashed; background: transparent; }
+.dp2-cand.is-off .dp2-cand__title, .dp2-cand.is-off .dp2-cand__expr, .dp2-cand.is-off .dp2-cand__val { color: var(--ink-3); font-weight: 500; }
+@keyframes dp2-in { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .dp2-cand { animation: none; } }
+:root[data-motion="reduce"] .dp2-cand { animation: none; }
+
+/* ---------------------------------------------------------------- lab toolbar and inputs */
+.dp2-toolbar { flex-direction: column; align-items: stretch; }
+.dp2-toolbar > .dp2-grow { width: 100%; flex: none; }
+.dp2-jump { padding: 0 clamp(10px, 2cqi, 18px) 12px; }
+.dp2-knapin { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 24px; width: 100%; }
+.dp2-knapin__items { flex: 3 1 340px; min-width: 0; }
+.dp2-knapin__cap { flex: 1 1 220px; min-width: 0; padding-bottom: 6px; }
+.dp2-knapin__presets { margin-top: 8px; }
+
+/* ---------------------------------------------------------------- one-row panes */
+.dp2-panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; padding: 10px clamp(8px, 2cqi, 18px) 4px; }
+@container fig (max-width: 760px) { .dp2-panes { grid-template-columns: minmax(0, 1fr); } }
+.dp2-pane { min-width: 0; padding: 8px 6px 6px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); }
+.dp2-pane__title { margin: 0 0 4px 8px; font: 650 13.5px var(--font-sans); color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- variations, code pairs, tables */
+.dp-var-minis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 12px; margin-bottom: 18px; }
+.dp-var-minis .mini__stage { min-height: 96px; padding: 10px 8px; display: block; }
+.dp-code-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.dp-code-pair__title { margin: 0 0 6px; font-size: 13.5px; font-weight: 650; color: var(--ink-2); }
+.lesson-body > section > .dp-code-pair { margin-top: var(--space-5); }
+.dp2-cost-table { min-width: 700px; }
+.mini-row .mini__stage { display: block; place-items: normal; padding: 10px 8px; }
+.mini-row .vz-grid-host { width: 100%; }
+.summary__viz .vz { max-width: 100%; }
+.summary__viz .vz-grid-host { width: 100%; }
+
+/* summary card: three across, then two, then one */
+#summary-card .summary__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 760px) { #summary-card .summary__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 440px) { #summary-card .summary__grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* long inline formulas wrap instead of pushing the page wider on phones */
+.lesson-body p code, .lesson-body .callout code, .lesson-body figcaption code, .lesson-body .quiz code { white-space: normal; overflow-wrap: anywhere; }

@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Dynamic programming II · Visual DSA</title>
+<meta name="description" content="Tables with two indexes: count grid paths around obstacles, then fill the longest-common-subsequence, edit-distance and 0/1 knapsack tables cell by cell, trace the arrows back to rebuild the answer, and see why a one-row table must loop backwards.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/35-dynamic-programming-2d.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/35-dynamic-programming-2d.js" defer></script>
+<script src="../js/lessons/35-dynamic-programming-2d-views.js" defer></script>
+<script src="../js/lessons/35-dynamic-programming-2d-labs.js" defer></script>
+<script src="../js/lessons/35-dynamic-programming-2d-more.js" defer></script>
+<script src="../js/lessons/35-dynamic-programming-2d.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="35-dynamic-programming-2d">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Dynamic programming II</h1>
+      <p class="hero__lede">Give the table a second index. Every cell compares a prefix of one thing with a prefix of another, and a glowing path of arrows leads back from the corner to the answer.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">28 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="34-dynamic-programming.html">Needs: dynamic programming I</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage dp2-hero" id="teaser" role="img" aria-label="Animation: a table for the words BATH and BEAT fills one anti-diagonal at a time, every new cell drawing an arrow back to the neighbour it came from; then a glowing path walks back from the bottom-right corner to the top-left, the arrows that show which letters the words share."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2>The problem</h2>
+      <p>A robot stands in the top-left corner of a grid and wants to reach the bottom-right. It moves only <b>right</b> or <b>down</b>. How many different routes are there?</p>
+      <p>Click any cell to drop an obstacle, or pick a layout. Step through, and watch each cell collect the routes that arrive from above and from the left.</p>
+      <figure class="fig wide" id="fig-grid">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Counting routes, one cell at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-preset></div><span class="dp2-hint">Click a cell to toggle an obstacle.</span></div>
+        <div class="fig__stage fig__stage--plain dp2-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a five by six grid. Each cell shows how many routes reach it. The first row and column hold 1 (only one way along an edge); every other cell is the sum of the cell above and the cell to its left; obstacles hold nothing and cut off the routes behind them. The bottom-right cell is the answer.</figcaption>
+      </figure>
+      <p>Every route into a cell ends with a step from above or a step from the left, so <code>paths(r, c) = paths(r − 1, c) + paths(r, c − 1)</code>. That is lesson 34's idea with one new twist: the state has <b>two numbers</b>, a row and a column, so the table is a grid.</p>
+      <div class="quiz" id="quiz-grid"></div>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2>Build the intuition</h2>
+      <p>Strings give you the same shape without a robot. Take two of them and ask: what is the longest thing they <b>share</b>, in order? Step through a few guesses.</p>
+      <figure class="fig wide" id="fig-share">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">What two strings have in common</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain dp2-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: two strings, AGGTAB above and GXTXAYB below. Candidate common subsequences (G, GT, TG, AB, GAB, GTAB) are linked letter to letter; TG is rejected because the letters appear in the opposite order. The longest, GTAB, has length 4.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>A <dfn>subsequence</dfn> keeps some letters of a string, in their original order, and drops the rest. The <dfn>longest common subsequence</dfn> (LCS) is the longest one that both strings contain. Diff tools, version control and DNA comparison all rest on it.</p>
+      </aside>
+      <div class="quiz" id="quiz-order"></div>
+      <p>Trying every subsequence of a 6-letter string means testing 64 of them, and each extra letter doubles that. Instead, shrink the problem. Compare only the <b>first i letters</b> of A with the <b>first j letters</b> of B, for every i and j. Those small answers are the cells of a table.</p>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Analogy: two bookmarks</p>
+        <p>Read two books side by side with a bookmark in each. A cell records "how much do the pages up to my two bookmarks share?". Push either bookmark forward by one letter and the answer can only change a little, so it is worth remembering the answer for every pair of bookmark positions.</p>
+      </aside>
+      <p>Click any cell to see which two prefixes it stands for, and a longest subsequence they share.</p>
+      <figure class="fig wide" id="fig-prefix">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">One cell, two prefixes</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="dp2-top" data-strip></div>
+        <div class="fig__stage fig__stage--plain dp2-stage" data-stage></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: the LCS table of AGGTAB and GXTXAYB. The chosen cell dp[i][j] holds the length of the longest common subsequence of the first i letters of A and the first j letters of B; the strings above show those two prefixes and one such subsequence.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>The table only works because a cell depends on <em>smaller prefix pairs</em> and nothing else. If the answer for two prefixes also depended on what comes later in the strings, no table of prefixes could hold it.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ MECHANISM: the two rules -->
+    <section id="rules">
+      <h2 data-toc="Two rules">Two rules fill the table</h2>
+      <p>Look at one cell and its three neighbours: up-left, up and left. The last letters of the two prefixes decide which neighbour matters.</p>
+      <div class="mini-row wide" id="mini-rules"></div>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>If the last letters match, they can both end the subsequence, so extend the diagonal cell by 1. If not, at most one of them can be used, so keep the better of "drop the last letter of A" (up) and "drop the last letter of B" (left). Row 0 and column 0 are the base cases.</p>
+      </aside>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why the match rule is safe</p>
+        <p>If A and B both end in T, some longest common subsequence ends with that T. Any answer that ignores one of the two T's can be improved by matching them, so the shorter prefixes' best plus one is always achievable and never beaten.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE LAB: LCS -->
+    <section id="lab">
+      <h2>The LCS lab</h2>
+      <p>Type two strings, or pick a preset, and step. Each cell lights its neighbours, draws an arrow, and weighs the options underneath. When the table is full, the traceback follows the arrows from the corner, and the letters where it goes diagonally spell the answer.</p>
+      <figure class="fig fig--lab full" id="lab-lcs">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Longest common subsequence, step by step</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar dp2-toolbar"><div data-input class="dp2-grow"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="dp2-top" data-top></div>
+            <div class="fig__stage fig__stage--tall dp2-stage" data-stage></div>
+            <div data-cands></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="dp2-jump"><button type="button" class="btn btn--sm" data-jump>Jump to the full table</button></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask what goes into a cell. Text alternative: the caption describes every step, including the two compared letters, the candidate values and the traceback moves.</figcaption>
+      </figure>
+      <p class="dp2-aside">Two things to try: enter <code>ABC, CBA</code> and see why the answer is only 1, then enter two identical strings and watch the arrows run down the diagonal.</p>
+    </section>
+
+    <!-- ============================================================ FILL ORDER -->
+    <section id="order">
+      <h2 data-toc="Fill order">Any order that finishes the inputs first</h2>
+      <p>Every arrow points up, left or up-left, so a cell can be filled once its three neighbours are done. Row by row is the usual choice. Try the others, and try the broken one.</p>
+      <figure class="fig wide" id="fig-order">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Four ways to fill one table</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-preset></div></div>
+        <div class="fig__stage fig__stage--plain dp2-stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a five by five table. Row by row, column by column and diagonal by diagonal all fill every cell after the cells it reads. Starting from the bottom row makes the first cell read empty neighbours.</figcaption>
+      </figure>
+      <p>The diagonal order is a hint about speed: all the cells on one anti-diagonal are independent, so a computer with many cores can fill them at once. That is how bioinformatics tools align long DNA strands quickly.</p>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">One cell as a flowchart</h2>
+      <p>The logic of every cell in a flowchart. Step the LCS lab above and the current box lights up.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The loop the table runs</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <figcaption class="fig__foot">Text alternative: set row 0 and column 0 to zero; while cells remain, if the two letters are equal the cell is the diagonal neighbour plus one, otherwise it is the larger of the cell above and the cell to the left; move to the next cell; when none remain, walk the arrows back from the corner.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ EDIT DISTANCE -->
+    <section id="edit">
+      <h2>Edit distance</h2>
+      <p>Spell checkers ask a different question: how <em>few edits</em> turn word A into word B? An edit is one of three moves. Each move is one arrow in the table.</p>
+      <div class="mini-row wide" id="mini-ops"></div>
+      <aside class="callout callout--def">
+        <p class="callout__title">Definition</p>
+        <p>The <dfn>edit distance</dfn> (Levenshtein distance) between two words is the fewest single-letter insertions, deletions and replacements that turn one into the other. Same table as LCS: <code>dp[i][j]</code> is the distance between the first i letters of A and the first j of B.</p>
+      </aside>
+      <p>The base cases are forced: turning i letters into nothing takes i deletions, and building j letters from nothing takes j insertions. Then each cell takes the cheapest of three arrows. When the table is full, the traceback path <b>is</b> the edit script, and the lab replays it on the word.</p>
+      <figure class="fig fig--lab full" id="lab-edit">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Edit distance, then the edits themselves</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar dp2-toolbar"><div data-input class="dp2-grow"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="dp2-top" data-top></div>
+            <div class="fig__stage fig__stage--tall dp2-stage" data-stage></div>
+            <div data-cands></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="dp2-jump"><button type="button" class="btn btn--sm" data-jump>Jump to the full table</button></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once to ask which arrow wins a cell. Text alternative: the caption describes every cell, every traceback move and finally each edit applied to the word A until it equals B.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-arrow"></div>
+    </section>
+
+    <!-- ============================================================ KNAPSACK -->
+    <section id="knapsack">
+      <h2>The knapsack</h2>
+      <p>You have a bag with room for 5 units and three items. Each item has a <b>weight</b> and a <b>value</b>, and you may take it or leave it, never half of it. Which items maximise the value?</p>
+      <p>The tempting rule, "take the best value per weight first", can fail. Compare the two bags.</p>
+      <div class="mini-row wide" id="mini-greedy"></div>
+      <p>The table fixes it by <b>trying both choices</b> for every item and every capacity. Rows are items (one more row per item available), columns are capacities. Cell <code>dp[i][c]</code> is the best value using the first i items in a bag of size c: <b>skip</b> item i and keep the row above, or <b>take</b> it and add its value to the best with the room that is left.</p>
+      <figure class="fig fig--lab full" id="lab-knap">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">0/1 knapsack: take or skip, then fill the bag</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar dp2-toolbar"><div data-input class="dp2-grow"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="dp2-top" data-top></div>
+            <div class="fig__stage fig__stage--tall dp2-stage" data-stage></div>
+            <div data-cands></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="dp2-jump"><button type="button" class="btn btn--sm" data-jump>Jump to the full table</button></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">The lab pauses once during the traceback to ask whether an item goes into the bag. Text alternative: the caption describes each cell's two candidates and, after the table is full, which items are taken and why.</figcaption>
+      </figure>
+      <p>Before the next section, try the same kind of question yourself. Click the item that the best bag leaves out.</p>
+      <figure class="fig" id="fig-knap-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which item stays behind?</h3></div>
+        </header>
+        <div class="fig__stage fig__stage--plain dp2-stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: three items on a shelf and an empty bag with room for 5. Item 1 weighs 4 and is worth 6; item 2 weighs 3 and is worth 5; item 3 weighs 2 and is worth 3.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-knap-click"></div>
+    </section>
+
+    <!-- ============================================================ ONE ROW -->
+    <section id="space">
+      <h2 data-toc="One row">One row is enough, if you go backwards</h2>
+      <p>Row i of the knapsack table reads only row i − 1. So you could keep <b>one row</b> and update it in place. But the direction of the loop now matters: the figure runs both directions on the same item (weight 2, value 3, only one of it) and shows one of them breaking.</p>
+      <figure class="fig wide" id="fig-space">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">One row, two loop directions</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="dp2-panes">
+          <div class="dp2-pane"><p class="dp2-pane__title">Backwards: capacity 7 → 2</p><div data-left></div></div>
+          <div class="dp2-pane"><p class="dp2-pane__title">Forwards: capacity 2 → 7</p><div data-right></div></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: two copies of the row dp[0..7] for one item of weight 2 and value 3. Going backwards, every cell reads a cell that still holds its old value and the item is used at most once. Going forwards, dp[4] reads dp[2] after it was rewritten, so dp[4] = 6, dp[6] = 9 and the item appears to be used three times.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Looping capacity <b>downwards</b> keeps every read pointing at the "before this item" row, which is exactly the 0/1 rule. Looping <b>upwards</b> lets a cell read a value that already contains the item, which allows unlimited copies: the <em>unbounded</em> knapsack that you met as coin change.</p>
+      </aside>
+      <div class="dp-code-pair wide">
+        <div><p class="dp-code-pair__title">Table: O(n · W) space</p><pre data-code-block="table"></pre></div>
+        <div><p class="dp-code-pair__title">One row: O(W) space</p><pre data-code-block="row"></pre></div>
+      </div>
+      <p>The price of the smaller table: it can tell you the best <em>value</em>, but not which items made it. The traceback needs the full table (or extra bookkeeping).</p>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>A table costs <b>(number of cells) × (work per cell)</b>. LCS and edit distance fill (m + 1)(n + 1) cells with constant work each. Knapsack fills (n + 1)(W + 1) cells. Brute force, by contrast, tries every subset or every subsequence: 2<sup>n</sup> of them.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Brute force against the table</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-preset></div><div data-slider-n class="dp2-grow"></div><div data-slider-w class="dp2-grow"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <figcaption class="fig__foot">Log scale: each gridline is ten times the one below. Brute force time assumes 100 million operations per second. For small n and a big capacity, brute force is actually cheaper; the marked crossover shows where the table wins. Hover or focus the chart and use the arrow keys to read values.</figcaption>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table dp2-cost-table">
+          <thead><tr><th scope="col">Problem</th><th scope="col">Cells</th><th scope="col">Work per cell</th><th scope="col" class="num">Time</th><th scope="col" class="num">Space</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Grid paths, r × c</th><td>r · c</td><td>1 addition</td><td class="num"><span class="big-o" data-o="n2">O(r·c)</span></td><td class="num"><span class="big-o" data-o="n">O(c)</span> with one row</td></tr>
+            <tr><th scope="row">LCS, lengths m and n</th><td>(m + 1)(n + 1)</td><td>1 comparison, 1 max</td><td class="num"><span class="big-o" data-o="n2">O(m·n)</span></td><td class="num"><span class="big-o" data-o="n">O(min(m, n))</span> for the length; O(m·n) to rebuild it</td></tr>
+            <tr><th scope="row">Edit distance</th><td>(m + 1)(n + 1)</td><td>3 reads, 1 min</td><td class="num"><span class="big-o" data-o="n2">O(m·n)</span></td><td class="num"><span class="big-o" data-o="n">O(min(m, n))</span> for the distance</td></tr>
+            <tr><th scope="row">0/1 knapsack, n items, capacity W</th><td>(n + 1)(W + 1)</td><td>2 reads, 1 max</td><td class="num"><span class="big-o" data-o="nk">O(n·W)</span></td><td class="num"><span class="big-o" data-o="n">O(W)</span> with one row</td></tr>
+            <tr><th scope="row">Brute force knapsack</th><td>2<sup>n</sup> subsets</td><td>up to n additions</td><td class="num"><span class="big-o" data-o="2n">O(n·2ⁿ)</span></td><td class="num"><span class="big-o" data-o="n">O(n)</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>For strings of length 5,000 the LCS table holds 25 million cells: seconds of work. In 2015, Backurs and Indyk showed that a genuinely faster edit distance algorithm would break a widely believed conjecture about satisfiability, so the quadratic table is likely the best you can do in general.</p>
+      <details class="accordion">
+        <summary>Why is O(n·W) called “pseudo-polynomial”?</summary>
+        <div class="accordion__body"><p>The time grows with the <em>value</em> of W, not with the number of digits needed to write it. A capacity of a billion needs a table with a billion columns, though “1000000000” is ten digits. Knapsack is NP-hard in the length of its input, yet perfectly practical whenever W is modest.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ RECOGNIZE -->
+    <section id="recognize">
+      <h2 data-toc="Recognize a 2D DP">Is it a two-dimensional DP?</h2>
+      <p>Most interview and real-world problems do not announce their table. Ask these questions in order. Click an answer on each.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Which table does this problem need?</h3></div>
+          <div class="btn-row"><button type="button" class="btn btn--sm btn--ghost" data-restart>Start over</button></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
+        <p class="fig__caption" data-caption aria-live="polite"></p>
+        <figcaption class="fig__foot">Text alternative: two sequences to compare gives a prefix table (LCS, edit distance); otherwise items under a capacity give an item by capacity table (knapsack); otherwise a walk on a grid gives a cell table (grid paths); otherwise a range that splits in two gives an interval table; otherwise one index may be enough, or add a dimension.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The same tables, with one rule changed, solve a family of problems.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="substring">Substring, not subsequence</button>
+          <button data-tab="interval">Interval DP</button>
+          <button data-tab="subset">Subset sum</button>
+          <button data-tab="rows">Two rows</button>
+        </div>
+        <div data-tab-panel="substring">
+          <div class="dp-var-minis" data-mini="substring"></div>
+          <div class="split">
+            <p>A <b>substring</b> must be contiguous. One rule changes: a mismatch resets the cell to 0. Because a run can end anywhere, the answer is the <b>largest cell</b>, not the corner.</p>
+            <pre data-code-block="substring"></pre>
+          </div>
+        </div>
+        <div data-tab-panel="interval">
+          <div class="dp-var-minis" data-mini="interval"></div>
+          <div class="split">
+            <p>Some problems ask about a <b>range</b> of one sequence, such as the cheapest way to multiply a chain of matrices. The cell (i, j) means "the range i..j", and it combines two shorter ranges. The order is by length: short ranges before long ones.</p>
+            <p>Interval DP is the one place where the fill order is not row by row. It costs O(n³) when every split point is tried.</p>
+          </div>
+        </div>
+        <div data-tab-panel="subset">
+          <div class="dp-var-minis" data-mini="subset"></div>
+          <div class="split">
+            <p>Replace the values by yes and no and knapsack becomes <b>subset sum</b>: can some of the numbers add up exactly to the target? Splitting an array into two equal halves is subset sum with half the total as the target.</p>
+            <pre data-code-block="subset"></pre>
+          </div>
+        </div>
+        <div data-tab-panel="rows">
+          <div class="dp-var-minis" data-mini="rows"></div>
+          <div class="split">
+            <p>LCS and edit distance also read only the previous row, so two rows are enough when you need the <em>number</em>. To rebuild the string as well, you need the full table, or Hirschberg's divide-and-conquer trick that regains the string in linear space.</p>
+            <pre data-code-block="rows"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-cells"></div>
+        <div class="quiz" id="quiz-dir"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Two-dimensional dynamic programming</p></div>
+          <div class="cluster"><span class="chip chip--sm">cells = size₁ × size₂</span><span class="chip chip--sm">read three neighbours</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1965–74<small>found again and again</small></div>
+        <p class="history__people">Levenshtein, Vintsyuk, Needleman &amp; Wunsch, Wagner &amp; Fischer<span><em>JACM</em> 21(1), 1974</span></p>
+        <div class="history__body">
+          <p>The edit-distance table was discovered again and again: by speech researchers in 1968, by biologists aligning proteins in 1970, and by computer scientists Robert Wagner and Michael Fischer in 1974. Vladimir Levenshtein had defined the distance in 1965 while studying codes that repair dropped and inserted bits.</p>
+          <p>In 2015 Arturs Backurs and Piotr Indyk explained why nobody has beaten the quadratic table: doing so would mean a breakthrough on satisfiability.</p>
+        </div>
+        <p class="history__source">Sources: R. Wagner and M. Fischer, “The String-to-String Correction Problem”, <em>JACM</em> 21(1), 1974; A. Backurs and P. Indyk, “Edit Distance Cannot Be Computed in Strongly Subquadratic Time (unless SETH is false)”, STOC 2015.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Minimum path sum</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Each grid cell has a cost. Move only right or down from the top-left to the bottom-right and minimise the total cost of the cells you visit. What is the recurrence, and which cell holds the answer?</p></li>
+        <li><div class="practice__title">Delete operation for two strings</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Using only deletions (from either word), what is the fewest deletions that make two words equal? Relate the answer to the LCS length, and check it on two examples.</p></li>
+        <li><div class="practice__title">Longest palindromic subsequence</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Find the longest subsequence of a string that reads the same forwards and backwards. Can you solve it by feeding a string and its reverse to the LCS table? Why does that work?</p></li>
+        <li><div class="practice__title">Partition into two equal halves</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Decide whether an array of positive integers can be split into two groups with the same sum. Define a boolean state, write the recurrence, and reduce the table to one row (which loop direction?).</p></li>
+        <li><div class="practice__title">Rebuild the alignment</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Give insertion, deletion and replacement different costs (say 1, 1 and 2), fill the edit table, and print the actual sequence of edits. Then count how many different cheapest edit scripts exist. What extra number does each cell need?</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-15-dynamic-programming-optimal-substructure-over-a-subproblem-dag.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Optimal substructure over a subproblem DAG</span><span class="deeper__text" style="display:block">The long-form study: edit distance and knapsack as shortest paths in a DAG, interval DP, semirings, and the ways a DP fails silently.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

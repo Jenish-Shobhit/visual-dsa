@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Graph studio · Visual DSA</title>
+<meta name="description" content="Draw any graph, or start from a preset, and run BFS, DFS, topological sort, Dijkstra, Bellman-Ford, Floyd-Warshall, Kruskal, Prim and max flow on it, one animated step at a time. Share your graph as a link.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/labs/graph-studio.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/graph.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/algos/25-graphs.js" defer></script>
+<script src="../js/algos/26-bfs-and-dfs.js" defer></script>
+<script src="../js/algos/27-topological-sort.js" defer></script>
+<script src="../js/algos/28-dijkstra-and-a-star.js" defer></script>
+<script src="../js/labs/graph-studio-capture.js" defer></script>
+<script src="../js/algos/29-bellman-ford-and-floyd-warshall.js" defer></script>
+<script src="../js/algos/30-minimum-spanning-trees.js" defer></script>
+<script src="../js/algos/31-network-flow.js" defer></script>
+<script src="../js/labs/graph-studio-model.js" defer></script>
+<script src="../js/labs/graph-studio.js" defer></script>
+</head>
+<body data-page="lab" data-crumb="Graph studio">
+<main id="main" class="gs">
+
+  <header class="gs-head">
+    <p class="hero__eyebrow"><span class="hero__num">Lab</span><span>Graphs</span></p>
+    <h1 class="gs-head__title">Graph studio</h1>
+    <p class="gs-head__lede">Draw a graph, pick an algorithm, and step through it. Turn on <b>Directed</b> or <b>Weighted</b>, load a preset such as <b>Negative edge</b>, and see which algorithms still work.</p>
+  </header>
+
+  <figure class="fig fig--lab wide gs-fig" id="studio" aria-labelledby="gs-title">
+    <header class="fig__head gs-fig__head">
+      <div class="fig__titles"><h2 class="fig__title" id="gs-title">Studio</h2></div>
+      <div data-legend></div>
+    </header>
+
+    <div class="fig__toolbar gs-tools">
+      <div class="gs-row">
+        <div class="gs-field gs-field--switches">
+          <div data-directed></div>
+          <div data-weighted></div>
+        </div>
+        <div class="gs-field gs-field--presets">
+          <span class="field-label" id="gs-pre-l">Start from</span>
+          <div class="gs-presets" role="group" aria-labelledby="gs-pre-l" data-presets></div>
+        </div>
+      </div>
+      <div class="gs-row gs-row--random">
+        <div class="gs-field gs-field--slider"><div data-size></div></div>
+        <div class="gs-field gs-field--slider"><div data-density></div></div>
+        <div class="btn-row gs-graph-actions" role="group" aria-label="Graph actions">
+          <button class="btn btn--sm" type="button" data-act="random">New random graph</button>
+          <button class="btn btn--sm" type="button" data-act="tidy" title="Rearrange the vertices (T)">Tidy layout</button>
+          <button class="btn btn--sm" type="button" data-act="clear">Clear</button>
+          <button class="btn btn--sm" type="button" data-act="undo" disabled title="Undo the last edit (U)">Undo</button>
+          <button class="btn btn--sm btn--ghost" type="button" data-act="share" title="Copy a link to this exact graph and algorithm">Copy link</button>
+        </div>
+      </div>
+      <div class="gs-row gs-row--algo">
+        <div class="gs-field gs-field--algos">
+          <span class="field-label" id="gs-algo-l">Algorithm</span>
+          <div class="gs-algos" role="group" aria-labelledby="gs-algo-l" data-algos></div>
+        </div>
+      </div>
+      <div class="gs-row gs-row--pick">
+        <label class="gs-field gs-field--select" data-pick="src"><span class="field-label" data-pick-label="src">Start</span><select class="field" data-src></select></label>
+        <label class="gs-field gs-field--select" data-pick="dst"><span class="field-label" data-pick-label="dst">Target</span><select class="field" data-dst></select></label>
+        <div class="btn-row gs-pickbtns" data-pickbtns role="group" aria-label="Use the selected vertex">
+          <button class="btn btn--sm" type="button" data-use="src" disabled>Start = selected</button>
+          <button class="btn btn--sm" type="button" data-use="dst" disabled>Target = selected</button>
+        </div>
+        <div class="gs-lesson" data-lesson></div>
+        <div class="gs-tool" role="group" aria-label="Canvas tool"><div data-tool></div></div>
+      </div>
+      <p class="gs-notice" data-notice role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="lab gs-lab">
+      <div class="lab__main gs-main">
+        <p class="gs-hint" data-hint><b>Click</b> empty space to add a vertex. <b>Drag</b> from one vertex to another to connect them. <b>Click an edge</b> to set its weight. <kbd>Delete</kbd> removes the selection. <kbd>Shift</kbd>-drag or the Move tool repositions.</p>
+        <div class="fig__stage fig__stage--plain gs-stage" data-stage></div>
+        <ul class="gs-facts" data-facts aria-label="Facts about this graph"></ul>
+        <p class="fig__caption gs-caption" data-caption aria-live="polite"></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="gs-jump btn-row">
+          <button class="btn btn--sm" type="button" data-act="end">Jump to the result</button>
+          <div data-turbo></div>
+        </div>
+      </div>
+      <div class="lab__side gs-side">
+        <section class="gs-card" aria-labelledby="gs-ds-h">
+          <h3 class="gs-card__title" id="gs-ds-h" data-ds-title>Data structure</h3>
+          <div class="gs-ds" data-ds><div class="gs-ds__chips"></div><div class="gs-ds__grid" hidden></div></div>
+        </section>
+        <section class="gs-card" aria-labelledby="gs-res-h">
+          <h3 class="gs-card__title" id="gs-res-h">Result</h3>
+          <div class="gs-result" data-result></div>
+        </section>
+        <div class="fig__stats gs-counters" data-counters></div>
+      </div>
+    </div>
+
+    <div class="gs-reps">
+      <section class="gs-card gs-card--matrix" aria-labelledby="gs-mat-h">
+        <h3 class="gs-card__title" id="gs-mat-h">Adjacency matrix</h3>
+        <div class="gs-matrix" data-matrix></div>
+        <p class="gs-card__note" data-matrix-note></p>
+      </section>
+      <section class="gs-card gs-card--list" aria-labelledby="gs-list-h">
+        <h3 class="gs-card__title" id="gs-list-h">Adjacency list</h3>
+        <div class="gs-list" data-list></div>
+      </section>
+      <section class="gs-card gs-card--text" aria-labelledby="gs-text-h">
+        <h3 class="gs-card__title" id="gs-text-h">Edge list: import and export</h3>
+        <label class="field-label" for="gs-text" data-text-label>Edges (A-B:4 is undirected, A&gt;B:4 is directed)</label>
+        <textarea class="field gs-text" id="gs-text" data-text rows="5" spellcheck="false" autocomplete="off" aria-describedby="gs-text-msg"></textarea>
+        <div class="btn-row gs-text__actions">
+          <button class="btn btn--sm btn--primary" type="button" data-act="import">Apply this text</button>
+          <button class="btn btn--sm" type="button" data-act="copytext">Copy</button>
+        </div>
+        <p class="gs-msg" id="gs-text-msg" data-text-msg role="status" aria-live="polite"></p>
+      </section>
+    </div>
+
+    <figcaption class="fig__foot gs-foot">
+      <span>Keys (when not typing): <kbd>T</kbd> tidy, <kbd>U</kbd> undo, <kbd>E</kbd> edge list. On the canvas: <kbd>N</kbd> new vertex, <kbd>Delete</kbd> remove, arrows nudge. Player: <kbd>←</kbd> <kbd>→</kbd> step, <kbd>Space</kbd> play or pause, <kbd>Home</kbd> <kbd>End</kbd> first or last.</span>
+      <span>Up to 16 vertices and 48 edges. Weights are whole numbers from −99 to 99; with Flow on, each weight is a pipe capacity.</span>
+    </figcaption>
+  </figure>
+
+  <section class="gs-tips flow" aria-labelledby="gs-tips-h">
+    <h2 id="gs-tips-h">Things to try</h2>
+    <ul>
+      <li>Load <b>Negative edge</b>, pick <b>Dijkstra</b>, jump to the result: it reports the wrong distance for A. Now pick <b>Bellman-Ford</b>.</li>
+      <li>Load <b>Course DAG</b> and run <b>Topological sort</b>. Then draw an edge from ALG back to CS1 and watch the cycle jam Kahn’s queue.</li>
+      <li>Load <b>City map</b>: run <b>Kruskal</b> and <b>Prim</b> and compare the trees. Then turn <b>Weighted</b> off and see every spanning tree weigh V − 1.</li>
+      <li>Load <b>Flow network</b> and press <b>Edmonds-Karp</b>. Change one capacity and watch the min cut move.</li>
+    </ul>
+  </section>
+
+  <nav class="gs-lessons flow" aria-labelledby="gs-les-h">
+    <h2 id="gs-les-h">Learn how they work</h2>
+    <ul data-lessons></ul>
+  </nav>
+
+</main>
+</body>
+</html>

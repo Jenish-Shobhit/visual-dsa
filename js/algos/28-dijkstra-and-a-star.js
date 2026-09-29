@@ -38,7 +38,7 @@
   if (root) {
     root.VDSA = root.VDSA || {};
     root.VDSA.algos = root.VDSA.algos || {};
-    root.VDSA.algos.shortestPaths = api;
+    root.VDSA.algos.shortestPaths = Object.assign(root.VDSA.algos.shortestPaths || {}, api);   // merge: lessons 28 and 29 share this namespace
   }
 }(typeof window !== 'undefined' ? window : null, function () {
   'use strict';

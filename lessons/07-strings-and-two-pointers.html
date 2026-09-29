@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Strings, two pointers &amp; windows · Visual DSA</title>
+<meta name="description" content="A string is an array of characters. Watch pointers converge on palindromes and sorted pair sums, a window slide over a string, and prefix sums turn range queries into a subtraction, with code-synced labs and live cost charts.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/07-strings-and-two-pointers.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/grid.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/07-strings-and-two-pointers.js" defer></script>
+<script src="../js/lessons/07-strings-and-two-pointers-figs.js" defer></script>
+<script src="../js/lessons/07-strings-and-two-pointers-labs.js" defer></script>
+<script src="../js/lessons/07-strings-and-two-pointers.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="07-strings-and-two-pointers">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Strings, two pointers &amp; windows</h1>
+      <p class="hero__lede">A string is an array of characters, and a surprising number of problems dissolve into one pass with two indices: pointers that walk toward each other, a window that slides, and sums you never add twice.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">18 min</li>
+        <li class="chip" data-icon="level">Beginner</li>
+        <li><a class="chip" data-icon="prereq" href="06-arrays.html">Needs: arrays</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: a word such as racecar sits in a row of boxes. A pointer l on the first letter and a pointer r on the last compare their letters, both turn green when they match, and the pointers step inward until they meet in the middle."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">Text is an array in disguise</h2>
+      <p>Is <em>racecar</em> the same backwards? Which seven days of a year had the best sales? Do <em>listen</em> and <em>silent</em> use the same letters? Each question is about a row of characters or numbers, and each can be answered in one pass if you scan it the right way.</p>
+      <p>A string is an array of characters, so lesson 06 still applies: positions start at 0, any character is one step away, and neighbours sit side by side. Type below to see it. Each box is one character, and underneath it is the number the machine really stores.</p>
+      <figure class="fig wide" id="fig-chars">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A string is a row of numbered characters</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l07-input"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <div class="fig__stats" data-stats></div>
+        <div class="table-wrap l07-chars-table"><table class="table table--compact" data-table>
+          <thead><tr><th scope="col">Index</th><th scope="col">Character</th><th scope="col">Code point</th><th scope="col">UTF-16 code units</th><th scope="col">UTF-8 bytes</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <figcaption class="fig__foot">Text alternative: each typed character is drawn as a box with its index below and its code point inside; a table lists the same characters with their code point, UTF-16 units and UTF-8 byte count.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">One slot is not always one character</p>
+        <p>An emoji needs two 16-bit code units, so JavaScript’s <code>.length</code> says 2 where Python’s <code>len</code> says 1. This lesson works with whole characters; the pointer ideas are identical either way.</p>
+      </aside>
+      <p>There is one real difference from an array. In many languages a string is <dfn>immutable</dfn>: you cannot change a character, only make a new string. So <code>s = s + c</code> allocates a fresh block and copies everything into it. Watch what that costs in a loop.</p>
+      <figure class="fig wide" id="fig-concat">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Building a string one character at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="l07-slider"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the variable s is a row of characters. With s = s + c, a new longer block appears under it, all old characters are copied into it, the new one is added, and s points at the new block. A builder appends into one buffer and copies once at the end.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>Copying the old string every turn costs 1 + 2 + … + n, which is about n² / 2 writes. A builder (a dynamic array of characters, then one <code>join</code>) writes about 2n. The rest of the lesson is about scans that never redo work like this.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2 data-toc="Intuition">Three ways to walk a row</h2>
+      <p>Imagine two people at opposite ends of a corridor, walking toward each other and checking a tile as they go. Or one person reading a list while a second one stamps the keepers into a fresh list. Or a picture frame sliding along a wall and showing what is inside it. Those three walks are the whole lesson.</p>
+      <div class="mini-row wide" id="mini-intuition"></div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the pictures stop</p>
+        <p>People look ahead and jump. A pointer only knows the values it stands on, so every move must be <em>justified</em> by something already known: a sorted order, a symmetry, a rule the window must keep. That justification is what each figure below makes visible.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ PALINDROME -->
+    <section id="palindrome">
+      <h2 data-toc="Palindromes">Converging pointers: palindromes</h2>
+      <p>A <dfn>palindrome</dfn> reads the same forwards and backwards. Put a pointer <b>l</b> on the first character and <b>r</b> on the last. If they differ, you are done. If they match, that pair is settled, so both pointers step inward.</p>
+      <figure class="fig wide" id="fig-pal">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Two pointers meet in the middle</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: the word is drawn as boxes with a pointer l below the first box and a pointer r above the last. Each step compares the two characters under the pointers; equal pairs turn green and the pointers move inward, and an unequal pair turns red and stops the check.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Invariant</p>
+        <p>At every step, every character outside <code>s[l..r]</code> has already been matched with its mirror image. When the pointers meet or cross, nothing is left unmatched, so the answer is yes. One mismatch answers no immediately.</p>
+      </aside>
+      <p>The work is about n / 2 comparisons and no extra memory. Notice that the odd middle character never gets compared: it is its own mirror image.</p>
+    </section>
+
+    <!-- ============================================================ TWO-SUM -->
+    <section id="twosum">
+      <h2 data-toc="Sorted pair sums">Sorted pair sums, and the pair grid</h2>
+      <p>Now a harder question. Given a <em>sorted</em> array, find two values that add up to a target. Brute force tries every pair, about n² / 2 sums. Two pointers do it in at most n − 1, and the picture on the right shows why they can.</p>
+      <p>The <dfn>pair grid</dfn> has one cell for every pair of indices, holding the sum <code>a[i] + a[j]</code>. A pointer move never checks a cell it skipped; it <em>rules out a whole row or column at once</em>.</p>
+      <figure class="fig wide" id="fig-pairs">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Each pointer move discards a row or a column</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="l07-slider"></div><button type="button" class="btn btn--sm" data-shuffle>New numbers</button></div>
+        <div class="fig__stage fig__stage--plain l07-pairs">
+          <div class="l07-pairs__array" data-array></div>
+          <div class="l07-pairs__grid" data-grid></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a sorted array with pointers lo and hi, next to a triangular grid whose cell (i, j) is a[i] + a[j]. Each sum checked lights one cell; when the sum is too small a whole row turns grey, and when it is too big a whole column turns grey.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Why a pointer may move</p>
+        <p>Say <code>a[lo] + a[hi]</code> is too small. <code>a[hi]</code> is the largest value still in play, so <code>a[lo]</code> is too small with <em>any</em> partner: row <em>lo</em> of the grid is dead. If the sum is too big, <code>a[hi]</code> overshoots even with the smallest partner, and column <em>hi</em> is dead. Every move kills a full row or column and no answer is ever lost. The staircase of moves ends after at most n − 1 sums.</p>
+      </aside>
+      <p>This only works because the array is sorted. On unsorted data “too small” tells you nothing about the values further along; you would sort first (n log n) or use a hash table (lesson 11).</p>
+    </section>
+
+    <!-- ============================================================ LAB: TWO POINTERS -->
+    <section id="lab-two">
+      <h2 data-toc="Lab: two pointers">The lab: four pointer problems</h2>
+      <p>Same idea, four problems. Switch tabs, type your own input, and step through with <kbd>←</kbd> and <kbd>→</kbd>. Code, variables and counters follow the trace, and the lab pauses twice to ask what comes next.</p>
+      <figure class="fig fig--lab full" id="lab-pointers">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace two-pointer algorithms on your own input</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="tabs l07-labtabs" id="lab-pointers-tabs">
+          <div class="tabs__list">
+            <button data-tab="palindrome">Palindrome</button>
+            <button data-tab="twosum">Two-sum<span class="l07-wide-only"> (sorted)</span></button>
+            <button data-tab="reverse">Reverse<span class="l07-wide-only"> in place</span></button>
+            <button data-tab="dedupe">Dedupe<span class="l07-wide-only">: remove duplicates</span></button>
+          </div>
+          <div data-tab-panel="palindrome"><p class="l07-invariant"><b>Converging.</b> Compare the outermost unchecked pair; a mismatch ends it. About n / 2 comparisons.</p></div>
+          <div data-tab-panel="twosum"><p class="l07-invariant"><b>Converging.</b> Sum too small: lo moves. Too big: hi moves. At most n − 1 sums, on <em>sorted</em> data only.</p></div>
+          <div data-tab-panel="reverse"><p class="l07-invariant"><b>Converging.</b> Swap the outermost pair, move inward. Exactly ⌊n / 2⌋ swaps and no extra array.</p></div>
+          <div data-tab-panel="dedupe"><p class="l07-invariant"><b>Read and write.</b> <b>r</b> reads every value, <b>w</b> marks the next free slot. Keep a value only if it differs from the last one kept.</p></div>
+        </div>
+        <div class="fig__toolbar"><div data-input class="l07-input"></div><div data-target class="l07-slider" hidden></div></div>
+        <p class="l07-note" data-note aria-live="polite"></p>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the caption under the figure explains every step in words; the code panel highlights the line that runs and the variables panel shows both pointers and the values under them.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ RACE -->
+    <section id="race">
+      <h2 data-toc="Race">Race: every pair versus one staircase</h2>
+      <p>Same numbers, same target, one clock. Each tick pays for one pair examined. Brute force scans the grid row by row; two pointers take their staircase and rule out the rest. Try <em>First two values</em>: brute force wins, and that is fair, because its cost depends on where the answer hides while the staircase never costs more than n − 1.</p>
+      <figure class="fig full" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Brute force versus two pointers on the pair grid</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="l07-slider"></div><button type="button" class="btn btn--sm" data-shuffle>New numbers</button></div>
+        <div class="fig__stage fig__stage--plain">
+          <div class="l07-race">
+            <div class="l07-lane" data-lane="brute"><div class="l07-lane__head"><span class="l07-lane__name">Brute force: every pair</span><span class="l07-lane__status" data-status></span></div><div data-grid></div><div class="l07-lane__stats" data-stats></div></div>
+            <div class="l07-lane" data-lane="pointers"><div class="l07-lane__head"><span class="l07-lane__name">Two pointers: one staircase</span><span class="l07-lane__status" data-status></span></div><div data-grid></div><div class="l07-lane__stats" data-stats></div></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: two pair grids side by side. The left one lights cells row by row; the right one lights a staircase of cells and greys out the rows and columns it can rule out. A counter under each shows pairs checked, and a status line says whether a pair was found.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ WINDOWS -->
+    <section id="windows">
+      <h2 data-toc="Sliding windows">Sliding windows</h2>
+      <p>Many questions are about a <em>contiguous</em> stretch: the best 3 days in a row, the longest substring with a property. A <dfn>window</dfn> is the stretch <code>a[l..r]</code>. Instead of rebuilding the answer for every stretch, slide the window one step: one value enters on the right, one leaves on the left, and the answer changes by exactly that.</p>
+      <figure class="fig wide" id="fig-fixed">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Best sum of k values in a row: slide, do not re-add</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="l07-slider"></div></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a bracket around k values slides across the array. In slide mode it adds the entering value and subtracts the leaving one; in re-add mode it sums all k values again for every window. A second row shows the best window so far.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Cost</p>
+        <p>Re-adding costs k additions for each of the n − k + 1 windows. Sliding costs k for the first window and 2 per slide after that. Drag the window size up: re-adding grows with k, sliding does not.</p>
+      </aside>
+      <p>The window need not have a fixed size. For <em>the longest substring with no repeated character</em>, let the window grow while every character is different and shrink it from the left when a repeat appears. A table of counts tells you instantly whether the window is valid. Both pointers only ever move right.</p>
+    </section>
+
+    <!-- ============================================================ LAB: WINDOW -->
+    <section id="lab-window-sec">
+      <h2 data-toc="Lab: sliding window">The lab: expand and contract</h2>
+      <p>Watch the bracket grow, hit a repeat, and shrink. The count table shows what the window holds at every step, and the best window so far is copied into the second row. The lab asks you to predict how far <b>l</b> has to move.</p>
+      <figure class="fig fig--lab full" id="lab-window">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace a sliding window on your own input</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="tabs l07-labtabs" id="lab-window-tabs">
+          <div class="tabs__list">
+            <button data-tab="longest">Longest substring<span class="l07-wide-only"> without repeats</span></button>
+            <button data-tab="fixed">Max sum<span class="l07-wide-only"> of k values</span></button>
+          </div>
+          <div data-tab-panel="longest"><p class="l07-invariant"><b>Invariant:</b> every character in <code>s[l..r]</code> is different. r adds one character; while a repeat exists, l drops characters.</p></div>
+          <div data-tab-panel="fixed"><p class="l07-invariant"><b>Invariant:</b> the window holds exactly k values and <code>sum</code> is their total. Each slide adds one value and subtracts one.</p></div>
+        </div>
+        <div class="fig__toolbar"><div data-input class="l07-input"></div><div data-k class="l07-slider" hidden></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <div class="l07-table" data-table></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the string is drawn as boxes with a bracket around the window, pointers l and r, and a second row holding the best window found so far. Under it a table shows how many times each character is inside the window; the caption explains every step.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The window as a flowchart</h2>
+      <p>The same logic as a map. It is wired to the lab above: step the lab and the box that is running lights up here, and a token travels along the arrow that was taken. Watch the small loop between the repeat check and the shrink box: that is the window contracting.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-flow-title>Longest substring without repeats as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><p class="l07-toolbar-note">Switching here also switches the lab.</p></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 480px"></div>
+        <figcaption class="fig__foot" data-flow-alt>Text alternative: start with an empty count table, l = 0 and best = 0. Move r right and add s[r] to the table. While the count of s[r] is above 1, drop s[l] from the table and move l right. Then set best to the larger of best and the window length, and continue with the next r. When r has passed the last character, return best.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ PREFIX SUMS -->
+    <section id="prefix">
+      <h2 data-toc="Prefix sums">Prefix sums: a range is a difference of two bars</h2>
+      <p>Windows answer one running question. What if you get thousands of range questions about the same array: “what is the total from day 40 to day 97?” Adding up each range costs up to n. Do the adding <em>once</em>, and each answer becomes a subtraction.</p>
+      <p>The <dfn>prefix sum</dfn> <code>P[i]</code> is the sum of the first <i>i</i> values, so <code>P[0] = 0</code>. Each entry reuses the one before it. Then the sum of <code>a[l..r]</code> is the height of bar <code>P[r + 1]</code> minus the height of bar <code>P[l]</code>: everything before the range is in both bars and cancels.</p>
+      <figure class="fig fig--lab wide" id="fig-prefix">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Build P, then answer a range with one subtraction</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l07-input"></div><div data-lo class="l07-slider"></div><div data-hi class="l07-slider"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--plain fig__stage--scroll" data-stage style="--stage-min: 420px"></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the values are boxes on top; under them a bar rises at each boundary between boxes, its height the sum of everything to its left. A range of boxes is highlighted, and the sum of that range is the gap between the bar at the range’s end and the bar at its start.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Trade</p>
+        <p>You pay n additions once and n + 1 numbers of memory, and every later query costs one subtraction. If the array changes between queries the table goes stale, and lesson 23 shows a tree that repairs it in O(log n).</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ ANAGRAM -->
+    <section id="anagram">
+      <h2 data-toc="Frequency counts">Frequency counts: same letters?</h2>
+      <p>Two words are <dfn>anagrams</dfn> when they use the same letters the same number of times. You could sort both words, but you do not need order at all. Tally each letter once, then compare the two tables.</p>
+      <figure class="fig wide" id="fig-anagram">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Two frequency tables, side by side</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar l07-anagram-form">
+          <label class="l07-field"><span class="field-label">First word</span><input class="field" type="text" data-w1 maxlength="14" autocomplete="off" spellcheck="false"></label>
+          <label class="l07-field"><span class="field-label">Second word</span><input class="field" type="text" data-w2 maxlength="14" autocomplete="off" spellcheck="false"></label>
+          <button type="button" class="btn btn--primary" data-apply>Compare</button>
+          <div class="input-row__presets" role="group" aria-label="Examples">
+            <button type="button" class="btn btn--sm" data-preset="listen|silent">listen / silent</button>
+            <button type="button" class="btn btn--sm" data-preset="rat|car">rat / car</button>
+            <button type="button" class="btn btn--sm" data-preset="aab|abb">aab / abb</button>
+            <button type="button" class="btn btn--sm" data-preset="abc|abcd">abc / abcd</button>
+          </div>
+          <p class="input-row__error" data-err role="alert"></p>
+        </div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: a paired bar chart with one group of two bars per letter. The first bar counts the letter in the first word and the second bar counts it in the second word. The words are anagrams exactly when every pair of bars has the same height.</figcaption>
+      </figure>
+      <p>Cost: one tally per letter, then one look per distinct letter. That is linear, and it is the count table from the window lab in another costume. Slide a fixed window over a long text, keep its table up to date, and you can find every anagram of a word inside it.</p>
+    </section>
+
+    <!-- ============================================================ CHOOSE -->
+    <section id="choose">
+      <h2 data-toc="Which pattern?">Which pattern fits my problem?</h2>
+      <p>Answer the questions by clicking <b>yes</b> or <b>no</b> on the diagram. Most scan problems fall into one of five families.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Choosing a scan pattern</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 380px"></div>
+        <p class="fig__caption" data-answer aria-live="polite"></p>
+        <div class="fig__controls l07-btnbar"><button type="button" class="btn btn--sm" data-restart>Start over</button></div>
+        <figcaption class="fig__foot">Text alternative: if the answer lives in a contiguous piece, ask whether you get many range-sum questions (use prefix sums), then whether the piece has a fixed size (fixed window) or is decided by a condition (variable window). Otherwise, if the input is sorted or the question is a pair or symmetry, use converging pointers; if you must rewrite in place, use read and write pointers; else use counts or a hash map.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Every technique in this lesson trades a nested loop for one pass. The chart counts real operations, from code that actually ran, for the slow version and the fast one. Drag <em>n</em> and watch the gap, then switch to log scale to see two very different shapes.</p>
+      <figure class="fig wide" id="fig-cost">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Operations against input size</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-slider class="l07-slider"></div><div data-toggle></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Hover or focus the chart and use the arrow keys to read exact values. Counts come from running the algorithms on a worst-case input for the slow version.</figcaption>
+      </figure>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Technique</th><th scope="col">Time</th><th scope="col">Extra space</th><th scope="col">Needs</th><th scope="col">Slow way</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Palindrome check</th><td><span class="big-o" data-o="n">O(n)</span> n / 2 comparisons</td><td><span class="big-o" data-o="1"></span></td><td>Random access</td><td>Reverse a copy: <span class="big-o" data-o="n"></span> time, <span class="big-o" data-o="n"></span> space</td></tr>
+            <tr><th scope="row">Two-sum, sorted</th><td><span class="big-o" data-o="n">O(n)</span> ≤ n − 1 sums</td><td><span class="big-o" data-o="1"></span></td><td>Sorted input</td><td>All pairs: <span class="big-o" data-o="n2"></span></td></tr>
+            <tr><th scope="row">Reverse in place</th><td><span class="big-o" data-o="n"></span> ⌊n / 2⌋ swaps</td><td><span class="big-o" data-o="1"></span></td><td>Mutable array</td><td>Immutable strings must copy: <span class="big-o" data-o="n"></span> space</td></tr>
+            <tr><th scope="row">Remove duplicates, sorted</th><td><span class="big-o" data-o="n"></span> one pass</td><td><span class="big-o" data-o="1"></span></td><td>Sorted input</td><td>Set of seen values: <span class="big-o" data-o="n"></span> space</td></tr>
+            <tr><th scope="row">Fixed window (max sum of k)</th><td><span class="big-o" data-o="n"></span> k + 2(n − k)</td><td><span class="big-o" data-o="1"></span></td><td>A sum that can be updated</td><td>Re-add each window: <span class="big-o" data-o="nk">O(n · k)</span></td></tr>
+            <tr><th scope="row">Variable window</th><td><span class="big-o" data-o="n"></span> l and r each pass n once</td><td><span class="big-o" data-o="1">O(σ)</span> σ = alphabet size</td><td>A rule that stays true after shrinking</td><td>Every start, extend: <span class="big-o" data-o="n2"></span></td></tr>
+            <tr><th scope="row">Prefix sums</th><td><span class="big-o" data-o="n">O(n)</span> build, <span class="big-o" data-o="1">O(1)</span> per query</td><td><span class="big-o" data-o="n"></span></td><td>An array that does not change</td><td>Re-add each range: <span class="big-o" data-o="n"></span> per query</td></tr>
+            <tr><th scope="row">Anagram by counts</th><td><span class="big-o" data-o="n"></span> tally + compare</td><td><span class="big-o" data-o="1">O(σ)</span></td><td>A small alphabet</td><td>Sort both: <span class="big-o" data-o="nlogn"></span></td></tr>
+            <tr><th scope="row">Build a string of n characters</th><td>Builder: <span class="big-o" data-o="n"></span></td><td><span class="big-o" data-o="n"></span></td><td>A buffer or <code>join</code></td><td><code>s = s + c</code> in a loop: <span class="big-o" data-o="n2"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <details class="accordion">
+        <summary>Why is the window O(n) when there is a loop inside a loop?</summary>
+        <div class="accordion__body"><p>Count the moves, not the loops. r moves right once per character: n moves. l only ever moves right and can never pass r, so it makes at most n moves in total across every run of the inner loop. The whole scan does at most 2n pointer moves. This is an <dfn>amortized</dfn> argument: an expensive shrink for one r is paid for by the characters that r added earlier.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why does sliding a fixed window cost 2 per step?</summary>
+        <div class="accordion__body"><p>The new window differs from the old one in exactly two values. Subtracting the one that left and adding the one that arrived updates the sum in two operations, however large k is. The first window costs k because nothing is there yet to reuse.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>The same three walks appear under many names. Each variation below is one of them with a small twist.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="three">Three-sum</button>
+          <button data-tab="zeros">Move zeroes</button>
+          <button data-tab="anagram">Anagrams in a text</button>
+          <button data-tab="merge">Merge two lists</button>
+          <button data-tab="hash">Rolling hash</button>
+        </div>
+        <div data-tab-panel="three"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="three"></div><figcaption>Fix one value, then run sorted two-sum on the rest.</figcaption></figure><div><p>To find three values that add up to zero, sort, fix the first value <code>i</code>, and run the converging two-pointer search on everything to its right for the target <code>−a[i]</code>. That is n rounds of an O(n) search: O(n²), where brute force is O(n³).</p><pre data-code-block="three"></pre></div></div></div>
+        <div data-tab-panel="zeros"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="zeros"></div><figcaption>The write pointer trails the read pointer.</figcaption></figure><div><p>Read/write pointers also filter in place. The reader visits every value; the writer only advances when a value is kept. After the pass, everything left of <code>w</code> is the filtered array in its original order.</p><pre data-code-block="zeros"></pre></div></div></div>
+        <div data-tab-panel="anagram"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="anagram"></div><figcaption>A fixed window plus a count table.</figcaption></figure><div><p>To find every anagram of “abc” inside a long text, slide a window of size 3 and keep its letter counts up to date: add the entering letter, drop the leaving one, and compare with the counts of the pattern. It combines the fixed window with the frequency table.</p><pre data-code-block="anagram"></pre></div></div></div>
+        <div data-tab-panel="merge"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="merge"></div><figcaption>One pointer per list; always take the smaller.</figcaption></figure><div><p>Two pointers can also walk two <em>different</em> sorted lists. Compare the values under the pointers, move the smaller one to the output, and advance that pointer. This is the merge step of merge sort, and it costs n + m for lists of length n and m.</p><pre data-code-block="merge"></pre></div></div></div>
+        <div data-tab-panel="hash"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="hash"></div><figcaption>The next window’s fingerprint from the last one.</figcaption></figure><div><p>A window can also carry a <em>fingerprint</em> of its contents, a number computed from the characters. Sliding updates it in O(1): remove the leaving character’s share, shift, add the entering one. Rabin and Karp used this in 1987 to compare a pattern with every window of a text, and lesson 36 builds it out.</p><pre data-code-block="hash"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-sorted"></div>
+        <div class="quiz" id="quiz-window"></div>
+        <div class="quiz" id="quiz-prefix"></div>
+        <div class="quiz" id="quiz-concat"></div>
+      </div>
+      <figure class="fig" id="fig-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">A window with a repeat</h3></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: the string a, b, c, b, d with l at index 0 and r at index 3; the window a, b, c, b holds two copies of b, shown in red.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Strings, two pointers &amp; windows</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="n">O(n) one pass</span><span class="chip chip--sm">O(1) extra space</span><span class="chip chip--sm">Prefix sums: O(1) per query</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1992<small>UTF-8 on a placemat</small></div>
+        <p class="history__people">Ken Thompson and Rob Pike<span>USENIX, January 1993</span></p>
+        <div class="history__body">
+          <p>Telegraph codes of the 1870s already sent each character as a fixed group of on/off signals, and ASCII in 1963 made a string an array of 7-bit numbers with the letters in a row. Unicode broke that neat picture. In September 1992 Ken Thompson sketched UTF-8 on a diner placemat in New Jersey: ASCII characters stay one byte and others take two to four, which is why a string’s length in bytes and in characters can differ.</p>
+          <p>The sliding window has an older cousin with a fingerprint on it. In 1987 Michael Rabin and Richard Karp published a way to slide a hash over a text and compare a pattern in expected linear time.</p>
+        </div>
+        <p class="history__source">Sources: M. Rabin and R. Karp, “Efficient randomized pattern-matching algorithms”, <em>IBM J. Res. Dev.</em> 31(2), 1987; R. Pike, “Hello World or Καλημέρα κόσμε or こんにちは 世界” (UTF-8 history); C. Petzold, <em>Code</em>, ch. 13.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Valid palindrome</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Decide whether a sentence is a palindrome when you ignore case, spaces and punctuation. Use two pointers on the original string and skip characters that do not count, without building a cleaned copy.</p></li>
+        <li><div class="practice__title">Container with most water</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given wall heights, pick two walls that hold the most water between them (width times the shorter height). Start with the widest pair. Which pointer do you move, and why can you never lose the best pair?</p></li>
+        <li><div class="practice__title">Longest run with at most k changes</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given a string of A and B, find the longest substring you could make all one letter by changing at most k characters. Write the window rule that stays true after shrinking.</p></li>
+        <li><div class="practice__title">Subarray sum equals k</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Count the contiguous ranges of an array (values may be negative) that add up to k. Explain why a sliding window fails here and how prefix sums plus a table of earlier prefix values do not.</p></li>
+        <li><div class="practice__title">Minimum window substring</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Given strings s and t, find the shortest window of s that contains every character of t (with multiplicity). Decide when to expand r, when to shrink l, and what counter tells you the window is valid.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-01-linear-layouts-and-access-disciplines.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Linear layouts and access disciplines</span><span class="deeper__text" style="display:block">The longer study of sequences as abstract types: arrays, linked lists, stacks and queues, with proofs, edge cases and exercises.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

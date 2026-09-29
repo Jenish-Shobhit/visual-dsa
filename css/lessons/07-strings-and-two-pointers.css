@@ -1,0 +1,115 @@
+/* Lesson 07 — Strings, two pointers & windows. Lesson-specific styles only; colours come from tokens. */
+
+/* ---------------------------------------------------------------- toolbars, tabs, notes */
+.l07-input { flex: 1 1 460px; min-width: 0; }
+.l07-slider { flex: 1 1 200px; max-width: 320px; }
+.l07-slider[hidden] { display: none; }
+.l07-toolbar-note { margin: 0; align-self: center; font-size: 13px; color: var(--ink-3); }
+.l07-btnbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.l07-note { margin: 0; padding: 0 18px 8px; min-height: 0; font-size: 13.5px; color: var(--ink-3); }
+.l07-note:empty { display: none; }
+.l07-labtabs { padding: 4px 18px 0; border-bottom: 1px solid var(--line); }
+.l07-labtabs .tabs__list { border-bottom: 0; }
+.l07-labtabs .tabs__tab { font-weight: 650; }
+.l07-labtabs .tabs__panel { padding: 8px 0 12px; }
+.l07-invariant { margin: 0; font-size: 14.5px !important; line-height: 1.5 !important; color: var(--ink-2); }
+.l07-invariant b { color: var(--ink); font-weight: 650; }
+.l07-wide-only { display: none; }
+@container fig (min-width: 560px) { .l07-wide-only { display: inline; } }
+
+/* ---------------------------------------------------------------- intuition minis */
+.l07-mini-title { margin: 0; padding: 9px 12px 0; font-size: 13px; font-weight: 700; color: var(--unit-ink); }
+.l07-mini-stage { min-height: 130px; }
+
+/* ---------------------------------------------------------------- characters table */
+.l07-chars-table { margin: 0 var(--space-4) var(--space-4); --table-max: 260px; }
+.l07-chars-table tbody tr { cursor: pointer; }
+.l07-chars-table tbody tr.is-selected > * { background: color-mix(in srgb, var(--st-active) 14%, var(--bg-elev)); }
+.l07-chars-table .l07-ch { font-family: var(--font-mono); font-size: 16px; font-weight: 700; }
+.l07-chars-table td.num { font-family: var(--font-mono); font-size: 13px; }
+
+/* ---------------------------------------------------------------- pair grid figure */
+.l07-pairs { display: grid; gap: 16px 24px; grid-template-columns: minmax(0, 1fr); align-items: start; place-items: normal; padding: 16px; }
+.l07-pairs__array, .l07-pairs__grid { min-width: 0; }
+@container fig (min-width: 820px) {
+  .l07-pairs { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .l07-pairs__array { padding-top: 26px; }
+}
+
+/* ---------------------------------------------------------------- race */
+.l07-race { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); padding: 12px; width: 100%; }
+@container fig (min-width: 760px) { .l07-race { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; } }
+.l07-lane { min-width: 0; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); padding: 10px 12px 12px; display: grid; gap: 8px; align-content: start; }
+.l07-lane__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.l07-lane__name { font-size: 14px; font-weight: 700; color: var(--ink); }
+.l07-lane__status { font-size: 13px; font-family: var(--font-mono); color: var(--ink-3); }
+.l07-lane__status[data-done="1"] { color: color-mix(in srgb, var(--st-done) 75%, var(--ink)); font-weight: 650; }
+.l07-lane__stats { display: flex; }
+
+/* ---------------------------------------------------------------- anagram form */
+.l07-anagram-form { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; }
+.l07-field { display: grid; gap: 4px; }
+.l07-field .field { width: 170px; max-width: 100%; }
+.l07-anagram-form .input-row__presets { flex: 1 1 100%; }
+.l07-anagram-form .input-row__error { flex: 1 1 100%; margin: 0; }
+.l07-anagram-form .input-row__error:empty { display: none; }
+
+/* ---------------------------------------------------------------- window lab: count table and ledger */
+.l07-table { margin: 4px 0 2px; min-height: 76px; padding: 4px 18px 8px; }
+.l07-ct__title { margin: 0 0 8px; font-size: 12.5px; font-weight: 650; letter-spacing: .01em; color: var(--ink-3); }
+.l07-ct { display: flex; flex-wrap: wrap; gap: 8px; }
+.l07-ct__cell {
+  display: grid; grid-template-columns: auto auto; align-items: center; gap: 0;
+  border: 1.5px solid var(--line-strong); border-radius: var(--r-sm); background: var(--bg-elev); overflow: hidden;
+  opacity: .55; transition: opacity var(--dur-2, 200ms), border-color var(--dur-2, 200ms), background var(--dur-2, 200ms);
+}
+.l07-ct__c { padding: 4px 10px; font: 700 15px var(--font-mono); color: var(--ink); background: var(--bg-sunken); }
+.l07-ct__n { min-width: 32px; padding: 4px 10px; text-align: center; font: 700 15px var(--font-mono); color: var(--ink-3); }
+.l07-ct__cell.is-on { opacity: 1; border-color: color-mix(in srgb, var(--st-visited) 70%, var(--bg-elev)); }
+.l07-ct__cell.is-on .l07-ct__n { color: var(--ink); background: color-mix(in srgb, var(--st-visited) 14%, var(--bg-elev)); }
+.l07-ct__cell.is-dup { border-color: var(--st-error); background: color-mix(in srgb, var(--st-error) 10%, var(--bg-elev)); }
+.l07-ct__cell.is-dup .l07-ct__n { background: var(--st-error); color: var(--on-state); }
+.l07-ct__cell.is-bump { animation: l07-bump 380ms var(--ease-out, ease-out); }
+@keyframes l07-bump { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(1); } }
+.l07-ledger { display: grid; gap: 8px; }
+.l07-ledger__eq { margin: 0; font: 650 22px var(--font-mono); color: var(--ink); letter-spacing: -.01em; }
+.l07-ledger__eq.is-note { font: 600 15px var(--font-sans); color: var(--ink-2); letter-spacing: 0; }
+.l07-ledger__eq em { font-style: normal; color: var(--ink-3); padding: 0 2px; }
+.l07-ledger__eq .in { color: color-mix(in srgb, var(--st-active) 75%, var(--ink)); }
+.l07-ledger__eq .out { color: color-mix(in srgb, var(--st-compare) 65%, var(--ink)); }
+.l07-ledger__row { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; font-size: 13px; color: var(--ink-3); }
+.l07-ledger__v { font: 750 20px var(--font-mono); color: var(--ink); }
+.l07-ledger__v--best { color: color-mix(in srgb, var(--st-done) 75%, var(--ink)); }
+@media (prefers-reduced-motion: reduce) { .l07-ct__cell.is-bump { animation: none; } }
+
+/* ---------------------------------------------------------------- prefix sums figure (custom svg) */
+.l07-pfx { display: block; width: 100%; height: auto; margin: 0 auto; font-family: var(--font-sans); }
+.l07-pfx .axis { stroke: var(--line-strong); stroke-width: 1.5; }
+.l07-pfx .rowlbl { font: 700 13px var(--font-mono); fill: var(--ink-3); }
+.l07-pfx .band { fill: color-mix(in srgb, var(--st-active) 9%, transparent); stroke: color-mix(in srgb, var(--st-active) 45%, transparent); stroke-dasharray: 5 4; transition: opacity var(--t, 300ms); }
+.l07-pfx .box rect { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 1.5; transition: fill var(--t, 300ms), stroke var(--t, 300ms); }
+.l07-pfx .box text { font: 700 18px var(--font-sans); fill: var(--el-ink); text-anchor: middle; dominant-baseline: central; }
+.l07-pfx .box text.idx { font: 500 11px var(--font-mono); fill: var(--ink-3); dominant-baseline: auto; }
+.l07-pfx .box.is-active rect { fill: color-mix(in srgb, var(--st-active) 16%, var(--el-fill)); stroke: var(--st-active); stroke-width: 2.5; }
+.l07-pfx .box.is-visited rect { fill: color-mix(in srgb, var(--st-visited) 12%, var(--el-fill)); stroke: color-mix(in srgb, var(--st-visited) 65%, var(--el-fill)); }
+.l07-pfx .bar { fill: color-mix(in srgb, var(--el-stroke) 12%, var(--el-fill)); stroke: color-mix(in srgb, var(--el-stroke) 50%, var(--el-fill)); stroke-width: 1.5; transition: fill var(--t, 300ms), stroke var(--t, 300ms); }
+.l07-pfx .bar.is-active { fill: var(--st-active); stroke: var(--st-active); }
+.l07-pfx .bar.is-key { fill: var(--st-key); stroke: var(--st-key); }
+.l07-pfx .bar.is-compare { fill: var(--st-compare); stroke: var(--st-compare); }
+.l07-pfx .gap { fill: var(--st-found); stroke: var(--st-found); stroke-width: 1.5; transition: opacity var(--t, 300ms); }
+.l07-pfx .plabel { font: 700 13px var(--font-mono); fill: var(--ink); text-anchor: middle; transition: opacity var(--t, 300ms); }
+.l07-pfx .pidx { font: 500 11px var(--font-mono); fill: var(--ink-3); text-anchor: middle; transition: opacity var(--t, 300ms); }
+.l07-pfx .level { stroke: var(--ink-2); stroke-width: 1.75; stroke-dasharray: 6 5; transition: opacity var(--t, 300ms); }
+.l07-pfx .sumlbl { font: 750 14px var(--font-mono); fill: color-mix(in srgb, var(--st-found) 70%, var(--ink)); transition: opacity var(--t, 300ms); }
+.l07-pfx .bracket { fill: none; }
+
+/* ---------------------------------------------------------------- narrow screens */
+@container fig (max-width: 520px) {
+  .l07-ledger__eq { font-size: 18px; }
+  .l07-field .field { width: 140px; }
+}
+
+/* lower half of a pair grid: not a pair, drawn as quiet filler rather than the default dark wall */
+.l07-pairs .vz .vz-item.vz-gcell.vz-wall, .l07-race .vz .vz-item.vz-gcell.vz-wall {
+  --vz-fill: transparent; --vz-stroke: color-mix(in srgb, var(--line) 60%, transparent); --vz-ink: transparent;
+}

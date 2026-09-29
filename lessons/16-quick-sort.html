@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7">
+<title>Quick sort &amp; quickselect · Visual DSA</title>
+<meta name="description" content="Partition around a pivot and recurse: watch Lomuto and Hoare partitions, see why the pivot decides everything, and use the same idea to find the k-th smallest value without sorting.">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/vdsa.css">
+<link rel="stylesheet" href="../css/viz.css">
+<link rel="stylesheet" href="../css/lessons/16-quick-sort.css">
+<script src="../js/vdsa/core.js"></script>
+<script src="../js/curriculum.js" defer></script>
+<script src="../js/vdsa/shell.js" defer></script>
+<script src="../js/vdsa/widgets.js" defer></script>
+<script src="../js/vdsa/code.js" defer></script>
+<script src="../js/vdsa/vars.js" defer></script>
+<script src="../js/vdsa/quiz.js" defer></script>
+<script src="../js/vdsa/player.js" defer></script>
+<script src="../js/vdsa/views/base.js" defer></script>
+<script src="../js/vdsa/views/array.js" defer></script>
+<script src="../js/vdsa/views/tree.js" defer></script>
+<script src="../js/vdsa/views/callstack.js" defer></script>
+<script src="../js/vdsa/views/chart.js" defer></script>
+<script src="../js/vdsa/views/flowchart.js" defer></script>
+<script src="../js/algos/14-elementary-sorts.js" defer></script>
+<script src="../js/algos/16-quick-sort.js" defer></script>
+<script src="../js/lessons/16-quick-sort-figs.js" defer></script>
+<script src="../js/lessons/16-quick-sort-lab.js" defer></script>
+<script src="../js/lessons/16-quick-sort.js" defer></script>
+</head>
+<body data-page="lesson" data-lesson="16-quick-sort">
+<main id="main" class="lesson">
+
+  <!-- ============================================================ HERO -->
+  <header class="hero">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
+      <h1 class="hero__title">Quick sort &amp; quickselect</h1>
+      <p class="hero__lede">Pick a value, send smaller ones left and larger ones right, and repeat on each side. That one move sorts a million values in about 28 million comparisons, and it also finds the median without sorting. Whether it is fast or slow depends on a single choice: the pivot.</p>
+      <ul class="hero__meta" aria-label="About this lesson">
+        <li class="chip" data-icon="clock">25 min</li>
+        <li class="chip" data-icon="level">Intermediate</li>
+        <li><a class="chip" data-icon="prereq" href="14-elementary-sorts.html">Needs: elementary sorts, recursion</a></li>
+      </ul>
+    </div>
+    <div class="hero__stage" id="teaser" role="img" aria-label="Animation: eleven bars of different heights. One bar glows magenta as the pivot; shorter bars move to its left and taller bars to its right, and the pivot turns green in its final place. The same happens inside each side until all bars stand in order."></div>
+  </header>
+
+  <div class="lesson-body">
+
+    <!-- ============================================================ THE PROBLEM -->
+    <section id="problem">
+      <h2 data-toc="The problem">Split first, sort later</h2>
+      <p>The sorts in lesson 14 compare and move values one neighbour at a time, so they need about n²/2 comparisons. A million values would take half a trillion. Quick sort needs about 1.4 · n · log₂ n: roughly 28 million for the same million values.</p>
+      <p>The trick is to cut the job in two before doing any real work. Pick any value and call it the <dfn>pivot</dfn>. Send every smaller value to its left and every larger value to its right. The pivot is now exactly where it belongs, and the two sides can be sorted separately.</p>
+      <p>Try it by hand. Click a value inside a shaded group: it becomes the pivot, and the group splits around it. Keep going until every value is green.</p>
+      <figure class="fig wide" id="fig-hand">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Sort by splitting: click a pivot</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption l16-msg" data-msg aria-live="polite"></p>
+        <div class="fig__stats" data-stats></div>
+        <div class="fig__controls l16-btnbar"><button type="button" class="btn btn--sm" data-reset>Start over</button><button type="button" class="btn btn--sm" data-shuffle>New numbers</button></div>
+        <figcaption class="fig__foot">Text alternative: eleven numbers in a row. Clicking a number inside an unsorted group moves every smaller number in that group to its left and every larger one to its right; the clicked number is then in its final sorted place.</figcaption>
+      </figure>
+      <p>Every comparison you paid for was one value against a pivot: a group of <em>m</em> values costs <em>m</em> − 1 comparisons to split. Pick pivots near the middle and the groups halve quickly. Pick the smallest or largest value in a group and only one value gets settled per split.</p>
+    </section>
+
+    <!-- ============================================================ INTUITION -->
+    <section id="intuition">
+      <h2 data-toc="Intuition">Why splitting works</h2>
+      <aside class="callout callout--analogy">
+        <p class="callout__title">Lining up a class</p>
+        <p>To line up a class by height, ask one student to stand still. Everyone shorter walks to her left and everyone taller to her right. She will never move again, and nobody on the left can end up on the right, so each side is a smaller, independent line-up. Repeat inside each side.</p>
+      </aside>
+      <p>Three facts make the idea work. Each one is a small picture, so look at them before the mechanics.</p>
+      <div class="mini-row wide" id="mini-facts"></div>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Where the analogy breaks</p>
+        <p>A student can see at a glance who is taller. A program compares one value with the pivot at a time, and it must rearrange values inside the same array without a second list. Doing that cheaply is the whole art of <em>partitioning</em>.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ PARTITION -->
+    <section id="partition">
+      <h2 data-toc="Partition">Partition: the one operation that matters</h2>
+      <p>A <dfn>partition</dfn> rearranges a range so that every value on one side of a split is at most the pivot and every value on the other side is at least the pivot. It takes one pass, about one comparison per value, and no extra memory.</p>
+      <p>There are two classic ways to do it. <strong>Lomuto</strong> keeps one boundary and sweeps a scanner across the range. <strong>Hoare</strong>, the original, walks two pointers towards each other. Step through both on the same numbers; the figure pauses once to ask you a question.</p>
+      <figure class="fig wide" id="fig-partition">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-title>One Lomuto partition, step by step</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><button type="button" class="btn btn--sm" data-new>New numbers</button></div>
+        <div class="fig__stage" data-stage></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: seven numbers with the pivot marked in magenta. Shaded bands show the zones that are already known to be at most the pivot, greater than the pivot, or not yet seen. The caption under the figure explains each comparison and swap.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Lomuto invariant</p>
+        <p>Before each look at <code>a[j]</code>: <code>a[lo..i]</code> are all ≤ pivot, <code>a[i+1..j−1]</code> are all &gt; pivot, <code>a[j..hi−1]</code> are not seen yet, and <code>a[hi]</code> is the pivot. Each step keeps this true. When <code>j</code> reaches the pivot, one last swap drops it between the two zones: its final place.</p>
+      </aside>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Hoare is different in one way that matters</p>
+        <p>After a Hoare partition, everything left of the split is ≤ pivot and everything right is ≥ pivot, but the pivot itself is <em>not</em> promised to sit on the split. So nothing is green yet, and both sides are sorted again, one of them possibly holding the pivot. Hoare usually makes fewer swaps, and it handles many equal keys better.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ RECURSION -->
+    <section id="recursion">
+      <h2 data-toc="Recursion">Then do it again on each side</h2>
+      <p>After a Lomuto partition the pivot is final, so only the two sides remain. Sort each with the same procedure. A range of one value is already sorted. When every call has returned, the array is sorted, and there is nothing to merge, because each value was placed on the way down.</p>
+      <p>Each partition below is one step. The tree records every call: a node is a range, and its two children are the ranges left over on each side of its pivot.</p>
+      <figure class="fig wide" id="fig-levels">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The recursion, one partition per step</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--plain l16-double" data-stage>
+          <div class="l16-double__arr" data-arr></div>
+          <div class="l16-double__tree" data-tree></div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <div class="fig__stats" data-counters></div>
+        <figcaption class="fig__foot">Text alternative: twelve numbers above a recursion tree. Each step partitions one range around its last value; the pivot turns green and two child ranges appear below its node until every range is a single value.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Key idea</p>
+        <p>The total cost is the sum of the partition sizes over every call. If each partition splits its range roughly in half, the tree is about log₂ n levels deep and every level costs about n comparisons. That is where n log n comes from. The next sections show what happens when the splits are lopsided.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ THE LAB -->
+    <section id="lab">
+      <h2>The lab</h2>
+      <p>Quick sort on your own numbers. Switch between the two partitions, and change the pivot rule to see how the recursion tree reshapes. The code, variables, counters and flowchart follow along, and the lab pauses a few times to ask what happens next. Press <kbd>←</kbd> and <kbd>→</kbd> to step and <kbd>Space</kbd> to play.</p>
+      <figure class="fig fig--lab full" id="lab-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Trace quick sort: Lomuto and Hoare</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="tabs l16-labtabs" id="lab-tabs">
+          <div class="tabs__list">
+            <button data-tab="lomuto">Lomuto<span class="l16-wide-only"> partition</span></button>
+            <button data-tab="hoare">Hoare<span class="l16-wide-only"> partition</span></button>
+          </div>
+          <div data-tab-panel="lomuto"><p class="l16-invariant"><b>Invariant:</b> a[lo..i] ≤ pivot, a[i+1..j−1] &gt; pivot, the rest not seen. <b>The pivot is final</b> after each partition.</p></div>
+          <div data-tab-panel="hoare"><p class="l16-invariant"><b>Invariant:</b> left of i ≤ pivot, right of j ≥ pivot. <b>Split after j</b>; the pivot is not necessarily final.</p></div>
+        </div>
+        <div class="fig__toolbar"><div data-input class="l16-input"></div>
+          <div class="l16-side"><span class="field-label">Pivot rule</span><div data-pivot></div></div>
+          <div class="l16-side"><span class="field-label">View</span><div data-mode></div></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <div class="l16-recur">
+              <div class="l16-recur__pane"><p class="l16-recur__title">Recursion tree</p><div class="l16-recur__stage" data-tree></div></div>
+              <div class="l16-recur__pane"><p class="l16-recur__title">Call stack</p><div class="l16-recur__stage" data-stack></div></div>
+            </div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: the caption under the array explains every step in words; the code panel highlights the running line, the variables panel shows lo, hi, the pivot and the pointers, and the tree and call stack show which calls exist and which are still running.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ FLOWCHART -->
+    <section id="flowchart">
+      <h2 data-toc="Flowchart">The logic as a flowchart</h2>
+      <p>The same decisions as a map. It is wired to the lab: step the lab and the box that is running lights up here, and a token travels along the arrow that was taken.</p>
+      <figure class="fig wide" id="fig-flow">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title" data-flow-title>Quick sort with Lomuto partition as a flowchart</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><p class="l16-toolbar-note">Switching here also switches the lab.</p></div>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 340px"></div>
+        <figcaption class="fig__foot" data-flow-alt>Text alternative: a range of one value or fewer returns at once. Otherwise choose a pivot and park it at the end, set i = lo − 1 and scan j from lo. If a[j] ≤ pivot, increase i and swap a[i] with a[j]. When the scan ends, swap the pivot into a[i + 1], then sort the left and right parts.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ PIVOT MATTERS -->
+    <section id="pivots">
+      <h2 data-toc="The pivot decides">Why the pivot decides everything</h2>
+      <p>Here is the same sorted input of 15 values, sorted twice. On the left the pivot is the <em>middle</em> value; on the right it is the <em>last</em> one. The numbers on the nodes are the comparisons each call pays, one per other value in its range.</p>
+      <figure class="fig full" id="fig-trees">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Balanced tree or chain: same input, different pivot</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage>
+          <div class="l16-pair">
+            <div class="l16-pair__side" data-side="good"><p class="l16-pair__title">Middle value as pivot</p><div class="l16-pair__tree" data-tree></div><div data-stats></div></div>
+            <div class="l16-pair__side" data-side="bad"><p class="l16-pair__title">Last value as pivot</p><div class="l16-pair__tree" data-tree></div><div data-stats></div></div>
+          </div>
+        </div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: two recursion trees for fifteen sorted values, drawn one call at a time. With the middle value as pivot the tree is four levels deep and costs 34 comparisons. With the last value it is a chain fifteen levels deep and costs 105 comparisons.</figcaption>
+      </figure>
+      <aside class="callout callout--key">
+        <p class="callout__title">Best and worst case</p>
+        <p>A perfectly balanced tree has about log₂ n levels of n comparisons each: <span class="big-o" data-o="nlogn"></span>. A chain has n levels of n − 1, n − 2, … comparisons: n(n − 1)/2, which is <span class="big-o" data-o="n2"></span>. Every input has a best and a worst pivot; the lesson of quick sort is how to avoid the worst one.</p>
+      </aside>
+      <p>Pivot rules differ in how easily an input can hurt them. Press <em>Sorted</em> below: the first-element and last-element rules turn quadratic on input that is already in order, which is common in real data. The middle element, the median of three and a random pivot stay near n log n.</p>
+      <figure class="fig wide" id="fig-strategies">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Comparisons against n, for four pivot rules</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input></div><div data-scale></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Counts come from running Lomuto quick sort on real arrays; shuffled and few-unique inputs are averaged over 10 runs. Hover or focus the chart and use the arrow keys to read exact values.</figcaption>
+      </figure>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Median of three has its own bad input</p>
+        <p>An adversary who knows you take the median of the first, middle and last values can still build an input that makes every split lopsided. Only a <em>random</em> pivot removes that: no fixed input is bad, only unlucky coin flips are.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ LUCK -->
+    <section id="luck">
+      <h2 data-toc="Randomised">Bad luck is rare</h2>
+      <p>With a random pivot, the running time depends on the coin flips, not on the input. Below is the same sorted array of 30 values sorted again and again with fresh random pivots. The worst possible run costs 435 comparisons. Watch where the runs actually land.</p>
+      <figure class="fig wide" id="fig-luck">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Comparisons over many random-pivot runs</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="l16-slider"></div><button type="button" class="btn btn--sm btn--primary" data-more>Run 100 more</button><button type="button" class="btn btn--sm" data-clear>Clear</button></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-readout aria-live="polite"></p>
+        <figcaption class="fig__foot">Each bar counts runs whose comparison total falls in that range. Every run sorts the same already-sorted array; only the random pivots differ.</figcaption>
+      </figure>
+      <aside class="callout callout--insight">
+        <p class="callout__title">Expected cost</p>
+        <p>Two values are ever compared only when one of them is the first pivot chosen from the values between them (inclusive). For values that are <em>d</em> places apart in sorted order that has probability 2/(d + 1). Adding these up over all pairs gives about <b>2 n ln n ≈ 1.39 n log₂ n</b> comparisons in expectation, for every input. The study linked at the end proves it in a page.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================================ CHOOSE A PIVOT -->
+    <section id="choose">
+      <h2 data-toc="Choosing a pivot">Choosing a pivot</h2>
+      <p>Answer the questions to walk the diagram. Most libraries pick a random pivot or the median of three, and add a safety net for the rare bad case.</p>
+      <figure class="fig wide" id="fig-choose">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">How should I choose the pivot?</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 340px"></div>
+        <p class="fig__caption" data-answer aria-live="polite"></p>
+        <div class="fig__controls l16-btnbar"><button type="button" class="btn btn--sm" data-restart>Start over</button></div>
+        <figcaption class="fig__foot">Text alternative: if the input is random the last element is fine. Otherwise, if the worst case must be guaranteed use merge sort, heapsort or introsort. With many equal keys use a random pivot and a three-way partition. Otherwise use the median of three, or a random pivot if the extra comparisons are unwelcome.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ DUPLICATES -->
+    <section id="duplicates">
+      <h2 data-toc="Duplicates">Many equal values: the Dutch national flag</h2>
+      <p>Lomuto puts every value equal to the pivot on the small side, so an array of all-equal values splits into 0 and n − 1 every time: quadratic. Values equal to the pivot are already in place. A <dfn>three-way partition</dfn> gathers them in a middle zone that is never touched again.</p>
+      <p>Edsger Dijkstra posed the puzzle with a flag: red, white and blue items in a jumble, to be sorted in one pass with three pointers and no extra array. The white items are the pivot value.</p>
+      <figure class="fig fig--lab full" id="fig-flag">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Dutch national flag: red, white, blue in one pass</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l16-input"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: a row of red, white and blue discs, each with the letter R, W or B. Pointers lt, i and gt split the row into four zones; the row ends sorted with all red first, then all white, then all blue.</figcaption>
+      </figure>
+      <aside class="callout callout--def">
+        <p class="callout__title">Three-way invariant</p>
+        <p><code>a[lo..lt−1]</code> &lt; pivot, <code>a[lt..i−1]</code> = pivot, <code>a[i..gt]</code> not seen yet, <code>a[gt+1..hi]</code> &gt; pivot. When a big value is swapped in from the right, <code>i</code> does not advance: the value that arrived has not been looked at.</p>
+      </aside>
+      <p>Now count what it saves. The bars show comparisons for each partition on four kinds of input. Look at the all-equal group: the three-way partition finishes in n comparisons.</p>
+      <figure class="fig wide" id="fig-dups">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Two-way against three-way partitions</h3></div>
+        </header>
+        <div class="fig__toolbar"><div data-slider class="l16-slider"></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-readout></p>
+        <figcaption class="fig__foot">All runs use the median-of-three pivot rule. A three-way comparison (less, equal or greater) counts as one comparison. Few-unique and random inputs are averaged over 12 arrays.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ QUICKSELECT -->
+    <section id="select">
+      <h2 data-toc="Quickselect">Quickselect: find the k-th smallest</h2>
+      <p>Sometimes you do not need the whole order: the median, the 90th percentile, the ten cheapest items. Partition once and look at where the pivot landed. If its index is exactly the one you want, you are done. Otherwise the answer is in one side only, so <strong>discard the other side</strong> and repeat.</p>
+      <p>Tony Hoare published this as <em>Find</em>, right next to quick sort. Choose k and step through. The greyed region is what the algorithm has proved it can ignore.</p>
+      <figure class="fig fig--lab full" id="sel-fig">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Quickselect: one side at a time</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-input class="l16-input"></div>
+          <div class="l16-side"><span class="field-label">Pivot rule</span><div data-pivot></div></div>
+          <div data-slider class="l16-slider"></div></div>
+        <div class="lab">
+          <div class="lab__main">
+            <div class="fig__stage fig__stage--tall" data-stage></div>
+            <p class="fig__caption" data-caption></p>
+            <div class="fig__controls" data-controls></div>
+            <p class="l16-selnote" data-note></p>
+          </div>
+          <div class="lab__side">
+            <div data-code></div>
+            <div data-vars></div>
+            <div data-counters></div>
+          </div>
+        </div>
+        <figcaption class="fig__foot">Text alternative: an array with a marker k at the sorted position of the wanted value. Each partition puts the pivot in its final place; the side that cannot contain index k is greyed out and the search continues in the other side until the pivot lands on k.</figcaption>
+      </figure>
+      <p>How much does skipping half of the work save? Each round discards part of the array, so the work forms a shrinking series like n + n/2 + n/4 + … ≈ 2n when the splits are even. The chart counts real runs, against fully sorting the same array.</p>
+      <figure class="fig wide" id="fig-selwork">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Selecting against sorting</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div></div>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+        <p class="fig__caption" data-note></p>
+        <figcaption class="fig__foot">Random pivots, random arrays, averaged over 16 runs per size. Quickselect grows in a straight line; sorting bends upward.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ RACE -->
+    <section id="race">
+      <h2 data-toc="Race">Race: quick, merge and insertion sort</h2>
+      <p>Same input, three lanes, one clock. Each tick pays for one comparison or one move. Try <em>Random</em>, then <em>Sorted</em> with the last-element pivot: quick sort suddenly loses to insertion sort. Switch its pivot to the median of three and it is back in front.</p>
+      <figure class="fig full" id="fig-race">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Quick sort vs merge sort vs insertion sort</h3></div>
+          <div data-legend></div>
+        </header>
+        <div class="fig__toolbar"><div data-seg></div><div data-pivot></div><div data-slider class="l16-slider"></div><button type="button" class="btn btn--sm" data-shuffle>New numbers</button></div>
+        <div class="fig__stage fig__stage--plain" data-stage><div class="l16-race" data-lanes></div></div>
+        <p class="fig__caption" data-caption></p>
+        <div class="fig__controls" data-controls></div>
+        <figcaption class="fig__foot">Text alternative: three lanes of bars sort the same values; each lane counts its comparisons, moves and ticks, and shows its finishing place when done. Merge sort's moves are its writes into the merged output.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ COST -->
+    <section id="cost">
+      <h2>What it costs</h2>
+      <p>Each row names the operation it counts. Comparisons are the values compared with a pivot; the average assumes a random pivot or a random input order.</p>
+      <div class="table-wrap wide">
+        <table class="table">
+          <thead><tr><th scope="col">Algorithm</th><th scope="col">Best case</th><th scope="col">Average</th><th scope="col">Worst case</th><th scope="col">Extra space</th><th scope="col">Stable</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Quick sort (Lomuto or Hoare)</th><td><span class="big-o" data-o="nlogn"></span> balanced splits, about n log₂ n comparisons</td><td><span class="big-o" data-o="nlogn"></span> about 1.39 n log₂ n comparisons</td><td><span class="big-o" data-o="n2"></span> n(n − 1)/2, a chain of splits</td><td><span class="big-o" data-o="logn"></span> stack on average, O(n) worst</td><td>No</td></tr>
+            <tr><th scope="row">Randomised quick sort</th><td><span class="big-o" data-o="nlogn"></span> same</td><td><span class="big-o" data-o="nlogn"></span> expected 2 n ln n on every input</td><td><span class="big-o" data-o="n2"></span> only by very bad luck</td><td><span class="big-o" data-o="logn"></span> with smaller side first</td><td>No</td></tr>
+            <tr><th scope="row">Three-way quick sort</th><td><span class="big-o" data-o="n">O(n)</span> all values equal: one pass</td><td><span class="big-o" data-o="nlogn"></span> and faster with duplicates</td><td><span class="big-o" data-o="n2"></span> unlucky pivots</td><td><span class="big-o" data-o="logn"></span></td><td>No</td></tr>
+            <tr><th scope="row">Quickselect (k-th smallest)</th><td><span class="big-o" data-o="n"></span> pivot lands on k at once</td><td><span class="big-o" data-o="n"></span> about 2–3.4 n comparisons</td><td><span class="big-o" data-o="n2"></span> a chain of splits</td><td><span class="big-o" data-o="1"></span> as a loop</td><td>n/a</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>So the honest summary is: quick sort is <span class="big-o" data-o="nlogn">O(n log n)</span> <em>on average</em> and <span class="big-o" data-o="n2"></span> in the worst case, and randomising the pivot makes the average hold for every input. Compared with merge sort it does no merging, moves values in place, and touches memory in order, which is why it is usually the fastest in practice.</p>
+      <details class="accordion">
+        <summary>Why is the balanced case n log₂ n?</summary>
+        <div class="accordion__body"><p>A range of m values costs m − 1 comparisons to partition. If each split is even, level 0 has one range of n values, level 1 has two ranges that together hold about n values, and so on: every level costs about n. Halving n values down to 1 takes log₂ n levels, so the total is about n log₂ n.</p></div>
+      </details>
+      <details class="accordion">
+        <summary>Why is the worst case n(n − 1)/2?</summary>
+        <div class="accordion__body"><p>If the pivot is always the smallest or the largest value, one side is empty and the other holds all the rest. The ranges then have sizes n, n − 1, n − 2, …, 2, and partitioning them costs (n − 1) + (n − 2) + … + 1 = n(n − 1)/2 comparisons. The recursion is n levels deep, so a naive implementation can also overflow the stack.</p></div>
+      </details>
+    </section>
+
+    <!-- ============================================================ VARIATIONS -->
+    <section id="variations">
+      <h2>Variations and patterns</h2>
+      <p>Real libraries never ship the textbook version. These are the changes that matter.</p>
+      <div class="tabs wide" id="variants">
+        <div class="tabs__list">
+          <button data-tab="random">Random pivot</button>
+          <button data-tab="median">Median of three</button>
+          <button data-tab="intro">Introsort</button>
+          <button data-tab="stack">Smaller side first</button>
+          <button data-tab="stable">Not stable</button>
+          <button data-tab="topk">Top k</button>
+        </div>
+        <div data-tab-panel="random"><div class="split"><figure class="mini"><div class="mini__stage l16-mini-stage" data-mini="random" role="img" aria-label="Random-pivot partitions of eight values, looping: a different value is chosen as pivot each time."></div><figcaption>A different pivot each lap: no input is bad on purpose.</figcaption></figure><div><p>Draw the pivot index at random from the range. Then the running time depends on the coin flips, not on how the data is ordered, so an adversary cannot craft a slow input. It costs one random number per partition.</p><pre data-code-block="random"></pre></div></div></div>
+        <div data-tab-panel="median"><div class="split"><figure class="mini"><div class="mini__stage l16-mini-stage" data-mini="median"></div><figcaption>The middle value of the first, middle and last is the pivot.</figcaption></figure><div><p>Look at <code>a[lo]</code>, <code>a[mid]</code> and <code>a[hi]</code> and take the one that is in the middle by value. On sorted or reversed input that is the true median, so the split is perfect. It costs three comparisons per partition and is cheaper than random numbers.</p><pre data-code-block="median"></pre></div></div></div>
+        <div data-tab-panel="intro"><div class="split"><figure class="mini"><div class="mini__stage l16-mini-stage l16-mini-flow" data-mini="intro"></div><figcaption>A safety net: give up on quick sort when the recursion gets too deep.</figcaption></figure><div><p><dfn>Introsort</dfn>, invented by David Musser in 1997, runs quick sort but counts the recursion depth. If it passes about 2·log₂ n, the pivots have been unlucky, so it switches that range to heapsort, which is guaranteed n log n. Tiny ranges are finished by insertion sort. C++ <code>std::sort</code> works this way.</p><pre data-code-block="intro"></pre></div></div></div>
+        <div data-tab-panel="stack"><div class="split"><figure class="mini"><div class="mini__stage l16-mini-stage" data-mini="stack"></div><figcaption data-stack-note></figcaption></figure><div><p>Both recursive calls are independent, so you can recurse into the <em>smaller</em> side and loop on the larger one. Each recursive call then has at most half the values, so the stack is never deeper than log₂ n, even if the pivots are terrible. The time is unchanged.</p><pre data-code-block="stack"></pre></div></div></div>
+        <div data-tab-panel="stable"><div class="split"><figure class="mini"><div class="mini__stage l16-mini-stage" data-mini="stable"></div><figcaption data-stable-note></figcaption></figure><div><p>Partitioning swaps values across long distances, so two equal values can trade places. Sort records by one field with quick sort and their earlier order is not kept. If you need stability, use merge sort, or sort with a tiebreaker such as the original index.</p></div></div></div>
+        <div data-tab-panel="topk"><div class="split"><figure class="mini"><div class="mini__stage l16-mini-stage" data-mini="topk" role="img" aria-label="After quickselect for k = 3, the three smallest values sit in the first three slots, in no particular order."></div><figcaption>After quickselect for k = 3 the three smallest are on the left, unordered.</figcaption></figure><div><p>When quickselect finds the k-th smallest, the partition has already moved every smaller value to its left. So <code>a[0..k−1]</code> are the k smallest values, in no particular order, in expected O(n) time. Sort just those k if you need them ordered: O(n + k log k) in all.</p><pre data-code-block="topk"></pre></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CHECK YOURSELF -->
+    <section id="check">
+      <h2>Check yourself</h2>
+      <p>Your score on this page: <span data-quiz-score></span></p>
+      <div class="quiz-stack">
+        <div class="quiz" id="quiz-lomuto"></div>
+        <div class="quiz" id="quiz-quadratic"></div>
+        <div class="quiz" id="quiz-select"></div>
+      </div>
+      <figure class="fig" id="fig-click">
+        <header class="fig__head">
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Lomuto partition with pivot 5, just finished</h3></div>
+        </header>
+        <div class="fig__stage" data-stage></div>
+        <figcaption class="fig__foot">Text alternative: the array 2, 4, 3, 5, 9, 8, 7 after partitioning around 5, with the values at most 5 on the left and the larger values on the right.</figcaption>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
+    </section>
+
+    <!-- ============================================================ SUMMARY -->
+    <section id="summary">
+      <h2>Summary</h2>
+      <div class="summary wide" id="summary-card">
+        <div class="summary__head">
+          <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Quick sort &amp; quickselect</p></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="nlogn">O(n log n) average</span><span class="chip chip--sm">O(n²) worst</span><span class="chip chip--sm">In place, not stable</span></div>
+        </div>
+        <div class="summary__grid"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ HISTORY -->
+    <section id="history">
+      <h2>History</h2>
+      <div class="history">
+        <div class="history__year">1959<small>Moscow</small></div>
+        <p class="history__people">Tony Hoare<span>Algorithms 63–65, <em>CACM</em> (1961)</span></p>
+        <div class="history__body">
+          <p>Tony Hoare invented quick sort in 1959 as an exchange student at Moscow State University, where he needed to sort the words of Russian sentences for a machine-translation project. Back in London his boss asked him to write Shellsort; Hoare said he knew something faster, and won a bet of sixpence.</p>
+          <p>He published it in 1961 as Algorithms 63 (Partition), 64 (Quicksort) and 65 (Find, the quickselect of this lesson). He later said he could only describe partitioning neatly once he had learned the recursion of ALGOL 60. David Musser added introsort in 1997, and Java 7 adopted Vladimir Yaroslavskiy’s dual-pivot version in 2009. Hoare died in March 2026, aged 92.</p>
+        </div>
+        <p class="history__source">Sources: C. A. R. Hoare, “Algorithm 63: Partition”, “Algorithm 64: Quicksort”, “Algorithm 65: Find”, <em>Communications of the ACM</em> 4(7), 1961; C. A. R. Hoare, “Quicksort”, <em>The Computer Journal</em> 5(1), 1962; D. R. Musser, “Introspective sorting and selection algorithms”, <em>Software: Practice and Experience</em> 27(8), 1997.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PRACTICE + GO DEEPER -->
+    <section id="practice">
+      <h2>Practice</h2>
+      <ol class="practice">
+        <li><div class="practice__title">Sort colours</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">An array holds only 0, 1 and 2. Sort it in place in a single pass with O(1) extra space and no library sort. State what is true of each zone after every step.</p></li>
+        <li><div class="practice__title">Kth largest element</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Return the k-th largest value of an unsorted array in expected O(n) time, without sorting. Say which side you recurse into, and what input makes your version quadratic.</p></li>
+        <li><div class="practice__title">All equal, all slow</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Count the comparisons Lomuto quick sort makes on n equal values, then change the comparison in the scan from ≤ to &lt;. Does that fix it? Explain what happens to the two sides.</p></li>
+        <li><div class="practice__title">Stack depth</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Rewrite quick sort so that it recurses only into the smaller side and loops over the larger one. Prove that the stack never holds more than log₂ n frames.</p></li>
+        <li><div class="practice__title">Median in linear time, always</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Quickselect is only <em>expected</em> linear. Read about median of medians (groups of five) and explain how choosing the pivot that way guarantees a split no worse than 30 : 70, and hence O(n) in the worst case.</p></li>
+      </ol>
+      <a class="deeper" href="../studies/dsa-06-sorting-and-the-comparison-barrier.html">
+        <span class="deeper__icon"><i class="ico" data-ico="book" aria-hidden="true"></i></span>
+        <span><span class="deeper__label">Go deeper</span><span class="deeper__title" style="display:block">Sorting and the comparison barrier</span><span class="deeper__text" style="display:block">A full proof that randomised quick sort makes 2 n ln n comparisons in expectation, and why no comparison sort can beat n log n.</span></span>
+        <i class="ico deeper__arrow" data-ico="arrow" aria-hidden="true"></i>
+      </a>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,99 @@
+/* Lesson 16 — Quick sort & quickselect. Lesson-specific styles only; colours come from tokens. */
+
+/* ---------------------------------------------------------------- lab tabs + toolbar */
+.l16-labtabs { padding: 4px 18px 0; border-bottom: 1px solid var(--line); }
+.l16-labtabs .tabs__list { border-bottom: 0; }
+.l16-labtabs .tabs__tab { font-weight: 650; }
+.l16-labtabs .tabs__panel { padding: 8px 0 12px; }
+.l16-invariant { margin: 0; font-size: 14.5px !important; line-height: 1.5 !important; color: var(--ink-2); }
+.l16-invariant b { color: var(--ink); font-weight: 650; }
+.l16-input { flex: 1 1 460px; min-width: 0; }
+.l16-side { display: flex; flex-direction: column; gap: 6px; }
+.l16-slider { flex: 1 1 200px; max-width: 320px; }
+.l16-toolbar-note { margin: 0; align-self: center; font-size: 13px; color: var(--ink-3); }
+.l16-btnbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.fig__caption.l16-msg[data-state="done"] { background: color-mix(in srgb, var(--st-done) 9%, var(--bg-elev)); }
+.fig__caption.l16-msg[data-state="compare"] { background: color-mix(in srgb, var(--st-compare) 10%, var(--bg-elev)); }
+.l16-selnote { margin: 0; padding: 8px 14px 0; font-size: 14px !important; line-height: 1.5 !important; color: var(--ink-2); }
+.l16-selnote b { color: var(--ink); }
+#fig-strategies .fig__caption, #fig-selwork .fig__caption, #fig-luck .fig__caption, #fig-dups .fig__caption { font-size: 14.5px; color: var(--ink-2); }
+#fig-choose .fig__caption { min-height: calc(1.55em * 3 + 26px); }
+
+/* ---------------------------------------------------------------- array + tree double stage */
+.l16-double { display: grid; gap: 6px; align-content: start; place-items: stretch; padding: 8px 10px 4px; }
+.l16-double__arr, .l16-double__tree { min-width: 0; }
+.l16-double__tree { border-top: 1px dashed var(--line-strong); padding-top: 6px; }
+
+/* ---------------------------------------------------------------- recursion panes under the lab */
+.l16-recur { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 12px; padding: 12px 14px 14px; }
+.l16-recur__pane { min-width: 0; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); overflow: hidden; }
+.l16-recur__title { margin: 0; padding: 8px 12px 0; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.l16-recur__stage { min-height: 150px; padding: 4px 6px 8px; display: grid; place-items: center; }
+@container fig (max-width: 720px) {
+  .l16-recur { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------------------------------------------------------------- good vs bad trees */
+.l16-pair { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 10px; }
+.l16-pair__side { display: flex; flex-direction: column; gap: 8px; padding: 10px 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); min-width: 0; }
+.l16-pair__title { margin: 0; font-size: 14.5px; font-weight: 700; }
+.l16-pair__tree { min-height: 300px; display: grid; place-items: center; }
+.l16-pair .stats { gap: 6px; }
+.l16-pair .stat { min-width: 0; flex: 1 1 90px; padding: 6px 9px 7px; }
+.l16-pair .stat__value { font-size: 18px; }
+@container fig (max-width: 640px) {
+  .l16-pair { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------------------------------------------------------------- minis */
+.l16-mini-title { margin: 0; padding: 9px 12px 0; font-size: 13px; font-weight: 700; color: var(--unit-ink); }
+.l16-mini-stage { min-height: 150px; }
+.l16-mini-flow { min-height: 210px; }
+.mini__stage.l16-fact { display: grid; place-items: center; padding: 8px 6px 4px; min-height: 130px; }
+
+/* ---------------------------------------------------------------- race */
+.l16-race { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; }
+.l16-lane { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); transition: border-color var(--dur), box-shadow var(--dur); }
+.l16-lane.is-finished { border-color: color-mix(in srgb, var(--st-done) 55%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--st-done) 30%, transparent); }
+.l16-lane__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.l16-lane__name { font-weight: 700; font-size: 14.5px; }
+.l16-lane__status { font-size: 12.5px; font-weight: 650; padding: 2px 9px; border-radius: 999px; background: var(--bg-sunken); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.l16-lane.is-finished .l16-lane__status { background: color-mix(in srgb, var(--st-done) 14%, var(--bg-elev)); color: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }
+.l16-lane__status[data-rank="1"] { background: var(--st-done) !important; color: color-mix(in srgb, var(--st-done) 20%, black) !important; }
+.l16-lane__stage { min-height: 140px; display: grid; align-items: end; }
+.l16-lane__stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.l16-lane__stats .stats { gap: 6px; }
+.l16-lane__stats .stat { min-width: 0; flex: 1 1 70px; padding: 6px 9px 7px; }
+.l16-lane__stats .stat__value { font-size: 17px; }
+
+/* ---------------------------------------------------------------- summary */
+#summary-card .summary__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+#summary-card .summary__viz { height: 100px; display: grid; place-items: center; }
+
+/* ---------------------------------------------------------------- workarounds for engine CSS ordering
+   css/viz.css sets a default --vz-c on regions and pointers after the .is-<state> rules with equal specificity, so
+   states other than the first few would draw blue. Restore the state colour (same fix as lesson 14). */
+.vz .vz-region.is-done { --vz-c: var(--st-done); }
+.vz .vz-region.is-visited { --vz-c: var(--st-visited); }
+.vz .vz-region.is-compare { --vz-c: var(--st-compare); }
+.vz .vz-region.is-key { --vz-c: var(--st-key); }
+.vz .vz-region.is-swap { --vz-c: var(--st-swap); }
+.vz .vz-region.is-error { --vz-c: var(--st-error); }
+.vz .vz-region.is-frontier { --vz-c: var(--st-frontier); }
+.vz .vz-region.is-pivot { --vz-c: var(--st-pivot); }
+.vz .vz-region.is-path { --vz-c: var(--st-path); }
+.vz .vz-pointer.is-compare { --vz-c: var(--st-compare); }
+.vz .vz-pointer.is-key { --vz-c: var(--st-key); }
+.vz .vz-pointer.is-swap { --vz-c: var(--st-swap); }
+.vz .vz-pointer.is-done { --vz-c: var(--st-done); }
+.vz .vz-pointer.is-pivot { --vz-c: var(--st-pivot); }
+.vz .vz-pointer.is-frontier { --vz-c: var(--st-frontier); }
+.vz .vz-pointer.is-visited { --vz-c: var(--st-visited); }
+
+/* Narrow figures: let long segmented controls wrap instead of hiding options; shorten the lab tab labels. */
+@container fig (max-width: 560px) {
+  .fig__toolbar .seg { flex-wrap: wrap; }
+  .l16-wide-only { display: none; }
+  .l16-labtabs { padding: 2px 10px 0; }
+  .l16-lane__stage { min-height: 110px; }
+}

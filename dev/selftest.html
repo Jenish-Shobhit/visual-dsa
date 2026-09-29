@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Renderer self-test · Visual DSA (dev)</title>
+  <script src="../js/vdsa/core.js"></script>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/viz.css">
+  <style>
+    body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-sans); }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    p { color: var(--ink-2); margin: 0 0 12px; max-width: 80ch; }
+    table { border-collapse: collapse; font: 12.5px var(--font-mono); }
+    td, th { text-align: left; padding: 4px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .ok { color: var(--st-done); } .fail { color: var(--st-error); font-weight: 700; } .skip { color: var(--ink-3); }
+    #work { position: absolute; left: -10000px; top: 0; width: 720px; }
+  </style>
+</head>
+<body>
+  <h1>Renderer self-test</h1>
+  <p>Builds every demo from <code>dev/gallery/</code> off-screen, renders its steps forward, backward, at random and with interrupted animations,
+     and checks that the settled figure equals a fresh view rendering the same step instantly (the snapshot contract).
+     Filter with <code>?only=array,tree</code>. Automation: <code>await window.runAll(['array'])</code>.</p>
+  <p id="status">Running…</p>
+  <table><thead><tr><th>result</th><th>section</th><th>demo</th><th>steps</th><th>details</th></tr></thead><tbody id="out"></tbody></table>
+  <div id="work"></div>
+<script>
+var CFGS = [];
+var Gallery = { demo: function (sec, cfg) { cfg.section = sec; CFGS.push(cfg); }, button: function () { return document.createElement('button'); }, log: function () {}, h: function () { return document.createElement('div'); } };
+</script>
+<script src="../js/vdsa/views/base.js"></script>
+<script src="../js/vdsa/views/array.js"></script>
+<script src="../js/vdsa/views/tree.js"></script>
+<script src="../js/vdsa/views/graph.js"></script>
+<script src="../js/vdsa/views/grid.js"></script>
+<script src="../js/vdsa/views/list.js"></script>
+<script src="../js/vdsa/views/stack.js"></script>
+<script src="../js/vdsa/views/hash.js"></script>
+<script src="../js/vdsa/views/memory.js"></script>
+<script src="../js/vdsa/views/callstack.js"></script>
+<script src="../js/vdsa/views/chart.js"></script>
+<script src="../js/vdsa/views/flowchart.js"></script>
+<script src="gallery/demo-array.js"></script>
+<script src="gallery/demo-tree.js"></script>
+<script src="gallery/demo-graph.js"></script>
+<script src="gallery/demo-grid.js"></script>
+<script src="gallery/demo-list.js"></script>
+<script src="gallery/demo-stack.js"></script>
+<script src="gallery/demo-hash.js"></script>
+<script src="gallery/demo-memory.js"></script>
+<script src="gallery/demo-callstack.js"></script>
+<script src="gallery/demo-chart.js"></script>
+<script src="gallery/demo-flowchart.js"></script>
+<script>
+function card() { var c = document.createElement('div'); c.innerHTML = '<div class="g-fig"></div><div class="g-extra"></div><div class="g-log"></div><span class="g-caption"></span>'; document.getElementById('work').appendChild(c); return c; }
+function snap(host) {
+  var root = host.querySelector('svg.vz') || host;
+  var els = root.querySelectorAll('[transform], [opacity], [class*="is-"], text, rect, path, circle, line');
+  return Array.prototype.map.call(els, function (el) {
+    var t = (el.getAttribute('transform') || '').replace(/-?\d+\.\d+/g, function (m) { return (+m).toFixed(0); });
+    var o = el.getAttribute('opacity'); o = o ? (+o).toFixed(2) : '';
+    var geo = ['x','y','width','height','d','cx','cy','r','x1','y1','x2','y2'].map(function (k) { var v = el.getAttribute(k); return v ? String(v).replace(/-?\d+(\.\d+)?/g, function (m) { return Math.round(+m); }) : ''; }).join(',');
+    var cls = (el.getAttribute('class') || '').split(/\s+/).filter(Boolean).sort().join(' ');
+    return el.tagName + '|' + cls + '|' + t + '|' + o + '|' + geo + '|' + (el.children.length ? '' : el.textContent);
+  }).sort().join('\n');
+}
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+async function test(cfg, sections) {
+  if (sections && sections.indexOf(cfg.section) === -1) return null;
+  var ca = card(), A;
+  try { A = cfg.build(ca.querySelector('.g-fig'), ca); } catch (e) { return { demo: cfg.id, error: 'build: ' + e.message }; }
+  var steps = A.steps || [];
+  if (steps.length < 2) { ca.remove(); return { demo: cfg.id, skipped: 'static' }; }
+  var rnd = VDSA.rng(42), fails = [];
+  var seq = [];
+  for (var i = 0; i < Math.min(steps.length, 12); i++) seq.push(i);
+  for (i = Math.min(steps.length, 12) - 1; i >= 0; i -= 2) seq.push(i);
+  for (i = 0; i < 8; i++) seq.push(rnd.int(0, steps.length - 1));
+  seq.push(steps.length - 1, 0);
+  var prev = null;
+  for (var s = 0; s < seq.length; s++) {
+    var k = seq[s];
+    var mode = s % 3;
+    try {
+      if (mode === 0) A.render(steps[k], { index: k, prev: prev, direction: 1, duration: 0, instant: true });
+      else {
+        // interrupted animation, then settle instantly on k
+        var j = (k + 1) % steps.length;
+        A.render(steps[j], { index: j, duration: 240 }); await sleep(60);
+        A.render(steps[k], { index: k, duration: 240 }); await sleep(90);
+        A.render(steps[k], { index: k, duration: 0, instant: true, force: true });
+        A.render(Object.assign({}, steps[k]), { index: k, duration: 0, instant: true });
+      }
+    } catch (e) { fails.push('render ' + k + ': ' + e.message); break; }
+    prev = steps[k];
+    var cb = card(), B = cfg.build(cb.querySelector('.g-fig'), cb);
+    B.render(steps[k], { index: k, prev: null, direction: 1, duration: 0, instant: true });
+    var a = snap(ca), b = snap(cb);
+    if (a !== b) {
+      var al = a.split('\n'), bl = b.split('\n');
+      var diff = al.filter(function (x) { return bl.indexOf(x) === -1; }).slice(0, 3).concat(['---'], bl.filter(function (x) { return al.indexOf(x) === -1; }).slice(0, 3));
+      fails.push('step ' + k + ' (after seq ' + s + ', mode ' + mode + '): ' + diff.join(' || '));
+    }
+    cb.remove();
+    if (fails.length > 2) break;
+  }
+  ca.remove();
+  return { demo: cfg.id, steps: steps.length, ok: !fails.length, fails: fails };
+}
+window.runAll = async function (sections, onResult) {
+  var out = [];
+  for (var i = 0; i < CFGS.length; i++) {
+    var r = await test(CFGS[i], sections);
+    if (r) { r.section = CFGS[i].section; out.push(r); if (onResult) onResult(r, i, CFGS.length); }
+  }
+  return out;
+};
+(async function () {
+  var q = new URLSearchParams(location.search);
+  var only = q.get('only') ? q.get('only').split(',') : null;
+  var body = document.getElementById('out'), fails = 0, status = document.getElementById('status');
+  var res = await window.runAll(only, function (r, i, n) {
+    status.textContent = 'Running… ' + (i + 1) + ' / ' + n;
+    var tr = document.createElement('tr');
+    var kind = r.error ? 'fail' : r.skipped ? 'skip' : r.ok ? 'ok' : 'fail';
+    if (kind === 'fail') fails++;
+    [kind.toUpperCase(), r.section || '', r.demo || '', r.steps || '', r.error || r.skipped || (r.fails || []).join('\n')].forEach(function (t, i) {
+      var td = document.createElement('td'); td.textContent = t; if (i === 0) td.className = kind; if (i === 4) td.style.whiteSpace = 'pre-wrap'; tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+  document.getElementById('status').textContent = res.length + ' demos checked, ' + fails + ' failing.';
+  document.getElementById('work').textContent = '';
+  window.selftestDone = { total: res.length, fails: fails };
+})();
+</script>
+</body>
+</html>

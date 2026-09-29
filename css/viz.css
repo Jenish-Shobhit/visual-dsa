@@ -1,0 +1,523 @@
+/* Visual DSA — visualisation renderer styles (.vz-*)
+   Loaded after css/tokens.css. Reads only design tokens, so theme switches need no re-render.
+
+   How colour works
+   - Views put a state class `is-<state>` on each element group (item, edge, pointer, region).
+   - `.vz .is-<state>` sets --vz-c to the semantic colour --st-<state>.
+   - Component rules turn --vz-c into --vz-fill / --vz-stroke / --vz-ink (items) or stroke (edges).
+   - Shapes consume those variables, and fill/stroke transitions use --vz-dur, which each view sets on its
+     root <svg> per render (the player's step duration, 0 under reduced motion).
+   - Text on a filled state uses --on-state, except on the bright states (compare, swap, done, frontier,
+     path) where a tonal dark ink (state colour mixed with black) keeps contrast >= 4.5:1 in both themes.
+   - State-coloured text on the page background uses --vz-text, a mix of the state colour with --ink,
+     which darkens in light mode and lightens in dark mode.
+   - Never set CSS `opacity` on elements a view fades: views fade with the SVG `opacity` attribute, and any
+     CSS opacity rule silently beats it. Use fill-opacity/stroke-opacity (or colour mixes) for styling. */
+
+/* ============================================================ root */
+.vz {
+  --vz-dur: 450ms;
+  --vz-ease: var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
+  --vz-c: var(--st-default);
+  --vz-text: color-mix(in srgb, var(--vz-c) 68%, var(--ink));
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--el-ink);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Views set their own pixel height inline on every render; undo generic figure caps such as
+   `.fig__stage > svg { height: auto; max-height: 520px }` so tall figures are never letterboxed. */
+svg.vz.vz { max-height: none; min-width: 0; flex: none; }
+.vz text { fill: currentColor; font-variant-numeric: tabular-nums; }
+.vz .vz-mono { font-family: var(--font-mono); }
+
+/* ============================================================ semantic states -> --vz-c */
+.vz .is-default  { --vz-c: var(--st-default); }
+.vz .is-active   { --vz-c: var(--st-active); }
+.vz .is-compare  { --vz-c: var(--st-compare); }
+.vz .is-swap     { --vz-c: var(--st-swap); }
+.vz .is-done     { --vz-c: var(--st-done); }
+.vz .is-found    { --vz-c: var(--st-found); }
+.vz .is-visited  { --vz-c: var(--st-visited); }
+.vz .is-frontier { --vz-c: var(--st-frontier); }
+.vz .is-path     { --vz-c: var(--st-path); }
+.vz .is-pivot    { --vz-c: var(--st-pivot); }
+.vz .is-key      { --vz-c: var(--st-key); }
+.vz .is-error    { --vz-c: var(--st-error); }
+.vz .is-muted    { --vz-c: var(--st-muted); }
+.vz [class*="is-"] { --vz-text: color-mix(in srgb, var(--vz-c) 68%, var(--ink)); }
+
+/* ============================================================ items (cells, boxes, bars, nodes)
+   Structure: <g class="vz-item is-<state>"> <rect|circle class="vz-shape"/> <text class="vz-ink"/> </g> */
+.vz .vz-item {
+  --vz-fill: var(--el-fill);
+  --vz-stroke: var(--el-stroke);
+  --vz-ink: var(--el-ink);
+  --vz-sw: 1.5px;
+}
+.vz .vz-item:is(.is-active, .is-compare, .is-swap, .is-done, .is-found, .is-frontier, .is-path, .is-pivot, .is-key, .is-error) {
+  --vz-fill: var(--vz-c);
+  --vz-stroke: var(--vz-c);
+  --vz-ink: var(--on-state);
+}
+.vz .vz-item:is(.is-compare, .is-swap, .is-done, .is-frontier, .is-path) {
+  --vz-ink: color-mix(in srgb, var(--vz-c) 20%, black);
+}
+.vz .vz-item.is-visited {
+  --vz-fill: color-mix(in srgb, var(--vz-c) 20%, var(--el-fill));
+  --vz-stroke: var(--vz-c);
+  --vz-ink: var(--el-ink);
+}
+.vz .vz-item.is-muted {
+  --vz-fill: var(--bg-sunken);
+  --vz-stroke: color-mix(in srgb, var(--st-muted) 80%, var(--el-fill));
+  --vz-ink: var(--ink-3);
+}
+.vz .vz-shape {
+  fill: var(--vz-fill);
+  stroke: var(--vz-stroke);
+  stroke-width: var(--vz-sw);
+  transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease), stroke-width var(--vz-dur) var(--vz-ease), opacity var(--vz-dur) var(--vz-ease);
+}
+.vz .vz-ink {
+  fill: var(--vz-ink);
+  transition: fill var(--vz-dur) var(--vz-ease), opacity var(--vz-dur) var(--vz-ease);
+}
+.vz .vz-value { font-weight: 650; }
+.vz .vz-sub { font-size: 10px; font-weight: 500; opacity: .85; }
+/* soft elevation shadow under lifted / held items: dark in both themes (never a light glow) */
+.vz .vz-lift-shadow { fill: color-mix(in srgb, var(--bg-sunken) 45%, black); fill-opacity: .42; }
+.vz .vz-empty { fill: var(--ink-3); font: italic 500 12px var(--font-sans); }
+
+/* Badges: small pills on the corner of an item (height, count, distance ...) */
+.vz .vz-badge rect { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1px; transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease); }
+.vz .vz-badge text { fill: var(--ink-2); font: 650 10px var(--font-mono); }
+.vz .vz-badge[class*="is-"]:not(.is-default) rect { fill: var(--vz-c); stroke: var(--vz-c); }
+.vz .vz-badge[class*="is-"]:not(.is-default) text { fill: var(--on-state); }
+.vz .vz-badge:is(.is-compare, .is-swap, .is-done, .is-frontier, .is-path) text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
+
+/* Quiet labels: indices, addresses, axis text */
+.vz .vz-label { fill: var(--ink-3); font: 500 11px var(--font-mono); }
+.vz .vz-label.is-strong { fill: var(--ink-2); font-weight: 650; }
+.vz .vz-caption { fill: var(--ink-2); font: 600 11px var(--font-sans); letter-spacing: .04em; }
+
+/* Empty slot / placeholder / hole */
+.vz .vz-slot { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1px; stroke-dasharray: 3 3; transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease); }
+.vz .vz-slot.is-solid { stroke-dasharray: none; }
+
+/* ============================================================ edges and arrows
+   <g class="vz-edge is-<state>"> <path class="vz-line"/> <path class="vz-head"/> </g> */
+.vz .vz-edge { --vz-ew: 1.75px; }
+.vz .vz-edge.is-default { --vz-c: var(--el-edge); }
+.vz .vz-edge:not(.is-default) { --vz-ew: 3px; }
+.vz .vz-edge.is-visited { --vz-ew: 2.25px; }
+.vz .vz-edge.is-muted { --vz-c: var(--st-muted); --vz-ew: 1.25px; }
+.vz .vz-edge .vz-line {
+  fill: none;
+  stroke: var(--vz-c);
+  stroke-width: var(--vz-ew);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke var(--vz-dur) var(--vz-ease), stroke-width var(--vz-dur) var(--vz-ease), opacity var(--vz-dur) var(--vz-ease);
+}
+.vz .vz-edge .vz-head { fill: var(--vz-c); stroke: none; transition: fill var(--vz-dur) var(--vz-ease); }
+.vz .vz-edge.is-dashed .vz-line { stroke-dasharray: 5 5; }
+
+/* ============================================================ pointers (i, j, head, curr ...) */
+.vz .vz-pointer { --vz-c: var(--st-active); }
+.vz .vz-pointer.is-default { --vz-c: var(--el-edge-strong); }
+.vz .vz-pointer .vz-ptr-head { fill: var(--vz-c); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz .vz-pointer .vz-ptr-stem { stroke: var(--vz-c); stroke-width: 1.75px; fill: none; stroke-linecap: round; transition: stroke var(--vz-dur) var(--vz-ease); }
+.vz .vz-pointer .vz-ptr-label { fill: var(--vz-text); font: 700 12px var(--font-mono); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz .vz-pointer .vz-ptr-chip { fill: var(--vz-c); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz .vz-pointer .vz-ptr-chip-text { fill: var(--on-state); font: 700 11.5px var(--font-mono); }
+.vz .vz-pointer:is(.is-compare, .is-swap, .is-done, .is-frontier, .is-path) .vz-ptr-chip-text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
+
+/* ============================================================ regions (sorted, window, partition ...) */
+.vz .vz-region { --vz-c: var(--st-active); }
+.vz .vz-region rect.vz-band {
+  fill: color-mix(in srgb, var(--vz-c) 10%, transparent);
+  stroke: color-mix(in srgb, var(--vz-c) 42%, transparent);
+  stroke-width: 1px;
+  transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease);
+}
+.vz .vz-region.is-muted rect.vz-band { fill: color-mix(in srgb, var(--st-muted) 16%, transparent); }
+.vz .vz-region .vz-region-label { fill: var(--vz-text); font: 650 10.5px var(--font-sans); letter-spacing: .05em; }
+
+/* ============================================================ interaction and focus */
+.vz .is-clickable { cursor: pointer; outline: none; }
+.vz .is-clickable:hover .vz-shape { stroke-width: 2.5px; }
+.vz .is-clickable:focus-visible .vz-shape { stroke: var(--accent); stroke-width: 3px; }
+.vz .is-clickable:focus-visible .vz-focus { opacity: 1; }
+.vz .vz-focus { fill: none; stroke: var(--accent); stroke-width: 2px; opacity: 0; pointer-events: none; }
+.vz .is-selected .vz-shape { stroke: var(--accent); stroke-width: 3px; }
+.vz-host-focus:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--r-sm); }
+
+/* Visually hidden text for screen readers (live regions, figure summaries) */
+.vz-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ============================================================ view-level legend (optional; VDSA.legend is the site widget) */
+.vz-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 0; font: 500 12px/1.3 var(--font-sans); color: var(--ink-2); }
+.vz-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.vz-legend-swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--vz-c, var(--st-default)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent); }
+.vz-legend-item.is-default .vz-legend-swatch { background: var(--el-fill); box-shadow: inset 0 0 0 1.5px var(--el-stroke); }
+.vz-legend-item.is-visited .vz-legend-swatch { background: color-mix(in srgb, var(--st-visited) 20%, var(--el-fill)); box-shadow: inset 0 0 0 1.5px var(--st-visited); }
+.vz-legend-item.is-muted .vz-legend-swatch { background: var(--bg-sunken); box-shadow: inset 0 0 0 1.5px var(--st-muted); }
+.vz-legend-line .vz-legend-swatch { height: 3px; border-radius: 2px; box-shadow: none; }
+.vz-legend-item.is-active   { --vz-c: var(--st-active); }
+.vz-legend-item.is-compare  { --vz-c: var(--st-compare); }
+.vz-legend-item.is-swap     { --vz-c: var(--st-swap); }
+.vz-legend-item.is-done     { --vz-c: var(--st-done); }
+.vz-legend-item.is-found    { --vz-c: var(--st-found); }
+.vz-legend-item.is-visited  { --vz-c: var(--st-visited); }
+.vz-legend-item.is-frontier { --vz-c: var(--st-frontier); }
+.vz-legend-item.is-path     { --vz-c: var(--st-path); }
+.vz-legend-item.is-pivot    { --vz-c: var(--st-pivot); }
+.vz-legend-item.is-key      { --vz-c: var(--st-key); }
+.vz-legend-item.is-error    { --vz-c: var(--st-error); }
+.vz-legend-item.is-muted    { --vz-c: var(--st-muted); }
+
+/* ============================================================ array (array.js) */
+.vz-array .vz-cell-bg { fill: none; }
+.vz-array .vz-bar.is-default { --vz-fill: color-mix(in srgb, var(--st-default) 20%, var(--el-fill)); --vz-stroke: color-mix(in srgb, var(--st-default) 34%, var(--el-fill)); }
+.vz-array .vz-bar .vz-shape { --vz-sw: 1px; }
+.vz-array .vz-bar.is-visited { --vz-fill: color-mix(in srgb, var(--st-visited) 34%, var(--el-fill)); }
+.vz-array .vz-bar .vz-bar-value { fill: var(--ink-2); font: 600 11px var(--font-sans); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-array .vz-bar:not(.is-default):not(.is-muted):not(.is-visited) .vz-bar-value { fill: var(--vz-text); }
+.vz-array .vz-baseline { stroke: var(--line-strong); stroke-width: 1px; }
+.vz-array .vz-cellsq .vz-shape { --vz-sw: 1px; }
+.vz-array .vz-cellsq.is-default { --vz-fill: color-mix(in srgb, var(--st-default) 14%, var(--el-fill)); --vz-stroke: color-mix(in srgb, var(--st-default) 26%, var(--el-fill)); }
+.vz-array .vz-held .vz-shape { --vz-sw: 2px; }
+/* end array */
+
+/* ============================================================ tree (tree.js) */
+.vz-tree .vz-node .vz-shape { --vz-sw: 1.75px; }
+.vz-tree .vz-halo {
+  fill: none; stroke: var(--vz-c); stroke-width: 2.5px; opacity: 0; pointer-events: none;
+  transition: opacity var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease);
+}
+.vz-tree .vz-node.has-halo .vz-halo { opacity: 1; }
+/* Red-black colouring is a property of the node, not a step state: the fill shows red/black and any
+   non-default state shows as a halo ring around it. */
+.vz.vz-tree .vz-node.rb-black {
+  --vz-fill: color-mix(in srgb, var(--ink) 12%, black);
+  --vz-stroke: color-mix(in srgb, var(--el-stroke) 72%, black);
+  --vz-ink: white;
+}
+.vz.vz-tree .vz-node.rb-red { --vz-fill: var(--st-error); --vz-stroke: var(--st-error); --vz-ink: var(--on-state); }
+.vz-tree .vz-node-sub { fill: var(--ink-2); font-size: 10.5px; }
+.vz-tree .vz-null-line { fill: none; stroke: var(--line-strong); stroke-width: 1.25px; stroke-dasharray: 3 3; }
+.vz-tree .vz-null-box { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1px; }
+.vz-tree .vz-null-text { fill: var(--ink-3); font: 600 10px var(--font-mono); }
+.vz-tree .vz-ret text { font-size: 10.5px; }
+/* end tree */
+
+/* ============================================================ graph (graph.js) */
+.vz-graph .vz-gnode { --vz-sw: 1.75px; }
+.vz-graph .vz-gnode .vz-badge text { font-size: calc(var(--vz-gf, 11px) - 1px); }
+.vz-graph .vz-gsub { fill: var(--ink-2); font: 600 calc(var(--vz-gf, 11px) - .5px) var(--font-mono); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-graph .vz-gnode:not(.is-default):not(.is-muted) .vz-gsub { fill: var(--vz-text); }
+.vz-graph .vz-weight rect { fill: var(--bg-elev); stroke: color-mix(in srgb, var(--vz-c) 50%, var(--bg-elev)); stroke-width: 1px; transition: stroke var(--vz-dur) var(--vz-ease); }
+.vz-graph .vz-weight text { fill: var(--ink-2); font: 650 var(--vz-gf, 11px) var(--font-mono); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-graph .vz-weight:not(.is-default):not(.is-muted) text { fill: var(--vz-text); }
+.vz-graph .vz-weight.is-muted text { fill: var(--ink-3); }
+.vz-graph .vz-pipe { fill: none; stroke: color-mix(in srgb, var(--vz-c) 20%, var(--el-fill)); stroke-linecap: round; transition: stroke var(--vz-dur) var(--vz-ease); }
+.vz-graph .vz-edge.is-default .vz-line.vz-flow { stroke: var(--el-edge-strong); }
+.vz-graph .vz-line.vz-flow { stroke-linecap: round; }
+.vz-graph .vz-pulse { fill: var(--vz-c); stroke: var(--bg-elev); stroke-width: 1.5px; pointer-events: none; }
+.vz-graph .vz-hit { fill: none; stroke: transparent; stroke-width: 16px; pointer-events: stroke; cursor: pointer; outline: none; }
+.vz-graph .vz-hit:focus-visible { stroke: color-mix(in srgb, var(--accent) 30%, transparent); }
+.vz-graph .vz-edge.is-selected .vz-line { stroke: var(--accent); }
+.vz-graph .vz-edge.is-selected .vz-head { fill: var(--accent); }
+.vz-graph .vz-weight.is-selected rect { stroke: var(--accent); stroke-width: 2px; }
+.vz-graph .vz-rubber { fill: none; stroke: var(--accent); stroke-width: 2px; stroke-dasharray: 6 5; stroke-linecap: round; pointer-events: none; }
+.vz-graph .vz-gnode.is-target .vz-shape { stroke: var(--accent); stroke-width: 3px; }
+.vz-graph.is-editing { cursor: crosshair; touch-action: none; }
+.vz-graph.is-editing .vz-gnode { cursor: pointer; }
+.vz-graph.is-draggable .vz-gnode, .vz-graph.is-editing.is-move-tool .vz-gnode { cursor: grab; touch-action: none; }
+.vz-graph .vz-gnode.is-dragging { cursor: grabbing; }
+.vz-graph .vz-gnode.is-dragging .vz-shape { stroke-width: 2.5px; }
+.vz-graph-input {
+  position: absolute; z-index: 3; width: 52px; height: 28px; padding: 0 4px; box-sizing: border-box;
+  font: 650 13px var(--font-mono); text-align: center; color: var(--ink); background: var(--bg-elev);
+  border: 2px solid var(--accent); border-radius: 8px; box-shadow: var(--shadow-2); outline: none;
+}
+/* end graph */
+
+/* ============================================================ grid (grid.js) */
+.vz-grid-host { position: relative; }
+.vz-grid-canvas { position: absolute; left: 0; top: 0; pointer-events: none; }
+.vz-grid-host > .vz-grid { position: relative; } /* overlay (markers, arrows, headers) paints above the canvas */
+.vz-grid.is-paintable { touch-action: none; cursor: crosshair; }
+.vz-grid .vz-gcell { --vz-sw: 1px; }
+.vz-grid-table .vz-gcell.is-default { --vz-stroke: var(--line-strong); }
+.vz-grid .vz-gtext { font-weight: 620; }
+.vz-grid .vz-glabel { font-family: var(--font-mono); font-weight: 500; opacity: .78; }
+/* pathfinding cells: colour only, no outlines */
+.vz-grid-path .vz-gcell { --vz-sw: 0px; }
+.vz-grid-path .vz-gcell.is-default { --vz-fill: var(--bg-sunken); --vz-stroke: transparent; }
+.vz-grid-path .vz-gcell.is-visited { --vz-fill: color-mix(in srgb, var(--st-visited) 30%, var(--el-fill)); --vz-stroke: transparent; }
+.vz-grid-path .vz-gcell.is-muted { --vz-fill: color-mix(in srgb, var(--st-muted) 30%, var(--bg-sunken)); --vz-stroke: transparent; }
+/* walls (cell.wall / walls: [[r,c]]) override the state colour */
+.vz .vz-item.vz-gcell.vz-wall { --vz-fill: color-mix(in srgb, var(--st-default) 78%, var(--el-fill)); --vz-stroke: color-mix(in srgb, var(--st-default) 78%, var(--el-fill)); --vz-ink: var(--el-fill); }
+/* headers */
+.vz-grid .vz-ghead { fill: var(--ink-2); font-family: var(--font-mono); font-weight: 600; transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-grid .vz-ghead.is-default { fill: var(--ink-2); }
+.vz-grid .vz-ghead.is-hl { fill: var(--vz-text); font-weight: 800; }
+/* row/col highlight bands sit over the cells as a translucent tint */
+.vz-grid .vz-gband { pointer-events: none; }
+.vz-grid .vz-gband rect.vz-band { fill: color-mix(in srgb, var(--vz-c) 9%, transparent); stroke: color-mix(in srgb, var(--vz-c) 55%, transparent); stroke-width: 1.25px; }
+/* cursor ring */
+.vz-grid .vz-cursor { --vz-c: var(--st-active); pointer-events: none; }
+.vz-grid .vz-cursor rect { fill: none; stroke: var(--vz-c); stroke-width: 2.5px; transition: stroke var(--vz-dur) var(--vz-ease); }
+/* DP dependency arrows (vz-edge + halo so they stay legible over values) */
+.vz-grid .vz-garrow { pointer-events: none; }
+.vz-grid .vz-edge.vz-garrow { --vz-ew: 2px; }
+.vz-grid .vz-edge.vz-garrow.is-default { --vz-c: var(--el-edge-strong); }
+.vz-grid .vz-garrow-halo { fill: none; stroke: var(--bg-elev); stroke-width: calc(var(--vz-ew) + 1.75px); stroke-linecap: round; opacity: .9; }
+.vz-grid .vz-garrow-label { fill: var(--vz-text); font: 700 10.5px var(--font-mono); paint-order: stroke; stroke: var(--bg-elev); stroke-width: 3px; }
+/* start / end / dot markers */
+.vz-grid .vz-marker { pointer-events: none; --vz-c: var(--st-active); }
+.vz-grid .vz-marker .vz-marker-outer { fill: var(--vz-c); stroke: var(--el-fill); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-grid .vz-marker.is-end .vz-marker-outer { fill: var(--el-fill); stroke: var(--vz-c); }
+.vz-grid .vz-marker .vz-marker-inner { fill: var(--vz-c); }
+.vz-grid .vz-marker .vz-marker-text { fill: var(--on-state); font: 750 11px var(--font-sans); }
+.vz-grid .vz-marker.is-end .vz-marker-text { fill: var(--vz-text); }
+.vz-grid .vz-marker:is(.is-compare, .is-swap, .is-done, .is-frontier, .is-path):not(.is-end) .vz-marker-text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
+/* keyboard focus cell */
+.vz-grid .vz-kfocus { fill: none; stroke: var(--accent); stroke-width: 2.5px; pointer-events: none; }
+/* end grid */
+
+/* ============================================================ list (list.js) */
+.vz-list .vz-lnode .vz-divider { stroke: var(--vz-stroke); stroke-width: 1px; opacity: .45; transition: stroke var(--vz-dur) var(--vz-ease); }
+.vz-list .vz-lnode .vz-dot { fill: var(--vz-ink); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-list .vz-lnode .vz-slash { stroke: var(--vz-ink); stroke-width: 1.6px; stroke-linecap: round; transition: stroke var(--vz-dur) var(--vz-ease); }
+.vz-list .vz-lnode .vz-lcaption { font-size: 10px; }
+.vz-list .vz-null-text { fill: var(--ink-3); font: 600 11px var(--font-mono); }
+.vz-list .vz-edge { --vz-ew: 1.6px; }
+.vz-list .vz-edge.is-default { --vz-c: var(--el-edge-strong); }
+.vz-list .vz-edge:not(.is-default) { --vz-ew: 2.4px; }
+.vz-list .vz-edge.is-muted { --vz-ew: 1.25px; }
+/* end list */
+
+/* ============================================================ stack / queue / ring (stack.js) */
+.vz-linear .vz-tray-line { fill: none; stroke: var(--line-strong); stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round; transition: stroke var(--vz-dur) var(--vz-ease); }
+.vz-linear .vz-tray.is-error .vz-tray-line { stroke: var(--st-error); stroke-width: 2.5px; }
+.vz-linear .vz-tray.is-error .vz-tray-caption { fill: color-mix(in srgb, var(--st-error) 68%, var(--ink)); }
+.vz-linear .vz-empty-text { font: 600 11px var(--font-sans); letter-spacing: .06em; fill: var(--ink-3); }
+.vz-linear .vz-slot { fill: none; }
+.vz-ring .vz-ring-slot .vz-shape { --vz-sw: 1.25px; stroke-linejoin: round; }
+.vz-ring .vz-ring-slot.is-default { --vz-stroke: color-mix(in srgb, var(--el-stroke) 55%, var(--el-fill)); }
+.vz-ring .vz-ring-slot.is-empty,
+.vz-ring .vz-ring-cell.is-empty { --vz-fill: color-mix(in srgb, var(--el-fill) 40%, var(--bg-sunken)); --vz-stroke: var(--line-strong); }
+.vz-ring .vz-ring-cell.is-empty .vz-shape,
+.vz-ring .vz-ring-slot.is-empty .vz-shape { stroke-dasharray: 3 3; }
+.vz-ring .vz-ring-cell .vz-shape { --vz-sw: 1.25px; }
+.vz-ring .vz-ring-size { fill: var(--ink); font: 700 26px var(--font-sans); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-ring .vz-ring-sizecap { font-size: 11px; }
+.vz-ring .vz-ring-center.is-full .vz-ring-size { fill: color-mix(in srgb, var(--st-error) 70%, var(--ink)); }
+.vz-ring .vz-ring-center.is-emptyring .vz-ring-size { fill: var(--ink-3); }
+/* end stack */
+
+/* ============================================================ hashtable (hash.js) */
+.vz-hash .vz-bucket .vz-shape { --vz-sw: 1.25px; }
+.vz-hash .vz-bucket.is-default { --vz-fill: var(--bg-sunken); --vz-stroke: var(--line-strong); }
+.vz-hash .vz-bucket-index { font-size: 11.5px; }
+.vz-hash .vz-bucket:not(.is-default) .vz-bucket-index { fill: var(--vz-text); font-weight: 700; }
+.vz-hash .vz-hash-null { fill: var(--ink-3); font: 500 13px var(--font-mono); }
+.vz-hash .vz-hash-dot { fill: var(--el-edge-strong); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-hash .vz-bucket:not(.is-default):not(.is-muted):not(.is-visited) .vz-hash-dot { fill: var(--vz-ink); }
+.vz-hash .vz-hash-entry .vz-value { font-weight: 650; }
+.vz-hash .vz-edge.is-default { --vz-c: var(--el-edge-strong); --vz-ew: 1.5px; }
+.vz-hash .vz-hash-inputbox { fill: none; stroke: var(--line-strong); stroke-width: 1px; stroke-dasharray: 4 4; }
+.vz-hash .vz-hash-fnbox { fill: var(--bg-tint); stroke: color-mix(in srgb, var(--accent) 50%, var(--line)); stroke-width: 1.5px; transition: stroke var(--vz-dur) var(--vz-ease), fill var(--vz-dur) var(--vz-ease); }
+.vz-hash .vz-hash-hash.is-busy .vz-hash-fnbox { stroke: var(--accent); fill: color-mix(in srgb, var(--accent) 12%, var(--bg-elev)); }
+.vz-hash .vz-hash-fn { fill: var(--ink-2); font: 600 12px var(--font-mono); }
+.vz-hash .vz-hash-value { fill: color-mix(in srgb, var(--accent) 72%, var(--ink)); font: 700 12px var(--font-mono); }
+.vz-hash .vz-hash-meter-track { fill: var(--bg-sunken); stroke: var(--line); stroke-width: 1px; }
+.vz-hash .vz-hash-meter-fill { fill: var(--vz-c); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-hash .vz-hash-meter-tick { stroke: var(--ink-2); stroke-width: 1.5px; }
+.vz-hash .vz-hash-meter-label { fill: var(--vz-text); font: 650 11px var(--font-mono); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-hash .vz-hash-meter-ticklabel { fill: var(--ink-3); font: 500 9.5px var(--font-mono); }
+.vz-hash .vz-hash-resize { fill: color-mix(in srgb, var(--st-swap) 68%, var(--ink)); font: 650 11px var(--font-sans); }
+.vz-hash .vz-hash-tomb-text { fill: var(--ink-3); font: 600 11px var(--font-mono); }
+.vz-hash .vz-hash-probe-badge text { font-size: 9.5px; }
+/* end hash */
+
+/* ============================================================ memory (memory.js) */
+/* ram cells */
+.vz-memory .vz-mem-cell .vz-shape { --vz-sw: 1px; }
+.vz-memory .vz-mem-cell.is-default { --vz-stroke: var(--line-strong); }
+.vz-memory .vz-mem-bits { font-weight: 500; fill-opacity: .72; }
+.vz-memory .vz-mem-celladdr { font-size: 9.5px; }
+.vz-memory .vz-mem-addr { font-size: 11px; }
+.vz-memory .vz-mem-bracket { fill: none; stroke: var(--vz-text); stroke-width: 1.5px; stroke-linejoin: round; stroke-linecap: round; transition: stroke var(--vz-dur) var(--vz-ease); }
+.vz-memory .vz-mem-varname { fill: var(--vz-text); font: 650 11.5px var(--font-mono); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-memory .vz-mem-var.is-default { --vz-text: var(--ink-2); }
+/* stack frames */
+.vz-memory .vz-mem-frame-body { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1px; }
+.vz-memory .vz-mem-frame .vz-mem-frame-head { --vz-sw: 1px; }
+.vz-memory .vz-mem-frame.is-default { --vz-fill: var(--bg-sunken); --vz-stroke: var(--line-strong); }
+.vz-memory .vz-mem-frame-title { font: 650 12px var(--font-mono); }
+.vz-memory .vz-mem-frame.is-muted > * { opacity: .55; }
+.vz-memory .vz-mem-varname2 { fill: var(--ink-2); font: 500 11.5px var(--font-mono); }
+.vz-memory .vz-mem-val .vz-shape, .vz-memory .vz-mem-field .vz-shape { --vz-sw: 1px; }
+.vz-memory .vz-mem-val.is-default { --vz-stroke: var(--line-strong); }
+.vz-memory .vz-mem-dot { fill: var(--vz-ink); transition: fill var(--vz-dur) var(--vz-ease); }
+/* heap objects */
+.vz-memory .vz-mem-objframe { fill: none; stroke: none; transition: stroke var(--vz-dur) var(--vz-ease), fill var(--vz-dur) var(--vz-ease); }
+.vz-memory .vz-mem-object .vz-mem-objframe { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1px; }
+.vz-memory .vz-mem-obj:not(.is-default) .vz-mem-objframe { stroke: var(--vz-c); stroke-width: 2px; }
+.vz-memory .vz-mem-obj.is-visited:not(.vz-mem-object) .vz-mem-objframe { fill: color-mix(in srgb, var(--vz-c) 12%, transparent); }
+.vz-memory .vz-mem-obj.is-muted .vz-mem-objframe { stroke: var(--st-muted); stroke-dasharray: 4 3; }
+.vz-memory .vz-mem-obj.is-muted > * { opacity: .45; }
+.vz-memory .vz-mem-objlabel { fill: var(--ink-2); font: 650 11px var(--font-mono); }
+.vz-memory .vz-mem-field.is-default { --vz-stroke: var(--el-stroke); }
+.vz-memory .vz-mem-object .vz-mem-field.is-default { --vz-stroke: var(--line-strong); }
+.vz-memory .vz-mem-fieldname { fill: var(--ink-2); font: 500 11.5px var(--font-mono); }
+.vz-memory .vz-mem-node .vz-mem-fieldname { fill: var(--ink-3); font-size: 9.5px; }
+.vz-memory .vz-mem-idx { font-size: 9.5px; }
+/* pointer arrows */
+.vz-memory .vz-edge.is-default { --vz-c: var(--el-edge-strong); --vz-ew: 1.6px; }
+/* end memory */
+
+/* ============================================================ callstack (callstack.js) */
+/* Frames are tinted cards (not filled items): the state colours the border and header. */
+.vz-callstack .vz-frame { --vz-fill: var(--el-fill); --vz-stroke: var(--line-strong); --vz-sw: 1.25px; }
+.vz-callstack .vz-frame:not(.is-default):not(.is-muted) {
+  --vz-fill: color-mix(in srgb, var(--vz-c) 6%, var(--el-fill));
+  --vz-stroke: var(--vz-c);
+  --vz-sw: 1.75px;
+}
+.vz-callstack .vz-frame.is-muted { --vz-fill: var(--bg-sunken); --vz-stroke: var(--line); }
+.vz-callstack .vz-frame-head { fill: color-mix(in srgb, var(--ink) 5%, var(--el-fill)); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-callstack .vz-frame:not(.is-default):not(.is-muted) .vz-frame-head { fill: color-mix(in srgb, var(--vz-c) 16%, var(--el-fill)); }
+.vz-callstack .vz-frame-title { fill: var(--el-ink); font: 650 13px var(--font-mono); }
+.vz-callstack .vz-frame.is-muted .vz-frame-title { fill: var(--ink-3); }
+.vz-callstack .vz-frame-meta { fill: var(--ink-3); font: 500 11px var(--font-mono); }
+.vz-callstack .vz-frame-key { fill: var(--ink-2); font: 500 12px var(--font-mono); }
+.vz-callstack .vz-frame-val { fill: var(--el-ink); font: 650 12px var(--font-mono); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-callstack .vz-frame-row:not(.is-default) .vz-frame-val { fill: var(--vz-text); }
+.vz-callstack .vz-frame-flash { fill: color-mix(in srgb, var(--st-swap) 16%, transparent); opacity: 0; transition: opacity var(--vz-dur) var(--vz-ease); }
+.vz-callstack .vz-frame-row.is-changed .vz-frame-flash { opacity: 1; }
+.vz-callstack .vz-frame-ret text { font: 650 11px var(--font-mono); }
+.vz-callstack .vz-frame-more-bg { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1px; stroke-dasharray: 4 3; }
+.vz-callstack .vz-frame-more-text { fill: var(--ink-3); font: 600 11.5px var(--font-sans); }
+.vz-callstack .vz-flyer { pointer-events: none; }
+/* end callstack */
+
+/* ============================================================ chart (chart.js) */
+/* Categorical series order (series without an explicit `state`): active, compare, done, pivot, frontier,
+   visited, path, error. A series with `state` uses that semantic colour instead (e.g. state: 'muted' for a
+   reference curve). */
+.vz-chart .vz-cat-0 { --vz-c: var(--st-active); }
+.vz-chart .vz-cat-1 { --vz-c: var(--st-compare); }
+.vz-chart .vz-cat-2 { --vz-c: var(--st-done); }
+.vz-chart .vz-cat-3 { --vz-c: var(--st-pivot); }
+.vz-chart .vz-cat-4 { --vz-c: var(--st-frontier); }
+.vz-chart .vz-cat-5 { --vz-c: var(--st-visited); }
+.vz-chart .vz-cat-6 { --vz-c: var(--st-path); }
+.vz-chart .vz-cat-7 { --vz-c: var(--st-error); }
+.vz-chart [class*="vz-cat-"] { --vz-text: color-mix(in srgb, var(--vz-c) 68%, var(--ink)); }
+.vz-chart.is-hoverable { cursor: crosshair; touch-action: pan-y; }
+/* axes: quiet gridlines, ink-3 labels */
+.vz-chart .vz-gridline { stroke: var(--line); stroke-width: 1px; shape-rendering: crispEdges; }
+.vz-chart .vz-tick.is-minor .vz-gridline { stroke: color-mix(in srgb, var(--line) 55%, transparent); }
+.vz-chart .vz-tick-x .vz-gridline { stroke: var(--line-strong); }
+.vz-chart .vz-tick-x.is-grid .vz-gridline { stroke: var(--line); }
+.vz-chart .vz-tick-label { fill: var(--ink-3); font: 500 11px var(--font-sans); font-variant-numeric: tabular-nums; }
+.vz-chart .vz-tick-y .vz-tick-label { text-anchor: end; }
+.vz-chart .vz-axis-line { stroke: var(--line-strong); stroke-width: 1px; shape-rendering: crispEdges; }
+.vz-chart .vz-axis-title { fill: var(--ink-2); font: 600 11.5px var(--font-sans); letter-spacing: .01em; }
+/* lines */
+.vz-chart .vz-series-line { fill: none; stroke: var(--vz-c); stroke-width: 2.25px; stroke-linejoin: round; stroke-linecap: round; transition: stroke var(--vz-dur) var(--vz-ease); }
+.vz-chart .vz-series-line.is-dashed { stroke-dasharray: 6 5; stroke-width: 2px; }
+.vz-chart .vz-series.is-muted .vz-series-line { stroke-width: 1.75px; }
+.vz-chart .vz-series-dot { fill: var(--vz-c); stroke: var(--bg-elev); stroke-width: 1.5px; }
+.vz-chart .vz-series.is-dim, .vz-chart .vz-series-label.is-dim, .vz-chart .vz-scatter-dot.is-dim, .vz-chart .vz-bar-g.is-dim { opacity: .28; transition: opacity var(--vz-dur) var(--vz-ease); }
+.vz-chart .vz-series, .vz-chart .vz-series-label, .vz-chart .vz-bar-g { transition: opacity var(--vz-dur) var(--vz-ease); }
+.vz-chart .vz-series-label { fill: var(--vz-text); font: 650 12px var(--font-sans); }
+.vz-chart .vz-series-label.is-inside { paint-order: stroke; stroke: var(--bg-elev); stroke-width: 3.5px; stroke-linejoin: round; }
+/* bars */
+.vz-chart .vz-bar-rect { fill: var(--vz-c); transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-chart .vz-bar-g.is-hl .vz-bar-rect { stroke: var(--ink); stroke-width: 1.5px; }
+.vz-chart .vz-bar-label { fill: var(--ink-2); font: 600 11px var(--font-sans); font-variant-numeric: tabular-nums; }
+.vz-chart .vz-cat-label { fill: var(--ink-2); font-weight: 600; }
+/* scatter */
+.vz-chart .vz-scatter-dot { fill: color-mix(in srgb, var(--vz-c) 78%, transparent); stroke: var(--bg-elev); stroke-width: 1px; }
+/* legend (bar/scatter, or narrow line charts) */
+.vz-chart .vz-lg-swatch { fill: var(--vz-c); }
+.vz-chart .vz-lg-text { fill: var(--ink-2); font: 600 12px var(--font-sans); }
+/* annotations */
+.vz-chart .vz-annot { --vz-c: var(--ink-3); }
+.vz-chart .vz-annot:not(.is-default) .vz-annot-text { fill: var(--vz-text); }
+.vz-chart .vz-annot-line { stroke: var(--vz-c); stroke-width: 1.25px; stroke-dasharray: 4 4; }
+.vz-chart .vz-annot.is-point .vz-annot-line { stroke: none; }
+.vz-chart .vz-annot-dot { fill: var(--vz-c); stroke: var(--bg-elev); stroke-width: 1.5px; }
+.vz-chart .vz-annot-text { fill: var(--ink-2); font: 600 11px var(--font-sans); paint-order: stroke; stroke: var(--bg-elev); stroke-width: 3px; stroke-linejoin: round; }
+.vz-chart .vz-annot.is-default { --vz-c: var(--ink-3); }
+/* highlighted point */
+.vz-chart .vz-hl-ring { fill: color-mix(in srgb, var(--vz-c) 18%, transparent); stroke: var(--vz-c); stroke-width: 1.5px; }
+.vz-chart .vz-hl-dot { fill: var(--vz-c); stroke: var(--bg-elev); stroke-width: 2px; }
+.vz-chart .vz-hl-pill { fill: var(--vz-c); }
+.vz-chart .vz-hl-text { fill: var(--on-state); font: 700 11.5px var(--font-sans); font-variant-numeric: tabular-nums; }
+.vz-chart .vz-hl:is(.vz-cat-1, .vz-cat-2, .vz-cat-4, .vz-cat-6, .is-compare, .is-done, .is-frontier, .is-path, .is-swap) .vz-hl-text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
+/* hover crosshair + tooltip */
+.vz-chart .vz-hover { pointer-events: none; }
+.vz-chart .vz-crosshair { stroke: var(--ink-3); stroke-width: 1px; stroke-dasharray: 3 3; }
+.vz-chart .vz-hover-dot { fill: var(--vz-c); stroke: var(--bg-elev); stroke-width: 2px; }
+.vz-chart .vz-tip-box { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1px; }
+.vz-chart .vz-tip-shadow { fill: var(--ink); opacity: .08; }
+.vz-chart .vz-tip-title { fill: var(--ink); font: 700 12px var(--font-sans); font-variant-numeric: tabular-nums; }
+.vz-chart .vz-tip-label { fill: var(--ink-2); font: 500 12px var(--font-sans); }
+.vz-chart .vz-tip-value { fill: var(--ink); font: 700 12px var(--font-sans); font-variant-numeric: tabular-nums; }
+.vz-chart .vz-tip-swatch { fill: var(--vz-c); }
+/* end chart */
+
+/* ============================================================ flowchart (flowchart.js) */
+.vz-flowchart .vz-flow-node .vz-shape { --vz-sw: 1.5px; stroke-linejoin: round; }
+.vz-flowchart .vz-flow-text { font-weight: 550; letter-spacing: .005em; }
+/* neutral shape cues for untouched nodes (states still win once a trace colours them) */
+.vz-flowchart .vz-flow-start.is-default,
+.vz-flowchart .vz-flow-end.is-default { --vz-fill: var(--bg-sunken); }
+.vz-flowchart .vz-flow-decision.is-default { --vz-fill: var(--bg-tint); }
+.vz-flowchart .vz-flow-note.is-default { --vz-fill: transparent; --vz-stroke: var(--line-strong); --vz-ink: var(--ink-2); }
+.vz-flowchart .vz-flow-note .vz-shape { stroke-dasharray: 5 4; --vz-sw: 1.25px; }
+.vz-flowchart .vz-flow-note .vz-flow-text { font-style: italic; font-weight: 450; }
+.vz-flowchart .vz-flow-edge.is-default { --vz-ew: 1.6px; }
+.vz-flowchart .vz-flow-edge.is-noarrow .vz-head { display: none; }
+/* edge labels (yes / no ...): a pill sitting on the line near its source */
+.vz-flowchart .vz-flow-pill { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1px; transition: fill var(--vz-dur) var(--vz-ease), stroke var(--vz-dur) var(--vz-ease); }
+.vz-flowchart .vz-flow-label text { fill: var(--ink-2); font: 650 10.5px var(--font-sans); letter-spacing: .02em; transition: fill var(--vz-dur) var(--vz-ease); }
+.vz-flowchart .vz-flow-label:not(.is-default) .vz-flow-pill { stroke: var(--vz-c); fill: color-mix(in srgb, var(--vz-c) 14%, var(--bg-elev)); }
+.vz-flowchart .vz-flow-label:not(.is-default) text { fill: var(--vz-text); }
+/* interactive decision tree: labels become buttons */
+.vz-flowchart .vz-flow-label.is-clickable .vz-flow-pill { stroke: var(--accent); fill: var(--accent-soft); stroke-width: 1.25px; }
+.vz-flowchart .vz-flow-label.is-clickable text { fill: var(--accent); }
+.vz-flowchart .vz-flow-label.is-clickable:hover .vz-flow-pill { fill: var(--accent); }
+.vz-flowchart .vz-flow-label.is-clickable:hover text { fill: var(--accent-ink); }
+.vz-flowchart .vz-flow-label.is-clickable:focus-visible .vz-flow-pill { stroke-width: 3px; stroke: var(--accent); }
+.vz-flowchart .vz-flow-label.is-clickable:not(.is-default) .vz-flow-pill { stroke: var(--vz-c); fill: color-mix(in srgb, var(--vz-c) 16%, var(--bg-elev)); }
+.vz-flowchart .vz-flow-label.is-clickable:not(.is-default) text { fill: var(--vz-text); }
+.vz-flowchart .vz-flow-label.is-disabled { pointer-events: none; }
+.vz-flowchart .vz-flow-label.is-clickable.is-disabled.is-default .vz-flow-pill { fill: var(--bg-elev); stroke: var(--line-strong); stroke-dasharray: 2 2; }
+.vz-flowchart .vz-flow-label.is-clickable.is-disabled.is-default text { fill: var(--ink-3); }
+/* travelling token and the trail it paints */
+.vz-flowchart .vz-flow-trail { fill: none; stroke: var(--st-active); stroke-width: 3.5px; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.vz-flowchart .vz-flow-token { pointer-events: none; }
+.vz-flowchart .vz-flow-token .vz-flow-dot { fill: var(--st-active); stroke: var(--bg-elev); stroke-width: 2px; }
+.vz-flowchart .vz-flow-token .vz-flow-halo { fill: var(--st-active); opacity: .22; }
+/* end flowchart */
+
+/* ============================================================ reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .vz, .vz * { transition: none !important; }
+}
+:root[data-motion="reduce"] .vz,
+:root[data-motion="reduce"] .vz * { transition: none !important; }

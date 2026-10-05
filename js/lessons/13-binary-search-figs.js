@@ -175,9 +175,9 @@
       seq.forEach(function (r, k) {
         var a = 1 + (n - r) / 2;
         var cap;
-        if (k === 0) cap = '<b>' + L13.num(n) + ' candidates.</b> Any of them could hold the target, so before the first comparison the whole bar is bright.';
-        else if (r === 0) cap = 'After <b>' + k + ' comparisons</b> nothing is left: the target has been found or ruled out. That is ⌊log₂ ' + L13.num(n) + '⌋ + 1 = <b>' + k + '</b> comparisons, from ' + L13.num(n) + ' candidates.';
-        else cap = 'After <b>' + k + ' comparison' + (k === 1 ? '' : 's') + '</b>, at most <b>' + L13.num(r) + '</b> candidates can remain: each comparison keeps at most half.' + (k === 10 && n >= 1e6 ? ' Ten comparisons took us from ' + L13.num(n) + ' down to about a thousand.' : '');
+        if (k === 0) cap = '<b>' + L13.num(n) + (n === 1 ? ' candidate.' : ' candidates.') + '</b> ' + (n === 1 ? 'It' : 'Any of them') + ' could hold the target, so before the first comparison the whole bar is bright.';
+        else if (r === 0) cap = 'After <b>' + k + (k === 1 ? ' comparison' : ' comparisons') + '</b> nothing is left: the target has been found or ruled out. That is ⌊log₂ ' + L13.num(n) + '⌋ + 1 = <b>' + k + '</b> ' + (k === 1 ? 'comparison' : 'comparisons') + ', from ' + L13.num(n) + (n === 1 ? ' candidate.' : ' candidates.');
+        else cap = 'After <b>' + k + ' comparison' + (k === 1 ? '' : 's') + '</b>, at most <b>' + L13.num(r) + '</b> ' + (r === 1 ? 'candidate' : 'candidates') + ' can remain: each comparison keeps at most half.' + (k === 10 && n >= 1e6 ? ' Ten comparisons took us from ' + L13.num(n) + ' down to about a thousand.' : '');
         out.push({ k: k, r: r, n: n, caption: cap, live: r > 0 ? [a, a + r - 1] : null, counters: { comparisons: k, left: L13.num(r) }, seq: seq });
       });
       return out;
@@ -185,7 +185,7 @@
     function render(st, ctx) {
       // the bar is a fixed 1000-wide picture of the candidates: r / n of it is bright
       var frac = st.r / st.n, w = frac * 1000, a = 1 + (1000 - w) / 2;
-      bar.render({ live: st.r > 0 ? [a, a + Math.max(w, 0.6) - 1] : null, note: st.r > 0 ? L13.num(st.r) + ' left' : 'none left', describe: L13.num(st.r) + ' of ' + L13.num(st.n) + ' candidates remain.' }, { duration: ctx.duration });
+      bar.render({ live: st.r > 0 ? [a, a + Math.max(w, 0.6) - 1] : null, note: st.r > 0 ? L13.num(st.r) + ' left' : 'none left', describe: L13.num(st.r) + ' of ' + L13.num(st.n) + (st.n === 1 ? ' candidate remains.' : ' candidates remain.') }, { duration: ctx.duration });
       // ladder chips
       V.clear(ladder);
       st.seq.forEach(function (r, k) {
@@ -238,8 +238,8 @@
       else if (A[probe] === target) caption.innerHTML = '<b>Lucky: a[' + probe + '] = ' + target + ' is the target.</b> A blind probe hits with chance 1 in ' + n + ', so plan for a miss. Try another value.';
       else {
         var v = A[probe], left = n - st.ruled;
-        caption.innerHTML = '<code>a[' + probe + '] = ' + v + '</code> is ' + (st.cmp === 'lt' ? 'smaller' : 'bigger') + ' than ' + target + '. Sorted order means ' + (st.cmp === 'lt' ? 'everything to its left is smaller still' : 'everything to its right is bigger still') + ', so <b>' + st.ruled + ' values are out</b> and ' + left + ' remain. ' +
-          (probe === mid ? 'This is the middle: whichever way the comparison goes, at most ' + mid + ' values are left. No probe guarantees more.' : 'Unlucky answers here could leave ' + worst + ' values; the middle (index ' + mid + ') could never leave more than ' + mid + '.');
+        caption.innerHTML = '<code>a[' + probe + '] = ' + v + '</code> is ' + (st.cmp === 'lt' ? 'smaller' : 'bigger') + ' than ' + target + '. Sorted order means ' + (st.cmp === 'lt' ? 'everything to its left is smaller still' : 'everything to its right is bigger still') + ', so <b>' + st.ruled + (st.ruled === 1 ? ' value is out</b> and ' : ' values are out</b> and ') + left + ' remain. ' +
+          (probe === mid ? 'This is the middle: whichever way the comparison goes, at most ' + mid + (mid === 1 ? ' value is left.' : ' values are left.') + ' No probe guarantees more.' : 'Unlucky answers here could leave ' + worst + (worst === 1 ? ' value' : ' values') + '; the middle (index ' + mid + ') could never leave more than ' + mid + '.');
       }
     }
     view.on('click', function (e) { probe = e.index; draw(); });

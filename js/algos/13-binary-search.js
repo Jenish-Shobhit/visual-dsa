@@ -272,8 +272,8 @@
     var startCap = n === 0
       ? 'The array is empty, so there is nothing to look at. ' + (half ? '<code>lo = 0</code> and <code>hi = n = 0</code>: the answer can only be position 0.' : '<code>lo = 0</code> and <code>hi = n − 1 = −1</code> already cross.')
       : 'Looking for <b>' + xs + '</b> among ' + plural(n, 'sorted value') + '. ' + (half
-        ? 'The answer is one of the ' + (n + 1) + ' positions 0 to ' + n + ' (position ' + n + ' means “past the end”), so <code>lo = 0</code> and <code>hi = n = ' + n + '</code>.'
-        : 'Any of the ' + n + ' positions could hold it, so <code>lo = 0</code> and <code>hi = n − 1 = ' + (n - 1) + '</code>.');
+        ? 'The answer is one of the ' + (n + 1) + (n === 0 ? ' position' : ' positions') + ' 0 to ' + n + ' (position ' + n + ' means “past the end”), so <code>lo = 0</code> and <code>hi = n = ' + n + '</code>.'
+        : (n === 1 ? 'The only position could hold it' : 'Any of the ' + n + ' positions could hold it') + ', so <code>lo = 0</code> and <code>hi = n − 1 = ' + (n - 1) + '</code>.');
     if (!sorted) startCap += ' <b>Careful: this array is not sorted</b>, so the halving argument below will not hold.';
     snap('start', { caption: startCap, line: 'init', flow: 'start' });
 
@@ -527,7 +527,7 @@
       : 'The answer is near the square root of ' + problem.x + '. Test each m with “' + pName + '”: false for small m, true once m is big enough, and never back. The first true m is one too far.' });
     while (lo < hi) {
       var mid = lo + Math.floor((hi - lo) / 2);
-      snap('mid', { mid: mid, line: 'mid', caption: 'Probe the middle candidate, <code>mid = ' + mid + '</code>: ' + (hi - lo + 1) + ' candidates from ' + lo + ' to ' + hi + ' (the right end, ' + hi + ', is known to be true).' });
+      snap('mid', { mid: mid, line: 'mid', caption: 'Probe the middle candidate, <code>mid = ' + mid + '</code>: ' + (hi - lo + 1) + (hi === lo ? ' candidate' : ' candidates') + ' from ' + lo + ' to ' + hi + ' (the right end, ' + hi + ', is known to be true).' });
       var p = info.pred(mid);
       evals++; evaluated.push(mid - base);
       snap('test', { mid: mid, probe: p, line: 'test', caption: info.explain(mid) });
@@ -535,7 +535,7 @@
       else { lo = mid + 1; snap('discard', { mid: mid, probe: p, line: 'false', caption: 'False at <code>' + mid + '</code>, so every smaller candidate is false too (monotonic). The first true is later: <code>lo = mid + 1 = ' + lo + '</code>.' }); }
     }
     var ans = problem.kind === 'ship' ? lo : lo - 1;
-    snap('done', { done: true, answer: ans, line: 'done', caption: info.answerText(lo) + ' It took only <b>' + evals + '</b> tests out of ' + n + ' candidates.' });
+    snap('done', { done: true, answer: ans, line: 'done', caption: info.answerText(lo) + ' It took only <b>' + evals + '</b> ' + (evals === 1 ? 'test' : 'tests') + ' out of ' + plural(n, 'candidate') + '.' });
     return steps;
   }
   function answerBrute(problem) {

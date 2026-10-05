@@ -358,7 +358,7 @@
       // linear lane
       var lt = Math.min(t, built.linTicks), l = lanes.lin;
       var done = t >= built.linTicks;
-      var lstate = { scan: lt > 0 ? [0, (done && lin.found ? built.idx : lt) - (done && lin.found ? 1 : 1)] : null, marks: [], describe: 'Linear search has checked ' + lt + ' values.' };
+      var lstate = { scan: lt > 0 ? [0, (done && lin.found ? built.idx : lt) - (done && lin.found ? 1 : 1)] : null, marks: [], describe: 'Linear search has checked ' + lt + (lt === 1 ? ' value.' : ' values.') };
       if (lt > 0) lstate.scan = [0, lt - 1];
       if (lt > 0 && !(done && lin.found)) lstate.marks = [{ id: 'i', at: lt - 1, label: 'i = ' + L13.num(lt - 1), state: 'compare', side: 'above' }];
       if (done && lin.found) { lstate.hit = built.idx; lstate.marks = [{ id: 'i', at: built.idx, label: 'found ' + L13.num(built.idx), state: 'found', side: 'above' }]; }
@@ -367,7 +367,7 @@
       // binary lane
       var bt = Math.min(t, built.binTicks), b = lanes.bin, bdone = t >= built.binTicks;
       var probe = bt > 0 ? plan.probes[bt - 1] : null;
-      var bstate = { marks: [], describe: 'Binary search has made ' + bt + ' comparisons.' };
+      var bstate = { marks: [], describe: 'Binary search has made ' + bt + (bt === 1 ? ' comparison.' : ' comparisons.') };
       var left = n;
       if (!probe) bstate.live = [0, n - 1];
       else if (probe.move === 'found') { bstate.live = null; bstate.hit = probe.mid; left = 0; bstate.marks = [{ id: 'm', at: probe.mid, label: 'found ' + L13.num(probe.mid), state: 'found', side: 'above' }]; }
@@ -397,8 +397,8 @@
         var lw = built.linTicks < built.binTicks;
         return '<b>Both finished.</b> Linear search: <b>' + L13.num(built.linTicks) + '</b> comparisons. Binary search: <b>' + built.binTicks + '</b>. ' + (built.linTicks === built.binTicks ? 'A tie, on this target.' : lw ? 'Linear search wins this one because the target sits at the very front; that is its best case, and binary search does not know that.' : 'Binary search needed ' + Math.round(built.linTicks / built.binTicks) + ' times fewer looks' + (n >= 1000 ? ', and the gap widens as n grows.' : '.'));
       }
-      if (doneB && !doneL) return '<b>Binary search has finished after ' + built.binTicks + ' comparisons.</b> Linear search has checked ' + L13.num(lt) + ' of ' + L13.num(n) + ' values' + (st.fast ? ' (fast-forwarding: each step is now ' + st.stride + ' ticks)' : '') + ' and still needs ' + L13.num(built.linTicks - lt) + ' more.';
-      if (doneL && !doneB) return '<b>Linear search found it after ' + built.linTicks + ' comparisons</b>, before binary search finished: the target is near the front.';
+      if (doneB && !doneL) return '<b>Binary search has finished after ' + built.binTicks + (built.binTicks === 1 ? ' comparison.</b>' : ' comparisons.</b>') + ' Linear search has checked ' + L13.num(lt) + ' of ' + L13.num(n) + (n === 1 ? ' value' : ' values') + (st.fast ? ' (fast-forwarding: each step is now ' + st.stride + ' ticks)' : '') + ' and still needs ' + L13.num(built.linTicks - lt) + ' more.';
+      if (doneL && !doneB) return '<b>Linear search found it after ' + built.linTicks + (built.linTicks === 1 ? ' comparison</b>' : ' comparisons</b>') + ', before binary search finished: the target is near the front.';
       return 'Tick ' + t + '. Linear search has checked ' + L13.num(lt) + ' value' + (lt === 1 ? '' : 's') + ', ruling out ' + L13.num(lt) + '. Binary search has made ' + bt + ' comparison' + (bt === 1 ? '' : 's') + ' and ruled out ' + L13.num(n - (bt > 0 && plan.probes[bt - 1].move !== 'found' ? Math.max(0, plan.probes[bt - 1].hiAfter - plan.probes[bt - 1].loAfter + 1) : n)) + '.';
     }
     var steps = built.steps.map(function (st) { return Object.assign({}, st, { caption: caption(st) }); });

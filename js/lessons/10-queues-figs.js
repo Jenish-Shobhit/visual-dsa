@@ -330,7 +330,10 @@
     var player = null;
     function curWalls() { return Object.keys(wallSet).map(function (k) { return k.split(',').map(Number); }); }
     function draw(s, ctx) {
-      grid.render({ rows: s.rows, cols: s.cols, walls: s.walls, cells: s.cells, markers: { start: { cell: s.start, label: 'S' } } }, { duration: ctx.duration });
+      var cl = {}; Object.keys(s.cells || {}).forEach(function (k) { cl[k] = Object.assign({}, s.cells[k]); });
+      var sk = s.start[0] + ',' + s.start[1];
+      if (cl[sk]) cl[sk].label = '';   // the S marker sits on the start cell; its distance 0 would print underneath it
+      grid.render({ rows: s.rows, cols: s.cols, walls: s.walls, cells: cl, markers: { start: { cell: s.start, label: 'S' } } }, { duration: ctx.duration });
       queue.render({ items: s.queue }, { duration: ctx.duration });
     }
     function load() {

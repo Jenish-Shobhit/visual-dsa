@@ -395,7 +395,7 @@
   L9.stackMini = function (values, o) {
     o = o || {};
     var s = V.s, PW = o.plate || 62, PH = o.plateH || 20, GAP = 3, PAD = 8, cap = Math.max(o.slots || values.length, 1);
-    var W = PW + PAD * 2 + (o.top === false ? 0 : 34), H = cap * (PH + GAP) + PAD * 2 + 4;
+    var W = PW + PAD * 2 + (o.top === false ? 0 : 44), H = cap * (PH + GAP) + PAD * 2 + 4;
     var svg = s('svg', { class: 'vz l9m', viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': o.label || ('Stack, bottom to top: ' + values.join(', ')) });
     svg.style.maxWidth = Math.round(W * (o.scale || 1.5)) + 'px';
     var base = H - PAD - 2;

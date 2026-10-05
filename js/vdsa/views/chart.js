@@ -767,6 +767,17 @@
       S.hls.begin();
       var placed = annotBoxes.slice();   // pills (and annotation text) already positioned, as absolute {x0, x1, y0, y1}
       var hls = state.highlight ? (Array.isArray(state.highlight) ? state.highlight : [state.highlight]) : [];
+      var ringBoxes = [];   // ringed points of every highlight, so a pill never covers another series' marker
+      if (m.type !== 'bar') hls.forEach(function (h, i) {
+        if (!h || h.x === undefined) return;
+        var s0 = null; m.series.forEach(function (x) { if (x.id === String(h.series)) s0 = x; });
+        if (!s0 && m.series.length === 1) s0 = m.series[0];
+        if (!s0) return;
+        var y0 = h.y !== undefined ? h.y : (s0.fn ? s0.fn(h.x) : L.valueAt(s0.pts, h.x));
+        if (y0 === null || !isFinite(y0)) return;
+        var X0 = P.x(h.x), Y0 = sy(y0);
+        ringBoxes.push({ i: i, x0: X0 - 9, x1: X0 + 9, y0: Y0 - 9, y1: Y0 + 9 });
+      });
       if (m.type !== 'bar') hls.forEach(function (h, i) {
         if (!h || h.x === undefined) return;
         var s = null;
@@ -789,6 +800,7 @@
         vz.set(rec.text, 'x', N2(px + tw / 2));
         var above = Y - 34 > P.top - 10;
         function hit(off) {
+          if (ringBoxes.some(function (q) { return q.i !== i && X + px < q.x1 && X + px + tw > q.x0 && Y + off < q.y1 && Y + off + 20 > q.y0; })) return true;   // another highlight's ring
           return placed.some(function (q) { return X + px < q.x1 && X + px + tw > q.x0 && Y + off < q.y1 && Y + off + 20 > q.y0; });
         }
         var off = above ? -34 : 14;

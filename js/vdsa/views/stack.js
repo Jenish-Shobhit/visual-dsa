@@ -157,7 +157,7 @@
     ctx.layer('tray'); ctx.layer('slots'); ctx.layer('items'); ctx.layer('pointers');
     var S = { items: new vz.Store(true), slots: new vz.Store(), ptrs: new vz.Store() };
     var clickable = !!opts.onItemClick;
-    var reserveSlots = opts.reserve || 0, reserveLv = { a: 0, b: 0 };
+    var reserveNeg = false, reserveSlots = opts.reserve || 0, reserveLv = { a: 0, b: 0 };
     var G = null, lastKey = '';
     var prevOrder = [];
     var tray = {
@@ -214,14 +214,16 @@
         var bh = opts.cellSize || 36, gap = 5;
         var bw = opts.cellWidth || clamp(Math.round(W * 0.34), 84, 150);
         bw = Math.min(bw, W - 2 * pad - 130);
-        bw = Math.max(bw, 56);
+        bw = Math.max(bw, W < 150 ? 44 : 56);
         g.bw = bw; g.bh = bh; g.gap = gap;
-        g.cx = W / 2 - 24;
+        g.cx = Math.max(W / 2 - 24, bw / 2 + 30);   // keep the index labels (left of the plate) inside the svg
         g.top = 12 + bh + 14 + (N.label ? 18 : 0);   // room for the drop-in and a caption
         g.baseY = g.top + nSlots * (bh + gap) + 4;
         g.slot = function (k) { return { x: g.cx, y: g.baseY - 4 - gap / 2 - (k + 0.5) * (bh + gap) + gap / 2 }; };
         g.enterFrom = function (p) { return { x: p.x, y: g.top - bh - 6 }; };
         g.height = g.baseY + 14;
+        N.pointers.forEach(function (p) { if (p.index < 0) reserveNeg = true; });
+        if (reserveNeg) g.height = Math.max(g.height, g.baseY - 4 + (bh + gap) / 2 + 20);   // a pointer at slot -1 (empty stack) hangs below the tray
         g.font = clamp(Math.round(bh * 0.42), 11, 17);
       } else {
         var extra = 2.4; // entry/exit room at both ends
@@ -229,14 +231,26 @@
         s = Math.max(s, 18);
         g.bw = s - Math.max(3, s * 0.1); g.bh = Math.min(g.bw, 52); g.gap = s - g.bw; g.s = s;
         var x0 = (W - nSlots * s) / 2;
+        /* labels of neighbouring slots that would collide sideways take the next level down / up */
+        ['above', 'below'].forEach(function (sd) {
+          var placed = [];
+          N.pointers.filter(function (q) { return q._side === sd; }).sort(function (a, b) { return a.index - b.index || a._level - b._level; }).forEach(function (q) {
+            var lw = vz.textWidth(String(q.label !== undefined ? q.label : q.name), 12, true, 700) + 4, cxq = (q.index + 0.5) * s;
+            var lvl = q._level;
+            while (placed.some(function (o) { return o.lv === lvl && Math.abs(o.x - cxq) < (o.w + lw) / 2; })) lvl++;
+            q._level = lvl; placed.push({ x: cxq, w: lw, lv: lvl });
+            if (sd === 'above') maxA = Math.max(maxA, lvl + 1); else maxB = Math.max(maxB, lvl + 1);
+          });
+        });
+        reserveLv.a = Math.max(reserveLv.a, maxA); reserveLv.b = Math.max(reserveLv.b, maxB);
         var y = 8 + (N.label ? 18 : 0);
-        if (reserveLv.a) y += 14 + 20 + (reserveLv.a - 1) * 16;
+        if (reserveLv.a) y += 14 + 20 + (reserveLv.a - 1) * 18;
         g.cy = y + g.bh / 2;
         y += g.bh;
         g.idxY = y + 16;
         y += opts.showIndices ? 24 : 6;
         g.ptrTipB = y + 2;
-        if (reserveLv.b) y += 14 + 20 + (reserveLv.b - 1) * 16;
+        if (reserveLv.b) y += 14 + 20 + (reserveLv.b - 1) * 18;
         g.ptrTipA = g.cy - g.bh / 2 - 3;
         g.slot = function (k) { return { x: x0 + (k + 0.5) * s, y: g.cy }; };
         g.x0 = x0;
@@ -314,7 +328,7 @@
         var up = side !== 'above';
         vz.set(rec.head, 'd', up ? 'M0 0L-5.5 8Q0 6.4 5.5 8Z' : 'M0 0L-5.5 -8Q0 -6.4 5.5 -8Z');
         vz.set(rec.stem, 'x1', 0); vz.set(rec.stem, 'x2', 0); vz.set(rec.stem, 'y1', up ? 7 : -7); vz.set(rec.stem, 'y2', up ? 12 : -12);
-        vz.set(rec.label, 'x', 0); vz.set(rec.label, 'y', n2((up ? 1 : -1) * (21 + 15 * lv)));
+        vz.set(rec.label, 'x', 0); vz.set(rec.label, 'y', n2((up ? 1 : -1) * (21 + 17 * lv)));
         vz.set(rec.label, 'text-anchor', 'middle');
       }
       var a = c.a >= 0.999 ? null : c.a.toFixed(3);
@@ -358,7 +372,7 @@
         tt.cy = 10;
       } else {
         var s0 = G.slot(0), sN = G.slot((isStack && N.capacity ? N.capacity : G.n) - 1);
-        tt = { x: (s0.x + sN.x) / 2, w: sN.x - s0.x + G.bw + 14, top: G.cy - G.bh / 2 - 6, b: G.cy + G.bh / 2 + 6, cy: G.cy - G.bh / 2 - 6 - 14 - (reserveLv.a ? 14 + 20 + (reserveLv.a - 1) * 16 : 0), ex: (s0.x + sN.x) / 2, ey: G.cy, eo: N.items.length ? 0 : 1, o: 1 };
+        tt = { x: (s0.x + sN.x) / 2, w: sN.x - s0.x + G.bw + 14, top: G.cy - G.bh / 2 - 6, b: G.cy + G.bh / 2 + 6, cy: G.cy - G.bh / 2 - 6 - 14 - (reserveLv.a ? 14 + 20 + (reserveLv.a - 1) * 18 : 0), ex: (s0.x + sN.x) / 2, ey: G.cy, eo: N.items.length ? 0 : 1, o: 1 };
         if (isStack) tt.w += 10;
       }
       if (first) tray.cur = copy(tt);
@@ -513,15 +527,25 @@
     center.paint = function (c) {
       vz.place(c.el, c.cur.x, c.cur.y);
       vz.opacity(c.el, c.cur.o);
+      var bt = c.big.textContent || '', fw = vz.textWidth(bt, 26, false, 700);   // keep the size word clear of the slot indices
+      c.big.style.fontSize = fw > c.cur.r * 1.05 ? Math.max(14, Math.floor(26 * c.cur.r * 1.05 / fw)) + 'px' : '';
       vz.set(c.big, 'y', n2(-c.cur.r * 0.1)); vz.set(c.small, 'y', n2(c.cur.r * 0.3));
     };
 
+    var reserveRingLv = 0;
     function geometry(R) {
       var W = ctx.width;
-      var outer = clamp(Math.min(W / 2 - 66, opts.radius || 122), 64, 160);
-      var g = { W: W, cx: W / 2, cy: 12 + 44 + outer, R: outer, r: outer * 0.6, cap: R.capacity };
+      var outer = clamp(Math.min(W / 2 - 66 - 0, opts.radius || 122), 64, 160);
+      /* pointers sharing a slot stack outwards: keep room above the ring for the highest level */
+      var cnt = {}, maxLv = 0, cp = Math.max(R.capacity, 1);
+      [R.head, R.tail].concat((R.rawPtrs || []).map(function (p) { return p && typeof p.index === 'number' ? ((p.index % cp) + cp) % cp : null; })).forEach(function (ix) {
+        if (ix === null || ix === undefined) return;
+        var l = cnt[ix] || 0; cnt[ix] = l + 1; maxLv = Math.max(maxLv, l);
+      });
+      reserveRingLv = Math.max(reserveRingLv, maxLv);
+      var g = { W: W, cx: W / 2, cy: 12 + 44 + 22 * reserveRingLv + outer, R: outer, r: outer * 0.6, cap: R.capacity };
       g.gapA = Math.min(0.06, 2.2 / outer * 1.2);
-      var y = g.cy + outer + 44;
+      var y = g.cy + outer + 44 + 22 * reserveRingLv;
       if (opts.unrolled) {
         var s = Math.min(46, (W - 24) / (R.capacity + 1.5));
         g.s = s; g.bw = s - Math.max(2, s * 0.1); g.bh = Math.min(g.bw, 40);
@@ -617,6 +641,7 @@
         vz.set(r.stem, 'x1', n2(ca * (tip + 7))); vz.set(r.stem, 'y1', n2(sa * (tip + 7)));
         vz.set(r.stem, 'x2', n2(ca * (tip + len + 5))); vz.set(r.stem, 'y2', n2(sa * (tip + len + 5)));
         var lx = ca * (lab + r.cw * 0.3 * Math.abs(ca)), lyy = sa * (lab + 4 * Math.abs(sa));
+        lx = clamp(lx, 3 + r.cw / 2 - G.cx, G.W - 3 - r.cw / 2 - G.cx);   // keep the chip inside the svg
         vz.set(r.chip, 'x', n2(lx - r.cw / 2)); vz.set(r.chip, 'y', n2(lyy - 9));
         vz.set(r.label, 'x', n2(lx)); vz.set(r.label, 'y', n2(lyy));
         vz.set(r.head, 'opacity', null); vz.set(r.stem, 'opacity', null);
@@ -625,6 +650,7 @@
 
     function draw(state, ms) {
       var R = L.ring(state);
+      R.rawPtrs = state.pointers;
       G = geometry(R);
       ctx.setHeight(G.height);
       var cap = R.capacity, step = (Math.PI * 2) / cap;

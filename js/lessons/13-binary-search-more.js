@@ -206,7 +206,7 @@
       var ann = [{ y: 0, text: 'y = 0', state: 'muted', id: 'zero' }, { x: st.lo, text: 'lo', state: 'active', id: 'lo' }, { x: st.hi, text: 'hi', state: 'active', id: 'hi' }];
       if (st.mid !== null && st.kind !== 'done') ann.push({ x: st.mid, text: 'mid', state: 'compare', id: 'mid' });
       var out = { x: { label: 'x', min: 1, max: 2, ticks: 5 }, y: { label: 'f(x) = x² − 2', min: -1.2, max: 2.2 }, series: [{ id: 'f', label: 'x² − 2', fn: f, domain: [1, 2], state: 'active', markers: false }], annotations: ann };
-      if (st.mid !== null) out.highlight = { series: 'f', x: st.mid, label: (Math.round(st.fmid * 1e4) / 1e4) + '' };
+      if (st.mid !== null) out.highlight = { series: 'f', x: st.mid, label: ((Math.round(st.fmid * 1e4) / 1e4) + '').replace('-', '−') };
       return { chart: out, caption: st.caption, counters: { probes: st.iter, width: Math.round(st.width * 1e6) / 1e6 } };
     });
     V.player({ root: fig, steps: steps, render: function (st, ctx) { chart.render(st.chart, { duration: ctx.duration }); }, caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),

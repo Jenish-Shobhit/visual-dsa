@@ -288,7 +288,7 @@
 
     function setup(n) {
       var W = innerW(container) || o.width || 640;
-      var padL = 46, padR = 14;
+      var padL = 64, padR = 14;   // wide enough for the right-aligned row labels ("blocks T")
       var cw = clamp(Math.floor((W - padL - padR) / (n + 0.6)), o.cellMin || 34, o.cellMax || 56);
       var svgW = Math.max(W, cw * (n + 1) + padL + padR);
       var maxLevel = 0;

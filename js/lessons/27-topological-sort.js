@@ -8,6 +8,25 @@
   var T = V.algos.topo;
   var L = V.L27 = V.L27 || {};
 
+  /* Layout stability: reserve the tallest height a panel reaches over every step of the current run, so playing never shifts the page.
+     paint(step) must draw the panel with no animation; the player draws its own current step again straight after setSteps. */
+  L.reserve = function (player, host, paint, first) {
+    var set = player.setSteps;
+    function measure(steps) {
+      var top = 0;
+      host.style.minHeight = '';
+      steps.forEach(function (st) { paint(st); top = Math.max(top, host.offsetHeight); });
+      if (top) host.style.minHeight = top + 'px';
+      if (steps.length) paint(steps[0]);
+    }
+    player.setSteps = function (steps, o) { measure(steps); return set.call(player, steps, o); };
+    if (first) measure(first);
+    return measure;
+  };
+  L.reserveVars = function (player, vars, first) {
+    return L.reserve(player, vars.el, function (st) { vars.update(st.vars || {}, st.varStates); }, first);
+  };
+
   /* ================================================================== data */
   function graph(nodes, edges) {
     return { nodes: nodes.map(function (n) { return { id: n[0], x: n[1], y: n[2], label: n[3] }; }), edges: edges, directed: true };
@@ -17,7 +36,7 @@
 
   /* The running example: a small computer-science degree. The layout is deliberately tangled. */
   L.COURSES = graph(
-    [['CS1', 790, 80], ['MATH', 150, 430], ['DISC', 560, 520], ['DS', 340, 150], ['ALG', 700, 330], ['OS', 110, 120], ['DB', 900, 470], ['NET', 420, 320], ['ML', 920, 210]],
+    [['CS1', 790, 80], ['MATH', 150, 430], ['DISC', 560, 520], ['DS', 340, 150], ['ALG', 700, 330], ['OS', 110, 120], ['DB', 930, 575], ['NET', 420, 320], ['ML', 920, 210]],
     [['CS1', 'DS'], ['MATH', 'DISC'], ['DISC', 'ALG'], ['DS', 'ALG'], ['DS', 'OS'], ['DS', 'DB'], ['OS', 'NET'], ['ALG', 'ML'], ['MATH', 'ML']]);
   L.COURSE_NAMES = { CS1: 'Intro programming', MATH: 'Calculus', DISC: 'Discrete math', DS: 'Data structures', ALG: 'Algorithms', OS: 'Operating systems', DB: 'Databases', NET: 'Networks', ML: 'Machine learning' };
 
@@ -149,7 +168,7 @@
   L.orderLine = function (host, g, o) {
     o = o || {};
     var G = T.adjacency(g), ids = G.ids.slice(), n = ids.length;
-    var slotW = o.slotW || 72, padX = 26, chipW = slotW - 16, chipH = 36, maxArc = Math.min(120, 26 + n * 11);
+    var slotW = o.slotW || 72, padX = 26, chipW = slotW - 16, chipH = 36, maxArc = Math.min(o.maxArc || 120, 26 + n * 11);
     var topH = maxArc + 14, botH = Math.round(maxArc * 0.5) + 14;
     var lineY = topH + chipH / 2, W = padX * 2 + n * slotW, H = topH + chipH + botH;
     var svg = s('svg', { class: 't27-order', viewBox: '0 0 ' + W + ' ' + H, role: 'group', 'aria-label': o.label || 'Vertices in a line with arrows between them' });

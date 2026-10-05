@@ -218,6 +218,11 @@
           mapNode: function (node) { if (node.id === 'X' && step.alt) node.sub = 'other route: ' + step.alt; },
           mapEdge: function (e) { if (e.id === 'Y-X' && step.neg) e.weight = -5; }
         }), { duration: ctx.duration });
+        /* the Y -> X edge runs straight up into X: tuck X's sub-labels to the left of that edge so it never strikes through them */
+        Array.prototype.forEach.call(fig.querySelectorAll('.vz-gnode'), function (nd) {
+          var t = nd.querySelector('text'), sub = nd.querySelector('.vz-gsub');
+          if (t && sub && t.textContent === 'X') { sub.setAttribute('text-anchor', 'end'); sub.setAttribute('x', '-6'); }
+        });
       }
     });
   }

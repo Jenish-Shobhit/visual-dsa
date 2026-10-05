@@ -17,6 +17,8 @@
 .dj-trio__label span { display: block; }
 .dj-duo__stage { min-height: 200px; padding: 8px 10px 4px; }
 .dj-tally { margin: 0; padding: 4px 16px 12px; min-height: 2em; font-size: 14px; color: var(--ink-2); }
+.dj-trio .dj-tally { line-height: 1.5; min-height: calc(3em + 16px); box-sizing: border-box; }
+.dj-trio .dj-tally > span { display: block; }
 .dj-tally.is-bad b { color: color-mix(in srgb, var(--st-error) 75%, var(--ink)); }
 .dj-tally.is-good b { color: color-mix(in srgb, var(--st-done) 65%, var(--ink)); }
 .is-good { color: color-mix(in srgb, var(--st-done) 65%, var(--ink)); font-weight: 700; }
@@ -28,7 +30,7 @@
 .dj-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .dj-trio__col { min-width: 0; display: flex; flex-direction: column; }
 .dj-trio__col + .dj-trio__col { border-left: 1px solid var(--line); }
-.dj-trio__stage { padding: 8px 6px 4px; }
+.dj-trio__stage { padding: 8px 6px 4px; min-height: 0; }
 @container fig (max-width: 520px) {
   .dj-trio { grid-template-columns: minmax(0, 1fr); }
   .dj-trio__col + .dj-trio__col { border-left: 0; border-top: 1px solid var(--line); }
@@ -67,7 +69,10 @@
 
 /* ---------------------------------------------------------------- lab */
 .dj-toolbar { align-items: flex-end; }
-.dj-select { display: flex; flex-direction: column; gap: 4px; }
+.dj-select { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.dj-select .field-label { text-align: left; }
+.dj-toolbar { column-gap: 14px; }
+@media (max-width: 560px) { .dj-select { flex-direction: row; align-items: center; gap: 10px; width: 100%; } .dj-select .field { flex: 1; } }
 .dj-select .field { height: 36px; min-width: 96px; padding: 0 10px; }
 .dj-lab-stage { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 300px; }
 .dj-lab-stage > .fig__stage { flex: 1; }
@@ -97,6 +102,15 @@
 .dj-cmp tr.is-current th, .dj-cmp tr.is-current td { background: color-mix(in srgb, var(--st-active) 10%, transparent); }
 .dj-cmp__exp { position: relative; min-width: 150px; }
 .dj-cmp__exp b { position: relative; font-family: var(--font-mono); }
+@media (max-width: 560px) {
+  .dj-compare { padding: 4px 0 8px; }
+  .dj-cmp { width: 100%; table-layout: fixed; }
+  .dj-cmp th, .dj-cmp td { padding: 6px 5px; font-size: 13px; overflow-wrap: anywhere; }
+  .dj-cmp th:first-child, .dj-cmp td:first-child { width: 27%; }
+  .dj-cmp th:nth-child(2) { width: 25%; }
+  .dj-cmp th:nth-child(3) { width: 16%; }
+  .dj-cmp__exp { min-width: 0; }
+}
 .dj-cmp__bar { position: absolute; left: 0; top: 50%; height: 60%; width: var(--w); transform: translateY(-50%); border-radius: 4px; background: color-mix(in srgb, var(--st-visited) 30%, transparent); transition: width .4s var(--ease-out); }
 .dj-cmp__note.is-bad { color: color-mix(in srgb, var(--st-error) 75%, var(--ink)); font-weight: 700; }
 
@@ -121,6 +135,7 @@
 .dj-rx.is-worse .rx-verdict .rx-pill__rect { fill: color-mix(in srgb, var(--st-error) 14%, var(--el-fill)); stroke: var(--st-error); }
 .dj-rx .rx-parent { fill: none; stroke: var(--st-done); stroke-width: 3; stroke-dasharray: 6 4; }
 .dj-rx .rx-parent__text { font: 700 13px var(--font-mono); fill: color-mix(in srgb, var(--st-done) 60%, var(--ink)); }
+@container fig (max-width: 560px) { .dj-rx .rx-parent__text { font-size: 15px; } }
 
 /* ---------------------------------------------------------------- minis */
 .dj-mini-svg { width: 100%; max-width: 360px; height: auto; display: block; margin: 0 auto; }
@@ -137,3 +152,6 @@
 .dj-deque__note { margin: 0; text-align: center; font-size: 13px; color: var(--ink-2); min-height: 2.6em; padding: 0 8px; }
 
 #fig-quiz-next .fig__stage { min-height: 220px; }
+
+/* "Start over" never sits alone at the left of its own row: it goes to the row's end */
+.fig__head > [data-restart], .fig__toolbar > [data-reset], .fig__toolbar > [data-restart] { margin-left: auto; }

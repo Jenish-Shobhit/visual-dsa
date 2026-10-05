@@ -61,16 +61,18 @@
 .bf-eq__chip.is-new { border-color: var(--st-found); background: color-mix(in srgb, var(--st-found) 18%, var(--bg-elev)); }
 
 /* stopover chips */
-.bf-stops { display: flex; flex-direction: column; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--line); overflow-x: auto; }
-.bf-stops__row { display: flex; align-items: center; gap: 6px; }
+.bf-stops { display: flex; flex-direction: column; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--line); }
+.bf-stops__row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .bf-stops__cap { flex: 0 0 130px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
-.bf-stop { flex: 0 0 auto; min-width: 46px; text-align: center; padding: 4px 8px; border-radius: 8px; border: 1.5px solid var(--line); font: 700 13px var(--font-mono); color: var(--ink-3); transition: background 300ms, color 300ms, border-color 300ms; }
+.bf-stop { flex: 0 0 auto; min-width: 46px; min-height: 28px; box-sizing: border-box; text-align: center; padding: 4px 8px; border-radius: 8px; border: 1.5px solid var(--line); font: 700 13px var(--font-mono); color: var(--ink-3); transition: background 300ms, color 300ms, border-color 300ms; }
 .bf-stops__row:first-child .bf-stop.is-on { border-color: var(--st-pivot); color: color-mix(in srgb, var(--st-pivot) 75%, var(--ink)); background: color-mix(in srgb, var(--st-pivot) 10%, var(--bg-elev)); }
 .bf-stops__row:first-child .bf-stop.is-cur { background: var(--st-pivot); color: var(--on-state); }
 .bf-stop--cost { color: var(--ink); }
 .bf-stop--cost:empty { border-style: dashed; }
 .bf-stop--cost.is-cur { border-color: var(--st-active); background: color-mix(in srgb, var(--st-active) 14%, var(--bg-elev)); }
 .bf-stop--cost.is-drop { border-color: var(--st-done); background: color-mix(in srgb, var(--st-done) 16%, var(--bg-elev)); }
+
+@media (max-width: 560px) { .bf-stops__cap { flex-basis: 100%; } }
 
 /* arbitrage */
 .bf-arb { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 0; align-items: stretch; }
@@ -88,3 +90,19 @@
 
 /* long formulas in prose wrap instead of pushing the page wider on phones */
 .lesson-body p code, .lesson-body .callout code, .lesson-body .practice__text code { white-space: normal; overflow-wrap: anywhere; }
+
+/* figures inside tab panels keep the shared caption size (the panel's prose rule would otherwise enlarge it) */
+.tabs__panel .fig__caption { font-size: 15.5px; line-height: 1.55; }
+
+/* "Start over" never sits alone at the left of its own row: it goes to the row's end */
+.fig__head > [data-restart], .fig__toolbar > [data-reset], .fig__toolbar > [data-restart] { margin-left: auto; }
+
+/* round table: give the graph the wider cell so the weight labels around Y stay apart */
+#fig-layers .bf-split { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+@container fig (max-width: 720px) { #fig-layers .bf-split { grid-template-columns: minmax(0, 1fr); } }
+
+/* arbitrage table: "USD → EUR" stays on one line; a little more room for the side panel */
+.bf-wtable tbody th, .bf-wtable tbody td:first-child { white-space: nowrap; }
+.bf-arb { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@container fig (max-width: 720px) { .bf-arb { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) { .bf-wtable th, .bf-wtable td { padding-left: 8px; padding-right: 8px; font-size: 13px; } }

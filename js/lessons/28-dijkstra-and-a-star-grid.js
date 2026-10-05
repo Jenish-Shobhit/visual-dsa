@@ -260,7 +260,7 @@
       });
       cmpHost.appendChild(h('p', { class: 'dj-cmp__cap' }, 'All three searches on this map (same heuristic setting)'));
       cmpHost.appendChild(h('div', { class: 'table-wrap' }, h('table', { class: 'table table--compact dj-cmp' },
-        h('thead', {}, h('tr', {}, h('th', { scope: 'col' }, 'Search'), h('th', { scope: 'col' }, 'Cells expanded'), h('th', { scope: 'col', class: 'num' }, 'Route cost'), h('th', { scope: 'col' }, 'Verdict'))),
+        h('thead', {}, h('tr', {}, h('th', { scope: 'col' }, 'Search'), h('th', { scope: 'col' }, 'Expanded'), h('th', { scope: 'col', class: 'num' }, 'Cost'), h('th', { scope: 'col' }, 'Verdict'))),
         tbody)));
     }());
     function updateCompare() {
@@ -414,7 +414,7 @@
           c.view.render(L.gridState(st, { heat: true }), { duration: ctx.duration });
           c.ov.draw(st, { heat: true });
           var done = st === c.end;
-          c.tally.innerHTML = '<b>' + st.counters.expanded + '</b> expanded' + (done ? ' · cost <b>' + c.cost + '</b>' + (c.cost === best ? ' <span class="is-good">optimal</span>' : ' <span class="is-bad">+' + (c.cost - best) + ' dearer</span>') : '');
+          c.tally.innerHTML = '<span><b>' + st.counters.expanded + '</b> expanded</span><span>' + (done ? 'cost <b>' + c.cost + '</b>' + (c.cost === best ? ' <span class="is-good">optimal</span>' : ' <span class="is-bad">+' + (c.cost - best) + ' dearer</span>') : '&nbsp;') + '</span>';
         });
       }
     });

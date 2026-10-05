@@ -8,6 +8,25 @@
   var SP = V.algos.shortestPaths;
   var L = V.L29 = V.L29 || {};
 
+  /* Layout stability: reserve the tallest height a panel reaches over every step of the current run, so playing never shifts the page.
+     paint(step) must draw the panel with no animation; the player draws its own current step again straight after setSteps. */
+  L.reserve = function (player, host, paint, first) {
+    var set = player.setSteps;
+    function measure(steps) {
+      var top = 0;
+      host.style.minHeight = '';
+      steps.forEach(function (st) { paint(st); top = Math.max(top, host.offsetHeight); });
+      if (top) host.style.minHeight = top + 'px';
+      if (steps.length) paint(steps[0]);
+    }
+    player.setSteps = function (steps, o) { measure(steps); return set.call(player, steps, o); };
+    if (first) measure(first);
+    return measure;
+  };
+  L.reserveVars = function (player, vars, first) {
+    return L.reserve(player, vars.el, function (st) { vars.update(st.vars || {}, st.varStates); }, first);
+  };
+
   /* ================================================================== data */
   function G(nodes, edges) {
     return {
@@ -295,7 +314,7 @@
   function layersFigure(fig) {
     var g = L.CLRS, ids = g.nodes.map(function (n) { return n.id; });
     var lay = SP.layers(g, 'S');
-    var gview = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: { w: 1000, h: 600 }, maxHeight: 380, label: 'Cheapest routes with at most k edges' });
+    var gview = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: { x: 40, y: 50, w: 940, h: 500 }, maxHeight: 400, label: 'Cheapest routes with at most k edges' });
     var tview = V.views.grid(fig.querySelector('[data-table]'), { cellSize: 44, label: 'Distance of each vertex after each round' });
     L.legend(fig.querySelector('[data-legend]'), [{ state: 'default', shape: 'outline', label: 'Not reachable in k edges' }, { state: 'visited', label: 'Reachable' }, { state: 'frontier', label: 'Just got cheaper' }, { state: 'path', shape: 'line', label: 'Route that changed' }, { state: 'visited', shape: 'line', label: 'Other best routes' }]);
     var caps = [

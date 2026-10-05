@@ -278,17 +278,17 @@
         } else if (listRounds === 0) {
           lDoneNow = true; caps.push('<b>List:</b> ' + esc(u) + ' has no neighbours, so its list is empty. Zero reads settle it.'); line.push('lnone');
         } else lDoneNow = true;
-        snap(r === rounds ? 'answer' : 'probe', o, caps.join(' '), line, { u: u, v: v, matrixReads: mCount, listReads: lCount }, mDoneNow, lDoneNow || r >= listRounds);
+        snap(r === rounds ? 'answer' : 'probe', o, caps.join(' '), line, { u: u, v: v }, mDoneNow, lDoneNow || r >= listRounds);
       }
       snap('done', { lRow: iu }, 'Both agree: ' + (found ? 'the edge exists' : 'no such edge') + '. Matrix reads: <b>' + mCount + '</b>. List reads: <b>' + lCount + '</b>' +
-        (lCount > mCount ? ', and the list gets slower as ' + esc(u) + ' gains neighbours.' : '.'), null, { u: u, v: v, matrixReads: mCount, listReads: lCount }, true, true);
+        (lCount > mCount ? ', and the list gets slower as ' + esc(u) + ' gains neighbours.' : '.'), null, { u: u, v: v }, true, true);
       return steps;
     }
     if (op === 'neighbours') {
       var nb = rep.adj[u], deg = nb.length;
       var jlist = {};
       snap('start', { lRow: iu, mRow: iu }, 'Question: which vertices does ' + b(u) + ' point to' + (rep.directed ? '' : ' (its neighbours)') + '? The matrix must scan row ' + esc(u) + ' cell by cell; the list simply holds them.',
-        null, { u: u }, false, false);
+        null, { u: u, v: '–' }, false, false);
       var lRounds = deg;
       for (var j = 0; j < V; j++) {
         var oo = { mCell: [iu, j], mRow: iu, lRow: iu };
@@ -304,10 +304,10 @@
           ln.push('lvisit');
         } else if (j === lRounds) cp.push('<b>List:</b> finished after ' + plural(lCount, 'read') + '.');
         else cp.push('<b>List:</b> finished.');
-        snap(mFinished ? 'answer' : 'probe', oo, cp.join(' '), ln, { u: u, v: ids[j], matrixReads: mCount, listReads: lCount }, mFinished, j >= lRounds - 1 || lRounds === 0);
+        snap(mFinished ? 'answer' : 'probe', oo, cp.join(' '), ln, { u: u, v: ids[j] }, mFinished, j >= lRounds - 1 || lRounds === 0);
       }
       snap('done', { mRow: iu, lRow: iu }, 'Same answer, different work. The matrix read <b>' + mCount + '</b> cells (one per vertex, mostly zeros); the list read <b>' + lCount + '</b> entries (one per real neighbour).', null,
-        { u: u, matrixReads: mCount, listReads: lCount }, true, true);
+        { u: u, v: '–' }, true, true);
       return steps;
     }
     /* op === 'all': visit every edge, one vertex at a time */
@@ -320,10 +320,10 @@
       nbrs.forEach(function (_, kk) { lHit.push([i, kk]); });
       snap(i === V - 1 ? 'answer' : 'probe', { mRow: i, lRow: i },
         '<b>Row ' + esc(ids[i]) + '.</b> Matrix: scanned ' + V + ' cells and found ' + plural(mh, 'edge end') + '. List: read ' + plural(nbrs.length, 'entry', 'entries') + ', every one a real edge end.',
-        ['mloop', 'lloop'], { row: ids[i], matrixReads: mCount, listReads: lCount }, i === V - 1, i === V - 1);
+        ['mloop', 'lloop'], { row: ids[i] }, i === V - 1, i === V - 1);
     }
     snap('done', {}, 'Totals: matrix <b>' + mCount + '</b> reads (always V²), list <b>' + lCount + '</b> reads (V + ' + (lCount) + ' edge ends: about V + E' + (rep.directed ? '' : ', counting each undirected edge twice') + ').', null,
-      { row: '–', matrixReads: mCount, listReads: lCount }, true, true);
+      { row: '–' }, true, true);
     return steps;
   }
 

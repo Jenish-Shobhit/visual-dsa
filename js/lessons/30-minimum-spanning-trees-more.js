@@ -88,17 +88,17 @@
     g.edges.forEach(function (x) { base[M.edgeKey(x.u, x.v)] = { state: 'muted', dashed: true }; });
     function em(over) { var m = Object.assign({}, base); Object.keys(over).forEach(function (k) { m[k] = over[k]; }); return m; }
     var treeState = {};
-    T.forEach(function (id) { treeState[id] = { state: 'path' }; });
+    T.forEach(function (id) { treeState[id] = { state: 'visited' }; });
     var steps = [
-      snap('tree', 'Here is a spanning tree <b>T</b> (orange), weight <b>' + wT + '</b>. The cut splits the towns into S (blue) and the rest (pink). The lightest road crossing it is <b>' + L.dash(e) + '</b> (' + e.w + '), and T does not use it. Claim: T can be improved.', em(treeState), wT),
+      snap('tree', 'Here is a spanning tree <b>T</b> (purple), weight <b>' + wT + '</b>. The cut splits the towns into S (blue) and the rest (pink). The lightest road crossing it is <b>' + L.dash(e) + '</b> (' + e.w + '), and T does not use it. Claim: T can be improved.', em(treeState), wT),
       snap('add', 'Add <b>' + L.dash(e) + '</b> to T. Its ends were already connected inside T, so adding it closes exactly one cycle (amber).', em(Object.assign({}, treeState, (function () { var o = {}; cycle.forEach(function (id) { o[id] = { state: 'compare' }; }); o[e.id] = { state: 'done' }; return o; }()))), wT + e.w),
       snap('cross', 'The cycle starts in S, crosses the cut along ' + L.dash(e) + ', and must cross back somewhere else. It does so along <b>' + L.dash(f) + '</b> (' + f.w + '). Because ' + L.dash(e) + ' is the lightest crossing edge, ' + e.w + ' &lt; ' + f.w + '.', em(Object.assign({}, treeState, (function () { var o = {}; cycle.forEach(function (id) { o[id] = { state: 'compare' }; }); o[e.id] = { state: 'done' }; o[f.id] = { state: 'error' }; return o; }()))), wT + e.w),
-      snap('swap', 'Remove <b>' + L.dash(f) + '</b>. Every town is still connected, because the new road covers the same gap. The weight drops by ' + (f.w - e.w) + ' to <b>' + wNew + '</b>. So T was never the cheapest: the lightest crossing edge belongs in an MST.', em((function () { var o = {}; T.forEach(function (id) { if (id !== f.id) o[id] = { state: 'path' }; }); o[e.id] = { state: 'done' }; o[f.id] = { state: 'muted', dashed: true }; return o; }())), wNew)
+      snap('swap', 'Remove <b>' + L.dash(f) + '</b>. Every town is still connected, because the new road covers the same gap. The weight drops by ' + (f.w - e.w) + ' to <b>' + wNew + '</b>. So T was never the cheapest: the lightest crossing edge belongs in an MST.', em((function () { var o = {}; T.forEach(function (id) { if (id !== f.id) o[id] = { state: 'visited' }; }); o[e.id] = { state: 'done' }; o[f.id] = { state: 'muted', dashed: true }; return o; }())), wNew)
     ];
     var view = V.views.graph(fig.querySelector('[data-stage]'), { label: 'Swap argument on the nine towns', maxHeight: 400 });
     V.legend(fig.querySelector('[data-legend]'), [
       { state: 'default', color: 'color-mix(in srgb, var(--st-active) 30%, var(--el-fill))', label: 'Side S' }, { state: 'default', color: 'color-mix(in srgb, var(--st-pivot) 30%, var(--el-fill))', label: 'Other side' },
-      { state: 'path', shape: 'line', label: 'Tree T' }, { state: 'compare', shape: 'line', label: 'The cycle' }, { state: 'done', shape: 'line', label: 'Lightest crossing' }, { state: 'error', shape: 'line', label: 'Heavier, crossing back' }]);
+      { state: 'visited', shape: 'line', label: 'Tree T' }, { state: 'compare', shape: 'line', label: 'The cycle' }, { state: 'done', shape: 'line', label: 'Lightest crossing' }, { state: 'error', shape: 'line', label: 'Heavier, crossing back' }]);
     var player = V.player({
       root: fig, steps: steps, caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterLabels: { weight: 'Weight of the tree' }, counterStates: { weight: 'done' }, baseStepMs: 2200, label: 'Swap argument controls',
@@ -116,8 +116,8 @@
   function compareFigure(fig) {
     var g = L.TOWNS, ids = L.ids(g), start = 'A';
     var kStage = fig.querySelector('[data-stage="k"]'), pStage = fig.querySelector('[data-stage="p"]');
-    var kv = V.views.graph(kStage, { label: 'Kruskal building the tree', maxHeight: 300, nodeRadius: 19, minRadius: 12 });
-    var pv = V.views.graph(pStage, { label: 'Prim building the tree', maxHeight: 300, nodeRadius: 19, minRadius: 12 });
+    var kv = V.views.graph(kStage, { label: 'Kruskal building the tree', bounds: { x: 40, y: 30, w: 940, h: 510 }, maxHeight: 340, nodeRadius: 22, minRadius: 12 });
+    var pv = V.views.graph(pStage, { label: 'Prim building the tree', bounds: { x: 40, y: 30, w: 940, h: 510 }, maxHeight: 340, nodeRadius: 22, minRadius: 12 });
     var kHost = fig.querySelector('[data-order="k"]'), pHost = fig.querySelector('[data-order="p"]');
     var kTot = h('span', { class: 'mst-order__total' }), pTot = h('span', { class: 'mst-order__total' });
     var kList = h('div'), pList = h('div');
@@ -128,7 +128,8 @@
     ids.forEach(function (id) { sel.appendChild(h('option', { value: id }, id)); });
     V.legend(fig.querySelector('[data-legend]'), [
       { state: 'done', shape: 'line', label: 'Kept' }, { state: 'active', shape: 'line', label: 'Kept just now' }, { state: 'default', shape: 'line', label: 'Not kept (yet)' },
-      { state: 'default', color: 'color-mix(in srgb, var(--st-active) 30%, var(--el-fill))', label: 'Kruskal component' }, { state: 'done', label: 'In Prim’s tree' }]);
+      { state: 'default', color: 'color-mix(in srgb, var(--st-active) 30%, var(--el-fill))', label: 'Kruskal component' }, { state: 'done', label: 'In Prim’s tree' },
+      { state: 'compare', label: 'Newest edge in the list' }]);
     var data, player;
     function build() {
       data = M.orderFrames(g, start);
@@ -157,14 +158,20 @@
         node: function (id) { return id === start && st.i === 0 ? 'active' : inTree[id] ? 'done' : 'default'; },
         edge: function (e, id) { return fr.prim.indexOf(id) >= 0 ? { state: id === lastP ? 'active' : 'done', pulse: id === lastP && st.i > 0 } : 'default'; }
       }), { duration: ctx.duration });
+      paintOrders(st, ctx.duration);
+    }
+    function paintOrders(st, duration) {
+      var fr = st.fr;
       function items(list, order) { return order.slice(0, fr[list].length).map(function (id, i) { var e = edgeOf(g, id); return { key: id, label: (i + 1) + '. ' + L.dash(e), w: e.w, state: i === fr[list].length - 1 ? 'considering' : 'accepted' }; }); }
-      kc.render(items('kruskal', data.kruskalOrder), { duration: ctx.duration });
-      pc.render(items('prim', data.primOrder), { duration: ctx.duration });
+      kc.render(items('kruskal', data.kruskalOrder), { duration: duration });
+      pc.render(items('prim', data.primOrder), { duration: duration });
       kTot.textContent = 'weight ' + fr.kTotal; pTot.textContent = 'weight ' + fr.pTotal;
     }
     player = V.player({
       root: fig, steps: build(), render: render, caption: fig.querySelector('[data-caption]'), baseStepMs: 1500, label: 'Side by side controls'
     });
+    var firstFrames = build();
+    [kHost, pHost].forEach(function (host) { L.reserve(player, host, function (st) { paintOrders(st, 0); }, firstFrames); });
     sel.addEventListener('change', function () { start = sel.value; player.setSteps(build()); });
   }
 
@@ -203,7 +210,7 @@
   function clusterFigure(fig) {
     var seed = 5, pts, g, k = 3, mst;
     var view = V.views.graph(fig.querySelector('[data-stage]'), { bounds: { w: 1000, h: 600 }, label: 'Points joined by their minimum spanning tree, longest links cut', maxHeight: 400, nodeRadius: 12, minRadius: 8 });
-    var out = fig.querySelector('[data-readout]');
+    var out = fig.querySelector('[data-caption]');
     function makePoints() {
       var rng = V.rng(seed), centers = [], out2 = [];
       while (centers.length < 3) {
@@ -217,7 +224,7 @@
     function load() { pts = makePoints(); g = M.pointsGraph(pts); mst = M.kruskal(g).tree; }
     var sl = V.slider(fig.querySelector('[data-slider]'), { label: 'Clusters k', min: 1, max: 8, step: 1, value: 3, format: function (v) { return 'k = ' + v; }, onInput: function (v) { k = v; draw(400); } });
     V.legend(fig.querySelector('[data-legend]'), [
-      { state: 'default', color: 'color-mix(in srgb, var(--st-active) 30%, var(--el-fill))', label: 'A cluster (one colour each)' }, { state: 'default', shape: 'line', label: 'MST link kept' }, { state: 'error', shape: 'dash', label: 'Cut: one of the k − 1 longest' }]);
+      { state: 'default', color: 'color-mix(in srgb, var(--st-active) 30%, var(--el-fill))', label: 'Cluster 1' }, { state: 'default', color: 'color-mix(in srgb, var(--st-path) 30%, var(--el-fill))', label: 'Cluster 2' }, { state: 'default', color: 'color-mix(in srgb, var(--st-done) 30%, var(--el-fill))', label: 'Cluster 3, and so on' }, { state: 'default', shape: 'line', color: 'var(--el-edge-strong)', label: 'MST link kept' }, { state: 'error', shape: 'dash', label: 'Cut: one of the k − 1 longest' }]);
     function draw(dur) {
       var r = M.clusterSplit(g, k), cut = {}, keep = {};
       r.cut.forEach(function (e) { cut[e.id] = e.w; }); r.keep.forEach(function (e) { keep[e.id] = true; });

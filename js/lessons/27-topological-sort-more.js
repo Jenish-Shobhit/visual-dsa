@@ -28,6 +28,14 @@
             if (ef !== null && ef !== undefined) { node.badge = 'week ' + ef; node.badgeState = step.states[node.id] === 'path' ? 'path' : 'default'; }
           }
         }), { duration: ctx.duration });
+        /* the wide "week N" chips sit centred under their vertex (the duration moves below them), clear of every arrow */
+        Array.prototype.forEach.call(fig.querySelectorAll('.vz-gnode'), function (nd) {
+          var b = nd.querySelector('.vz-badge'), c = nd.querySelector('circle'), sub = nd.querySelector('.vz-gsub');
+          if (!c) return;
+          var r = +c.getAttribute('r') || 20;
+          if (b) b.setAttribute('transform', 'translate(0 ' + (r + 12) + ')');
+          if (sub) sub.setAttribute('y', String(r + (b ? 31 : 11)));
+        });
       }
     });
     V.codeBlock(V.$('[data-code-block="critical"]'), [
@@ -163,7 +171,7 @@
     var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, minRadius: 17, uniformLabels: true, label: 'Kahn paused mid-run', maxHeight: 340 });
     view.render(L.gs(g, state, { badge: 'indeg', sub: 'pos' }), { duration: 0 });
     L.tagNodes(view, function (id) { return L.COURSE_NAMES[id] + ' (' + id + ')'; });
-    var qv = V.views.queue(fig.querySelector('[data-container]'), { cellSize: 36, label: 'Ready set' });
+    var qv = V.views.queue(fig.querySelector('[data-container]'), { cellSize: 58, label: 'Ready set' });
     qv.render(L.readyState(state), { duration: 0 });
     fig.querySelector('[data-order]').innerHTML = 'Placed so far: <b>' + (state.order.join(' → ') || 'nothing') + '</b>';
     var front = state.ready[0];
@@ -196,14 +204,19 @@
     // 2. click the arrow that points the wrong way
     var fig2 = V.$('#fig-quiz-order'), plain = L.plain(g);
     var bad = ['CS1', 'MATH', 'DISC', 'DS', 'ALG', 'NET', 'DB', 'OS', 'ML'];
-    var line = L.orderLine(fig2.querySelector('[data-stage]'), plain, { order: bad, blind: true, label: 'A proposed course order' });
+    var line = L.orderLine(fig2.querySelector('[data-stage]'), plain, { order: bad, blind: true, maxArc: 92, label: 'A proposed course order' });
     var chk = T.isTopoOrder(plain, bad), wrongKey = chk.violations[0].key;
-    L.legend(fig2.querySelector('[data-legend]'), [{ state: 'default', shape: 'line', label: 'Arrow points right' }, { state: 'error', shape: 'line', label: 'Arrow points left' }]);
+    var legend2 = fig2.querySelector('[data-legend]');
+    L.legend(legend2, [{ state: 'default', shape: 'line', label: 'Prerequisite arrow: from the course that comes first' }]);
     V.clickQuiz(fig2.querySelector('[data-stage]'), {
       el: '#quiz-order-edge', id: 'click-bad-arrow',
       question: 'This line-up looks plausible, but <b>one arrow points left</b>. Click the arrow that breaks the order.',
       check: function (id) {
-        if (id === wrongKey) { line.setBlind(false); return true; }
+        if (id === wrongKey) {
+          line.setBlind(false);
+          L.legend(legend2, [{ state: 'default', shape: 'line', label: 'Arrow points right' }, { state: 'error', shape: 'line', label: 'Arrow points left' }]);
+          return true;
+        }
         return { correct: false, message: 'That arrow goes from an earlier course to a later one, so it is respected. Look for a prerequisite that appears after the course that needs it.' };
       },
       right: wrongKey.split('-').join(' → ') + ' is the culprit: OS is taken after NET, but Networks needs OS first. Every other arrow points right.'

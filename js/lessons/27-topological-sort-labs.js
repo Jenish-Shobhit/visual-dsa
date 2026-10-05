@@ -324,6 +324,9 @@
   function raw(x) { return x === undefined || x === null ? null : V.vars.raw(String(x)); }
   function list(a) { return V.vars.raw('[' + (a || []).join(', ') + ']'); }
 
+  /* the panel that holds a lab's strip (and, in Kahn's lab, the ready-set view): its height is what has to stay put */
+  function strip_host(fig) { var el = fig.querySelector('[data-strip]'); return el.closest('.t27-panels') || el.closest('.t27-panel') || el; }
+
   /* ================================================================== Kahn's lab */
   function kahnLab(fig) {
     var G = L.COURSES, pick = 'fifo';
@@ -378,13 +381,20 @@
       strip(step.order, ctx.duration, { newest: step.kind === 'take' ? step.current : null });
     }
     showPick();
+    var first = generate();
     var player = V.player({
-      root: fig, steps: generate(), render: render, code: code, vars: vars, flow: flow,
+      root: fig, steps: first, render: render, code: code, vars: vars, flow: flow,
       caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterLabels: { emitted: 'Vertices placed', removed: 'Arrows removed', ready: 'Ready set size' },
       counterStates: { emitted: 'done', ready: 'frontier' },
       baseStepMs: 1000, label: 'Kahn lab controls'
     });
+
+    L.reserve(player, strip_host(fig), function (st) {
+      if (pick === 'lifo') sv.render(L.readyState(st), { duration: 0 }); else qv.render(L.readyState(st), { duration: 0 });
+      strip(st.order, 0, {});
+    }, first);
+    L.reserveVars(player, vars, first);
 
     player.addCheckpoint(function (steps) {
       for (var i = 2; i < steps.length; i++) if (steps[i].kind === 'take' && steps[i - 1].ready.length >= 2) return i;
@@ -447,13 +457,16 @@
       view.render(L.gs(G, step, { sub: 'times' }), { duration: ctx.duration });
       strip(step.order, ctx.duration, { newest: step.kind === 'finish' ? step.finished[step.finished.length - 1] : null });
     }
+    var first = generate();
     var player = V.player({
-      root: fig, steps: generate(), render: render, code: code, vars: vars, flow: flow,
+      root: fig, steps: first, render: render, code: code, vars: vars, flow: flow,
       caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterLabels: { finished: 'Vertices finished', checks: 'Arrows examined', depth: 'Route length (grey)' },
       counterStates: { finished: 'done', depth: 'frontier' },
       baseStepMs: 1000, label: 'DFS lab controls'
     });
+    L.reserve(player, strip_host(fig), function (st) { strip(st.order, 0, {}); }, first);
+    L.reserveVars(player, vars, first);
     player.addCheckpoint(function (steps) {
       for (var i = 1; i < steps.length; i++) if (steps[i].kind === 'skip' || steps[i].kind === 'back') return i;
       return -1;

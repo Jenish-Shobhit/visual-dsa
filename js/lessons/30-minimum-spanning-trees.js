@@ -8,6 +8,25 @@
   var M = V.algos.mst;
   var L = V.L30 = V.L30 || {};
 
+  /* Layout stability: reserve the tallest height a panel reaches over every step of the current run, so playing never shifts the page.
+     paint(step) must draw the panel with no animation; the player draws its own current step again straight after setSteps. */
+  L.reserve = function (player, host, paint, first) {
+    var set = player.setSteps;
+    function measure(steps) {
+      var top = 0;
+      host.style.minHeight = '';
+      steps.forEach(function (st) { paint(st); top = Math.max(top, host.offsetHeight); });
+      if (top) host.style.minHeight = top + 'px';
+      if (steps.length) paint(steps[0]);
+    }
+    player.setSteps = function (steps, o) { measure(steps); return set.call(player, steps, o); };
+    if (first) measure(first);
+    return measure;
+  };
+  L.reserveVars = function (player, vars, first) {
+    return L.reserve(player, vars.el, function (st) { vars.update(st.vars || {}, st.varStates); }, first);
+  };
+
   /* ================================================================== data */
   function graph(nodes, edges) {
     return {

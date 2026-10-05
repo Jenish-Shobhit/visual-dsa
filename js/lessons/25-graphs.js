@@ -8,6 +8,25 @@
   var G = V.algos.graphs;
   var L = V.L25 = V.L25 || {};
 
+  /* Layout stability: reserve the tallest height a panel reaches over every step of the current run, so playing never shifts the page.
+     paint(step) must draw the panel with no animation; the player draws its own current step again straight after setSteps. */
+  L.reserve = function (player, host, paint, first) {
+    var set = player.setSteps;
+    function measure(steps) {
+      var top = 0;
+      host.style.minHeight = '';
+      steps.forEach(function (st) { paint(st); top = Math.max(top, host.offsetHeight); });
+      if (top) host.style.minHeight = top + 'px';
+      if (steps.length) paint(steps[0]);
+    }
+    player.setSteps = function (steps, o) { measure(steps); return set.call(player, steps, o); };
+    if (first) measure(first);
+    return measure;
+  };
+  L.reserveVars = function (player, vars, first) {
+    return L.reserve(player, vars.el, function (st) { vars.update(st.vars || {}, st.varStates); }, first);
+  };
+
   /* ================================================================== helpers shared by all three files */
   /* Build a figure when it comes within ~one screen of the viewport (or before printing). */
   L.lazy = function (el, fn) {
@@ -174,7 +193,7 @@
     var steps = [
       { m: 0, deg: false, odd: false, caption: 'Königsberg in 1735: a river, two islands, four separate pieces of land and <b>seven bridges</b>. Can you walk a route that crosses every bridge exactly once? Citizens tried for years and always failed.' },
       { m: 1, deg: false, odd: false, caption: 'Leonhard Euler threw away everything that does not matter: shapes, sizes, distances. Each piece of land becomes a <b>vertex</b> (a dot). Each bridge becomes an <b>edge</b> (a line). Two pieces of land linked by two bridges get two parallel lines.' },
-      { m: 1, deg: true, odd: false, caption: 'Count the edges touching each vertex: its <b>degree</b>. The island A has five bridges, and B, C and D have three each. Notice that all four numbers are odd.' },
+      { m: 1, deg: true, odd: false, oddBadge: true, caption: 'Count the edges touching each vertex: its <b>degree</b>. The island A has five bridges, and B, C and D have three each. Notice that all four numbers are odd.' },
       { m: 1, deg: true, odd: true, caption: 'A walk that crosses every bridge once passes <em>through</em> most vertices: it enters on one bridge and leaves on another, using bridges in pairs. So only the start and the finish can have an odd degree. Königsberg has <b>four</b> odd vertices, so no such walk exists.' }
     ];
 
@@ -187,7 +206,7 @@
         lEls[k].classList.toggle('is-node', step.m > 0.5);
         lEls[k].classList.toggle('is-odd', step.odd && deg[k] % 2 === 1);
         dEls[k].classList.toggle('is-shown', step.deg);
-        dEls[k].classList.toggle('is-odd', step.odd && deg[k] % 2 === 1);
+        dEls[k].classList.toggle('is-odd', (step.odd || step.oddBadge) && deg[k] % 2 === 1);
       });
     }
     var player = V.player({
@@ -204,8 +223,8 @@
       };
     }, { id: 'konig-degree' });
     L.legend(fig.querySelector('[data-legend]'), [
-      { state: 'default', label: 'Land mass / vertex' },
-      { state: 'default', shape: 'line', label: 'Bridge / edge' },
+      { state: 'default', shape: 'outline', label: 'Land mass / vertex' },
+      { state: 'default', shape: 'line', color: 'color-mix(in srgb, var(--st-path) 55%, var(--ink-3))', label: 'Bridge / edge' },
       { state: 'compare', label: 'Odd degree' }
     ]);
   }
@@ -228,7 +247,7 @@
         text: 'Course prerequisites form a <b>directed</b> graph: an arrow says which course must come first, and it never points backwards.' }
     };
     var stage = fig.querySelector('[data-stage]');
-    var view = V.views.graph(stage, { bounds: { x: 50, y: 50, w: 860, h: 500 }, maxHeight: 460, nodeRadius: 28, label: 'One graph drawn as a road map, a friendship network and a set of course prerequisites' });
+    var view = V.views.graph(stage, { bounds: { x: 70, y: 70, w: 790, h: 460 }, maxHeight: 460, nodeRadius: 32, minRadius: 15, label: 'One graph drawn as a road map, a friendship network and a set of course prerequisites' });
     var meaning = fig.querySelector('[data-meaning]'), blurb = fig.querySelector('[data-blurb]');
     function show(key, dur) {
       var c = costumes[key];

@@ -8,6 +8,25 @@
   var GS = V.algos.graphSearch;
   var L = V.L26 = V.L26 || {};
 
+  /* Layout stability: reserve the tallest height a panel reaches over every step of the current run, so playing never shifts the page.
+     paint(step) must draw the panel with no animation; the player draws its own current step again straight after setSteps. */
+  L.reserve = function (player, host, paint, first) {
+    var set = player.setSteps;
+    function measure(steps) {
+      var top = 0;
+      host.style.minHeight = '';
+      steps.forEach(function (st) { paint(st); top = Math.max(top, host.offsetHeight); });
+      if (top) host.style.minHeight = top + 'px';
+      if (steps.length) paint(steps[0]);
+    }
+    player.setSteps = function (steps, o) { measure(steps); return set.call(player, steps, o); };
+    if (first) measure(first);
+    return measure;
+  };
+  L.reserveVars = function (player, vars, first) {
+    return L.reserve(player, vars.el, function (st) { vars.update(st.vars || {}, st.varStates); }, first);
+  };
+
   /* ================================================================== data */
   function graph(nodes, edges, directed) {
     return { nodes: nodes.map(function (n) { return { id: n[0], x: n[1], y: n[2], label: n[3] }; }), edges: edges, directed: !!directed };
@@ -452,6 +471,10 @@
     }
     show();
     var player = V.player({ root: fig, steps: sets.queue, render: render, caption: fig.querySelector('[data-caption]'), baseStepMs: 1000, label: 'Frontier figure controls' });
+    L.reserve(player, fig.querySelector('.bd-panel'), function (st) {
+      if (mode === 'queue') qv.render(L.queueState(st), { duration: 0 }); else sv.render(L.stackState(st), { duration: 0 });
+      chips(st.order, 0);
+    }, sets.queue);
     V.segmented(fig.querySelector('[data-seg]'), {
       label: 'Frontier container', value: 'queue',
       options: [{ value: 'queue', label: 'Queue → BFS' }, { value: 'stack', label: 'Stack → DFS' }],

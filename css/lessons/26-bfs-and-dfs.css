@@ -52,7 +52,7 @@
 }
 
 /* ---------------------------------------------------------------- graph + side panel */
-.bd-split { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+.bd-split { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
 .bd-split > .fig__stage { min-height: 260px; }
 .bd-split > .bd-panel { border-left: 1px solid var(--line); background: color-mix(in srgb, var(--bg-sunken) 35%, var(--bg-elev)); justify-content: center; }
 @container fig (max-width: 720px) {
@@ -149,3 +149,10 @@
 #fig-quiz-bfs .fig__stage { min-height: 220px; }
 /* Say what the bracket string is: "(A" = enter A, "A)" = leave A. */
 .bd-parens::before { content: "Enter (A, leave A) \2192  "; font: 600 12px var(--font-sans); color: var(--ink-3); margin-right: 6px; }
+
+/* "Start over" never sits alone at the left of its own row: it goes to the row's end */
+.fig__head > [data-restart], .fig__toolbar > [data-reset], .fig__toolbar > [data-restart] { margin-left: auto; }
+
+/* the frontier figure's visit order always wraps 5 + 4, never leaving a lone chip on the last row */
+.bd-split .bd-order { display: grid; grid-template-columns: repeat(5, 40px); gap: 6px; justify-content: start; min-height: 66px; align-content: start; }
+.bd-split .bd-order__empty { grid-column: 1 / -1; }

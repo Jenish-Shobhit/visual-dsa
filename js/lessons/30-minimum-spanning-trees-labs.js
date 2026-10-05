@@ -261,6 +261,12 @@
       baseStepMs: isK ? 1000 : 1100, label: (isK ? 'Kruskal' : 'Prim') + ' lab controls'
     });
 
+    L.reserve(player, panels, function (st) {
+      if (isK) { chips.render(kItems(st), { duration: 0, cursor: st.cursor }); strip.render(st.groups); }
+      else chips.render(pItems(st), { duration: 0 });
+    }, first);
+    L.reserveVars(player, vars, first);
+
     /* ---------- predictions */
     if (isK) {
       player.addCheckpoint(function (steps) {

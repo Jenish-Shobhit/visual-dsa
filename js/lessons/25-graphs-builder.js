@@ -352,7 +352,7 @@
     stage.appendChild(h('div', { class: 'g25-pane g25-pane--graph' }, h('p', { class: 'g25-pane__title' }, 'The graph'), gHost));
     stage.appendChild(h('div', { class: 'g25-pane g25-pane--matrix' }, h('p', { class: 'g25-pane__title' }, 'Adjacency matrix'), mHost));
     stage.appendChild(h('div', { class: 'g25-pane g25-pane--list' }, h('p', { class: 'g25-pane__title' }, 'Adjacency list'), lHost));
-    var gView = V.views.graph(gHost, { bounds: { w: 1000, h: 600 }, maxHeight: 460, nodeRadius: 30, minRadius: 12, label: 'The graph being queried' });
+    var gView = V.views.graph(gHost, { bounds: { w: 1000, h: 480 }, maxHeight: 300, nodeRadius: 30, minRadius: 12, label: 'The graph being queried' });
     var mView = V.views.grid(mHost, { mode: 'table', cellSize: 34, minCell: 18, label: 'Adjacency matrix being read' });
 
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: CODE.edge, default: 'pseudo', maxHeight: 340 });
@@ -361,7 +361,7 @@
     function layout(parsed) {
       var n = parsed.nodes.length;
       var edges = parsed.edges.map(function (e) { return { from: e[0], to: e[1] }; });
-      var p = n <= 2 ? circlePos(n) : V.views.graph.layouts.force(parsed.nodes, edges, { w: 1000, h: 600, pad: 80, seed: 6 });
+      var p = n <= 2 ? circlePos(n) : V.views.graph.layouts.force(parsed.nodes, edges, { w: 1000, h: 480, pad: 70, seed: 6 });
       var out = {};
       parsed.nodes.forEach(function (id, i) { var q = Array.isArray(p) ? p[i] : p[id]; out[id] = { x: q.x, y: q.y }; });
       return out;
@@ -465,6 +465,7 @@
       render: render, code: code, vars: vars, caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterLabels: { matrix: 'Matrix reads', list: 'List reads' }, baseStepMs: 1100, label: 'Matrix versus list controls'
     });
+    L.reserveVars(player, vars, stepsFor());
     player.addCheckpoint(function (steps) { return steps.length > 3 ? 1 : -1; }, function (c) {
       var st = c.steps[0], o = st.op;
       var nbCount = rep.adj[st.u] ? rep.adj[st.u].length : 0;

@@ -55,7 +55,7 @@
         cap.textContent = 'Empty trie.';
       } else {
         note.textContent = order === 'rank' ? 'Ranked by popularity score.' : 'In depth-first order: the order the DFS meets them, which is alphabetical.';
-        cap.innerHTML = (prefix ? 'Walked <b>' + c.matched + '</b> letter' + (c.matched === 1 ? '' : 's') + ' to <code>' + V.escape(prefix) + '</code>, then read <b>' + c.visited + '</b> node' + (c.visited === 1 ? '' : 's') + ' below to collect <b>' + c.all.length + '</b> word' + (c.all.length === 1 ? '' : 's') + '. ' : 'No prefix typed, so the DFS starts at the root and reads all <b>' + c.visited + '</b> nodes. ') +
+        cap.innerHTML = (prefix ? 'Walked <b>' + c.matched + '</b> letter' + (c.matched === 1 ? '' : 's') + ' to <code>' + V.escape(prefix) + '</code>, then read the <b>' + c.visited + '</b> node' + (c.visited === 1 ? '' : 's') + ' of the subtree there (that node included) to collect <b>' + c.all.length + '</b> word' + (c.all.length === 1 ? '' : 's') + '. ' : 'No prefix typed, so the DFS starts at the root and reads all <b>' + c.visited + '</b> nodes. ') +
           'Showing the ' + Math.min(5, c.all.length) + ' ' + (order === 'rank' ? 'most popular' : 'first in DFS order') + ': ' + v.showing.map(function (r) { return '<code>' + r.word + '</code>'; }).join(', ') + '.';
       }
     }

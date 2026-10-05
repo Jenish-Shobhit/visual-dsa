@@ -18,8 +18,8 @@
       '    for each arc on the path                      // @augment',
       '      forward arc: flow += b; reverse arc: flow −= b   // @augment',
       '    value ← value + b                             // @value',
-      '  S ← vertices the last search reached            // @cut',
-      '  return value and the cut (S, the rest)          // @cut'
+      '  R ← vertices the last search reached            // @cut',
+      '  return value and the cut (R, the rest)          // @cut'
     ].join('\n'),
     js: [
       'function maxFlow(n, edges, s, t) {   // edges: [from, to, capacity]',
@@ -48,8 +48,8 @@
       '    }',
       '    value += b;                                                     // @value',
       '  }',
-      '  const S = prev.map((p) => p !== null);                            // @cut',
-      '  return { value, S };                                              // @cut',
+      '  const R = prev.map((p) => p !== null);                            // @cut',
+      '  return { value, R };                                              // @cut',
       '}'
     ].join('\n'),
     py: [
@@ -79,8 +79,8 @@
       '            g[u][i][1] -= b; g[v][g[u][i][2]][1] += b          # @augment',
       '            v = u                                              # @augment',
       '        value += b                                             # @value',
-      '    S = [p is not None for p in prev]                          # @cut',
-      '    return value, S                                            # @cut'
+      '    R = [p is not None for p in prev]                          # @cut',
+      '    return value, R                                            # @cut'
     ].join('\n')
   };
   L.CODE = CODE;
@@ -93,7 +93,7 @@
       { id: 'found', type: 'decision', text: 'reached t?', col: 1, row: 2 },
       { id: 'bottleneck', text: 'b ← smallest room on the path', col: 1, row: 3 },
       { id: 'augment', text: 'push b: forward arcs +b, reverse arcs −b\nvalue ← value + b', col: 1, row: 4, maxWidth: 210 },
-      { id: 'cut', type: 'end', text: 'stop. S = vertices reached is a minimum cut; its capacity = value', col: 2, row: 2, maxWidth: 190 }
+      { id: 'cut', type: 'end', text: 'stop. R = vertices reached is a minimum cut; its capacity = value', col: 2, row: 2, maxWidth: 190 }
     ],
     edges: [
       { from: 'init', to: 'bfs' },
@@ -157,7 +157,7 @@
     var chartHost = fig.querySelector('[data-chart]');
     var chart = V.views.chart(chartHost, { type: 'bar', height: 190, label: 'Total flow after each augmentation' });
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: CODE, default: 'pseudo', title: 'maxFlow', maxHeight: 400 });
-    var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { u: 'active', queue: 'frontier', path: 'path', b: 'compare', value: 'done', S: 'frontier' } });
+    var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { u: 'active', queue: 'frontier', path: 'path', b: 'compare', value: 'done', R: 'frontier' } });
     var flowFig = V.$('#fig-flow');
     var flowView = V.views.flowchart(flowFig.querySelector('[data-stage]'), FLOW_SPEC, { label: 'Max-flow algorithm flowchart, lit by the lab' });
     L.legend(flowFig.querySelector('[data-legend]'), [{ state: 'active', label: 'Box running in the lab' }]);

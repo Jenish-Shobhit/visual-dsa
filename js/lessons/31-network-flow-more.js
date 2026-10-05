@@ -144,8 +144,8 @@
       options: ['The flow is maximum, and the vertices the search did reach form a minimum cut.', 'The flow is maximum, but you must search again to find a cut.', 'The flow may still be improvable by a different sequence of paths.', 'Every edge in the network is now full.'],
       answer: 0,
       explain: [
-        'Yes. No path from s to t in the residual graph means every edge leaving the reached set S is full and every edge coming back into S is empty, so the flow equals the capacity of that cut.',
-        'The search that just failed already is the cut: S is exactly the set it reached. Nothing more to compute.',
+        'Yes. No path from s to t in the residual graph means every edge leaving the reached set R is full and every edge coming back into R is empty, so the flow equals the capacity of that cut.',
+        'The search that just failed already is the cut: R is exactly the set it reached. Nothing more to compute.',
         'No: a failed search proves optimality. Any flow is at most the capacity of any cut, and this cut has the same value as your flow.',
         'Only the edges that cross the cut are guaranteed full. Other edges can have plenty of room left, and that is fine.'
       ]

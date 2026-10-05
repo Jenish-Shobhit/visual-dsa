@@ -196,7 +196,7 @@
   function problemFigure(fig) {
     var stage = fig.querySelector('[data-stage]');
     L.legend(fig.querySelector('[data-legend]'), [{ state: 'active', label: 'You' }, { state: 'default', shape: 'outline', label: 'Person' }, { state: 'default', shape: 'line', label: 'Handshake' }]);
-    var view = V.views.graph(stage, { label: 'Friendship network', maxHeight: 380 });
+    var view = V.views.graph(stage, { label: 'Friendship network', maxHeight: 380, minRadius: 14 });
     var base = { states: { You: 'active' } };
     view.render(L.graphState(L.SOCIAL, base), { duration: 0 });
     L.tagNodes(view, function (id) { return id === 'You' ? 'You' : 'Person ' + id; });

@@ -302,7 +302,7 @@
         snap('nopath', {
           round: rounds, flow: 'found', line: 'nopath', states: cst,
           caption: (full ? 'The queue ran empty without ever reaching ' : 'The search ran out of arcs with room without reaching ') + b(nm(N, t)) + '. No augmenting path exists, so nothing more can be pushed: the flow of ' + b(value) + ' is the maximum. The vertices the search did reach are ' + S.map(function (id) { return b(nm(N, id)); }).join(', ') + '.',
-          vars: { value: value, round: attempt, S: V(rawList(S.map(function (id) { return nm(N, id); }))) }
+          vars: { value: value, round: attempt, R: V(rawList(S.map(function (id) { return nm(N, id); }))) }
         });
         var edgesCut = cutEdges(N, S), cv = cutValue(N, S);
         var T = N.ids.filter(function (id) { return !found.reach[id]; });
@@ -311,8 +311,8 @@
         cut = { S: S, T: T, edges: edgesCut, value: cv, caps: edgesCut.map(function (id) { return N.byId[id].cap; }) };
         snap('cut', {
           round: rounds, flow: 'cut', line: 'cut', states: cs2, cut: cut,
-          caption: 'Split the vertices into the side ' + b('S') + ' that ' + b(nm(N, s)) + ' can still reach and the rest. Every edge from S to the other side is full, and their capacities add up to ' + b(cut.caps.join(' + ') + (cut.caps.length > 1 ? ' = ' + cv : '')) + ', exactly the flow. That is the max-flow min-cut theorem: the bottleneck is a cut of the same size.',
-          vars: { value: value, S: V(rawList(S.map(function (id) { return nm(N, id); }))), 'cut capacity': cv }
+          caption: 'Split the vertices into the set ' + b('R') + ' that ' + b(nm(N, s)) + ' can still reach and the rest. Every edge from R to the other side is full, and their capacities add up to ' + b(cut.caps.join(' + ') + (cut.caps.length > 1 ? ' = ' + cv : '')) + ', exactly the flow. That is the max-flow min-cut theorem: the bottleneck is a cut of the same size.',
+          vars: { value: value, R: V(rawList(S.map(function (id) { return nm(N, id); }))), 'cut capacity': cv }
         });
         break;
       }

@@ -246,7 +246,7 @@
     function sizeBucket(rec) {
       var h = G.rowH - 4;
       vz.set(rec.slot, 'x', 0); vz.set(rec.slot, 'y', n2(-h / 2));
-      vz.set(rec.slot, 'width', G.slotW); vz.set(rec.slot, 'height', n2(h));
+      vz.set(rec.slot, 'width', Math.max(0, G.slotW)); vz.set(rec.slot, 'height', n2(Math.max(0, h)));
       vz.set(rec.slot, 'rx', 5); vz.set(rec.slot, 'ry', 5);
       vz.set(rec.idx, 'x', -9);
       vz.set(rec.nul, 'x', n2(G.slotW / 2));
@@ -463,7 +463,7 @@
         var thr = N.threshold !== null ? N.threshold : opts.threshold;
         var mx = L.meterMax(N.load, thr);
         var mw = G.meterW, mx0 = G.W - G.pad - mw;
-        vz.set(mt.track, 'x', n2(mx0)); vz.set(mt.track, 'y', n2(G.headerY - 3)); vz.set(mt.track, 'width', n2(mw));
+        vz.set(mt.track, 'x', n2(mx0)); vz.set(mt.track, 'y', n2(G.headerY - 3)); vz.set(mt.track, 'width', n2(Math.max(0, mw)));
         vz.set(mt.fill, 'x', n2(mx0)); vz.set(mt.fill, 'y', n2(G.headerY - 3));
         var over = thr !== null && thr !== undefined && N.load > thr + 1e-9;
         vz.state(mt.el, over ? 'error' : 'active');
@@ -486,14 +486,14 @@
       if (G.showHash) {
         var inp = S.fixed.use('input', function (r) { buildFixed(r, 'input'); });
         vz.set(inp.box, 'x', G.input.x); vz.set(inp.box, 'y', G.input.y);
-        vz.set(inp.box, 'width', G.input.w); vz.set(inp.box, 'height', G.input.h);
+        vz.set(inp.box, 'width', Math.max(0, G.input.w)); vz.set(inp.box, 'height', Math.max(0, G.input.h));
         vz.text(inp.cap, N.incoming && N.incoming.op ? N.incoming.op : opts.inputLabel);
         vz.set(inp.cap, 'x', G.input.x + 10); vz.set(inp.cap, 'y', G.input.y + 13);
         if (inp.isNew) enter(inp, { o: 1 }); else update(inp, { o: 1 });
 
         var hb = S.fixed.use('hash', function (r) { buildFixed(r, 'hash'); });
         vz.set(hb.box, 'x', G.hash.x); vz.set(hb.box, 'y', G.hash.y);
-        vz.set(hb.box, 'width', G.hash.w); vz.set(hb.box, 'height', G.hash.h);
+        vz.set(hb.box, 'width', Math.max(0, G.hash.w)); vz.set(hb.box, 'height', Math.max(0, G.hash.h));
         vz.text(hb.fn, N.hashFn || 'h(k)');
         vz.set(hb.fn, 'x', n2(G.hash.x + G.hash.w / 2)); vz.set(hb.fn, 'y', n2(G.hash.y + 16));
         var fnW = measure(N.hashFn || 'h(k)', 12, 600);
@@ -537,7 +537,7 @@
         if (N.slots[t]) return;
         var rec = S.decor.use('t' + t, function (r) { buildDecor(r, 'tomb'); });
         var w = G.slotW - 8, h = G.boxH;
-        vz.set(rec.box, 'x', n2(-w / 2)); vz.set(rec.box, 'y', n2(-h / 2)); vz.set(rec.box, 'width', n2(w)); vz.set(rec.box, 'height', n2(h));
+        vz.set(rec.box, 'x', n2(-w / 2)); vz.set(rec.box, 'y', n2(-h / 2)); vz.set(rec.box, 'width', n2(Math.max(0, w))); vz.set(rec.box, 'height', n2(Math.max(0, h)));
         vz.text(rec.txt, w >= 56 ? '† deleted' : '†');
         var tt = { x: G.bucketX + G.slotW / 2, y: G.rowY(t), o: 1, s: 1 };
         if (rec.isNew) enter(rec, tt, { o: 0, s: 0.8 }); else update(rec, tt);
@@ -588,7 +588,7 @@
           var rec = S.badges.use('p' + slot, function (r) { buildDecor(r, 'badge'); });
           var txt = String(seen[slot]);
           var w = Math.max(14, measure(txt, 10, 650) + 8);
-          vz.set(rec.box, 'width', n2(w)); vz.set(rec.box, 'x', n2(-w / 2));
+          vz.set(rec.box, 'width', n2(Math.max(0, w))); vz.set(rec.box, 'x', n2(-w / 2));
           vz.text(rec.txt, txt);
           vz.state(rec.el, slot === N.probe.current ? N.probe.state : 'default');
           var bt = { x: G.bucketX + 3, y: G.rowY(slot) - G.boxH / 2, o: 1, s: 1 };

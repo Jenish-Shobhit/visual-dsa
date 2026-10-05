@@ -473,7 +473,7 @@
         arrows: arrows.map(function (x) { return { from: x.from, to: x.to, label: x.label, fresh: !!(o.fresh && x.from === o.fresh) }; }),
         states: states, topIdx: o.topIdx === undefined ? null : o.topIdx,
         caption: o.caption, line: o.line,
-        vars: { i: i, 'a[i]': i === null ? null : a[i], top: top, stack: stack.slice(), ans: ans.slice() },
+        vars: { i: i, 'a[i]': i === null ? null : a[i], top: top, stack: stack.slice(), ans: ans.map(function (v, k) { return resolved[k] || v !== null ? v : none; }) },
         counters: { comparisons: cmp, pushes: pushes, pops: pops }
       });
     }

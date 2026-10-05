@@ -135,7 +135,7 @@
       svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
       svg.setAttribute('width', W); svg.setAttribute('height', H);
       svg.style.minWidth = minW() + 'px';
-      var fs = Math.max(8, Math.min(15, r * 0.95));
+      var fs = Math.max(10, Math.min(15, r * 0.95));
       recs.forEach(function (rec) {
         rec.disc.setAttribute('r', r);
         rec.text.setAttribute('font-size', fs.toFixed(1));

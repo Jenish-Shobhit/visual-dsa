@@ -67,7 +67,7 @@
     queued: { state: 'frontier', label: 'In the queue' },
     visited: { state: 'visited', label: 'Searched' },
     current: { state: 'active', label: 'Current' },
-    side: { state: 'frontier', label: 'Source side S' },
+    side: { state: 'frontier', label: 'Source side' },
     dashed: { state: 'default', shape: 'dash', label: 'Reverse arc: flow you can take back' }
   };
 

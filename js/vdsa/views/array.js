@@ -221,7 +221,7 @@
       g.cellH = mode === 'cells' ? s - Math.max(1, s * 0.08) : s - Math.max(2, Math.min(6, s * 0.1));
       g.radius = Math.min(g.cellW, g.cellH) / 2;
       g.corner = mode === 'cells' ? Math.min(3, g.cellH * 0.12) : Math.min(9, g.cellH * 0.16);
-      g.font = mode === 'cells' ? vz.clamp(Math.round(s * 0.34), 8, 13) : vz.clamp(Math.round(s * 0.36), 9, 17);
+      g.font = mode === 'cells' ? vz.clamp(Math.round(s * 0.34), 8, 13) : vz.clamp(Math.round(s * 0.36), 10, 17);
       g.showText = opts.showValues && !(mode === 'cells' && s < 22) && !(bars && sw < 16);
       g.gap = function (r) { return r.gap !== undefined ? r.gap : sw * 0.45; };
 

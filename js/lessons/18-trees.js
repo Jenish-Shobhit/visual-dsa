@@ -89,7 +89,7 @@
     function describe(extra) {
       var d = REAL[key], st = build(d.root, collapsed), n = shown(st), total = count(d.root);
       var leaves = st.nodes.filter(function (x) { return !x.children.length && x.state === 'default'; }).length;
-      var s = '<b>' + d.label + '</b>: ' + n + ' nodes on screen' + (n < total ? ' (' + total + ' in all)' : '') + ', ' + (n - 1) + ' links, ' + leaves + ' ' + (leaves === 1 ? 'leaf' : 'leaves') + '. The root is <b>' + V.escape(d.root.label) + '</b>.';
+      var s = '<b>' + d.label + '</b>: ' + n + ' node' + (n === 1 ? '' : 's') + ' on screen' + (n < total ? ' (' + total + ' in all)' : '') + ', ' + (n - 1) + ' link' + (n === 2 ? '' : 's') + ', ' + leaves + ' ' + (leaves === 1 ? 'leaf' : 'leaves') + '. The root is <b>' + V.escape(d.root.label) + '</b>.';
       return (extra ? extra + ' ' : '') + s + (Object.keys(collapsed).length ? '' : ' <span class="muted">Click a ' + d.term + ' to fold it.</span>');
     }
     function draw(dur, extra) {

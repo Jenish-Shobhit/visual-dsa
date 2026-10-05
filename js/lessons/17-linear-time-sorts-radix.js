@@ -100,7 +100,7 @@
   L17.initRadixLab = function () {
     var fig = V.$('#lab-radix');
     var view = L17.bucketView(fig.querySelector('[data-stage]'), { label: 'Radix sort: numbers and ten digit buckets', chipH: 30 });
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE17.radix, default: 'pseudo', maxHeight: 330, title: 'radixSort' });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE17.radix, default: 'pseudo', maxHeight: 337, title: 'radixSort' });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { title: 'Variables' });
     var CLASSIC = [170, 45, 75, 90, 802, 24, 2, 66];
     var values = CLASSIC.slice(), stable = true;

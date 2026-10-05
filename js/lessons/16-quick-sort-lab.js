@@ -96,7 +96,7 @@
     var tree = V.views.tree(fig.querySelector('[data-tree]'), { nodeSize: 30, minNodeSize: 12, gap: 0.3, levelHeight: 36,   /* height follows the deepest prepared step, so the worst case is never clipped */ label: 'Recursion tree of the lab run' });
     var stack = V.views.callstack(fig.querySelector('[data-stack]'), { frameWidth: 210, maxVisible: 5, label: 'Call stack of the lab run' });
     var legendEl = fig.querySelector('[data-legend]');
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE_QUICK.lomuto, default: 'pseudo', maxHeight: 360 });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE_QUICK.lomuto, default: 'pseudo', maxHeight: 357 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { title: 'Variables' });
 
     var flowStage = flowFig.querySelector('[data-stage]');
@@ -258,7 +258,7 @@
     var fig = V.$('#sel-fig');
     var values = SEL_DEFAULT.slice(), k = 4, pivot = 'last';
     var view = V.views.array(fig.querySelector('[data-stage]'), { mode: 'boxes', cellSize: 52, label: 'Array being searched by quickselect' });
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE_QUICK.select, default: 'pseudo', maxHeight: 360 });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE_QUICK.select, default: 'pseudo', maxHeight: 357 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { title: 'Variables' });
     var note = fig.querySelector('[data-note]');
     function gen() { return S().quickselect(L16.labelDuplicates(values), k, { pivot: pivot, seed: SEED }); }

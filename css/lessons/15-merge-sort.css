@@ -131,3 +131,13 @@
   .fig__toolbar .seg { flex-wrap: wrap; }
   .l15-lane__stage { min-height: 120px; }
 }
+
+/* Race lanes: one lane per row at every width; stage and stat cards side by side on wide figures. */
+.l15-race { grid-template-columns: minmax(0, 1fr); }
+@container fig (min-width: 600px) {
+  .l15-lane { display: grid; grid-template-columns: minmax(0, 1fr) 150px; column-gap: 16px; align-items: end; }
+  .l15-lane__head { grid-column: 1 / -1; }
+  .l15-lane__stats { flex-direction: column; flex-wrap: nowrap; align-self: end; }
+  .l15-lane__stats .stat { flex: 0 0 auto; display: flex; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 10px 6px; }
+  .l15-lane__stats .stat__value { margin-top: 0; }
+}

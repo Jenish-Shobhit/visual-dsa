@@ -163,7 +163,7 @@
     var flowFig = V.$('#fig-flow');
     var values = CLASSIC.slice();
     var cv = L17.countingView(fig.querySelector('[data-stage]'), { chart: true, cellSize: 46, chartHeight: 128, label: 'Counting sort lab: input, counters and output' });
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE17.counting, default: 'pseudo', maxHeight: 330, title: 'countingSort' });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE17.counting, default: 'pseudo', maxHeight: 337, title: 'countingSort' });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { title: 'Variables' });
     var flowView = V.views.flowchart(flowFig.querySelector('[data-stage]'), FLOW, { label: 'Flowchart of counting sort', narrowWidth: 380 });
     V.legend(flowFig.querySelector('[data-legend]'), [{ state: 'active', label: 'Step running in the lab' }, { state: 'visited', label: 'Already run' }]);

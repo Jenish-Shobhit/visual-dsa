@@ -49,7 +49,7 @@
     var values = DEFAULT_INPUT.slice(), mode = 'levels';
     var view = V.views.array(stage, { mode: 'boxes', cellSize: 44, label: 'Merge sort: rows are recursion levels', showIndices: false });
     var treeView = V.views.tree(fig.querySelector('[data-tree]'), { nodeSize: 34, minNodeSize: 16, gap: 0.3, label: 'Recursion tree of merge sort' });
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: M().CODE_MERGE, default: 'pseudo', maxHeight: 400, title: 'mergeSort' });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: M().CODE_MERGE, default: 'pseudo', maxHeight: 398, title: 'mergeSort' });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { title: 'Variables' });
 
     /* flowchart, lit by the lab. step.flow may name several boxes, 'conquer|small' */
@@ -262,7 +262,7 @@
         var head = m.total === ins.total ? 'A tie at <b>' + m.total + '</b> ticks.' : '<b>' + TITLE[m.total < ins.total ? 'merge' : 'insertion'] + '</b> finishes first: merge sort ' + m.total + ' ticks, insertion sort ' + ins.total + '.';
         return head + ' ' + PRESET_NOTE[preset];
       }
-      return 'Tick ' + step.tick + '. ' + (done.length ? done.map(function (l) { return TITLE[l.name] + ' has finished (' + l.total + ' ticks)'; }).join('; ') + '.' : 'Both are still working.');
+      return 'Tick ' + step.tick + (stride > 1 ? ' (each step is ' + stride + ' ticks)' : '') + '. ' + (done.length ? done.map(function (l) { return TITLE[l.name] + ' has finished (' + l.total + ' ticks)'; }).join('; ') + '.' : 'Both are still working.');
     }
     function render(step, ctx) {
       lanes.forEach(function (l) {

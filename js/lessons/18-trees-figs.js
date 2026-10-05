@@ -80,8 +80,8 @@
     if (!fig) return;
     legend(fig, [{ state: 'active', label: 'being computed' }, { state: 'frontier', label: 'waiting for its operands' }, { state: 'done', label: 'value known' }, { state: 'path', shape: 'line', label: 'chain of calls' }]);
     var view = V.views.tree(fig.querySelector('[data-tree]'), { nodeSize: 44, gap: 0.7, label: 'An expression tree evaluated from the bottom up' });
-    var stack = V.views.callstack(fig.querySelector('[data-stack]'), { frameWidth: 220, maxVisible: 6, showLocals: false, label: 'Call stack of evaluate' });
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: A.CODE.eval, default: 'pseudo', title: 'evaluate', maxHeight: 300 });
+    var stack = V.views.callstack(fig.querySelector('[data-stack]'), { frameWidth: 300, maxVisible: 6, showLocals: false, label: 'Call stack of evaluate' });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: A.CODE.eval, default: 'pseudo', title: 'evaluate', maxHeight: 296 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { node: 'active', result: 'done' } });
     var tokHost = fig.querySelector('[data-tokens]'), rows = null, tree = null;
     var player = V.player({
@@ -126,8 +126,8 @@
     var bin = A.fromLevel(['A', 'B', 'C', 'D', 'E', '#', 'F', 'G']);
     legend(fig, [{ state: 'active', label: 'asked now' }, { state: 'frontier', label: 'waiting for its children' }, { state: 'done', label: 'answered: the chip is its value' }]);
     var view = V.views.tree(fig.querySelector('[data-tree]'), { nodeSize: 44, gap: 0.6, label: 'A tree where every node computes an answer from its children' });
-    var stack = V.views.callstack(fig.querySelector('[data-stack]'), { frameWidth: 220, maxVisible: 6, showLocals: false, label: 'Call stack' });
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: A.CODE.height, default: 'pseudo', title: 'height', maxHeight: 300 });
+    var stack = V.views.callstack(fig.querySelector('[data-stack]'), { frameWidth: 300, maxVisible: 6, showLocals: false, label: 'Call stack' });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: A.CODE.height, default: 'pseudo', title: 'height', maxHeight: 296 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { node: 'active', result: 'done', total: 'done' } });
     var player = V.player({
       root: fig, steps: [{ caption: '', root: null, nodes: [], frames: [], counters: {} }], baseStepMs: 1150, label: 'Computation controls',

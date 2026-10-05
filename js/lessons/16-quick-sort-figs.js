@@ -494,7 +494,7 @@
     var fig = V.$('#fig-flag');
     var stage = fig.querySelector('[data-stage]');
     var view = V.views.array(stage, { mode: 'dots', cellSize: 46, label: 'Red, white and blue discs to sort', showIndices: true, pointerStyle: 'chip' });
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE_QUICK.three, default: 'pseudo', maxHeight: 300 });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE_QUICK.three, default: 'pseudo', maxHeight: 296 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { title: 'Variables' });
     var values = [2, 0, 1, 1, 2, 0, 2, 1, 0, 2];
     function gen() { return S().dutchFlag(values); }

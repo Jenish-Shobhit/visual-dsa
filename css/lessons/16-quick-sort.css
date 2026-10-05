@@ -34,12 +34,13 @@
 }
 
 /* ---------------------------------------------------------------- good vs bad trees */
-.l16-pair { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 10px; }
+.l16-pair { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 10px; align-items: start; }
 .l16-pair__side { display: flex; flex-direction: column; gap: 8px; padding: 10px 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-elev); min-width: 0; }
 .l16-pair__title { margin: 0; font-size: 14.5px; font-weight: 700; }
-.l16-pair__tree { min-height: 300px; display: grid; place-items: center; }
+.l16-pair__tree { min-height: 0; display: grid; place-items: start center; }
 .l16-pair .stats { gap: 6px; }
-.l16-pair .stat { min-width: 0; flex: 1 1 90px; padding: 6px 9px 7px; }
+.l16-pair .stat { min-width: 0; flex: 1 1 64px; padding: 6px 9px 7px; }
+.l16-pair .stat:first-child { flex: 2 1 120px; }
 .l16-pair .stat__value { font-size: 18px; }
 @container fig (max-width: 640px) {
   .l16-pair { grid-template-columns: minmax(0, 1fr); }
@@ -96,4 +97,14 @@
   .l16-wide-only { display: none; }
   .l16-labtabs { padding: 2px 10px 0; }
   .l16-lane__stage { min-height: 110px; }
+}
+
+/* Race lanes: one lane per row at every width; stage and stat cards side by side on wide figures. */
+.l16-race { grid-template-columns: minmax(0, 1fr); }
+@container fig (min-width: 600px) {
+  .l16-lane { display: grid; grid-template-columns: minmax(0, 1fr) 150px; column-gap: 16px; align-items: end; }
+  .l16-lane__head { grid-column: 1 / -1; }
+  .l16-lane__stats { flex-direction: column; flex-wrap: nowrap; align-self: end; }
+  .l16-lane__stats .stat { flex: 0 0 auto; display: flex; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 10px 6px; }
+  .l16-lane__stats .stat__value { margin-top: 0; }
 }

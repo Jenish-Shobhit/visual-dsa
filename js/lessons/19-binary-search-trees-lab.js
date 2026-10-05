@@ -182,7 +182,7 @@
     var DEFAULT = [50, 30, 70, 20, 40, 60, 80, 35, 65, 45];
     var tree = B.empty();
     var op = 'build';
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: { pseudo: B.CODE.insert.pseudo, js: B.CODE.insert.js, py: B.CODE.insert.py }, default: 'pseudo', title: B.CODE.insert.title, maxHeight: 340 });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: { pseudo: B.CODE.insert.pseudo, js: B.CODE.insert.js, py: B.CODE.insert.py }, default: 'pseudo', title: B.CODE.insert.title, maxHeight: 337 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { key: 'key', cur: 'compare', node: 'compare', parent: 'visited', s: 'pivot', succ: 'pivot', min: 'found', max: 'found' } });
     var keyField;
     var view = L19.bstView(fig.querySelector('[data-stage]'), {

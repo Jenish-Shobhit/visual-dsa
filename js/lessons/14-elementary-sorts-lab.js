@@ -109,7 +109,7 @@
     var algo = 'bubble', values = DEFAULT_INPUT.slice(), mode = 'bars';
     var view = V.views.array(stage, { mode: mode, label: 'Array being sorted', barHeight: 220 });
     var legendEl = fig.querySelector('[data-legend]');
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE.bubble, default: 'pseudo', maxHeight: 330 });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE.bubble, default: 'pseudo', maxHeight: 337 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { title: 'Variables' });
 
     /* flowchart below the lab, lit by the lab's current step */

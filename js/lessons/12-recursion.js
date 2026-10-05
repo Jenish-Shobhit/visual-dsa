@@ -235,10 +235,10 @@
       { state: 'done', label: 'Returned (value in the chip)' }
     ]);
     var kind = 'factorial';
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: { pseudo: LAB_CODE[kind].pseudo, js: LAB_CODE[kind].js, py: LAB_CODE[kind].py }, default: 'pseudo', maxHeight: 300 });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: { pseudo: LAB_CODE[kind].pseudo, js: LAB_CODE[kind].js, py: LAB_CODE[kind].py }, default: 'pseudo', maxHeight: 296 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { n: 'active', a: 'active', s: 'active', x: 'active', sub: 'done', rest: 'done', half: 'done', b: 'done', result: 'done', depth: 'frontier' } });
     var tree = V.views.tree(fig.querySelector('[data-tree]'), { label: 'Recursion tree', nodeSize: 34 });
-    var cs = V.views.callstack(fig.querySelector('[data-cs]'), { label: 'Call stack', frameWidth: 270, maxVisible: 5 });
+    var cs = V.views.callstack(fig.querySelector('[data-cs]'), { label: 'Call stack', frameWidth: 340, maxVisible: 5 });
 
     // the recipe flowchart, lit by this player
     var flowFig = V.$('#fig-flow');

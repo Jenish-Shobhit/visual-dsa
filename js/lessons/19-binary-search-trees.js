@@ -191,7 +191,7 @@
 
     var aView = V.views.array(fig.querySelector('[data-stage="array"]'), { mode: 'boxes', cellSize: 44, label: 'Sorted array of scores' });
     aView.prepare(steps.map(function (s) { return s.arr; }));
-    var tView = bstView(fig.querySelector('[data-stage="tree"]'), { nodeSize: 40, label: 'Binary search tree of the same scores' });
+    var tView = bstView(fig.querySelector('[data-stage="tree"]'), { nodeSize: 40, gap: 1.7, levelHeight: 82, label: 'Binary search tree of the same scores' });
     tView.prepare(steps.map(function (s) { return s.tree; }));
     var aStats = V.stats(fig.querySelector('[data-stats="array"]'), { labels: LABELS, states: { moves: 'swap' } });
     var tStats = V.stats(fig.querySelector('[data-stats="tree"]'), { labels: LABELS, states: { moves: 'swap' } });
@@ -499,8 +499,8 @@
       return B.medianFirst(keys);
     }
     var views = {
-      a: bstView(fig.querySelector('[data-stage="a"]'), { nodeSize: 34, maxHeight: 640, label: 'Tree built from a random insertion order' }),
-      b: bstView(fig.querySelector('[data-stage="b"]'), { nodeSize: 34, maxHeight: 640, label: 'Tree built from the second insertion order' })
+      a: bstView(fig.querySelector('[data-stage="a"]'), { nodeSize: 34, gap: 0.3, maxHeight: 640, label: 'Tree built from a random insertion order' }),
+      b: bstView(fig.querySelector('[data-stage="b"]'), { nodeSize: 34, gap: 0.3, maxHeight: 640, label: 'Tree built from the second insertion order' })
     };
     var stats = {
       a: V.stats(fig.querySelector('[data-stats="a"]'), { labels: { height: 'Height', comparisons: 'Comparisons so far', search: 'Search for ' + keys[n - 1] } }),

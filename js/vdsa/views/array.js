@@ -321,9 +321,11 @@
       }
       if (!rec.badge) {
         var bg = vz.svg('g', { class: 'vz-badge' }, rec.el);
-        rec.badge = { g: bg, rect: vz.svg('rect', { rx: 7, ry: 7, height: 14, y: -7 }, bg), text: vz.svg('text', { 'text-anchor': 'middle', dy: '.35em' }, bg) };
+        var bh = opts.badgeSize || 14;   // opt-in: a larger pill (and glyph) for symbols such as an arrow
+        rec.badge = { g: bg, rect: vz.svg('rect', { rx: bh / 2, ry: bh / 2, height: bh, y: -bh / 2 }, bg), text: vz.svg('text', { 'text-anchor': 'middle', dy: '.35em' }, bg) };
+        if (opts.badgeSize) rec.badge.text.style.fontSize = Math.round(bh * 1.05) + 'px';
       }
-      var t = String(text), w = Math.max(14, measure(t, 10, 650) + 8);
+      var t = String(text), w = Math.max(opts.badgeSize || 14, measure(t, opts.badgeSize ? Math.round(opts.badgeSize * 1.05) : 10, 650) + 8);
       vz.text(rec.badge.text, t);
       vz.set(rec.badge.rect, 'width', w); vz.set(rec.badge.rect, 'x', -w / 2);
       vz.state(rec.badge.g, state || 'default');
@@ -508,15 +510,22 @@
 
       /* rows: captions + baselines */
       S.rows.begin();
+      var rowLeft = function (rg) { return slotLeft(rg, 0) + (G.bars ? 0 : (G.sw - G.cellW) / 2); };
+      // Rows that start at different offsets would stagger their captions diagonally; when that
+      // happens, stack the captions left-aligned in one column ending just before the leftmost row.
+      var minLeft = Infinity, maxLabelW = 0;
+      G.order.forEach(function (rg) { minLeft = Math.min(minLeft, rowLeft(rg)); if (rg.row.label) maxLabelW = Math.max(maxLabelW, measure(String(rg.row.label), 11, 600)); });
+      var staggered = G.order.some(function (rg) { return Math.abs(rowLeft(rg) - minLeft) > 1; });
       G.order.forEach(function (rg) {
         var rec = S.rows.use(rg.id, buildRow);
         var r = rg.row;
-        var left = slotLeft(rg, 0) + (G.bars ? 0 : (G.sw - G.cellW) / 2);
+        var left = rowLeft(rg);
         var right = slotLeft(rg, Math.max(0, r.n - 1)) + G.sw;
         vz.text(rec.label, r.label || '');
-        vz.set(rec.label, 'text-anchor', G.labelsLeft ? 'end' : 'start');
+        var colLeft = G.labelsLeft && staggered;
+        vz.set(rec.label, 'text-anchor', G.labelsLeft && !colLeft ? 'end' : 'start');
         vz.set(rec.label, 'dy', G.labelsLeft ? '.35em' : null);
-        var t = { x: left, lx: G.labelsLeft ? left - 12 : left, x2: right, ly: G.labelsLeft ? (G.bars ? (rg.cellTop + rg.zeroY) / 2 : rg.cellMid) : (rg.labelY || rg.top), by: G.bars ? rg.zeroY : 0, o: 1 };
+        var t = { x: left, lx: colLeft ? Math.max(4, minLeft - 12 - maxLabelW) : G.labelsLeft ? left - 12 : staggered ? minLeft : left, x2: right, ly: G.labelsLeft ? (G.bars ? (rg.cellTop + rg.zeroY) / 2 : rg.cellMid) : (rg.labelY || rg.top), by: G.bars ? rg.zeroY : 0, o: 1 };
         if (rec.isNew) enter(rec, t, { o: 0 }); else update(rec, t);
       });
       S.rows.end().forEach(function (rec) { rec.to = Object.assign({}, rec.cur, { o: 0 }); rec.from = Object.assign({}, rec.cur); anim.push(rec); });

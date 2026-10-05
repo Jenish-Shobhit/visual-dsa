@@ -167,6 +167,18 @@
       Object.keys(marks).forEach(function (id) { if (!seen[id]) marks[id].g.classList.add('is-gone'); });
       note.textContent = state.note || '';
       if (state.note && lv) note.setAttribute('x', ((X(lv[0]) + X(lv[1] + 1)) / 2).toFixed(1)); else note.setAttribute('x', W / 2);
+      // a note wider than its band would overprint the band's edges: lift it just above the bar instead
+      var noteY = bandY + bandH / 2 + 4.5;
+      if (state.note && lv) {
+        var bw = X(lv[1] + 1) - X(lv[0]), nw = textW(state.note, 13, false, 700);
+        if (bw < nw + 14) {
+          var hasAbove = (state.marks || []).some(function (m) { return m.side !== 'below'; });
+          var cx = Math.max(pad + nw / 2, Math.min(W - pad - nw / 2, (X(lv[0]) + X(lv[1] + 1)) / 2));
+          note.setAttribute('x', cx.toFixed(1));
+          noteY = hasAbove ? bandY + bandH + 34 : bandY - 9;
+        }
+      }
+      note.setAttribute('y', noteY.toFixed(1));
       note.style.opacity = state.note ? '' : '0';
       desc.textContent = state.describe || '';
       motion(list, ms);

@@ -86,7 +86,7 @@
 .bst-stack > .bst-pane + .bst-pane { border-top: 1px solid var(--line); }
 .bst-stack .fig__stage.bst-arr-stage { min-height: 120px; }
 /* shape race: trees hang from the top of their panes */
-#fig-shape .bst-pane .fig__stage { place-items: start center; }
+#fig-shape .bst-pane .fig__stage { place-items: start center; flex: none; }
 
 /* the delete figure: tree + flowchart side by side */
 .bst-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -121,3 +121,12 @@
 
 /* cost table: case notes */
 .bst-case { font-size: 13.5px; color: var(--ink-3); }
+
+/* race figure: each pane puts its two stat cards in a slim column beside the stage instead of a second row below it */
+@container fig (min-width: 620px) {
+  #fig-race .bst-pane { display: grid; grid-template-columns: minmax(0, 1fr) 150px; }
+  #fig-race .bst-pane__head { grid-column: 1 / -1; }
+  #fig-race .bst-pane .fig__stats { flex-direction: column; flex-wrap: nowrap; justify-content: center; gap: 8px; padding: 12px 14px; border-top: 0; border-left: 1px solid var(--line); }
+  #fig-race .bst-pane .stat { display: flex; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; padding: 7px 10px 7px; }
+  #fig-race .bst-pane .stat__value { margin-top: 0; font-size: 18px; }
+}

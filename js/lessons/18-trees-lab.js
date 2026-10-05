@@ -183,7 +183,7 @@
     }
     var layer = null;
 
-    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: A.CODE['recursive-pre'], default: 'pseudo', title: 'traversal', maxHeight: 420 });
+    var code = V.codePanel(fig.querySelector('[data-code]'), { languages: A.CODE['recursive-pre'], default: 'pseudo', title: 'traversal', maxHeight: 419 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { node: 'active', cur: 'active', out: 'done', stack: 'frontier', queue: 'frontier' } });
 
     var player = V.player({

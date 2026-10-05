@@ -131,7 +131,7 @@
       } else ox = W / 2 - k / 2;
       return {
         lay: lay, k: k, levelH: levelH, top: top, ox: ox, W: W, height: height, probeR: probeR,
-        stripY: treeBottom + below + Math.round(k * 0.39) + 22, font: vz.clamp(Math.round(k * 0.42), 9, 16),
+        stripY: treeBottom + below + Math.round(k * 0.39) + 22, font: vz.clamp(Math.round(k * 0.48), 10, 16),
         pos: function (id) { var p = lay.pos[id]; return p ? { x: ox + p.x * k, y: top + k / 2 + p.depth * levelH } : null; },
         colX: function (col) { return ox + (0.5 + col * opts.colGap) * k; }
       };

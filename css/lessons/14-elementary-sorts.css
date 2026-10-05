@@ -111,3 +111,14 @@
   .l14-labtabs { padding: 2px 10px 0; }
   .l14-lane__stage { min-height: 110px; }
 }
+
+/* Race lanes: one lane per row at every width (no lone lane in a half-empty second row); on wide figures the
+   stage and the stat cards sit side by side so "Comparisons" has room. */
+.l14-race { grid-template-columns: minmax(0, 1fr); }
+@container fig (min-width: 600px) {
+  .l14-lane { display: grid; grid-template-columns: minmax(0, 1fr) 150px; column-gap: 16px; align-items: end; }
+  .l14-lane__head { grid-column: 1 / -1; }
+  .l14-lane__stats { flex-direction: column; flex-wrap: nowrap; align-self: end; }
+  .l14-lane__stats .stat { flex: 0 0 auto; display: flex; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 10px 6px; }
+  .l14-lane__stats .stat__value { margin-top: 0; }
+}

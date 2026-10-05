@@ -176,7 +176,7 @@
   function spotlightFigure() {
     var fig = V.$('#fig-spotlight');
     var INPUT = [5, 8, 3, 6, 2, 7, 1, 4], n = INPUT.length;
-    var view = V.views.array(fig.querySelector('[data-stage]'), { mode: 'boxes', cellSize: 44, label: 'Bubble, selection and insertion sort after the same number of rounds' });
+    var view = V.views.array(fig.querySelector('[data-stage]'), { mode: 'boxes', cellSize: 44, badgeSize: 20, label: 'Bubble, selection and insertion sort after the same number of rounds' });
     var frames = {};
     ['bubble', 'selection', 'insertion'].forEach(function (a) { frames[a] = S().roundFrames(S().run(a, INPUT, { idPrefix: a[0] })); });
     var finalIndexOf = {};

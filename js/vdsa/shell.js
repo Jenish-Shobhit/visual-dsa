@@ -288,6 +288,14 @@
       bodyEl.appendChild(h('p', { class: 'muted', style: { padding: '16px 10px' } }, 'The course list could not be loaded on this page.'));
     }
 
+    /* Always present, even without curriculum data: the places that are not lessons. Paths come from VDSA.url, so they resolve from any depth. */
+    var more = h('ul', { class: 'drawer-labs drawer-more' });
+    [['labs', 'All labs', 'index.html#labs', 'Open playgrounds for your own input.'],
+     ['studies', 'Deep studies', 'studies/index.html', 'Long-form lecture notes with proofs and problem sets.'],
+     ['history', 'History', 'labs/history.html', 'An interactive timeline of algorithms and their people.']
+    ].forEach(function (m) { more.appendChild(h('li', null, h('a', { href: VDSA.url(m[2]) }, m[1], h('small', null, m[3])))); });
+    bodyEl.appendChild(h('section', { class: 'drawer__section drawer__section--more' }, h('h3', { class: 'drawer__label' }, 'Explore more'), more));
+
     drawer.appendChild(h('div', { class: 'drawer__foot' },
       h('button', { type: 'button', onclick: function () { closeContents(); setTimeout(showShortcuts, 50); } }, svgIcon(ICONS.keyboard), 'Keyboard shortcuts ', h('kbd', null, '?')),
       h('a', { href: VDSA.url('about.html'), style: { color: 'inherit' } }, 'About')
@@ -538,6 +546,8 @@
         h('nav', { 'aria-label': 'Site' },
           h('a', { href: VDSA.url('index.html') }, 'Home'),
           h('a', { href: VDSA.url('index.html#labs') }, 'Labs'),
+          h('a', { href: VDSA.url('studies/index.html') }, 'Deep studies'),
+          h('a', { href: VDSA.url('labs/history.html') }, 'History'),
           h('a', { href: VDSA.url('about.html') }, 'About'),
           h('button', { type: 'button', onclick: showShortcuts }, 'Keyboard shortcuts')))));
   }

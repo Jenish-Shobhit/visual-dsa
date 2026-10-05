@@ -1,0 +1,37 @@
+/* Shared page layout for every lab, the history page and About. Load this LAST.
+   One column (--lab-w, the site's --wide) holds hero, headings, prose, "Things to try" and stages, all on the same left edge.
+   Prose keeps the readable --measure but stays left-aligned inside that column. Lab internals live in each lab's own css. */
+body[data-page="lab"], body[data-page="about"] { --lab-w: var(--wide); --lab-col: min(var(--lab-w), 100% - 2 * var(--gutter)); }
+
+/* hero / page head: same width and left edge on every page, capped title size */
+body[data-page="lab"] main .hero,
+body[data-page="about"] main .hero { width: var(--lab-col); margin-inline: auto; }
+body[data-page="lab"] main :is(.hero__title, .sa-title, .pf-title, .gs-head__title, .ts-head__title, .cs-title),
+body[data-page="about"] main .hero__title {
+  font-size: clamp(2.2rem, 1.5rem + 2.6vw, 3.25rem); line-height: 1.04; max-width: none; text-wrap: balance;
+}
+body[data-page="lab"] main :is(.hero__lede, .sa-lede, .pf-lede, .gs-head__lede, .ts-head__lede, .cs-lede),
+body[data-page="about"] main .hero__lede { max-width: min(var(--measure), 100%); }
+body[data-page="lab"] main :is(.gs-head, .ts-head) { max-width: none; }
+
+/* lab wrappers: one wide column instead of per-lab widths */
+body[data-page="lab"] :is(.cs, .gs, .ts, .pf-wrap, .sa-wrap) { width: var(--lab-col); margin-inline: auto; }
+body[data-page="lab"] .sa-head { padding-inline: 0; }
+
+/* flow sections (chooser, big-o, history): content and wide share the lab column, left-aligned */
+body[data-page="lab"] main > .flow {
+  grid-template-columns: [full-start] minmax(var(--gutter), 1fr) [wide-start content-start] var(--lab-col) [content-end wide-end] minmax(var(--gutter), 1fr) [full-end];
+}
+body[data-page="lab"] main > .flow > .full { grid-column: wide; width: auto; justify-self: stretch; }
+body[data-page="lab"] main > .flow > :is(p, ul, ol) { max-width: min(var(--measure), 100%); }
+/* flow blocks nested inside a column that is already the lab column (graph / tree studio tips) */
+body[data-page="lab"] :is(.gs, .ts) > .flow { display: block; }
+body[data-page="lab"] :is(.gs-tips, .ts-tips, .pf-tips, .sa-tips) ul { max-width: min(var(--measure), 100%); }
+body[data-page="lab"] :is(.gs, .ts) > :is(.fig, .flow) { margin-inline: 0; }
+
+/* section headings in labs: same size and left edge everywhere */
+body[data-page="lab"] main :is(.gs-tips, .ts-tips, .gs-lessons) h2 { font-size: var(--fs-h2); }
+
+/* about: sections already use --wide; keep prose capped, balance headings */
+body[data-page="about"] main .about-sec { width: var(--lab-col); }
+body[data-page="lab"] main h2, body[data-page="about"] main h2 { text-wrap: balance; }

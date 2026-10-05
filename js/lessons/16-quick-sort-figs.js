@@ -371,7 +371,7 @@
       return (cache[key] = pts);
     }
     var NOTES = {
-      sorted: 'Sorted input: the last-element rule (and the first-element rule, which is identical here) makes n(n − 1)/2 comparisons and shoots off the top of the chart. Middle and median of three split perfectly. Random stays close to 1.39 n log₂ n.',
+      sorted: 'Sorted input: the last-element rule (and the first-element rule, which is identical here) makes n(n − 1)/2 comparisons and shoots off the top of the chart. Middle and median of three split perfectly. The random rule stays near n log₂ n at these sizes (the 1.39 factor is the large-n limit).',
       reversed: 'Reversed input is just as bad for the last-element rule. The middle element and median of three are still perfect here; random does not care.',
       shuffled: 'Shuffled input: nothing lines up against any rule, so all four sit close to n log₂ n (dashed). Simple rules only fail on inputs that are ordered against them.',
       few: 'Only three different values: every rule collapses, because Lomuto sends all values equal to the pivot to one side. Pivot choice cannot fix duplicates; a three-way partition can (later in this lesson).'
@@ -553,7 +553,7 @@
         series: PARTS.map(function (p) { return { id: p.id, label: p.label, values: data[p.id], state: p.state }; }),
         y: { label: 'comparisons, n = ' + n, min: 0 }
       }, { duration: dur === undefined ? 600 : dur });
-      readout.innerHTML = 'All values equal, n = ' + n + ': Lomuto makes <b>' + data.lomuto[0] + '</b> comparisons (n(n − 1)/2 = ' + (n * (n - 1) / 2) + '), Hoare <b>' + data.hoare[0] + '</b>, three-way <b>' + data.three[0] + '</b>. With three different values the three-way partition still wins clearly. On distinct values the three are within a factor of two of each other: Hoare pays extra comparisons to save swaps, and the three-way partition pays one comparison per value against the pivot.';
+      readout.innerHTML = 'All values equal, n = ' + n + ': Lomuto makes <b>' + data.lomuto[0] + '</b> comparisons (n(n − 1)/2 = ' + (n * (n - 1) / 2) + ' for the partitions themselves, plus the few comparisons spent choosing each median-of-three pivot), Hoare <b>' + data.hoare[0] + '</b>, three-way <b>' + data.three[0] + '</b>. With three different values the three-way partition still wins clearly. On distinct values the three are within a factor of two of each other: Hoare pays extra comparisons to save swaps, and the three-way partition pays one comparison per value against the pivot.';
     }
     V.slider(fig.querySelector('[data-slider]'), { label: 'n', min: 16, max: 128, step: 8, value: n, onInput: function (v) { n = v; draw(250); } });
     draw(0);

@@ -432,7 +432,7 @@
         if (preset === 'sorted' || preset === 'reversed') lesson = pivot === 'last' ? ' The last element is the largest (or smallest) in every range, so quick sort peels off one value per partition: a chain, as in the tree figure.' : ' The median of three finds the true middle of a sorted range, so quick sort keeps splitting evenly.';
         else if (preset === 'nearly') lesson = ' Insertion sort only pays for the disorder that is there' + (pivot === 'last' ? '; a last-element quick sort is also fooled by nearly sorted data.' : '.');
         else if (preset === 'few') lesson = ' Many equal values are a weakness of the two-way partition: quick sort loses ground here.';
-        else lesson = ' On random input, quick sort makes the fewest comparisons and modest moves.';
+        else lesson = ' On random input, quick sort needs far fewer ticks than insertion sort. Merge sort is in the same range.';
         return 'Finished: ' + order.map(function (l) { return '<b>' + label(l) + '</b> ' + l.total; }).join(', ') + ' ticks.' + lesson;
       }
       return 'Tick ' + t + '. ' + (done.length ? done.map(function (l) { return label(l) + ' finished at tick ' + l.total; }).join('; ') + '.' : 'All three are still working.');

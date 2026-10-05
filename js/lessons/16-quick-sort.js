@@ -143,13 +143,13 @@
     V.quiz('#quiz-quadratic', {
       id: 'l16-quadratic-inputs',
       question: 'Quick sort takes the <em>first</em> value as its pivot. Which of these inputs of distinct values make it quadratic? Pick all that apply.',
-      options: ['Already sorted: 1, 2, 3, 4, 5, 6', 'Reversed: 6, 5, 4, 3, 2, 1', 'A random shuffle', 'Zig-zag: 1, 6, 2, 5, 3, 4'],
-      answer: [0, 1, 3],
+      options: ['Already sorted: 1, 2, 3, 4, 5, 6', 'Reversed: 6, 5, 4, 3, 2, 1', 'A random shuffle', 'Mixed order: 3, 1, 4, 2, 6, 5'],
+      answer: [0, 1],
       explain: [
         'Yes. The first value is the smallest in its range, so one side is empty every time: n − 1, n − 2, … comparisons.',
         'Yes. The first value is the largest in its range every time, so the other side is empty: again a chain.',
         'No. A random pivot position in a random order splits at a random point, and random splits give about 1.39 n log₂ n on average.',
-        'Yes, surprisingly. The first value 1 is the minimum; then the first value of the rest, 6, is the maximum; then 2 the minimum, and so on. Every pivot is an extreme of its range.'
+        'No. The first value 3 splits the other five into two and three, close to the middle. Only an input that gives a lopsided split at every level is quadratic. (The zig-zag 1, 6, 2, 5, 3, 4 looks bad but takes 13 comparisons, not the 15 of a sorted run.)'
       ]
     });
     V.quiz('#quiz-select', {

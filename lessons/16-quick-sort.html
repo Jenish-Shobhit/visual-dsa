@@ -39,7 +39,7 @@
     <div class="hero__text">
       <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
       <h1 class="hero__title">Quick sort &amp; quickselect</h1>
-      <p class="hero__lede">Pick a value, send smaller ones left and larger ones right, and repeat on each side. That one move sorts a million values in about 28 million comparisons, and it also finds the median without sorting. Whether it is fast or slow depends on a single choice: the pivot.</p>
+      <p class="hero__lede">Pick a value, send smaller ones left and larger ones right, and repeat on each side. That one move sorts a million values in about 25 million comparisons, and it also finds the median without sorting. Whether it is fast or slow depends on a single choice: the pivot.</p>
       <ul class="hero__meta" aria-label="About this lesson">
         <li class="chip" data-icon="clock">25 min</li>
         <li class="chip" data-icon="level">Intermediate</li>
@@ -54,7 +54,7 @@
     <!-- ============================================================ THE PROBLEM -->
     <section id="problem">
       <h2 data-toc="The problem">Split first, sort later</h2>
-      <p>The sorts in lesson 14 compare and move values one neighbour at a time, so they need about n²/2 comparisons. A million values would take half a trillion. Quick sort needs about 1.4 · n · log₂ n: roughly 28 million for the same million values.</p>
+      <p>The sorts in lesson 14 compare and move values one neighbour at a time, so they need about n²/2 comparisons. A million values would take half a trillion. Quick sort needs about 1.39 · n · log₂ n comparisons for large n. For the same million values the exact average is about 25 million.</p>
       <p>The trick is to cut the job in two before doing any real work. Pick any value and call it the <dfn>pivot</dfn>. Send every smaller value to its left and every larger value to its right. The pivot is now exactly where it belongs, and the two sides can be sorted separately.</p>
       <p>Try it by hand. Click a value inside a shaded group: it becomes the pivot, and the group splits around it. Keep going until every value is green.</p>
       <figure class="fig wide" id="fig-hand">
@@ -354,7 +354,7 @@
     <!-- ============================================================ RACE -->
     <section id="race">
       <h2 data-toc="Race">Race: quick, merge and insertion sort</h2>
-      <p>Same input, three lanes, one clock. Each tick pays for one comparison or one move. Try <em>Random</em>, then <em>Sorted</em> with the last-element pivot: quick sort suddenly loses to insertion sort. Switch its pivot to the median of three and it is back in front.</p>
+      <p>Same input, three lanes, one clock. Each tick pays for one comparison or one move. Try <em>Random</em>, then <em>Sorted</em> with the last-element pivot: quick sort suddenly loses to insertion sort. Switch its pivot to the median of three and it is back ahead of merge sort (insertion sort still wins on already sorted input, because it only has to check).</p>
       <figure class="fig full" id="fig-race">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Quick sort vs merge sort vs insertion sort</h3></div>

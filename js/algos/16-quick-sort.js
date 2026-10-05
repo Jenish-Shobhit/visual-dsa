@@ -692,7 +692,7 @@
     R.snap('start', {
       caption: n === 1 ? 'One value on its own is already sorted.' : (opts.once
         ? 'One partition of the whole array. Pick a pivot, then rearrange so that small values end up on its left and large ones on its right.'
-        : 'Quick sort picks a pivot, partitions the range around it, then does the same to each side. The recursion tree on the right grows as the calls happen.'),
+        : 'Quick sort picks a pivot, partitions the range around it, then does the same to each side. The recursion tree below grows as the calls happen.'),
       line: 'call', flow: 'start', vars: { lo: 0, hi: n - 1 }
     });
     var part = kind === 'lomuto' ? lomutoPartition : hoarePartition;

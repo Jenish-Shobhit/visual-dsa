@@ -129,7 +129,8 @@
         var r = rows[k], isNew = !r;
         if (!r) r = rows[k] = makeRow(k);
         var defined = Object.prototype.hasOwnProperty.call(obj, k);
-        var f = defined ? format(obj[k]) : PLACEHOLDER;
+        /* a variable that is JS null/undefined is "not set yet": the panel shows the muted placeholder (raw('null') shows the word) */
+        var f = defined && obj[k] !== null && obj[k] !== undefined ? format(obj[k]) : PLACEHOLDER;
         var changed = r.text !== f.text;
         r.row.classList.remove('is-changed');
         r.row.classList.toggle('is-unset', !defined);

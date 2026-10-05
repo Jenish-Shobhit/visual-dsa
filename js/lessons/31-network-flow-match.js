@@ -46,9 +46,36 @@
   function matchFigure(fig) {
     var seed = 5, residual = false, pairs = parsePairs(PRESETS[0].text).values.pairs;
     var m = NF.matchingNetwork(pairs), net = m.net;
-    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: { w: 1000, h: 600 }, maxHeight: 420, label: 'Workers and jobs as a flow network', nodeRadius: 26, minRadius: 18 });
+    var stage = fig.querySelector('[data-stage]');
+    var view = null, narrow = null, pos = null, labelT = null, laidW = 0;
     function isMiddle(e) { return e.from.indexOf('w:') === 0 && e.to.indexOf('j:') === 0; }
-    var labelT = L.spreadLabels(net, isMiddle);
+    /* Narrow stages (phones): s on top, the workers row, the jobs row, t at the bottom, so the picture can use the
+       whole width and height instead of a 1000 x 600 box shrunk to a thumbnail. Every pill gets its own spot. */
+    var NARROW_PX = 560, NB = { w: 600, h: 1000 }, NMAX = 580, NPILL = [40, 22], NR = 19;
+    function narrowScale() { return Math.max(0.2, Math.min(((stage.clientWidth || 340) - 2 * (NR + 18)) / NB.w, (NMAX - 2 * (NR + 18)) / NB.h)); }
+    function rowX(i, n) { return n === 1 ? NB.w / 2 : 70 + (NB.w - 140) * i / (n - 1); }
+    function narrowPositions() {
+      var P = { s: { x: NB.w / 2, y: 40 }, t: { x: NB.w / 2, y: NB.h - 40 } };
+      m.workers.forEach(function (w, i) { P['w:' + w] = { x: rowX(i, m.workers.length), y: 290 }; });
+      m.jobs.forEach(function (j, i) { P['j:' + j] = { x: rowX(i, m.jobs.length), y: 710 }; });
+      return P;
+    }
+    function computeLabels() {
+      if (!narrow) { pos = null; labelT = L.spreadLabels(net, isMiddle); return; }
+      laidW = stage.clientWidth;
+      var k = narrowScale();
+      pos = narrowPositions();
+      labelT = L.spreadLabels(net, null, { pos: pos, m: { pw: NPILL[0] / k, ph: NPILL[1] / k, nw: (NR + 27) / k, nh: (NR + 17) / k } });
+    }
+    function buildView() {
+      narrow = stage.clientWidth > 0 && stage.clientWidth < NARROW_PX;
+      if (view) view.destroy();
+      view = narrow
+        ? V.views.graph(stage, { directed: true, bounds: { w: NB.w, h: NB.h }, maxHeight: NMAX, label: 'Workers and jobs as a flow network', nodeRadius: 24, minRadius: NR, arrowSize: 9 })
+        : V.views.graph(stage, { directed: true, bounds: { w: 1000, h: 600 }, maxHeight: 420, label: 'Workers and jobs as a flow network', nodeRadius: 26, minRadius: 18 });
+      computeLabels();
+    }
+    buildView();
     var list = fig.querySelector('[data-assign]');
     var rowEls = {}, lastAssign = {};
     L.legend(fig.querySelector('[data-legend]'), [L.LEG.path, L.LEG.reverse, { state: 'done', shape: 'line', label: 'Assigned pair' }, L.LEG.flow, L.LEG.cut, L.LEG.side]);
@@ -121,7 +148,7 @@
       V.clear(list); rowEls = {}; lastAssign = {};
     }
     function render(step, ctx) {
-      view.render(L.flowState(net, step, { residual: residual, labelT: labelT }), { duration: ctx.duration });
+      view.render(L.flowState(net, step, { residual: residual, labelT: labelT, pos: pos }), { duration: ctx.duration });
       drawAssign(step, ctx.duration);
     }
     rebuildList();
@@ -154,7 +181,7 @@
     }, { id: 'nf-match-reroute' });
 
     function setPairs(p) {
-      pairs = p; m = NF.matchingNetwork(pairs); net = m.net; labelT = L.spreadLabels(net, isMiddle);
+      pairs = p; m = NF.matchingNetwork(pairs); net = m.net; computeLabels();
       if (view.resetPositions) view.resetPositions();
       rebuildList();
       player.setSteps(generate());
@@ -172,7 +199,12 @@
     });
     V.toggle(fig.querySelector('[data-residual]'), {
       label: 'Show the residual graph', checked: false,
-      onChange: function (on) { residual = on; view.render(L.flowState(net, player.step, { residual: residual, labelT: labelT }), { duration: 450 }); }
+      onChange: function (on) { residual = on; view.render(L.flowState(net, player.step, { residual: residual, labelT: labelT, pos: pos }), { duration: 450 }); }
+    });
+    /* crossing the phone breakpoint (rotating, resizing) swaps the layout */
+    V.onResize(stage, function () {
+      var w = stage.clientWidth;
+      if (w > 0 && ((w < NARROW_PX) !== narrow || (narrow && Math.abs(w - laidW) > 6))) { if ((w < NARROW_PX) !== narrow) buildView(); else computeLabels(); view.render(L.flowState(net, player.step, { residual: residual, labelT: labelT, pos: pos }), { duration: 0 }); }
     });
     void input;
   }

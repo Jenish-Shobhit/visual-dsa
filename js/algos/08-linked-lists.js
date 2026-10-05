@@ -66,6 +66,9 @@
   function listValues(L) { return chainIds(L).map(function (id) { return L.byId[id].value; }); }
   function arrow(vals) { return vals.length ? vals.join(' → ') + ' → null' : 'null (empty list)'; }
   function val(L, id) { return id === null || id === undefined || !L.byId[id] ? null : L.byId[id].value; }
+  /* variables panel: a null pointer reads as the word null (the panel shows a dash for plain JS null) */
+  var NUL = { __vdsaRaw: true, text: 'null', type: 'null' };
+  function pv(L, id) { var v = val(L, id); return v === null ? NUL : v; }
   function vis() { return { st: {}, ns: {}, ps: {}, det: {}, pos: {}, lab: {}, txt: {} }; }
   function copy(o) { var c = {}; for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) c[k] = o[k]; return c; }
   function removeNode(L, id) {
@@ -109,7 +112,7 @@
     function P() { return node ? [{ name: 'node', target: node, state: 'key', side: 'below' }] : []; }
     function push(kind, cap, line, extra) {
       steps.push(Object.assign(snap(L, v, P()), { kind: kind, caption: cap, line: line, counters: counters(0, 0, w),
-        vars: { x: x, head: val(L, L.head), 'node.next': node ? val(L, L.byId[node].next) : null } }, extra || {}));
+        vars: { x: x, head: pv(L, L.head), 'node.next': node ? pv(L, L.byId[node].next) : NUL } }, extra || {}));
     }
     push('start', 'Insert <b>' + x + '</b> at the front of ' + arrow(listValues(L)) + '. The head pointer is all you need: no walking.', null);
     L.byId[NEW] = { id: NEW, value: x, next: null, prev: null };
@@ -140,7 +143,7 @@
     }
     function push(kind, cap, line, extra) {
       steps.push(Object.assign(snap(L, v, P()), { kind: kind, caption: cap, line: line, counters: counters(h, 0, w),
-        vars: { x: x, i: i, k: k, prev: val(L, prev), 'node.next': node ? val(L, L.byId[node].next) : null } }, extra || {}));
+        vars: { x: x, i: i, k: k, prev: pv(L, prev), 'node.next': node ? pv(L, L.byId[node].next) : NUL } }, extra || {}));
     }
     push('start', 'Insert <b>' + x + '</b> so it becomes index ' + i + ' of ' + arrow(listValues(L)) + '.', null);
     L.byId[NEW] = { id: NEW, value: x, next: null, prev: null };
@@ -196,8 +199,8 @@
       return p;
     }
     function push(kind, cap, line, extra) {
-      var vars = { x: x, head: val(L, L.head) };
-      if (useTail) vars.tail = val(L, L.tail); else vars.curr = val(L, curr);
+      var vars = { x: x, head: pv(L, L.head) };
+      if (useTail) vars.tail = pv(L, L.tail); else vars.curr = pv(L, curr);
       steps.push(Object.assign(snap(L, v, P()), { kind: kind, caption: cap, line: line, counters: counters(h, 0, w), vars: vars }, extra || {}));
     }
     push('start', useTail
@@ -252,7 +255,7 @@
     function push(kind, cap, line, flow, extra) {
       var pn = prev !== null && L.byId[prev] ? L.byId[prev].next : null;
       steps.push(Object.assign(snap(L, v, P()), { kind: kind, caption: cap, line: line, flow: flow, counters: counters(h, c, w),
-        vars: { x: x, head: val(L, L.head), prev: val(L, prev), 'prev.next': prev === null ? null : val(L, pn) } }, extra || {}));
+        vars: { x: x, head: pv(L, L.head), prev: pv(L, prev), 'prev.next': prev === null ? NUL : pv(L, pn) } }, extra || {}));
     }
     push('start', 'Delete the first node holding <b>' + x + '</b> from ' + arrow(listValues(L)) + '.', null, 'start');
     push('empty', L.head === null ? 'head is null: the list is empty.' : 'head is not null, so there is at least one node to check.', 'empty', 'empty');
@@ -300,7 +303,7 @@
     function P() { return i === null ? [] : [{ name: 'curr', target: curr, state: 'active' }]; }
     function push(kind, cap, line, extra) {
       steps.push(Object.assign(snap(L, v, P()), { kind: kind, caption: cap, line: line, counters: counters(h, c, 0),
-        vars: { x: x, curr: val(L, curr), i: i } }, extra || {}));
+        vars: { x: x, curr: pv(L, curr), i: i } }, extra || {}));
     }
     push('start', 'Search ' + arrow(listValues(L)) + ' for <b>' + x + '</b>. There is no index arithmetic: start at the head and follow next.', null);
     curr = L.head; i = 0;
@@ -432,7 +435,7 @@
     function push(kind, cap, line, flipId, extra) {
       paint(flipId);
       steps.push(Object.assign(snap(L, v, P()), { kind: kind, caption: cap, line: line, counters: { loops: loops, writes: w },
-        vars: { prev: val(L, prev), curr: val(L, curr), next: showNext ? val(L, nxt) : null } }, extra || {}));
+        vars: { prev: pv(L, prev), curr: pv(L, curr), next: showNext ? pv(L, nxt) : null } }, extra || {}));
     }
     push('init', 'prev ← null, curr ← head. prev will lead the reversed part (empty so far); curr is the first node still pointing forward.', 'init');
     while (true) {
@@ -451,7 +454,7 @@
     var done = {};
     L.order.forEach(function (id) { done[id] = 'done'; });
     steps.push(Object.assign(snap(L, { st: done, ns: {}, ps: {}, det: {}, pos: {}, lab: {}, txt: {} }, P()), {
-      kind: 'head', line: 'head', counters: { loops: loops, writes: w }, vars: { prev: val(L, prev), curr: null, next: null },
+      kind: 'head', line: 'head', counters: { loops: loops, writes: w }, vars: { prev: pv(L, prev), curr: NUL, next: NUL },
       caption: prev === null ? 'head ← prev, which is null: an empty list reversed is still empty.'
         : 'head ← prev: ' + val(L, prev) + ', the old tail, is the new head. ' + arrow(listValues(L)) + ', using O(1) extra space and ' + plural(w, 'pointer write') + '.',
       result: listValues(L)

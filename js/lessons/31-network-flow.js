@@ -133,11 +133,13 @@
   /* Pill placement. A pill stays at its edge's midpoint unless that spot is crowded; then it slides along the
      edge (labelT 0.2 .. 0.8) to the spot farthest from other pills and from the vertices. Distances are in
      the 1000-wide box, scaled by roughly one pill (110 x 70) and one vertex (130 x 100).  */
-  function pickT(a, b, pills, nodes) {
+  var WIDE_M = { pw: 125, ph: 80, nw: 175, nh: 120 };
+  function pickT(a, b, pills, nodes, m) {
+    m = m || WIDE_M;
     function score(t) {
       var x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t, sc = 9;
-      pills.forEach(function (q) { sc = Math.min(sc, Math.max(Math.abs(x - q.x) / 125, Math.abs(y - q.y) / 80)); });
-      nodes.forEach(function (q) { sc = Math.min(sc, Math.max(Math.abs(x - q.x) / 175, Math.abs(y - q.y) / 120)); });
+      pills.forEach(function (q) { sc = Math.min(sc, Math.max(Math.abs(x - q.x) / m.pw, Math.abs(y - q.y) / m.ph)); });
+      nodes.forEach(function (q) { sc = Math.min(sc, Math.max(Math.abs(x - q.x) / m.nw, Math.abs(y - q.y) / m.nh)); });
       return sc;
     }
     if (score(0.5) >= 1) return 0.5;
@@ -170,14 +172,17 @@
   };
 
   /* Same for the plain network: returns {'from-to': t} for the edges `edgeFilter` accepts. */
-  L.spreadLabels = function (net, edgeFilter) {
-    var N = L.norm(net), P = N.positions, nodes = nodePts(P), list = N.edges.filter(function (e) { return (!edgeFilter || edgeFilter(e)) && P[e.from] && P[e.to]; });
+  /* o (optional, for narrow layouts): {pos: {id: {x, y}} replacement positions, m: {pw, ph, nw, nh} the distances (in
+     logical units) that keep two pills / a pill and a vertex apart}. */
+  L.spreadLabels = function (net, edgeFilter, o) {
+    o = o || {};
+    var m = o.m || WIDE_M, N = L.norm(net), P = o.pos || N.positions, nodes = nodePts(P), list = N.edges.filter(function (e) { return (!edgeFilter || edgeFilter(e)) && P[e.from] && P[e.to]; });
     function pt(i, t) { var a = P[list[i].from], b = P[list[i].to]; return { x: a.x + (b.x - a.x) * t[i], y: a.y + (b.y - a.y) * t[i] }; }
     function worst(t) {
       var w = 9, pts = list.map(function (e, i) { return pt(i, t); });
       pts.forEach(function (p, i) {
-        for (var k = i + 1; k < pts.length; k++) w = Math.min(w, Math.max(Math.abs(p.x - pts[k].x) / 125, Math.abs(p.y - pts[k].y) / 80));
-        nodes.forEach(function (q) { w = Math.min(w, Math.max(Math.abs(p.x - q.x) / 150, Math.abs(p.y - q.y) / 110)); });
+        for (var k = i + 1; k < pts.length; k++) w = Math.min(w, Math.max(Math.abs(p.x - pts[k].x) / m.pw, Math.abs(p.y - pts[k].y) / m.ph));
+        nodes.forEach(function (q) { w = Math.min(w, Math.max(Math.abs(p.x - q.x) / (m.nw * 0.857), Math.abs(p.y - q.y) / (m.nh * 0.917))); });
       });
       return w;
     }
@@ -186,7 +191,7 @@
         list.forEach(function (e, i) {
           var others = [];
           list.forEach(function (f, k) { if (k !== i) others.push(pt(k, t)); });
-          t[i] = pickT(P[e.from], P[e.to], others, nodes);
+          t[i] = pickT(P[e.from], P[e.to], others, nodes, m);
         });
       }
       return t;

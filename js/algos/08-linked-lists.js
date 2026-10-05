@@ -507,7 +507,7 @@
       push('move', 'Turn ' + moves + ': slow has walked ' + moves + ', fast ' + (2 * moves) + '. fast is always twice as far along.');
     }
     var idx = L.order.indexOf(slow);
-    push('done', (fast === null ? 'fast fell off the end (even length, ' + n + ' nodes)' : 'fast is on the last node (odd length, ' + n + ' nodes)') +
+    push('done', (fast === null ? 'fast fell off the end (even length, ' + plural(n, 'node') + ')' : 'fast is on the last node (odd length, ' + plural(n, 'node') + ')') +
       ', so slow has walked half the way: index ' + idx + ', value <b>' + val(L, slow) + '</b>.' + (n % 2 === 0 ? ' With an even length this is the second of the two middle nodes.' : ''), { result: idx });
     return steps;
   }

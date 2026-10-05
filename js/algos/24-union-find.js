@@ -521,12 +521,13 @@
     return out;
   }
 
-  /* inverse Ackermann, CLRS version: A_k(1) = 2, 3, 7, 2047, then A_4(1) = 2^2059 - 1 (about 620 digits).
+  /* inverse Ackermann, CLRS version: A_k(1) = 2, 3, 7, 2047, then A_4(1) = A_3(2047), a tower of 2s about 2000 levels high
+     (A_2(2047) = 2^2059 - 1 alone has 620 digits).
      alpha(n) = smallest k with A_k(1) >= n. So n = 3 gives 1, 4..7 give 2, 8..2047 give 3, and everything from
-     2048 to about 10^620 (far beyond the atoms in the universe) gives 4. */
+     2048 to A_4(1) (far beyond the atoms in the universe) gives 4. */
   function alpha(n) {
     if (n <= 2) return 0; if (n <= 3) return 1; if (n <= 7) return 2; if (n <= 2047) return 3;
-    return 4;   // n up to ~2^2059; larger inputs cannot be stored
+    return 4;   // every n that can ever be stored is below A_4(1)
   }
 
   /* ================================================================== percolation */

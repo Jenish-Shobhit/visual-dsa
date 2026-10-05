@@ -178,7 +178,32 @@
     if (!tokens.length) return { tokens: [], error: 'Type at least one token.' };
     if (tokens.length > max) return { tokens: [], error: 'Keep it to ' + max + ' tokens or fewer so every step stays readable.' };
     if (tokens.some(function (x) { return isNum(x) && x.length > 3; })) return { tokens: [], error: 'Use numbers up to 999.' };
+    if (opts.parens) {
+      var bad2 = infixShapeError(tokens);
+      if (bad2) return { tokens: [], error: bad2 };
+    }
     return { tokens: tokens, error: null };
+  }
+
+  /* Infix must alternate operand, operator, operand ...; a group may not be empty. */
+  function infixShapeError(tokens) {
+    var expectOperand = true, depth = 0;
+    for (var k = 0; k < tokens.length; k++) {
+      var x = tokens[k];
+      if (expectOperand) {
+        if (isNum(x)) expectOperand = false;
+        else if (x === '(') depth++;
+        else if (x === ')') return k && tokens[k - 1] === '(' ? 'The parentheses are empty: put an expression between ( and ).' : 'An operand is missing before “)”: an operator needs a number on both sides.';
+        else if (k && isOp(tokens[k - 1])) return 'Two operators in a row (“' + pretty(tokens[k - 1]) + ' ' + pretty(x) + '”): an operator needs a number on both sides.';
+        else return 'The operator “' + pretty(x) + '” has no number before it: an operator needs a number on both sides.';
+      } else {
+        if (isOp(x)) expectOperand = true;
+        else if (x === ')') { if (depth) depth--; /* unmatched ) is reported by the stepper */ }
+        else return 'Two operands in a row (“' + pretty(tokens[k - 1]) + ' ' + pretty(x) + '”): an operator is missing between them.';
+      }
+    }
+    if (expectOperand) return 'The expression ends with an operator or an open (: it needs an operand to finish.';
+    return null;
   }
 
   function evalPostfix(tokens) {
@@ -246,9 +271,13 @@
         var bId = stack[stack.length - 1], aId = stack[stack.length - 2];
         var bv = nodes[bId].value, av = nodes[aId].value;
         var popStates = {}; popStates[aId] = 'compare'; popStates[bId] = 'compare';
-        stack.pop(); stack.pop(); pops += 2;
-        snap('pop', k, { held: { a: aId, b: bId }, nodeStates: popStates, a: av, b: bv, line: ['popb', 'popa'],
-          caption: bold(pretty(t)) + ' is an operator. Pop <b>b = ' + fmtNum(bv) + '</b> first (the newest, so the right operand), then <b>a = ' + fmtNum(av) + '</b>. The order matters for − and ÷.' });
+        var popB = {}; popB[bId] = 'compare';
+        stack.pop(); pops++;
+        snap('pop', k, { held: { b: bId }, nodeStates: popB, b: bv, line: 'popb',
+          caption: bold(pretty(t)) + ' is an operator. Pop <b>b = ' + fmtNum(bv) + '</b> first: it is the newest value, so it is the right operand.' });
+        stack.pop(); pops++;
+        snap('pop', k, { held: { a: aId, b: bId }, nodeStates: popStates, a: av, b: bv, line: 'popa',
+          caption: 'Pop <b>a = ' + fmtNum(av) + '</b> next: it is the left operand. The order matters for − and ÷.' });
         if (t === '/' && bv === 0) {
           snap('error', k, { tokState: 'error', error: 'divzero', result: 'error', held: { a: aId, b: bId }, nodeStates: popStates, a: av, b: bv, line: 'apply',
             caption: 'Dividing ' + fmtNum(av) + ' by 0 is undefined, so the evaluation stops here.' });

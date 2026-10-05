@@ -262,8 +262,21 @@ test('postfix errors: underflow, leftover values, division by zero, and the trac
   steps.slice(0, -1).forEach(s => assert.equal(s.result, null));
   // operand order: 9 3 - is 6, not -6
   assert.equal(S.evalPostfix(['9', '3', '-']).value, 6);
-  const popStep = S.postfixSteps(['9', '3', '-']).find(s => s.kind === 'pop');
+  const popStep = S.postfixSteps(['9', '3', '-']).filter(s => s.kind === 'pop').pop();
   assert.equal(popStep.vars.a, '9'); assert.equal(popStep.vars.b, '3');
+});
+
+test('infix with misplaced operators or empty groups is rejected', () => {
+  const e = x => S.tokenizeExpr(x, { parens: true }).error;
+  for (const bad of ['1 + + 2', '1 2', '()', '1 + ( )', '( + 3 )', '- 3', '3 +', '3 + (', '2 ( 3 )', '( 3 ) 4', '3 * / 4']) assert.ok(e(bad), bad);
+  for (const ok of ['3 + 4 * 2', '( 3 + 4 ) * 2', '1 + ( 2 * ( 3 - 4 ) )', '( ( 5 ) )', '( 3 + 4', '3 + 4 )']) assert.equal(e(ok), null, ok);
+});
+
+test('postfix pops are two steps: b then a', () => {
+  const pops = S.postfixSteps(['9', '3', '-']).filter(s => s.kind === 'pop');
+  assert.equal(pops.length, 2);
+  assert.equal(pops[0].line, 'popb'); assert.equal(pops[0].counters.pops, 1); assert.equal(pops[0].vars.a, null);
+  assert.equal(pops[1].line, 'popa'); assert.equal(pops[1].counters.pops, 2);
 });
 
 /* ============================================================ shunting-yard */

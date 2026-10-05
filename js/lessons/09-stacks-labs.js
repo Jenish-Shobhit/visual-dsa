@@ -297,7 +297,7 @@
     V.inputRow(fig.querySelector('[data-input]'), {
       label: 'Infix expression', value: SHUNT_DEFAULT, placeholder: 'e.g. 3 + 4 * ( 2 − 1 )',
       hint: 'Whole numbers, + − * / and parentheses. Up to ' + A().EXPR_MAX + ' tokens.',
-      parse: function (text) { var r = A().tokenizeExpr(text, { parens: true }); return { values: r.tokens, error: r.error }; },
+      parse: function (text) { var r = A().tokenizeExpr(text, { parens: true }); if (r.error) { send.disabled = true; send.dataset.out = ''; } return { values: r.tokens, error: r.error }; },
       presets: [{ label: '3 + 4 × 2', value: '3 + 4 * 2' }, { label: '(3 + 4) × 2', value: '( 3 + 4 ) * 2' }, { label: '8 − 3 − 2', value: '8 - 3 - 2' }, { label: 'Nested', value: '1 + ( 2 * ( 3 - 4 ) )' }, { label: 'Missing )', value: '( 3 + 4' }],
       onApply: function (toks) { player.setSteps(generate(toks)); }
     });

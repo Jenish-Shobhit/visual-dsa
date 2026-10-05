@@ -7,7 +7,7 @@
    - Component rules turn --vz-c into --vz-fill / --vz-stroke / --vz-ink (items) or stroke (edges).
    - Shapes consume those variables, and fill/stroke transitions use --vz-dur, which each view sets on its
      root <svg> per render (the player's step duration, 0 under reduced motion).
-   - Text on a filled state uses --on-state, except on the bright states (compare, swap, done, frontier,
+   - Text on a filled state uses --on-state, except on the bright states (compare, swap, update, done, frontier,
      path) where a tonal dark ink (state colour mixed with black) keeps contrast >= 4.5:1 in both themes.
    - State-coloured text on the page background uses --vz-text, a mix of the state colour with --ink,
      which darkens in light mode and lightens in dark mode.
@@ -42,6 +42,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz .is-active   { --vz-c: var(--st-active); }
 .vz .is-compare  { --vz-c: var(--st-compare); }
 .vz .is-swap     { --vz-c: var(--st-swap); }
+.vz .is-update   { --vz-c: var(--st-update); }
 .vz .is-done     { --vz-c: var(--st-done); }
 .vz .is-found    { --vz-c: var(--st-found); }
 .vz .is-visited  { --vz-c: var(--st-visited); }
@@ -61,12 +62,12 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
   --vz-ink: var(--el-ink);
   --vz-sw: 1.5px;
 }
-.vz .vz-item:is(.is-active, .is-compare, .is-swap, .is-done, .is-found, .is-frontier, .is-path, .is-pivot, .is-key, .is-error) {
+.vz .vz-item:is(.is-active, .is-compare, .is-swap, .is-update, .is-done, .is-found, .is-frontier, .is-path, .is-pivot, .is-key, .is-error) {
   --vz-fill: var(--vz-c);
   --vz-stroke: var(--vz-c);
   --vz-ink: var(--on-state);
 }
-.vz .vz-item:is(.is-compare, .is-swap, .is-done, .is-frontier, .is-path) {
+.vz .vz-item:is(.is-compare, .is-swap, .is-update, .is-done, .is-frontier, .is-path) {
   --vz-ink: color-mix(in srgb, var(--vz-c) 20%, black);
 }
 .vz .vz-item.is-visited {
@@ -100,7 +101,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz .vz-badge text { fill: var(--ink-2); font: 650 10px var(--font-mono); }
 .vz .vz-badge[class*="is-"]:not(.is-default) rect { fill: var(--vz-c); stroke: var(--vz-c); }
 .vz .vz-badge[class*="is-"]:not(.is-default) text { fill: var(--on-state); }
-.vz .vz-badge:is(.is-compare, .is-swap, .is-done, .is-frontier, .is-path) text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
+.vz .vz-badge:is(.is-compare, .is-swap, .is-update, .is-done, .is-frontier, .is-path) text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
 
 /* Quiet labels: indices, addresses, axis text */
 .vz .vz-label { fill: var(--ink-3); font: 500 11px var(--font-mono); }
@@ -137,7 +138,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz .vz-pointer .vz-ptr-label { fill: var(--vz-text); font: 700 12px var(--font-mono); transition: fill var(--vz-dur) var(--vz-ease); }
 .vz .vz-pointer .vz-ptr-chip { fill: var(--vz-c); transition: fill var(--vz-dur) var(--vz-ease); }
 .vz .vz-pointer .vz-ptr-chip-text { fill: var(--on-state); font: 700 11.5px var(--font-mono); }
-.vz .vz-pointer:is(.is-compare, .is-swap, .is-done, .is-frontier, .is-path) .vz-ptr-chip-text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
+.vz .vz-pointer:is(.is-compare, .is-swap, .is-update, .is-done, .is-frontier, .is-path) .vz-ptr-chip-text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
 
 /* ============================================================ regions (sorted, window, partition ...) */
 .vz .vz-region:not([class*=" is-"]) { --vz-c: var(--st-active); }
@@ -173,6 +174,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz-legend-item.is-active   { --vz-c: var(--st-active); }
 .vz-legend-item.is-compare  { --vz-c: var(--st-compare); }
 .vz-legend-item.is-swap     { --vz-c: var(--st-swap); }
+.vz-legend-item.is-update   { --vz-c: var(--st-update); }
 .vz-legend-item.is-done     { --vz-c: var(--st-done); }
 .vz-legend-item.is-found    { --vz-c: var(--st-found); }
 .vz-legend-item.is-visited  { --vz-c: var(--st-visited); }
@@ -289,7 +291,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz-grid .vz-marker .vz-marker-inner { fill: var(--vz-c); }
 .vz-grid .vz-marker .vz-marker-text { fill: var(--on-state); font: 750 11px var(--font-sans); }
 .vz-grid .vz-marker.is-end .vz-marker-text { fill: var(--vz-text); }
-.vz-grid .vz-marker:is(.is-compare, .is-swap, .is-done, .is-frontier, .is-path):not(.is-end) .vz-marker-text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
+.vz-grid .vz-marker:is(.is-compare, .is-swap, .is-update, .is-done, .is-frontier, .is-path):not(.is-end) .vz-marker-text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
 /* keyboard focus cell */
 .vz-grid .vz-kfocus { fill: none; stroke: var(--accent); stroke-width: 2.5px; pointer-events: none; }
 /* end grid */

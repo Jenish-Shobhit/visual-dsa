@@ -222,7 +222,7 @@
         if (at >= 0) {
           if (o.value !== undefined && chain[at].value !== o.value) {
             chain[at].value = o.value;
-            var mk = {}; mk[id] = 'swap';
+            var mk = {}; mk[id] = 'update';
             snap('update', kb(key) + ' is already here, so a map overwrites its value with <b>' + esc(String(o.value)) + '</b> instead of storing a second copy.', L[2], { marks: mk, hash: hv, vars: baseVars });
           } else {
             snap('dup', kb(key) + ' is already in the table. A set stores each key once, so nothing changes.', L[2], { marks: (function () { var s = {}; s[id] = 'found'; return s; }()), hash: hv, vars: baseVars });

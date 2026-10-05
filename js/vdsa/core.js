@@ -31,6 +31,7 @@
     active: 'current element or pointer focus',
     compare: 'being compared or examined',
     swap: 'being moved, written or swapped',
+    update: 'value overwritten in place',
     done: 'finalised: sorted, settled, confirmed',
     found: 'successful search result',
     visited: 'already processed',

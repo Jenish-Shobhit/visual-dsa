@@ -41,7 +41,9 @@
       <ul class="hero__meta" aria-label="About this lesson">
         <li class="chip" data-icon="clock">24 min</li>
         <li class="chip" data-icon="level">Intermediate</li>
-        <li class="chip" data-icon="prereq">Needs: sorting, heaps, trees</li>
+        <li><a class="chip" data-icon="prereq" href="14-elementary-sorts.html">Needs: Sorting</a></li>
+        <li><a class="chip" data-icon="prereq" href="21-heaps.html">Needs: Heaps</a></li>
+        <li><a class="chip" data-icon="prereq" href="18-trees.html">Needs: Trees</a></li>
       </ul>
     </div>
     <div class="hero__stage gr-hero" id="teaser" role="img" aria-label="Animation: eight meeting requests sit on a timeline. They re-order by finish time, then the earliest-finishing request is kept, every request that overlaps it fades out, and the next request that fits is kept, until four requests fill the room."></div>
@@ -86,7 +88,7 @@
         <figcaption class="fig__alt">Text alternative: a landscape line. The hiker climbs to whichever neighbour is higher. On a single hill this reaches the top; on a two-hill landscape starting on the small hill ends on the small peak.</figcaption>
       </figure>
       <aside class="callout callout--def"><p class="callout__title">Definition</p><p>A <dfn>greedy algorithm</dfn> builds an answer one piece at a time. At each step it takes the option that looks best <em>right now</em> and never undoes it.</p></aside>
-      <p>On one hill, every local peak is the global peak, so greedy wins. On two hills it strands you. Everything in this lesson is the question: <b>which problems are one-hill problems?</b> The answer is a proof, not a hunch.</p>
+      <p>On one hill, every local peak is the global peak, so greedy wins. On two hills it strands you. Everything in this lesson is the question: <b>which problems are one-hill problems?</b> The answer is a proof, not a hunch. Greedy is safe when every locally best step can be extended to a global optimum. The hiker is the failure picture; the proofs below are the guarantee.</p>
       <figure class="fig" id="fig-template">
         <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The greedy template</h3></div></header>
         <div class="gr-fig-stage"><pre data-code-block="template"></pre></div>
@@ -247,7 +249,7 @@
         <div class="fig__stage fig__stage--plain fig__stage--scroll gr-html-stage" data-stage style="--stage-min: 520px"></div>
         <figcaption class="fig__alt">Text alternative: ask whether some optimal answer contains the locally best pick; whether what remains is a smaller instance of the same problem; whether you can prove it by exchange, staying ahead or a matroid. Three yeses mean greedy is safe; a no sends you to dynamic programming or search.</figcaption>
       </figure>
-      <aside class="callout callout--insight"><p class="callout__title">Matroids in one sentence</p><p>Some problems come with a guarantee: if the feasible sets are closed under taking subsets and any smaller feasible set can always borrow an element from a larger one (a <dfn>matroid</dfn>), then greedy by weight is optimal. Spanning forests, scheduling with deadlines and pouring knapsack are matroid-like; whole-item knapsack is not.</p></aside>
+      <aside class="callout callout--insight"><p class="callout__title">Matroids in one sentence</p><p>Some problems come with a guarantee: if the feasible sets are closed under taking subsets and any smaller feasible set can always borrow an element from a larger one (a <dfn>matroid</dfn>), then greedy by weight is optimal. Spanning forests are the classic example. Pouring knapsack is greedy-friendly for a similar exchange reason; whole-item knapsack has no such guarantee.</p></aside>
     </section>
 
     <!-- ============================================================ COST -->
@@ -355,7 +357,7 @@
         <li><div class="practice__title">Minimum number of arrows</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Balloons are intervals on a line. One arrow bursts every balloon it passes through. Find the fewest arrows. Which sort key makes the greedy step safe, and what is the exchange argument?</p></li>
         <li><div class="practice__title">Jump game</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Each cell tells how far you may jump. Decide whether you can reach the last cell by tracking only the farthest position reachable so far. Why is that one number enough?</p></li>
         <li><div class="practice__title">Assign cookies</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Each child needs a cookie of at least some size; each cookie goes to at most one child. Maximise satisfied children. Sort both lists and argue why the smallest cookie that works is the right choice.</p></li>
-        <li><div class="practice__title">Break the greedy</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Find a coin set of four coins, including 1, where greedy fails at an amount below 20, and confirm with the Kozen–Zaks bound that no smaller amount can fail earlier than the bound says.</p></li>
+        <li><div class="practice__title">Break the greedy</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Find a coin set of four coins, including 1, where greedy fails at an amount below 20, then check that the failure lies below the sum of the two largest coins (Kozen–Zaks).</p></li>
         <li><div class="practice__title">Optimal merge pattern</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">You must merge n sorted files; merging two costs the sum of their sizes. Which merge order minimises the total cost, and how is it the same problem as Huffman coding?</p></li>
       </ol>
       <a class="deeper" href="../studies/dsa-16-when-is-greedy-optimal-exchange-arguments-and-matroids.html">

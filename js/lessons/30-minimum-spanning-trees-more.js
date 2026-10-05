@@ -396,7 +396,7 @@
     V.quiz('#quiz-cycle', {
       id: 'l30-cycle', question: 'A cycle in a graph has edges of weight 3, 5, 5 and 9. What does the cycle property guarantee?',
       options: ['The edge of weight 9 is in no minimum spanning tree', 'Both edges of weight 5 are in every MST', 'The edge of weight 3 must be in every MST', 'Nothing: it depends on the rest of the graph'], answer: 0,
-      explain: ['Yes: 9 is strictly the heaviest edge on the cycle, so removing it never disconnects anything and always lowers the total. No MST can contain it.', 'Not guaranteed. Two edges of equal weight on one cycle: one of them may be dropped.', 'Not from the cycle property alone. It is the lightest on this cycle, but the cut property, not the cycle property, would be needed to say it is safe.', 'The guarantee holds whatever the rest of the graph looks like: that is what makes the property useful.']
+      explain: ['Yes: 9 is strictly the heaviest edge on the cycle, so removing it never disconnects anything and always lowers the total. No MST can contain it.', 'Not guaranteed. The cycle property only speaks about the heaviest edge of a cycle; edges that are not the heaviest may or may not be in an MST.', 'Not from the cycle property alone. It is the lightest on this cycle, but the cut property, not the cycle property, would be needed to say it is safe.', 'The guarantee holds whatever the rest of the graph looks like: that is what makes the property useful.']
     });
     V.quiz('#quiz-bridge', {
       id: 'l30-bridge', question: 'True or false: the heaviest edge of the whole graph is never in the MST.',

@@ -251,6 +251,13 @@
     ['g', 'b'].forEach(function (k) {
       svg.appendChild(s('rect', { class: 'gr-plate', x: cx[k] - 90, y: baseY, width: 180, height: 8, rx: 4 }));
     });
+    var slots = {};
+    ['g', 'b'].forEach(function (k) {
+      var sg = s('g', { class: 'gr-slot', 'aria-hidden': 'true' });
+      sg.appendChild(s('rect', { x: cx[k] - 70, y: baseY - 176, width: 140, height: 170, rx: 12 }));
+      sg.appendChild(s('text', { x: cx[k], y: baseY - 86, 'text-anchor': 'middle' }, 'coins stack up here'));
+      svg.appendChild(sg); slots[k] = sg;
+    });
     var titles = {};
     ['g', 'b'].forEach(function (k) {
       titles[k] = s('text', { class: 'gr-coins__title', x: cx[k], y: 26, 'text-anchor': 'middle' });
@@ -318,6 +325,7 @@
           side.picks.forEach(function (c, i) {
             coins.push({ id: 'c' + k + i, v: c, x: cx[k], y: baseY - th * (i + 0.5), th: th, from: 't' + k + c, state: (k === 'g' ? 'active' : 'done') });
           });
+          slots[k].style.opacity = (hidden || side.picks.length) ? 0 : 1;
           var total = side.picks.reduce(function (a, b) { return a + b; }, 0);
           sumText[k].textContent = hidden ? '' : (side.picks.length ? side.picks.join(' + ') + ' = ' + total : '');
           var frac = st.amount ? side.remaining / st.amount : 0;

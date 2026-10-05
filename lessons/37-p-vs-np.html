@@ -69,21 +69,21 @@
       </figure>
       <aside class="callout callout--warn">
         <p class="callout__title">A fair warning about Sudoku</p>
-        <p>A fixed 9 × 9 grid is a finite puzzle, so on paper even brute force is "constant time". The claim about hardness is for the <em>generalised</em> puzzle on n² × n² grids, which is NP-complete (Yato and Seta, 2003). The 9 × 9 race is a model of that behaviour, not the proof.</p>
+        <p>A fixed 9 × 9 grid is a finite puzzle, so on paper even brute force is “constant time”. The claim about hardness is for the <em>generalised</em> puzzle on n² × n² grids, which is NP-complete (Yato and Seta, 2003). The 9 × 9 race is a model of that behaviour, not the proof.</p>
       </aside>
     </section>
 
     <!-- ============================================================ 2. INTUITION -->
     <section id="intuition">
       <h2>Two kinds of effort</h2>
-      <p>Theory works with <dfn>decision problems</dfn>: questions with a yes or no answer. "What is the shortest tour?" becomes "Is there a tour of length at most k?" Nothing is lost, because asking for every k (with a binary search) recovers the optimum.</p>
+      <p>Theory works with <dfn>decision problems</dfn>: questions with a yes or no answer. “What is the shortest tour?” becomes “Is there a tour of length at most k?” Nothing is lost, because asking for every k (with a binary search) recovers the optimum.</p>
       <aside class="callout callout--def">
         <p class="callout__title">P</p>
         <p><dfn>P</dfn> is the set of decision problems that an algorithm can <em>solve</em> in polynomial time, meaning O(n<sup>k</sup>) for some fixed k. Sorting, shortest paths, matching and primality testing all live here.</p>
       </aside>
       <aside class="callout callout--def">
         <p class="callout__title">NP</p>
-        <p><dfn>NP</dfn> is the set of decision problems where every "yes" instance has a short <dfn>certificate</dfn> that a polynomial-time <em>verifier</em> can check. It does <strong>not</strong> stand for "not polynomial". It stands for <em>nondeterministic</em> polynomial time.</p>
+        <p><dfn>NP</dfn> is the set of decision problems where every “yes” instance has a short <dfn>certificate</dfn> that a polynomial-time <em>verifier</em> can check. It does <strong>not</strong> stand for “not polynomial”. It stands for <em>nondeterministic</em> polynomial time.</p>
       </aside>
       <p>Each certificate below is easy to check. Whether it is easy to <em>find</em> is the open part.</p>
       <div class="mini-row wide" id="mini-cert"></div>
@@ -118,7 +118,7 @@
       <p>Move the slider. At n = 20, n³ is 8,000 steps, 2<sup>n</sup> is about a million, and n! is <b>77 years</b>. Buying a computer a thousand times faster only shifts the wall: the age-of-the-universe line moves up by a factor of 1,000, and n! reaches it at n = 29 instead of 27.</p>
       <aside class="callout callout--key">
         <p class="callout__title">Polynomial is the dividing line</p>
-        <p>Polynomial time is closed under composition, does not depend on the machine model, and separates "grows gently" from "hits a wall". It is a modelling choice, not a law: an n<sup>100</sup> algorithm is useless, and 2<sup>n/100</sup> is fine for small n. But as the line between tractable and hopeless it works remarkably well.</p>
+        <p>Polynomial time is closed under composition, does not depend on the machine model, and separates “grows gently” from “hits a wall”. It is a modelling choice, not a law: an n<sup>100</sup> algorithm is useless, and 2<sup>n/100</sup> is fine for small n. But as the line between tractable and hopeless it works remarkably well.</p>
       </aside>
       <div class="table-wrap">
         <table class="table">
@@ -130,11 +130,11 @@
             <tr><th scope="row">Is this formula satisfiable? (SAT)</th><td><span class="big-o" data-o="n">O(size)</span></td><td><span class="big-o" data-o="2n">2<sup>n</sup></span> in the worst case</td><td>NP-complete</td></tr>
             <tr><th scope="row">Tour of length ≤ k? (TSP)</th><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="2n">O(n² 2<sup>n</sup>)</span> (Held–Karp)</td><td>NP-complete</td></tr>
             <tr><th scope="row">Clique of size k?</th><td><span class="big-o" data-o="n2">O(k²)</span></td><td><span class="big-o" data-o="2n">exponential</span></td><td>NP-complete</td></tr>
-            <tr><th scope="row">Factor N into p × q</th><td><span class="big-o" data-o="n2">multiply and compare</span></td><td>sub-exponential, not polynomial (known)</td><td>NP, neither known P nor NP-complete</td></tr>
+            <tr><th scope="row">Has N a factor ≤ k?</th><td><span class="big-o" data-o="n2">multiply and compare</span></td><td>best known algorithm is sub-exponential, not polynomial</td><td>NP, neither known P nor NP-complete</td></tr>
           </tbody>
         </table>
       </div>
-      <p>"Best known" is doing real work in that table. Nobody has <em>proved</em> that the exponential algorithms for the NP-complete rows are necessary. That is exactly what P vs NP asks.</p>
+      <p>“Best known” is doing real work in that table. Nobody has <em>proved</em> that the exponential algorithms for the NP-complete rows are necessary. That is exactly what P vs NP asks.</p>
     </section>
 
     <!-- ============================================================ 4. TSP LAB -->
@@ -232,7 +232,7 @@
         <div class="fig__stats" data-counters></div>
         <figcaption class="fig__alt">Text alternative: variable switches x1 to x4, a row of clause cards that turn green when satisfied, and a counter of assignments tried out of 2 to the n. Brute-force mode enumerates the assignments in counting order.</figcaption>
       </figure>
-      <p>Two things to notice. Checking one assignment is a single pass over the clauses, and finding one may mean trying most of the 2<sup>n</sup>. And the unsatisfiable preset shows an asymmetry: a "yes" comes with a short certificate, while a "no" seems to need the entire search.</p>
+      <p>Two things to notice. Checking one assignment is a single pass over the clauses, and finding one may mean trying most of the 2<sup>n</sup>. And the unsatisfiable preset shows an asymmetry: a “yes” comes with a short certificate, while a “no” seems to need the entire search.</p>
       <aside class="callout callout--def">
         <p class="callout__title">NP-hard and NP-complete</p>
         <p>A problem is <dfn>NP-hard</dfn> if every problem in NP reduces to it. It is <dfn>NP-complete</dfn> if it is NP-hard <em>and</em> in NP. NP-hard problems need not be in NP at all: the halting problem is NP-hard and not even decidable.</p>
@@ -283,13 +283,13 @@
         <p class="callout__title">What is proven and what is believed</p>
         <p><b>Proven:</b> P ⊆ NP; SAT is NP-complete; the reductions in the web; the halting problem is undecidable. <b>Believed, not proven:</b> P ≠ NP (most researchers expect it, as no polynomial algorithm has surfaced for thousands of NP-complete problems); that factoring and graph isomorphism are not NP-complete. <b>Open:</b> P vs NP itself, one of the seven Clay Millennium Prize problems.</p>
       </aside>
-      <p>"If P = NP" would not make life magically easy: an algorithm running in n<sup>1000</sup> steps would still be useless. But it would make searching for proofs, schedules and designs as cheap as checking them, and it would break most of today's cryptography.</p>
+      <p>“If P = NP” would not make life magically easy: an algorithm running in n<sup>1000</sup> steps would still be useless. But it would make searching for proofs, schedules and designs as cheap as checking them, and it would break most of today's cryptography.</p>
     </section>
 
     <!-- ============================================================ 8. COPING -->
     <section id="coping">
       <h2>My problem seems NP-hard. Now what?</h2>
-      <p>NP-hardness is not a verdict of "give up". It tells you to stop hunting for a fast exact algorithm that works on <em>every</em> input, and to change the deal. The cleanest change is an <b>approximation algorithm</b>: fast, with a proof that the answer is close to optimal.</p>
+      <p>NP-hardness is not a verdict of “give up”. It tells you to stop hunting for a fast exact algorithm that works on <em>every</em> input, and to change the deal. The cleanest change is an <b>approximation algorithm</b>: fast, with a proof that the answer is close to optimal.</p>
       <p>Vertex cover has a beautiful one. While some edge is uncovered, take <em>both</em> its endpoints. The chosen edges never share a vertex (a <dfn>matching</dfn>), and any cover needs at least one endpoint of each, so the optimum is at least the matching size while ours is exactly twice that.</p>
       <figure class="fig fig--lab wide" id="fig-vc">
         <header class="fig__head">
@@ -335,10 +335,10 @@
           <button data-tab="pseudo">The pseudo-polynomial trap</button>
           <button data-tab="undec">Undecidable is different</button>
         </div>
-        <div data-tab-panel="param"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="param"></div><figcaption>Search-tree size for "vertex cover of size ≤ k".</figcaption></figure><div><p>Vertex cover of size at most k can be decided by branching: pick an uncovered edge, then either its left or its right endpoint must be in the cover. That is a binary tree of depth k, so at most 2<sup>k+1</sup> − 1 nodes, <em>whatever the size of the graph</em>.</p><p>The exponential part depends on k, not on n. Problems like this are <dfn>fixed-parameter tractable</dfn>: fine when the parameter is small.</p></div></div></div>
+        <div data-tab-panel="param"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="param"></div><figcaption>Search-tree size for “vertex cover of size ≤ k”.</figcaption></figure><div><p>Vertex cover of size at most k can be decided by branching: pick an uncovered edge, then either its left or its right endpoint must be in the cover. That is a binary tree of depth k, so at most 2<sup>k+1</sup> − 1 nodes, <em>whatever the size of the graph</em>.</p><p>The exponential part depends on k, not on n. Problems like this are <dfn>fixed-parameter tractable</dfn>: fine when the parameter is small.</p></div></div></div>
         <div data-tab-panel="special"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="special"></div><figcaption>The same question, easier on special inputs.</figcaption></figure><div><p>NP-hardness is a <em>worst-case, all-inputs</em> statement. Restrict the inputs and the problem can fall into P. 2-SAT (clauses of two literals) is in P. Independent set and vertex cover are easy on trees and bipartite graphs. TSP with distances on a tree metric or a line is easy.</p><p>Ask what your real inputs look like before you fight the general problem.</p></div></div></div>
-        <div data-tab-panel="pseudo"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="pseudo"></div><figcaption>Input size counts bits, not the value.</figcaption></figure><div><p>Subset sum with target T has a dynamic programme costing O(n · T). That looks polynomial, but T is written in log T bits, so the cost is <em>exponential in the input size</em>. It is <dfn>pseudo-polynomial</dfn>, fast only when the numbers are small, which is why subset sum is still NP-complete.</p><p>The same goes for the "textbook" knapsack DP. Always ask: polynomial in what?</p></div></div></div>
-        <div data-tab-panel="undec"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="undec"></div><figcaption>Two different kinds of "cannot".</figcaption></figure><div><p>NP-complete means "believed to need exponential time, but a finite search always works". <dfn>Undecidable</dfn> means <em>no algorithm at all</em> can answer every instance, however much time it gets. Turing proved in 1936 that the halting problem ("does this program stop?") is undecidable.</p><p>The halting problem is NP-hard, but it is not in NP. Do not mix up "slow" with "impossible".</p></div></div></div>
+        <div data-tab-panel="pseudo"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="pseudo"></div><figcaption>Input size counts bits, not the value.</figcaption></figure><div><p>Subset sum with target T has a dynamic programme costing O(n · T). That looks polynomial, but T is written in log T bits, so the cost is <em>exponential in the input size</em>. It is <dfn>pseudo-polynomial</dfn>, fast only when the numbers are small, which is why subset sum is still NP-complete.</p><p>The same goes for the “textbook” knapsack DP. Always ask: polynomial in what?</p></div></div></div>
+        <div data-tab-panel="undec"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="undec"></div><figcaption>Two different kinds of “cannot”.</figcaption></figure><div><p>NP-complete means “believed to need exponential time, but a finite search always works”. <dfn>Undecidable</dfn> means <em>no algorithm at all</em> can answer every instance, however much time it gets. Turing proved in 1936 that the halting problem (“does this program stop?”) is undecidable.</p><p>The halting problem is NP-hard, but it is not in NP. Do not mix up “slow” with “impossible”.</p></div></div></div>
       </div>
     </section>
 
@@ -375,7 +375,7 @@
         <div class="history__body">
           <p>In March 1956 Kurt Gödel wrote to a dying John von Neumann asking whether proofs of length n could be found in time growing only like n or n². Von Neumann never answered. Stephen Cook stated the question precisely in 1971 and proved that SAT is NP-complete; Leonid Levin reached the same idea independently in Moscow. In 1972 Richard Karp showed that 21 familiar problems are all equally hard. The Clay Institute put a million-dollar price on the question in 2000, and it is still unclaimed.</p>
         </div>
-        <p class="history__source">Sources: S. A. Cook, "The Complexity of Theorem-Proving Procedures", STOC 1971; R. M. Karp, "Reducibility Among Combinatorial Problems", 1972; L. A. Levin, "Universal Sequential Search Problems", <em>Problemy Peredachi Informatsii</em> 9(3), 1973; Gödel's letter to von Neumann, 20 March 1956.</p>
+        <p class="history__source">Sources: S. A. Cook, “The Complexity of Theorem-Proving Procedures”, STOC 1971; R. M. Karp, “Reducibility Among Combinatorial Problems”, 1972; L. A. Levin, “Universal Sequential Search Problems”, <em>Problemy Peredachi Informatsii</em> 9(3), 1973; Gödel's letter to von Neumann, 20 March 1956.</p>
       </div>
     </section>
 
@@ -384,7 +384,7 @@
       <h2>Practice</h2>
       <ol class="practice">
         <li><div class="practice__title">Write a verifier</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Given a graph, an integer k and a list of vertices, write a polynomial-time check that the list is a vertex cover of size at most k. What is its running time in terms of V and E?</p></li>
-        <li><div class="practice__title">Decision to optimisation</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Suppose you have a black box that answers "is there a tour of length at most k?" in polynomial time. Show how to find the length of the shortest tour with polynomially many calls. Then show how to recover the tour itself.</p></li>
+        <li><div class="practice__title">Decision to optimisation</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Suppose you have a black box that answers “is there a tour of length at most k?” in polynomial time. Show how to find the length of the shortest tour with polynomially many calls. Then show how to recover the tour itself.</p></li>
         <li><div class="practice__title">Which way does it reduce?</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Given that independent set is NP-complete, prove that clique is NP-hard. State the reduction, the direction, and why the yes and no answers are preserved.</p></li>
         <li><div class="practice__title">Beat the 2-approximation on paper</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Draw a graph where the matching-based vertex cover is exactly twice the optimum, and another where it is optimal. Can you find a graph on 6 vertices where the ratio is strictly between 1 and 2?</p></li>
         <li><div class="practice__title">Cheat with the triangle inequality</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">The MST tour argument used the triangle inequality. Build a small 4-city instance whose distances violate it, and show the shortcutting step can make the tour longer than twice the tree.</p></li>

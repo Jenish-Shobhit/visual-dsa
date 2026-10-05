@@ -488,7 +488,7 @@
       if (!cmpFig) return;
       if (!cmpChart) {
         cmpChart = V.views.chart(L.q(cmpFig, '[data-stage]'), {
-          type: 'bar', height: 250, label: 'Tour length found by each method', format: function (v) { return String(Math.round(v / 10)); },
+          type: 'bar', height: 250, labels: false, label: 'Tour length found by each method', format: function (v) { return String(Math.round(v / 10)); },
           valueFormat: function (v) { return (v / 10).toFixed(1); }
         });
         cmpTable = L.q(cmpFig, '[data-table]');
@@ -501,7 +501,7 @@
       V.clear(cmpTable);
       if (!c) {
         cmpTable.appendChild(h('p', { class: 'compare-empty' }, 'Place at least 3 cities to compare the methods.'));
-        cmpChart.render({ categories: ['tour length'], series: [{ id: 'opt', label: 'Optimal', values: [0], state: 'done' }], y: { label: 'tour length', min: 0, max: 100 } }, { duration: 300 });
+        cmpChart.render({ categories: [''], series: [{ id: 'opt', label: 'Optimal', values: [0], state: 'done' }], y: { min: 0, max: 100 } }, { duration: 300 });
         return;
       }
       var rows = [
@@ -511,9 +511,9 @@
         { id: 'mst', label: 'MST 2-approximation', v: c.mst, state: 'frontier' }
       ];
       cmpChart.render({
-        categories: ['tour length'],
+        categories: [''],
         series: rows.map(function (r) { return { id: r.id, label: r.label, values: [r.v], state: r.state }; }),
-        y: { label: 'tour length', min: 0 }
+        y: { min: 0 }
       }, { duration: 500 });
       var tbl = h('table', { class: 'table table--compact' },
         h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Method'), h('th', { scope: 'col', class: 'num' }, 'Length'), h('th', { scope: 'col', class: 'num' }, 'Above optimal'))));

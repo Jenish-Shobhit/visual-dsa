@@ -65,7 +65,7 @@
         <div class="fig__stats" data-stats></div>
         <figcaption class="fig__alt">Text alternative: a row of letters with the pattern under it. Each click slides the pattern one place; the figure compares characters left to right up to the first mismatch and counts every new alignment and comparison.</figcaption>
       </figure>
-      <p>With ordinary text, most alignments die on the first character. With repetitive text such as <code>aaaaaaaaab</code>, every alignment matches almost all the way before it fails. That is the trap: in the worst case naive search makes about <em>n</em> × <em>m</em> comparisons.</p>
+      <p>With ordinary text, most alignments die on the first character. With repetitive input, such as a text of all <code>a</code>&rsquo;s and a pattern like <code>aaab</code>, every alignment matches almost all the way before it fails. That is the trap: in the worst case naive search makes about <em>n</em> × <em>m</em> comparisons.</p>
     </section>
 
     <!-- ============================================================ INTUITION -->
@@ -202,7 +202,7 @@
     <section id="rabin-karp">
       <h2 data-toc="Rabin–Karp">Rabin–Karp: compare numbers, not letters</h2>
       <p>A different idea: give every window of the text a <dfn>hash</dfn>, a single small number, and compare that with the pattern's hash. Read letters as digits (<code>a = 1</code>, <code>b = 2</code>, …) in base <em>B</em>, so the window <code>abc</code> is the number <code>1·100 + 2·10 + 3 = 123</code>. Work modulo a prime <em>q</em> to keep it small.</p>
-      <p>The trick is the <dfn>rolling hash</dfn>: when the window slides one letter, you do not recompute. You subtract the leading digit, multiply by the base to shift every digit up one place, and add the trailing letter. Three small operations replace <em>m</em>.</p>
+      <p>The trick is the <dfn>rolling hash</dfn>: when the window slides one letter, you do not recompute. You subtract the leading letter&rsquo;s value times <em>B</em><sup><em>m</em>&minus;1</sup>, multiply by the base to shift every digit up one place, and add the trailing letter. Three small operations replace <em>m</em>.</p>
       <figure class="fig fig--lab full" id="lab-rk">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Roll the hash along the text</h3></div>
@@ -301,7 +301,7 @@
             <tr><th scope="row">KMP</th><td><span class="big-o" data-o="n">O(m)</span> table</td><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="n">O(n + m)</span> at most 2n comparisons</td><td><span class="big-o" data-o="n">O(m)</span></td><td>none: linear on every input</td></tr>
             <tr><th scope="row">Rabin–Karp</th><td><span class="big-o" data-o="n">O(m)</span> hash</td><td><span class="big-o" data-o="n">O(n + m)</span> expected</td><td><span class="big-o" data-o="nk">O(nm)</span> if many hits or collisions</td><td><span class="big-o" data-o="1"></span></td><td><code>aaaa…a</code> vs <code>a…a</code> (every window is a real match)</td></tr>
             <tr><th scope="row">Z-algorithm</th><td>none (Z is the search)</td><td><span class="big-o" data-o="n">O(n + m)</span></td><td><span class="big-o" data-o="n">O(n + m)</span></td><td><span class="big-o" data-o="n">O(n + m)</span> Z-array</td><td>none: linear on every input</td></tr>
-            <tr><th scope="row">Boyer–Moore, bad character</th><td><span class="big-o" data-o="n">O(m + σ)</span> table</td><td><span class="big-o" data-o="n">O(n / m)</span> skips text</td><td><span class="big-o" data-o="nk">O(nm)</span> (with the good-suffix rule: O(n + m))</td><td><span class="big-o" data-o="1">O(σ)</span></td><td>repetitive text</td></tr>
+            <tr><th scope="row">Boyer–Moore, bad character</th><td><span class="big-o" data-o="n">O(m + σ)</span> table</td><td><span class="big-o" data-o="n">O(n / m)</span> skips text</td><td><span class="big-o" data-o="nk">O(nm)</span> (O(n + m) with the good-suffix rule plus Galil&rsquo;s refinement)</td><td><span class="big-o" data-o="1">O(σ)</span></td><td>repetitive text</td></tr>
           </tbody>
         </table>
       </div>
@@ -342,7 +342,7 @@
         </div>
         <div data-tab-panel="use">
           <ul class="sm-uses">
-            <li><b>Editors and terminals.</b> Find-in-page uses a fast library search, often a Boyer–Moore variant. <code>grep</code> grew out of the same line of work.</li>
+            <li><b>Editors and terminals.</b> Find-in-page uses a fast library search, often a Boyer–Moore variant. GNU <code>grep</code> uses Boyer–Moore-style skipping; the original <code>grep</code> came from Thompson&rsquo;s regex search in <code>ed</code>.</li>
             <li><b>Genomes.</b> A four-letter alphabet with huge texts. Exact search is the base, and index structures such as suffix arrays answer repeated queries.</li>
             <li><b>Detecting repeats and periods.</b> The failure table tells you a string's shortest repeating period: <code>n − π[n − 1]</code> when it divides <code>n</code>.</li>
             <li><b>Competitive programming.</b> KMP and Z are the standard tools for counting borders, prefixes that reappear, and rotations.</li>

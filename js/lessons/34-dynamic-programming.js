@@ -333,7 +333,7 @@
     function cx(i) { return x0 + i * pitch + cs / 2; }
     function marker(x, y, num) { svg.appendChild(s('g', { class: 'dp34-marker', transform: 'translate(' + x + ' ' + y + ')' }, s('circle', { r: 12 }), s('text', { 'text-anchor': 'middle', dy: '.35em' }, String(num)))); }
     // nested arcs: the shortest span lands furthest left, so no two arcs cross
-    [[5, 'compare', '+1', 22, -20], [3, 'key', '+3', 50, -8], [2, 'compare', '+4', 74, 4]].forEach(function (a) {
+    [[5, 'compare', '+1', 22, -22], [3, 'key', '+3', 50, -4], [2, 'compare', '+4', 74, 14]].forEach(function (a) {
       var x1 = cx(a[0]) + 6, x2 = cx(6) + a[4], y = top - 4, qy = y - 2 * a[3], qx = (x1 + x2) / 2;
       var ang = Math.atan2(y - qy, x2 - qx), t = 0.3, u = 1 - t;
       var lx = u * u * x1 + 2 * u * t * qx + t * t * x2, ly = u * u * y + 2 * u * t * qy + t * t * y;

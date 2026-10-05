@@ -95,7 +95,7 @@
       <p>Trying every subsequence of a 6-letter string means testing 64 of them, and each extra letter doubles that. Instead, shrink the problem. Compare only the <b>first i letters</b> of A with the <b>first j letters</b> of B, for every i and j. Those small answers are the cells of a table.</p>
       <aside class="callout callout--analogy">
         <p class="callout__title">Analogy: two bookmarks</p>
-        <p>Read two books side by side with a bookmark in each. A cell records "how much do the pages up to my two bookmarks share?". Push either bookmark forward by one letter and the answer can only change a little, so it is worth remembering the answer for every pair of bookmark positions.</p>
+        <p>Read two books side by side with a bookmark in each. A cell records “how much do the pages up to my two bookmarks share?”. Push either bookmark forward by one letter and the answer can only change a little, so it is worth remembering the answer for every pair of bookmark positions.</p>
       </aside>
       <p>Click any cell to see which two prefixes it stands for, and a longest subsequence they share.</p>
       <figure class="fig wide" id="fig-prefix">
@@ -121,7 +121,7 @@
       <div class="mini-row wide" id="mini-rules"></div>
       <aside class="callout callout--key">
         <p class="callout__title">Key idea</p>
-        <p>If the last letters match, they can both end the subsequence, so extend the diagonal cell by 1. If not, at most one of them can be used, so keep the better of "drop the last letter of A" (up) and "drop the last letter of B" (left). Row 0 and column 0 are the base cases.</p>
+        <p>If the last letters match, they can both end the subsequence, so extend the diagonal cell by 1. If not, at most one of them can be used, so keep the better of “drop the last letter of A” (up) and “drop the last letter of B” (left). Row 0 and column 0 are the base cases.</p>
       </aside>
       <aside class="callout callout--insight">
         <p class="callout__title">Why the match rule is safe</p>
@@ -232,9 +232,9 @@
     <section id="knapsack">
       <h2>The knapsack</h2>
       <p>You have a bag with room for 5 units and three items. Each item has a <b>weight</b> and a <b>value</b>, and you may take it or leave it, never half of it. Which items maximise the value?</p>
-      <p>The tempting rule, "take the best value per weight first", can fail. Compare the two bags.</p>
+      <p>The tempting rule, “take the best value per weight first”, can fail. Compare the two bags.</p>
       <div class="mini-row wide" id="mini-greedy"></div>
-      <p>The table fixes it by <b>trying both choices</b> for every item and every capacity. Rows are items (one more row per item available), columns are capacities. Cell <code>dp[i][c]</code> is the best value using the first i items in a bag of size c: <b>skip</b> item i and keep the row above, or <b>take</b> it and add its value to the best with the room that is left.</p>
+      <p>The table fixes it by <b>trying both choices</b> for every item and every capacity. Rows are items, plus a row 0 for &lsquo;no items yet&rsquo;; columns are capacities. Cell <code>dp[i][c]</code> is the best value using the first i items in a bag of size c: <b>skip</b> item i and keep the row above, or <b>take</b> it and add its value to the best with the room that is left.</p>
       <figure class="fig fig--lab full" id="lab-knap">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">0/1 knapsack: take or skip, then fill the bag</h3></div>
@@ -288,7 +288,7 @@
       </figure>
       <aside class="callout callout--key">
         <p class="callout__title">Key idea</p>
-        <p>Looping capacity <b>downwards</b> keeps every read pointing at the "before this item" row, which is exactly the 0/1 rule. Looping <b>upwards</b> lets a cell read a value that already contains the item, which allows unlimited copies: the <em>unbounded</em> knapsack that you met as coin change.</p>
+        <p>Looping capacity <b>downwards</b> keeps every read pointing at the “before this item” row, which is exactly the 0/1 rule. Looping <b>upwards</b> lets a cell read a value that already contains the item, which allows unlimited copies: the <em>unbounded</em> knapsack that you met as coin change.</p>
       </aside>
       <div class="dp-code-pair wide">
         <div><p class="dp-code-pair__title">Table: O(n · W) space</p><pre data-code-block="table"></pre></div>
@@ -323,7 +323,7 @@
           </tbody>
         </table>
       </div>
-      <p>For strings of length 5,000 the LCS table holds 25 million cells: seconds of work. In 2015, Backurs and Indyk showed that a genuinely faster edit distance algorithm would break a widely believed conjecture about satisfiability, so the quadratic table is likely the best you can do in general.</p>
+      <p>For strings of length 5,000 the LCS table holds 25 million cells: a fraction of a second of work. In 2015, Backurs and Indyk showed that a genuinely faster edit distance algorithm would break a widely believed conjecture about satisfiability, so the quadratic table is likely the best you can do in general.</p>
       <details class="accordion">
         <summary>Why is O(n·W) called “pseudo-polynomial”?</summary>
         <div class="accordion__body"><p>The time grows with the <em>value</em> of W, not with the number of digits needed to write it. A capacity of a billion needs a table with a billion columns, though “1000000000” is ten digits. Knapsack is NP-hard in the length of its input, yet perfectly practical whenever W is modest.</p></div>
@@ -366,7 +366,7 @@
         <div data-tab-panel="interval">
           <div class="dp-var-minis" data-mini="interval"></div>
           <div class="split">
-            <p>Some problems ask about a <b>range</b> of one sequence, such as the cheapest way to multiply a chain of matrices. The cell (i, j) means "the range i..j", and it combines two shorter ranges. The order is by length: short ranges before long ones.</p>
+            <p>Some problems ask about a <b>range</b> of one sequence, such as the cheapest way to multiply a chain of matrices. The cell (i, j) means “the range i..j”, and it combines two shorter ranges. The order is by length: short ranges before long ones.</p>
             <p>Interval DP is the one place where the fill order is not row by row. It costs O(n³) when every split point is tried.</p>
           </div>
         </div>

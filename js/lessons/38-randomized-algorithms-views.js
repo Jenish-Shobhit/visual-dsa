@@ -157,7 +157,7 @@
 
   /* ------------------------------------------------------------------ reservoir view */
   L38.reservoirView = function (stage) {
-    var W = 560, PAD = 18, built = null, svg, mv = L38.mover(), tokens = {}, die = null, marker = null, readout, resTitle;
+    var W = 560, PAD = 18, built = null, svg, mv = L38.mover(), tokens = {}, die = null, marker = null, readout, resTitle, dieHint;
     var geo = {};
 
     function build(step) {
@@ -183,6 +183,8 @@
       }
       resTitle = s('text', { class: 'rz-head', x: W / 2, y: yRes - th / 2 - 22, 'text-anchor': 'middle' }, 'THE RESERVOIR  ·  keeps ' + k);
       g0.appendChild(resTitle);
+      dieHint = s('text', { class: 'rz-head', x: PAD, y: yDie + 4 }, 'THE DIE  ·  item i rolls a number from 1 to i');
+      g0.appendChild(dieHint);
       svg.appendChild(g0);
       die = s('g', { class: 'rz-die' });
       svg.appendChild(die);
@@ -208,6 +210,7 @@
 
     function drawDie(roll, dur) {
       V.clear(die);
+      if (dieHint) dieHint.style.opacity = roll ? 0 : 1;
       if (!roll) { marker.__rec.to.op = 0; return; }
       var n = roll.i, dw = Math.min(30, (W - 2 * PAD - 150) / Math.max(n, 1)), x0 = PAD, y = geo.yDie;
       for (var c = 1; c <= n; c++) {

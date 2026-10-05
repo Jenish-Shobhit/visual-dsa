@@ -43,7 +43,8 @@
       <ul class="hero__meta" aria-label="About this lesson">
         <li class="chip" data-icon="clock">22 min</li>
         <li class="chip" data-icon="level">Advanced</li>
-        <li class="chip" data-icon="prereq">Needs: graphs, BFS</li>
+        <li><a class="chip" data-icon="prereq" href="25-graphs.html">Needs: Graphs</a></li>
+        <li><a class="chip" data-icon="prereq" href="26-bfs-and-dfs.html">Needs: BFS</a></li>
       </ul>
     </div>
     <div class="hero__stage nf-hero" id="teaser" role="img" aria-label="Animation: a pipe network fills route by route. Each pipe shows flow over capacity, a dot travels along every route as it is filled, the total climbs to 12, and the pipes that limit everything light up red."></div>
@@ -95,7 +96,7 @@
         <figcaption class="fig__alt">Text alternative: a route s, a, b, t with three pipes of room 6, 2 and 4. The route can carry 2, the room of the narrowest pipe.</figcaption>
       </figure>
       <div class="quiz" id="quiz-bottleneck"></div>
-      <p>So one algorithm suggests itself: <em>find a route with room, push its bottleneck, repeat</em>. Each round is called an <strong>augmentation</strong> and the route is an <strong>augmenting path</strong>. But is it enough?</p>
+      <p>So one algorithm suggests itself: <em>find a route with room, push its bottleneck, repeat</em>. This generic loop is the <strong>Ford–Fulkerson</strong> method. Choosing the shortest path by BFS makes it <strong>Edmonds–Karp</strong>. Each round is called an <strong>augmentation</strong> and the route is an <strong>augmenting path</strong>. But is it enough?</p>
     </section>
 
     <section id="greedy">
@@ -258,7 +259,7 @@
         <table class="table">
           <thead><tr><th scope="col">Algorithm</th><th scope="col">Augmentations</th><th scope="col" class="num">Total time</th></tr></thead>
           <tbody>
-            <tr><th scope="row">Ford-Fulkerson, any path</th><td>up to the flow value |f|</td><td class="num"><span class="big-o" data-o="n3">O(E·|f|)</span></td></tr>
+            <tr><th scope="row">Ford-Fulkerson, any path</th><td>up to the flow value |f|</td><td class="num"><span class="big-o" data-o="n3">O(E·|f|)</span> (integer capacities)</td></tr>
             <tr><th scope="row">Edmonds-Karp, shortest path (BFS)</th><td>at most V·E/2, whatever the capacities</td><td class="num"><span class="big-o" data-o="n3">O(V·E²)</span></td></tr>
             <tr><th scope="row">Dinic, blocking flows</th><td>at most V phases</td><td class="num"><span class="big-o" data-o="n2">O(V²·E)</span></td></tr>
             <tr><th scope="row">Matching with unit capacities</th><td>at most V, one per matched pair</td><td class="num"><span class="big-o" data-o="n2">O(V·E)</span></td></tr>

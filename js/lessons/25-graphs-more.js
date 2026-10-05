@@ -415,7 +415,7 @@
       var best = Object.keys(dg).sort(function (a, b) { return dg[b] - dg[a]; })[0];
       V.clickQuiz(stage, {
         el: '#quiz-degree', id: 'degree-max', question: 'Click the vertex with the <b>highest degree</b>.', answer: best,
-        right: 'D touches four edges (B, C, E and F). B, C and E have three, and A and F only one. Degree is the number of edges at a vertex, not how central it looks.',
+        right: 'D touches four edges (B, C, E and F). B and C have three, E has two, and A and F only one. Degree is the number of edges at a vertex, not how central it looks.',
         wrong: 'Count the lines that touch each vertex. A vertex that looks central may not have the most.'
       });
     }(V.$('#fig-quizdeg')));

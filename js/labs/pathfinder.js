@@ -93,7 +93,7 @@
 
   function legend() {
     V.legend($('[data-legend]', fig), [
-      { state: 'default', color: 'var(--bg-sunken)', shape: 'outline', label: 'Open (cost 1)' },
+      { state: 'default', color: 'var(--ink-3)', shape: 'outline', label: 'Open (cost 1)' },
       { state: 'default', color: 'color-mix(in srgb, var(--st-default) 78%, var(--el-fill))', label: 'Wall' },
       { state: 'path', shape: 'line', label: 'Mud (cost ' + S.mudCost + ')' },
       { state: 'frontier', label: 'Waiting' },

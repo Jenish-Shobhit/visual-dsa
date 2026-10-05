@@ -26,9 +26,11 @@
 .gs-field--presets { flex: 1 1 420px; }
 .gs-presets { display: flex; flex-wrap: wrap; gap: 6px; }
 .gs-preset[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 16%, var(--bg-elev)); border-color: var(--accent); color: var(--ink); font-weight: 650; }
-.gs-field--slider { flex: 0 1 230px; min-width: 190px; }
+.gs-field--slider { flex: 0 0 285px; min-width: 0; max-width: 100%; }
+.gs-field--slider .slider { grid-template-columns: auto minmax(90px, 1fr) minmax(7.5em, auto); }
+.gs-field--slider .slider__value { text-align: left; white-space: nowrap; }
 .gs-graph-actions { margin-left: auto; }
-.gs-row--random { align-items: center; }
+.gs-row--random { align-items: center; column-gap: 40px; }
 .gs-row--note { align-items: baseline; justify-content: space-between; gap: 4px 22px; }
 .gs-row--note .gs-notice { flex: 1 1 320px; }
 .gs-row--note .gs-lesson { padding-bottom: 0; margin-left: auto; }
@@ -48,8 +50,8 @@
 .gs-algo:hover { border-color: var(--accent); }
 .gs-algo:focus-visible { outline: none; box-shadow: var(--ring); }
 .gs-algo[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.gs-algo.is-off { opacity: .48; border-style: dashed; cursor: not-allowed; }
-.gs-algo.is-off[aria-pressed="true"] { opacity: .8; background: color-mix(in srgb, var(--st-error) 16%, var(--bg-elev)); border-color: var(--st-error); color: var(--ink); }
+.gs-algo.is-off { color: var(--ink-3); border-style: dashed; border-color: var(--ink-3); cursor: not-allowed; }
+.gs-algo.is-off[aria-pressed="true"] { color: var(--ink); background: color-mix(in srgb, var(--st-error) 16%, var(--bg-elev)); border-color: var(--st-error); color: var(--ink); }
 .gs-algo.has-warn::after { content: "!"; margin-left: 7px; width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; font: 800 11px var(--font-sans); background: var(--st-compare); color: var(--on-state); }
 
 .gs-row--pick { align-items: flex-end; }
@@ -62,7 +64,7 @@
 .gs-tool { padding-bottom: 0; }
 .gs-notice { margin: 0; min-height: 1.4em; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 .gs-notice:empty { min-height: 0; }
-.gs-notice[data-kind="error"] { color: var(--st-error); font-weight: 560; }
+.gs-notice[data-kind="error"] { color: var(--st-error-text); font-weight: 560; }
 .gs-notice:not([data-kind]), .gs-notice[data-kind=""] { color: color-mix(in srgb, var(--st-compare) 60%, var(--ink)); }
 .gs-notice[data-kind="note"] { color: var(--ink-2); }
 
@@ -92,7 +94,7 @@
 .gs-chips { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
 .gs-empty { font-size: 13px; color: var(--ink-3); font-style: italic; }
 .gs-empty-msg { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-3); }
-.gs-empty-msg.is-error { color: var(--st-error); }
+.gs-empty-msg.is-error { color: var(--st-error-text); }
 .gs-chip {
   --c: var(--st-default);
   display: inline-flex; align-items: baseline; gap: 5px; min-width: 28px; justify-content: center; padding: 2px 8px 3px;
@@ -141,7 +143,7 @@
 .gs-text__actions { margin-top: 8px; }
 .gs-msg { margin: 8px 0 0; min-height: 1.4em; font-size: 13.5px; color: var(--ink-2); }
 .gs-msg:empty { min-height: 0; margin: 0; }
-.gs-msg[data-kind="error"] { color: var(--st-error); font-weight: 560; }
+.gs-msg[data-kind="error"] { color: var(--st-error-text); font-weight: 560; }
 
 .gs-foot { display: grid; gap: 4px; }
 .gs-tips, .gs-lessons { margin-top: var(--space-7); }

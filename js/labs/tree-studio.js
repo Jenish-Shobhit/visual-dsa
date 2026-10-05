@@ -19,7 +19,7 @@
   var mode = { kind: 'bst', compare: false, instant: false };
   var panes = [];           // {kind, S, view, el, chips, cap}
   var undoStack = [];
-  var player = null;
+  var player = null, pendingNote = null;
   var cur = null;           // frames on screen
   var rng = V.rng(Date.now() % 2147483647);
 
@@ -32,6 +32,7 @@
 
   function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
   function setMsg(text, kind) {
+    pendingNote = null;
     el.msg.textContent = text || '';
     el.msg.setAttribute('data-kind', kind || '');
     if (kind === 'error') el.value.setAttribute('aria-invalid', 'true'); else el.value.removeAttribute('aria-invalid');
@@ -342,7 +343,10 @@
     commit(results.map(function (r) { return { state: r.state, frames: r.frames, ok: true, message: '' }; }), { summary: 'Inserting ' + plural(values.length, mode.compare || !M.KINDS[mode.kind].word ? 'key' : 'word') + ' into all three trees: ' + values.join(', ') + '.' });
     var note = 'Inserted ' + plural(r0.done, wordy() ? 'word' : 'key') + '.';
     if (r0.skipped.length) note += ' Skipped ' + r0.skipped.length + ' already stored or over the size limit.';
-    setMsg(note, 'note');
+    /* say "Inserting…" while the animation runs and the final count once it lands */
+    var total = Math.max.apply(null, results.map(function (r) { return r.frames.length; }));
+    if (mode.instant || total <= 1 || V.reducedMotion() || player.index >= total - 1) { pendingNote = null; setMsg(note, 'note'); }
+    else { setMsg('Inserting ' + plural(r0.done, wordy() ? 'word' : 'key') + '…', 'note'); pendingNote = note; }
   }
   function bulkKind(which) {
     var k = panes[0].kind;
@@ -432,6 +436,7 @@
       root: root, steps: [restingStep('')], render: render, caption: '[data-caption]',
       baseStepMs: 550, speed: 1, label: 'Tree studio step controls'
     });
+    player.on('end', function () { if (pendingNote) { var n = pendingNote; pendingNote = null; setMsg(n, 'note'); } });
     syncButtons();
     showResting(example ? 'An example to start from: nine keys already inserted. Insert, delete or search, or press Clear to begin empty.' : init.keys.length ? 'Loaded ' + plural(init.keys.length, M.KINDS[init.kind].word && !init.compare ? 'word' : 'key') + ' from the link.' : 'Insert a value to begin, or try “Insert 1 to 15 in order”.');
     void cmpToggle;

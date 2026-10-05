@@ -97,9 +97,24 @@
     var s = state();
     flow.render(s.flow, { duration: dur === undefined ? (reduced() ? 0 : 500) : dur });
     paintPanel(s.w); paintTrail(s.w); paintRec(s.w);
+    revealCurrent(dur);
     $('[data-back]').disabled = !answers.length;
     $('[data-restart]').disabled = !answers.length;
     writeUrl();
+  }
+  /* On narrow screens the chart scrolls sideways: bring the current node into view. */
+  function revealCurrent(dur) {
+    var host = $('[data-flow]');
+    if (!host) return;
+    function go() {
+      if (host.scrollWidth <= host.clientWidth + 2) return;
+      var el = host.querySelector('.vz-flow-node.is-active');
+      if (!el) return;
+      var hr = host.getBoundingClientRect(), er = el.getBoundingClientRect();
+      var left = host.scrollLeft + (er.left - hr.left) - (hr.width - er.width) / 2;
+      host.scrollTo({ left: Math.max(0, left), behavior: reduced() ? 'auto' : 'smooth' });
+    }
+    if (dur === 0) go(); else setTimeout(go, (dur === undefined ? 500 : dur) + 80);
   }
   function answer(label, viaScenario) {
     if (!viaScenario) cancelScenario();

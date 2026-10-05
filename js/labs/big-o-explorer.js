@@ -299,8 +299,8 @@
   /* ------------------------------------------------------------------ doubling game */
   var D = { n: 4, prev: null, hist: {}, right: 0, total: 0, streak: 0, q: null, feedback: '' };
   var DBL_MAX = 1 << 20, DBL_MIN = 2;
-  var PRED_OPTS = ['×1', '×1.4', '×2', '×4', '×8', 'squared'];
-  var PRED_ANS = { '1': '×1', sqrtn: '×1.4', n: '×2', n2: '×4', n3: '×8', '2n': 'squared' };
+  var PRED_OPTS = ['×1', '×1.41', '×2', '×4', '×8', 'squared'];
+  var PRED_ANS = { '1': '×1', sqrtn: '×1.41', n: '×2', n2: '×4', n3: '×8', '2n': 'squared' };
   var PRED_IDS = Object.keys(PRED_ANS);
   var cardEls = {}, dblBusy = false;
   function buildCards() {
@@ -366,7 +366,7 @@
     D.total++; if (ok) { D.right++; D.streak++; } else D.streak = 0;
     dblStep(1);
     var ratio = B.formatRatio(c.log10(D.n) - c.log10(before));
-    D.feedback = (ok ? 'Right. ' : 'Not quite. ') + SHORT[D.q] + ' went from ' + B.formatCount(c.log10(before)) + ' to ' + B.formatCount(c.log10(D.n)) + ' steps as n doubled from ' + fmtN(before) + ' to ' + fmtN(D.n) + (D.q === '2n' ? ': the work squared (2ⁿ × 2ⁿ = 2²ⁿ).' : ' (' + ratio + ').');
+    D.feedback = 'Last answer: ' + (ok ? 'right. ' : 'not quite. ') + 'O(' + SHORT[D.q] + ') went from ' + B.formatCount(c.log10(before)) + ' to ' + B.formatCount(c.log10(D.n)) + ' steps as n doubled from ' + fmtN(before) + ' to ' + fmtN(D.n) + (D.q === '2n' ? ': the work squared (2ⁿ × 2ⁿ = 2²ⁿ).' : ' (' + ratio + ').');
     var card = cardEls[D.q].el; card.classList.remove('is-flash', 'is-wrong'); void card.offsetWidth; card.classList.add(ok ? 'is-flash' : 'is-wrong');
     paintScore(); newQuestion();
   }

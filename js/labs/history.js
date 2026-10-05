@@ -538,7 +538,7 @@
         for (var i = 0; i < placed.length; i++) if (Math.abs(placed[i] - x) < wdt) return;
         placed.push(x);
         frag.appendChild(s('line', { class: 'hx-tick' + (major ? ' is-major' : ''), x1: x, x2: x, y1: axisY, y2: axisY + (major ? 8 : 5) }));
-        var tx = VDSA.clamp(x, wdt / 2 - 2, W - wdt / 2 + 2); // keep edge labels inside the stage
+        var tx = VDSA.clamp(x, wdt / 2 + 8, W - wdt / 2 - 8); // keep edge labels inside the stage
         frag.appendChild(s('text', { class: 'hx-tick__label' + (major ? ' is-major' : ''), x: tx, y: axisY + 22 }, text));
       }
       // Era boundaries first: they carry the scale breaks and win label collisions.
@@ -1418,7 +1418,7 @@
       });
       var shown = sweepP < 1 ? Math.round(yNow) : 2025;
       yearEl.textContent = yearText(shown === 0 ? 1 : shown);
-      subEl.textContent = litCount + ' of ' + EVENTS.length + ' discoveries';
+      subEl.textContent = litCount + ' of ' + EVENTS.length + ' discoveries so far';
       var hx = AX + (yNow - Y0) / (Y1 - Y0) * AW;
       play.setAttribute('x1', hx.toFixed(1)); play.setAttribute('x2', hx.toFixed(1));
       play.style.opacity = sweepP > 0 && sweepP < 1 ? '1' : '0';

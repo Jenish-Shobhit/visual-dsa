@@ -79,19 +79,19 @@
       { id: 'init', type: 'start', text: 'dist[s] ← 0\npush (0, s)', col: 1, row: 0 },
       { id: 'empty', type: 'decision', text: 'queue empty?', col: 1, row: 1 },
       { id: 'done', type: 'end', text: 'done: every reachable vertex is settled', col: 2, row: 1, maxWidth: 170 },
-      { id: 'stale', type: 'decision', text: 'pop (d, u)\nd > dist[u] ?', col: 1, row: 2 },
+      { id: 'stale', type: 'decision', text: 'pop (d, u): stale?\nd > dist[u] ?', col: 1, row: 2 },
       { id: 'settle', text: 'settle u\ndist[u] is final', col: 1, row: 3 },
       { id: 'target', type: 'decision', text: 'u = target?', col: 1, row: 4 },
       { id: 'found', type: 'end', text: 'stop: read the path from the parents', col: 2, row: 4, maxWidth: 170 },
       { id: 'more', type: 'decision', text: 'next edge u → v ?', col: 1, row: 5 },
       { id: 'better', type: 'decision', text: 'dist[u] + w\n< dist[v] ?', col: 1, row: 6 },
-      { id: 'relax', text: 'dist[v] ← dist[u] + w\nparent[v] ← u\npush (dist[v], v)', col: 1, row: 7 }
+      { id: 'relax', text: 'dist[v] ← dist[u] + w\nparent[v] ← u\npush (dist[v], v)', col: 1, row: 7, maxWidth: 230 }
     ],
     edges: [
       { from: 'init', to: 'empty' },
       { from: 'empty', to: 'done', label: 'yes' },
       { from: 'empty', to: 'stale', label: 'no' },
-      { from: 'stale', to: 'empty', label: 'yes: discard', via: { fromSide: 'left', toSide: 'left' } },
+      { from: 'stale', to: 'empty', label: 'yes', via: { fromSide: 'left', toSide: 'left' } },
       { from: 'stale', to: 'settle', label: 'no' },
       { from: 'settle', to: 'target' },
       { from: 'target', to: 'found', label: 'yes' },

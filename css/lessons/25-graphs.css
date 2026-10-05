@@ -24,7 +24,7 @@
 .g25-degbadge.is-odd text { fill: var(--on-state); }
 /* the map is drawn in a 760-unit box that shrinks on phones: grow its text so it still reads at about 10px */
 @container fig (max-width: 560px) {
-  .g25-landname { font-size: 21px; }
+  .g25-landname { font-size: 22px; }
   .g25-nodename { font-size: 30px; }
   .g25-degbadge circle { r: 19px; }
   .g25-degbadge text { font-size: 22px; }
@@ -133,3 +133,9 @@
 /* Scenario choosers: long labels wrap inside the figure instead of running past it. */
 .btn-row[data-scenarios], .btn-row[data-presets] { max-width: 100%; min-width: 0; }
 .btn-row[data-scenarios] > .btn, .btn-row[data-presets] > .btn { white-space: normal; text-align: left; max-width: 100%; height: auto; min-height: 30px; padding-top: 5px; padding-bottom: 5px; line-height: 1.25; }
+
+/* Hero: the long word "representations" must fit its half-width column. */
+.hero__title { font-size: clamp(30px, 8.5vw, 42px); hyphens: auto; overflow-wrap: break-word; }
+/* Edge-kind minis: a tidy 2 x 2 instead of 3 + 1 orphan. */
+#mini-kinds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 480px) { #mini-kinds { grid-template-columns: minmax(0, 1fr); } }

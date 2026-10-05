@@ -142,7 +142,7 @@
         var d = rep.adj[node] ? rep.adj[node].length : 0;
         return 'Vertex <b>' + node + '</b> is selected: its list row has ' + d + ' ' + (d === 1 ? 'entry' : 'entries') + ' and the highlighted matrix row holds ' + d + ' non-zero ' + (d === 1 ? 'cell' : 'cells') + '. That is its ' + (directed ? 'out-' : '') + 'degree.';
       }
-      return 'Draw on the left: click empty space to add a vertex, drag from one vertex to another to add an edge. The matrix, the list and the edge list on the right update as you go. Click an edge or a vertex to see where it lives.';
+      return 'Draw in the top panel: click empty space to add a vertex, drag from one vertex to another to add an edge. The matrix, the list and the edge list below it update as you go. Click an edge or a vertex to see where it lives.';
     }
 
     function applyPreset(p) {

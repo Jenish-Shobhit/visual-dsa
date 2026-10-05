@@ -239,7 +239,7 @@
       }
       var d = step.delta;
       ledger.eq.innerHTML = d ? '<span>' + fmt(d.before) + '</span> <em>+</em> <b class="in">' + fmt(d.enter) + '</b> <em>−</em> <b class="out">' + fmt(d.leave) + '</b> <em>=</em> <span>' + fmt(step.sum) + '</span>'
-        : step.kind === 'first' ? 'first window: add its ' + step.k + ' values once' : 'window sum stays ' + fmt(step.sum);
+        : step.kind === 'first' ? 'first window: add its ' + (step.k === 1 ? '1 value' : step.k + ' values') + ' once' : 'window sum stays ' + fmt(step.sum);
       ledger.eq.classList.toggle('is-note', !d);
       ledger.sum.textContent = fmt(step.sum); ledger.best.textContent = step.best === null ? '–' : fmt(step.best);
     }

@@ -96,7 +96,7 @@
         var settled = top(ns).map(function (it, k) { return k === i ? Object.assign({}, it, { from: 'b' + i }) : it; });
         push('swapin', ns, { items: [], length: 0 }, 'The variable <code>s</code> now points at the new block; the old one is garbage. Length ' + ns + ', ' + (i === 0 ? 'and the cost was 1.' : 'and the whole turn cost <b>' + (i + 1) + '</b> writes.'), 'concat', { topItems: settled });
       }
-      steps[steps.length - 1].caption += ' Final total: <b>' + cost + '</b> writes for ' + n + ' characters, which is 1 + 2 + … + ' + n + ' = ' + (n * (n + 1) / 2) + '.';
+      steps[steps.length - 1].caption += ' Final total: <b>' + cost + '</b> writes for ' + plural(n, 'character') + ', which is 1 + 2 + … + ' + n + ' = ' + (n * (n + 1) / 2) + '.';
     } else {
       push('start', 0, { items: [], length: 0 }, 'A builder keeps one growing buffer (a dynamic array, lesson 06). Appending a character writes only that character.', 'init');
       for (var j = 0; j < n; j++) {
@@ -361,7 +361,7 @@
         ops += k;
         var improved = sum > best;
         if (improved) { best = sum; bestStart = l; }
-        snap('window', l, l + k - 1, null, null, 'Window <b>[' + l + '..' + (l + k - 1) + ']</b>: add all ' + k + ' values again, <b>' + sum + '</b>. ' + (improved ? 'New best.' : 'Not better than ' + best + '.') + ' Total additions so far: ' + ops + '.', 'sum');
+        snap('window', l, l + k - 1, null, null, 'Window <b>[' + l + '..' + (l + k - 1) + ']</b>: add all ' + plural(k, 'value') + ' again, <b>' + sum + '</b>. ' + (improved ? 'New best.' : 'Not better than ' + best + '.') + ' Total additions so far: ' + ops + '.', 'sum');
       }
       steps.push(Object.assign({}, steps[steps.length - 1], { kind: 'end', caption: 'Best window sum: <b>' + best + '</b>, at indices ' + bestStart + '..' + (bestStart + k - 1) + '. Recomputing cost ' + plural(ops, 'addition') + ': k × (n − k + 1) = ' + k + ' × ' + (n - k + 1) + '.', line: 'ret' }));
       return steps;

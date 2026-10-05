@@ -38,11 +38,15 @@
     },
     sorted: function (n, opts) { return presets.random(n, Object.assign({ unique: true }, opts)).sort(function (a, b) { return a - b; }); },
     reversed: function (n, opts) { return presets.sorted(n, opts).reverse(); },
-    /* nearlySorted: sorted, then `swaps` random adjacent swaps (default max(1, n/5)) */
+    /* nearlySorted: sorted, then `swaps` random adjacent swaps (default max(1, n/5)); never fully sorted */
     nearlySorted: function (n, opts) {
       opts = opts || {}; var r = makeRng(opts), arr = presets.sorted(n, opts);
       var swaps = opts.swaps === undefined ? Math.max(1, Math.round(n / 5)) : opts.swaps;
       for (var s = 0; s < swaps && n > 1; s++) { var i = rint(r, 0, n - 2); var t = arr[i]; arr[i] = arr[i + 1]; arr[i + 1] = t; }
+      /* swaps can cancel out; when swaps were asked for, never hand back a fully sorted array */
+      if (swaps > 0 && n > 1 && arr.every(function (v, k) { return k === 0 || arr[k - 1] <= v; })) {
+        var m = Math.floor(n / 2) - 1, u = arr[m]; arr[m] = arr[m + 1]; arr[m + 1] = u;
+      }
       return arr;
     },
     /* fewUnique: values drawn from only k distinct numbers (default 3) */

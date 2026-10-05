@@ -10,13 +10,6 @@
 (function () {
   'use strict';
   var V = window.VDSA, h = V.h;
-  /* nearly sorted, but never fully sorted: two random swaps can cancel, so guarantee one inversion */
-  function nearlySorted(n, o) {
-    var a = V.presets.nearlySorted(n, o), i;
-    for (i = 0; i + 1 < a.length; i++) if (a[i] > a[i + 1]) return a;
-    if (a.length > 1) { i = Math.floor(a.length / 2) - 1; var t = a[i]; a[i] = a[i + 1]; a[i + 1] = t; }
-    return a;
-  }
   var L16 = V.lessons = V.lessons || {};
   L16 = V.lessons.l16 = V.lessons.l16 || {};
   function S() { return V.algos.sorting; }
@@ -62,7 +55,7 @@
       { label: 'Random', value: function () { return V.presets.random(N, PRESET_OPTS); } },
       { label: 'Sorted', title: 'Worst case for a first-element or last-element pivot', value: function () { return V.presets.sorted(N, PRESET_OPTS); } },
       { label: 'Reversed', title: 'Also a worst case for a last-element pivot', value: function () { return V.presets.reversed(N, PRESET_OPTS); } },
-      { label: 'Nearly sorted', value: function () { return nearlySorted(N, Object.assign({ swaps: 2 }, PRESET_OPTS)); } },
+      { label: 'Nearly sorted', value: function () { return V.presets.nearlySorted(N, Object.assign({ swaps: 2 }, PRESET_OPTS)); } },
       { label: 'Few unique', title: 'Many equal keys', value: function () { return V.presets.fewUnique(N, Object.assign({ k: 3 }, { min: 10, max: 90 })); } },
       { label: 'All equal', value: [5, 5, 5, 5, 5, 5, 5, 5] },
       { label: 'One value', value: [42] }

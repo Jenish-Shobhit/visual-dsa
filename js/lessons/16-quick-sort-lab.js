@@ -4,13 +4,6 @@
 (function () {
   'use strict';
   var V = window.VDSA, h = V.h;
-  /* nearly sorted, but never fully sorted: two random swaps can cancel, so guarantee one inversion */
-  function nearlySorted(n, o) {
-    var a = V.presets.nearlySorted(n, o), i;
-    for (i = 0; i + 1 < a.length; i++) if (a[i] > a[i + 1]) return a;
-    if (a.length > 1) { i = Math.floor(a.length / 2) - 1; var t = a[i]; a[i] = a[i + 1]; a[i + 1] = t; }
-    return a;
-  }
   var L16 = V.lessons.l16;
   function S() { return V.algos.sorting; }
   function fmt(v) { return L16.fmt(v); }
@@ -405,7 +398,7 @@
       var o = { min: 5, max: 95, seed: seed };
       if (preset === 'sorted') return V.presets.sorted(n, o);
       if (preset === 'reversed') return V.presets.reversed(n, o);
-      if (preset === 'nearly') return nearlySorted(n, Object.assign({ swaps: 2 }, o));
+      if (preset === 'nearly') return V.presets.nearlySorted(n, Object.assign({ swaps: 2 }, o));
       if (preset === 'few') return V.presets.fewUnique(n, Object.assign({ k: 3 }, o));
       return V.presets.random(n, o);
     }

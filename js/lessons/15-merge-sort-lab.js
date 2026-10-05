@@ -5,13 +5,6 @@
 (function () {
   'use strict';
   var V = window.VDSA, h = V.h;
-  /* nearly sorted, but never fully sorted: two random swaps can cancel, so guarantee one inversion */
-  function nearlySorted(n, o) {
-    var a = V.presets.nearlySorted(n, o), i;
-    for (i = 0; i + 1 < a.length; i++) if (a[i] > a[i + 1]) return a;
-    if (a.length > 1) { i = Math.floor(a.length / 2) - 1; var t = a[i]; a[i] = a[i + 1]; a[i + 1] = t; }
-    return a;
-  }
   var L15 = V.lessons.l15;
   function M() { return V.algos.mergesort; }
   function S() { return V.algos.sorting; }
@@ -181,7 +174,7 @@
         { label: 'Random', value: function () { return V.presets.random(N, { min: 1, max: 40 }); } },
         { label: 'Sorted', title: 'Merge sort does the same merges: it cannot tell that the input is sorted', value: function () { return V.presets.sorted(N, { min: 1, max: 40 }); } },
         { label: 'Reversed', value: function () { return V.presets.reversed(N, { min: 1, max: 40 }); } },
-        { label: 'Nearly sorted', value: function () { return nearlySorted(N, { min: 1, max: 40, swaps: 2 }); } },
+        { label: 'Nearly sorted', value: function () { return V.presets.nearlySorted(N, { min: 1, max: 40, swaps: 2 }); } },
         { label: 'Few unique', value: function () { return V.presets.fewUnique(N, { min: 5, max: 40, k: 3 }); } },
         { label: '11 values', title: 'Odd sizes: the halves differ by one', value: function () { return V.presets.random(11, { min: 1, max: 40 }); } },
         { label: '16 values', value: function () { return V.presets.random(16, { min: 1, max: 40 }); } },
@@ -216,7 +209,7 @@
     var o = { min: 5, max: 95, seed: seed };
     if (preset === 'sorted') return V.presets.sorted(n, o);
     if (preset === 'reversed') return V.presets.reversed(n, o);
-    if (preset === 'nearly') return nearlySorted(n, Object.assign({ swaps: 2 }, o));
+    if (preset === 'nearly') return V.presets.nearlySorted(n, Object.assign({ swaps: 2 }, o));
     if (preset === 'few') return V.presets.fewUnique(n, Object.assign({ k: 3 }, o));
     return V.presets.random(n, o);
   }

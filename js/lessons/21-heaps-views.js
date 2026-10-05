@@ -199,7 +199,7 @@
       var g = s('g', { class: 'l21m-node l21m-cell is-' + st, transform: 'translate(' + (PAD + i * P) + ' ' + TOP + ')',
         'data-id': o.ids ? String(i) : null, 'data-label': o.ids ? (o.idLabel ? o.idLabel(v, i) : 'Index ' + i + ', value ' + v) : null },
         s('rect', { width: C, height: C, rx: 6 }),
-        s('text', { class: 'l21m-val', x: C / 2, y: C / 2 + 1, style: 'font-size:' + Math.round(C * 0.42) + 'px' }, L21.fmt(v)));
+        s('text', { class: 'l21m-val', x: C / 2, y: C / 2 + 1, style: 'font-size:' + Math.round(C * 0.5) + 'px' }, L21.fmt(v)));
       if (o.index) g.appendChild(s('text', { class: 'l21m-idx', x: C / 2, y: C + 13 }, i));
       svg.appendChild(g);
     });

@@ -95,7 +95,7 @@
   function summaryCard() {
     var grid = V.$('#summary-card .summary__grid');
     var tiles = [
-      { svg: L21.miniCells([1, 3, 2, 7, 4, 5, 6], { size: 22, pitch: 27, index: true, states: { 0: 'compare', 1: 'key', 3: 'frontier', 4: 'frontier' }, tags: [{ at: 1, text: 'i' }] }),
+      { svg: L21.miniCells([1, 3, 2, 7, 4, 5, 6], { size: 24, pitch: 28, index: true, states: { 0: 'compare', 1: 'key', 3: 'frontier', 4: 'frontier' }, tags: [{ at: 1, text: 'i' }] }),
         label: 'Tree in an array', text: 'Children of i: 2i + 1 and 2i + 2. Parent: ⌊(i − 1) / 2⌋.' },
       { svg: L21.miniTree([1, 3, 2, 7, 4, 5, 6], { r: 11, levelH: 32, states: { 0: 'found' } }),
         label: 'Heap property', text: 'Every parent ≤ its children. The minimum sits at the root: peek is O(1).' },
@@ -103,9 +103,9 @@
         label: 'Insert: sift up', text: 'Append, then swap with the parent while smaller. At most log n swaps.' },
       { svg: L21.miniTree([4, 5, 3, 9, 7], { r: 11, levelH: 32, states: { 0: 'key', 2: 'compare' }, edgeStates: { 2: 'compare' } }),
         label: 'Extract: sift down', text: 'Last value to the root, then swap with the smaller child. At most log n swaps.' },
-      { svg: L21.miniCells([9, 7, 8, 3, 4, 2, 1], { size: 22, pitch: 27, states: { 0: 'compare', 6: 'compare' } }),
+      { svg: L21.miniCells([9, 7, 8, 3, 4, 2, 1], { size: 24, pitch: 28, states: { 0: 'compare', 6: 'compare' } }),
         label: 'Build in O(n)', text: 'Sift down every non-leaf, last to first: about n swaps in the worst case.' },
-      { svg: L21.miniCells([1, 2, 3, 5, 7, 8, 9], { size: 22, pitch: 27, states: { 3: 'done', 4: 'done', 5: 'done', 6: 'done' } }),
+      { svg: L21.miniCells([1, 2, 3, 5, 7, 8, 9], { size: 24, pitch: 28, states: { 3: 'done', 4: 'done', 5: 'done', 6: 'done' } }),
         label: 'Heap sort', text: 'Build a max-heap, then swap the root to the end. O(n log n), in place, not stable.' }
     ];
     tiles.forEach(function (t) {

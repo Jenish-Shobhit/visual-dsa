@@ -129,6 +129,18 @@
         Object.keys(pair[0]).forEach(function (id) { if (!seen[pair[1]][id]) { var r = pair[0][id]; r.gone = true; r.tgt = { x: r.cur.x, y: r.cur.y, w: r.cur.w, o: 0 }; if (pair[1] === 'e') r.tgt = { parent: null }; } else pair[0][id].gone = false; });
       });
       last = state;
+      /* on a narrow screen the stage scrolls sideways: keep the action (the highlighted nodes) in view */
+      if (container.scrollWidth > container.clientWidth + 2) {
+        var hot = Object.keys(T.frames).filter(function (id) { return T.frames[id].state !== 'default'; });
+        if (!hot.length) hot = Object.keys(T.frames).filter(function (id) { return T.frames[id].y === TOP; });
+        if (hot.length) {
+          var x0 = Infinity, x1 = -Infinity;
+          hot.forEach(function (id) { x0 = Math.min(x0, T.frames[id].x); x1 = Math.max(x1, T.frames[id].x + T.frames[id].w); });
+          var sc = parseFloat(svg.style.width) / T.W, mid = ((x0 + x1) / 2) * sc + (svg.offsetLeft - container.offsetLeft || 0);
+          var left = Math.max(0, mid - container.clientWidth / 2);
+          if (container.scrollTo && !V.reducedMotion()) container.scrollTo({ left: left, behavior: o.duration ? 'smooth' : 'auto' }); else container.scrollLeft = left;
+        }
+      }
       var dur = V.dur(o.duration === undefined ? 600 : o.duration);
       if (tw) tw.cancel();
       var recs = Object.keys(F).map(function (id) { return F[id]; }).concat(Object.keys(K).map(function (id) { return K[id]; }));

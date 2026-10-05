@@ -616,12 +616,12 @@
     V.quiz('#quiz-delete', {
       id: 'bst-delete-30',
       kicker: 'Quick check: pick the tree',
-      question: 'You delete <b>30</b> from this tree, replacing it with its successor. Which tree do you get?' + mini(before, { size: 26, label: 'Tree: 30 with children 20 and 40; 20 has 10 and 25; 40 has 35 and 50', states: { 30: 'swap' } }),
+      question: 'You delete <b>30</b> from this tree, replacing it with its successor. Which tree do you get?' + mini(before, { size: 30, label: 'Tree: 30 with children 20 and 40; 20 has 10 and 25; 40 has 35 and 50', states: { 30: 'swap' } }),
       options: [
-        mini([35, [20, 10, 25], [40, null, 50]], { size: 22, label: 'Option A: 35 at the root, 40 keeps only 50' }),
-        mini([25, [20, 10], [40, 35, 50]], { size: 22, label: 'Option B: 25 at the root' }),
-        mini([40, [20, 10, 25], [50, 35]], { size: 22, label: 'Option C: 40 at the root, 35 under 50' }),
-        mini([35, [20, 10, 25], [40, 50]], { size: 22, label: 'Option D: 35 at the root, 50 left of 40' })
+        mini([35, [20, 10, 25], [40, null, 50]], { size: 28, label: 'Option A: 35 at the root, 40 keeps only 50' }),
+        mini([25, [20, 10], [40, 35, 50]], { size: 28, label: 'Option B: 25 at the root' }),
+        mini([40, [20, 10, 25], [50, 35]], { size: 28, label: 'Option C: 40 at the root, 35 under 50' }),
+        mini([35, [20, 10, 25], [40, 50]], { size: 28, label: 'Option D: 35 at the root, 50 left of 40' })
       ],
       answer: 0,
       explain: [
@@ -696,12 +696,12 @@
   function summaryCard() {
     var grid = V.$('#summary-card .summary__grid');
     var tiles = [
-      { svg: mini([50, [30, 20, 40], [70, 60, 80]], { size: 20, hullOf: 30, states: { 50: 'pivot' }, label: 'Left subtree of 50 shaded' }), label: 'One rule, whole subtrees', text: 'Left subtree &lt; node &lt; right subtree, at every node.' },
-      { svg: mini([50, [30, 20, 40], [70, 60, 80]], { size: 20, states: { 50: 'visited', 30: 'visited', 40: 'found' }, edges: { '50-30': 'path', '30-40': 'path' }, label: 'Search path 50, 30, 40' }), label: 'Search walks one path', text: 'One comparison per level: O(h).' },
-      { svg: mini([50, [30, 20, [40, null, 45]], [70, 60, 80]], { size: 20, states: { 45: 'done' }, edges: { '40-45': 'path' }, label: 'New leaf 45' }), label: 'Insert where you fall off', text: 'The new key always becomes a leaf.' },
-      { svg: mini([55, [30, 20, 40], [70, [60, null, 58], 80]], { size: 20, states: { 55: 'done', 58: 'active' }, label: 'Successor 55 copied into the root' }), label: 'Delete: 0, 1 or 2 children', text: 'Two children: copy the successor, delete it.' },
-      { svg: mini([40, [20, 10, 30], [60, 50, 70]], { size: 17, order: 'inorder', gap: 0.9, level: 1.2, strip: true, label: 'Each key dropped straight down gives 10, 20, 30, 40, 50, 60, 70' }), label: 'In-order is sorted', text: 'Left, node, right: smallest to largest.' },
-      { svg: mini([1, null, [2, null, [3, null, [4, null, 5]]]], { size: 18, level: 1.05, states: { 5: 'error' }, label: 'A stick of five keys' }), label: 'Order decides the shape', text: 'Sorted input builds a stick: h = n − 1.' }
+      { svg: mini([50, [30, 20, 40], [70, 60, 80]], { size: 25, hullOf: 30, states: { 50: 'pivot' }, label: 'Left subtree of 50 shaded' }), label: 'One rule, whole subtrees', text: 'Left subtree &lt; node &lt; right subtree, at every node.' },
+      { svg: mini([50, [30, 20, 40], [70, 60, 80]], { size: 25, states: { 50: 'visited', 30: 'visited', 40: 'found' }, edges: { '50-30': 'path', '30-40': 'path' }, label: 'Search path 50, 30, 40' }), label: 'Search walks one path', text: 'One comparison per level: O(h).' },
+      { svg: mini([50, [30, 20, [40, null, 45]], [70, 60, 80]], { size: 25, states: { 45: 'done' }, edges: { '40-45': 'path' }, label: 'New leaf 45' }), label: 'Insert where you fall off', text: 'The new key always becomes a leaf.' },
+      { svg: mini([55, [30, 20, 40], [70, [60, null, 58], 80]], { size: 25, states: { 55: 'done', 58: 'active' }, label: 'Successor 55 copied into the root' }), label: 'Delete: 0, 1 or 2 children', text: 'Two children: copy the successor, delete it.' },
+      { svg: mini([40, [20, 10, 30], [60, 50, 70]], { size: 24, order: 'inorder', gap: 0.9, level: 1.2, strip: true, label: 'Each key dropped straight down gives 10, 20, 30, 40, 50, 60, 70' }), label: 'In-order is sorted', text: 'Left, node, right: smallest to largest.' },
+      { svg: mini([1, null, [2, null, [3, null, [4, null, 5]]]], { size: 25, level: 1.05, states: { 5: 'error' }, label: 'A stick of five keys' }), label: 'Order decides the shape', text: 'Sorted input builds a stick: h = n − 1.' }
     ];
     tiles.forEach(function (t) {
       grid.appendChild(h('div', { class: 'summary__item' },

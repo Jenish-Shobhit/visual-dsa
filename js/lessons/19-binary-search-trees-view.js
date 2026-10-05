@@ -684,8 +684,8 @@
       out.push('<g class="vz-item vz-node is-' + stt + '" transform="translate(' + vz.n2(p.x) + ' ' + vz.n2(p.y) + ')"><circle class="vz-shape" r="' + vz.n2(K / 2) + '"/>' +
         '<text class="vz-ink vz-value" text-anchor="middle" dy=".35em" font-size="' + fs + '">' + V.escape(label) + '</text>');
       if (o.badges && o.badges[n.value] !== undefined) {
-        var bt = String(o.badges[n.value]), bw = Math.max(13, bt.length * 6 + 7);
-        out.push('<g class="vz-badge bst-node-badge is-default" transform="translate(' + vz.n2(K * 0.42 + bw / 2 - 4) + ' ' + vz.n2(-K * 0.4) + ')"><rect x="' + vz.n2(-bw / 2) + '" y="-6.5" width="' + bw + '" height="13" rx="6.5"/><text text-anchor="middle" dy=".35em" style="font-size:9px">' + V.escape(bt) + '</text></g>');
+        var bt = String(o.badges[n.value]), bw = Math.max(13, bt.length * 6.5 + 8);
+        out.push('<g class="vz-badge bst-node-badge is-default" transform="translate(' + vz.n2(K * 0.42 + bw / 2 - 4) + ' ' + vz.n2(-K * 0.4) + ')"><rect x="' + vz.n2(-bw / 2) + '" y="-6.5" width="' + bw + '" height="13" rx="6.5"/><text text-anchor="middle" dy=".35em" style="font-size:10px">' + V.escape(bt) + '</text></g>');
       }
       if (o.subs && o.subs[n.value] !== undefined) out.push('<text class="vz-label bst-node-sub" text-anchor="middle" y="' + vz.n2(K / 2 + 9) + '" dy=".35em">' + V.escape(String(o.subs[n.value])) + '</text>');
       out.push('</g>');

@@ -112,7 +112,7 @@
     var fig = figEl('fig-explorer');
     var T = A.queensTrees(4), last = T.steps[T.steps.length - 1];
     var list = last.pruned.map(function (p) { return { id: p.id, parent: p.parent, label: p.label, state: p.badge ? 'error' : 'done', badge: p.badge }; });
-    var view = V.views.tree(fig.querySelector('[data-tree]'), { label: 'State-space tree of four queens. Click a node.', nodeSize: 30, levelHeight: 46, gap: 0.25, onNodeClick: null });
+    var view = V.views.tree(fig.querySelector('[data-tree]'), { label: 'State-space tree of four queens. Click a node.', nodeSize: 30, levelHeight: 46, gap: 0.25, minNodeSize: 6, onNodeClick: null });
     var boardHost = fig.querySelector('[data-board]'), text = fig.querySelector('[data-text]');
     var board = B.boardView(boardHost, { cell: 46, label: 'Board for the selected tree node' });
     var sel = 'r1302';
@@ -174,7 +174,7 @@
   function treesFigure() {
     var fig = figEl('fig-trees');
     var T = A.queensTrees(4);
-    var full = V.views.tree(fig.querySelector('[data-full]'), { label: 'Brute-force tree for four queens, every column in every row', nodeSize: 14, minNodeSize: 2.5, levelHeight: 30, gap: 0.12, shape: 'circle' });
+    var full = V.views.tree(fig.querySelector('[data-full]'), { label: 'Brute-force tree for four queens, every column in every row', nodeSize: 14, minNodeSize: 1, levelHeight: 30, gap: 0.12, shape: 'circle' });
     var pruned = V.views.tree(fig.querySelector('[data-pruned]'), { label: 'Backtracking tree for four queens, safe squares only', nodeSize: 22, minNodeSize: 6, levelHeight: 46, gap: 0.55 });
     var fullStates = T.steps.map(function (st) { return B.toTree(st.full, { pathEdges: false }); });
     var prunedStates = T.steps.map(function (st) { return B.toTree(st.pruned, { pathEdges: false }); });

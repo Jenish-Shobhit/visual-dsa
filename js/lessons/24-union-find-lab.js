@@ -255,36 +255,7 @@
     var n = p0.n, byRank = p0.byRank, compress = p0.compress, ops = UF.parseOps(p0.text, n).values;
     var pending = null;
 
-    var pair = L.pair(stage, { label: 'Union-find forest', nodeR: 17, showRank: true, levelH: 58, minSlot: 46 });
-    /* a roomy forest scrolls inside its stage: say so, and open centred on the trees */
-    var swipe = h('p', { class: 'uf-swipe', hidden: true }, '\u2194 Swipe the forest or array sideways');
-    var fHost = stage.querySelector('.uf-pair__forest');
-    fHost.parentNode.insertBefore(swipe, fHost.nextSibling);
-    var needCenter = true;
-    function fitCue() {
-      var aHost = stage.querySelector('.uf-pair__array');
-      swipe.hidden = !(fHost.scrollWidth > fHost.clientWidth + 2 || (aHost && aHost.scrollWidth > aHost.clientWidth + 2));
-      if (needCenter) { needCenter = false; fHost.scrollLeft = 0; }
-    }
-    /* keep the nodes the step is working on inside the visible part of a scrolling forest */
-    var followT = null;
-    function follow(st) {
-      clearTimeout(followT);
-      followT = setTimeout(function () {
-        var ids = Object.keys(st.states || {}).filter(function (k) { return st.states[k] === 'active' || st.states[k] === 'compare'; });
-        if (!ids.length || fHost.scrollWidth <= fHost.clientWidth + 2) return;
-        var box = fHost.getBoundingClientRect(), lo = Infinity, hi = -Infinity;
-        ids.forEach(function (k) {
-          var g = fHost.querySelector('.uf-node[data-id="' + k + '"]'); if (!g) return;
-          var r = g.getBoundingClientRect(); lo = Math.min(lo, r.left); hi = Math.max(hi, r.right);
-        });
-        if (lo === Infinity) return;
-        if (lo < box.left + 40) fHost.scrollTo({ left: fHost.scrollLeft - (box.left + 40 - lo), behavior: 'smooth' });
-        else if (hi > box.right - 40) fHost.scrollTo({ left: fHost.scrollLeft + (hi - (box.right - 40)), behavior: 'smooth' });
-      }, 520);
-    }
-    if (window.ResizeObserver) new ResizeObserver(fitCue).observe(fHost);
-    if (window.ResizeObserver && stage.querySelector('.uf-pair__array')) new ResizeObserver(fitCue).observe(stage.querySelector('.uf-pair__array'));
+    var pair = L.pair(stage, { label: 'Union-find forest', nodeR: 17, showRank: true, levelH: 58, minWidth: 0 });
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: codeFor(byRank, compress), default: 'pseudo', title: 'DSU', maxHeight: 330 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { x: 'active', ra: 'compare', rb: 'compare' } });
 
@@ -333,11 +304,11 @@
         } else st.flow = null;
       });
       L.annotate(steps);
-      pair.reset(); pair.prepare(steps); needCenter = true;
+      pair.reset(); pair.prepare(steps);
       return steps;
     }
     var player = V.player({
-      root: fig, steps: build(), render: function (st, ctx) { stage.style.setProperty('--uf-arr-min', (st.parent.length * 40 + 16) + 'px'); pair.render(st, ctx); fitCue(); follow(st); }, code: code, vars: vars, flow: flow,
+      root: fig, steps: build(), render: function (st, ctx) { pair.render(st, ctx); }, code: code, vars: vars, flow: flow,
       caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterLabels: L.COUNTER_LABELS, counterStates: L.COUNTER_STATES, baseStepMs: 1000, label: 'Union-find lab controls'
     });

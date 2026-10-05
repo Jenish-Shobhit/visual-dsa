@@ -10,6 +10,13 @@
 (function () {
   'use strict';
   var V = window.VDSA, h = V.h;
+  /* nearly sorted, but never fully sorted: two random swaps can cancel, so guarantee one inversion */
+  function nearlySorted(n, o) {
+    var a = V.presets.nearlySorted(n, o), i;
+    for (i = 0; i + 1 < a.length; i++) if (a[i] > a[i + 1]) return a;
+    if (a.length > 1) { i = Math.floor(a.length / 2) - 1; var t = a[i]; a[i] = a[i + 1]; a[i + 1] = t; }
+    return a;
+  }
   var L16 = V.lessons = V.lessons || {};
   L16 = V.lessons.l16 = V.lessons.l16 || {};
   function S() { return V.algos.sorting; }
@@ -55,7 +62,7 @@
       { label: 'Random', value: function () { return V.presets.random(N, PRESET_OPTS); } },
       { label: 'Sorted', title: 'Worst case for a first-element or last-element pivot', value: function () { return V.presets.sorted(N, PRESET_OPTS); } },
       { label: 'Reversed', title: 'Also a worst case for a last-element pivot', value: function () { return V.presets.reversed(N, PRESET_OPTS); } },
-      { label: 'Nearly sorted', value: function () { return V.presets.nearlySorted(N, Object.assign({ swaps: 2 }, PRESET_OPTS)); } },
+      { label: 'Nearly sorted', value: function () { return nearlySorted(N, Object.assign({ swaps: 2 }, PRESET_OPTS)); } },
       { label: 'Few unique', title: 'Many equal keys', value: function () { return V.presets.fewUnique(N, Object.assign({ k: 3 }, { min: 10, max: 90 })); } },
       { label: 'All equal', value: [5, 5, 5, 5, 5, 5, 5, 5] },
       { label: 'One value', value: [42] }
@@ -253,9 +260,21 @@
   L16.initLevels = function () {
     var fig = V.$('#fig-levels');
     var arr = V.views.array(fig.querySelector('[data-arr]'), { mode: 'boxes', cellSize: 46, label: 'Array being sorted by quick sort', showIndices: true });
-    var tree = V.views.tree(fig.querySelector('[data-tree]'), { nodeSize: 34, label: 'Recursion tree', height: 210 });
     var all = S().quickLomuto([8, 3, 11, 5, 1, 9, 12, 2, 7, 10, 4, 6], { pivot: 'last' });
     var steps = L16.slice(all, ['start', 'call', 'place', 'base', 'done']).map(function (s) { return Object.assign({}, s, { pointers: s.pointers.filter(function (p) { return p.name === 'p'; }) }); });
+    /* size the stage from the deepest tree the run ever draws, so the last level is never cut off */
+    var maxDepth = 0;
+    steps.forEach(function (s) {
+      var byId = {}, nodes = (s.tree && s.tree.nodes) || [];
+      nodes.forEach(function (nd) { byId[nd.id] = nd; });
+      (function walk(id, d) {
+        var nd = byId[id]; if (!nd) return;
+        if (d > maxDepth) maxDepth = d;
+        if (nd.left !== undefined && nd.left !== null) walk(nd.left, d + 1);
+        if (nd.right !== undefined && nd.right !== null) walk(nd.right, d + 1);
+      }(s.tree && s.tree.root, 0));
+    });
+    var tree = V.views.tree(fig.querySelector('[data-tree]'), { nodeSize: 34, label: 'Recursion tree', height: Math.max(210, 32 + 6 + 34 + maxDepth * 42 + 8) });
     arr.prepare(steps); tree.prepare(steps.map(function (s) { return s.tree; }));
     var player = V.player({
       root: fig, steps: steps,
@@ -327,7 +346,7 @@
     function cap(s) {
       var g = pair.goodTotal, b = pair.badTotal;
       if (s.k === 0) return 'Same ' + N + ' values ' + (input === 'sorted' ? 'in sorted order' : 'in a shuffled order') + ' on both sides. Each step is one more call. Press play.';
-      if (s.k === N) return 'Done. Middle pivot: <b>' + g.comparisons + '</b> comparisons, ' + g.depth + ' levels. Last-value pivot: <b>' + b.comparisons + '</b> comparisons, ' + b.depth + ' levels.' +
+      if (s.k === N) return 'Done. Middle pivot: <b>' + g.comparisons + '</b> comparison' + (g.comparisons === 1 ? '' : 's') + ', ' + g.depth + ' level' + (g.depth === 1 ? '' : 's') + '. Last-value pivot: <b>' + b.comparisons + '</b> comparison' + (b.comparisons === 1 ? '' : 's') + ', ' + b.depth + ' level' + (b.depth === 1 ? '' : 's') + '.' +
         (input === 'sorted' ? ' On sorted input the last value is always the largest, so every call leaves n − 1 values in a single group: a chain, and n(n − 1)/2 comparisons.' : ' On shuffled input the last value is as good as any other, so both trees are bushy and the totals are close. The pivot rule only hurts on inputs that line up against it.');
       var nd = null;
       return 'Call ' + s.k + ' of ' + N + '. The number on each node is the comparisons that call pays: one per other value in its range.';

@@ -441,7 +441,7 @@
         if (o.op === 'search') {
           if (w.found) snap('hit', 'Found ' + kb(key) + ' in slot ' + w.slot + ' after ' + w.probed.length + ' probe' + (w.probed.length === 1 ? '' : 's') + '.', L.match,
             { marks: (function () { var s = {}; s[id] = 'found'; return s; }()), incoming: { id: inId, key: key, stage: 'hash', bucket: w.slot, op: 'search', state: 'found' }, hash: hvOn, probe: { slots: w.probed, current: w.slot, state: 'found' }, vars: { key: keyText(key), slot: w.slot, found: true }, flow: 'hit' });
-          else snap('miss', w.exhausted ? 'Every slot in the probe sequence was checked and ' + kb(key) + ' is not there: absent after ' + w.probed.length + ' probes.' : 'Search over: ' + kb(key) + ' is <b>' + (w.wrongMiss ? 'reported absent (wrongly!)' : 'absent') + '</b> after ' + w.probed.length + ' probe' + (w.probed.length === 1 ? '' : 's') + '.', L.empty,
+          else snap('miss', w.exhausted ? 'Every slot in the probe sequence was checked and ' + kb(key) + ' is not there: absent after ' + w.probed.length + (w.probed.length === 1 ? ' probe.' : ' probes.') : 'Search over: ' + kb(key) + ' is <b>' + (w.wrongMiss ? 'reported absent (wrongly!)' : 'absent') + '</b> after ' + w.probed.length + ' probe' + (w.probed.length === 1 ? '' : 's') + '.', L.empty,
             { incoming: { id: inId, key: key, stage: 'hash', bucket: w.slot < 0 ? home : w.slot, op: 'search', state: 'error' }, hash: hvOn, probe: { slots: w.probed, current: w.slot < 0 ? undefined : w.slot, state: 'error' }, marks: w.wrongMiss ? (function () { var s = {}; s[id] = 'error'; return s; }()) : undefined, vars: { key: keyText(key), found: false }, flow: 'miss' });
           return;
         }

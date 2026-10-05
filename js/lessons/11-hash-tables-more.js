@@ -62,7 +62,7 @@
         var lin = f.kinds.linear, q = f.kinds.quadratic, d = f.kinds.double;
         steps.push({ frame: f, counters: { linear: lin.total, quadratic: q.total, double: d.total, longest: lin.longest },
           caption: 'Insert <b>' + f.key + '</b> (home slot ' + lin.home + '). Linear needed <b>' + lin.probes + '</b> probe' + (lin.probes === 1 ? '' : 's') + ', quadratic <b>' + q.probes + '</b>, double hashing <b>' + d.probes + '</b>.' +
-            (i === frames.length - 1 ? ' After ' + frames.length + ' keys linear probing spent ' + lin.total + ' probes in total, quadratic ' + q.total + ', double hashing ' + d.total + '. Its longest run of filled slots is ' + lin.longest + ' long.' : '') });
+            (i === frames.length - 1 ? ' After ' + frames.length + (frames.length === 1 ? ' key' : ' keys') + ' linear probing spent ' + lin.total + ' probes in total, quadratic ' + q.total + ', double hashing ' + d.total + '. Its longest run of filled slots is ' + lin.longest + ' long.' : '') });
       });
       return steps;
     }

@@ -116,7 +116,7 @@
   function fitText(str, px, maxW) {
     if (!str) return px;
     var w = vz.textWidth(str, px, false, 650);
-    return w > maxW ? Math.max(8, Math.floor(px * maxW / w)) : px;
+    return w > maxW ? Math.max(px < 11 ? 8 : 11, Math.floor(px * maxW / w)) : px;
   }
   function badgeOn(rec, text, x, y) {
     if (text === undefined || text === null || text === '') { if (rec.badge) { rec.badge.g.remove(); rec.badge = null; } return; }
@@ -255,7 +255,7 @@
         g.slot = function (k) { return { x: x0 + (k + 0.5) * s, y: g.cy }; };
         g.x0 = x0;
         g.height = y + 8;
-        g.font = clamp(Math.round(g.bh * 0.38), 10, 17);
+        g.font = clamp(Math.round(g.bh * 0.38), 11, 17);
       }
       if (opts.height) g.height = Math.max(g.height, opts.height);
       return g;
@@ -721,7 +721,7 @@
           vz.set(cell.shape, 'width', n2(G.bw)); vz.set(cell.shape, 'height', n2(G.bh));
           vz.set(cell.shape, 'rx', n2(Math.min(7, G.bh * 0.18)));
           var cs = itk ? itemText(opts, itk) : '';
-          if (itk) { vz.text(cell.txt, cs); vz.set(cell.txt, 'font-size', fitText(cs, clamp(Math.round(G.bh * 0.38), 10, 15), G.bw * 0.86)); cell.pendingClear = false; }
+          if (itk) { vz.text(cell.txt, cs); vz.set(cell.txt, 'font-size', fitText(cs, clamp(Math.round(G.bh * 0.38), 11, 15), G.bw * 0.86)); cell.pendingClear = false; }
           else cell.pendingClear = true;   // keep the old value visible while it fades, clear it afterwards
           vz.text(cell.idx, k); vz.set(cell.idx, 'y', n2(G.bh / 2 + 10));
           vz.set(cell.idx, 'font-size', G.s < 26 ? 9 : 11);

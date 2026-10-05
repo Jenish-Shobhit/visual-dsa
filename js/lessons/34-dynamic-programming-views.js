@@ -234,7 +234,7 @@
           var changed = rec.lastText !== undefined && rec.lastText !== txt && txt !== '' && txt !== '?';
           rec.lastText = txt;
           vz.text(rec.txt, txt);
-          var fs = opts.shape === 'node' ? clamp(G.cs * 0.42, 11, 17) : clamp(G.cs * (txt.length > 2 ? 0.3 : 0.38), 10, 18);
+          var fs = opts.shape === 'node' ? clamp(G.cs * 0.42, 11, 17) : clamp(G.cs * (txt.length > 2 ? 0.3 : 0.38), 11, 18);
           vz.set(rec.txt, 'style', 'font-size:' + n2(fs) + 'px');
           // index and sub labels
           var il = row.index ? row.index[ci] : null;
@@ -462,7 +462,7 @@
         else if (ph === 'dag') txt = st.values ? String(A.fib(t.k)) : '';
         else txt = String(t.k);
         vz.text(rec.txt, txt);
-        vz.set(rec.txt, 'style', 'font-size:' + n2(clamp(w * (row ? 0.4 : 0.62), 9, 20)) + 'px');
+        vz.set(rec.txt, 'style', 'font-size:' + n2(clamp(w * (row ? 0.4 : 0.62), 11, 20)) + 'px');
         var target = { x: pos.x, y: pos.y, w: w, rx: row ? w * 0.2 : w / 2, o: o };
         if (rec.isNew) {
           var par = t.parent ? G.treePos(tree[+t.parent.slice(1)]) : pos;

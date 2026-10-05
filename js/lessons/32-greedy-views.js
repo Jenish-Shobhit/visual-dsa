@@ -297,7 +297,7 @@
         g.setAttribute('class', 'vz-item gr-coin is-' + d.state);
         r.setAttribute('x', -w / 2); r.setAttribute('y', -d.th / 2 + 1); r.setAttribute('width', w); r.setAttribute('height', Math.max(4, d.th - 2));
         r.setAttribute('rx', Math.min(8, d.th / 2));
-        g.lastChild.style.display = d.th >= 12 ? '' : 'none';
+        g.lastChild.style.display = d.th >= 17 ? '' : 'none';
         g.lastChild.style.fontSize = Math.min(16, d.th - 3) + 'px';
       }
     });
@@ -523,7 +523,7 @@
       var g = s('g', { class: 'vz-edge gr-fedge is-default' });
       var line = s('path', { class: 'vz-line' });
       var lab = s('g', { class: 'gr-fedge__lab' });
-      lab.appendChild(s('circle', { r: 9 }));
+      lab.appendChild(s('circle', { r: 10 }));
       lab.appendChild(s('text', { 'text-anchor': 'middle', dy: '.35em' }));
       g.appendChild(line); g.appendChild(lab);
       edgeG.appendChild(g);

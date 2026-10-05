@@ -498,8 +498,8 @@
       vz.opacity(rec.el, c.o);
     }
     function labelFs(label) {
-      var f = clamp(Math.round(R * 0.72), 10, 15), maxW = R * (opts.uniformLabels ? 1.9 : 1.7);
-      if (label) { var w = measureSans(label, f, 650); if (w > maxW) f = Math.max(8, Math.floor(f * maxW / w)); }
+      var f = clamp(Math.round(R * 0.72), 11, 15), maxW = R * (opts.uniformLabels ? 1.9 : 1.7);
+      if (label) { var w = measureSans(label, f, 650); if (w > maxW) f = Math.max(11, Math.floor(f * maxW / w)); }
       return f;
     }
     function nodeContent(rec, n) {

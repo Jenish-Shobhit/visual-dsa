@@ -13,6 +13,13 @@
 /* pipe drawing shared by the custom figures */
 .nf-stage { padding: clamp(6px, 2cqi, 16px); }
 .nf-pipes, .nf-chain, .nf-res { width: 100%; height: auto; display: block; max-width: 900px; margin: 0 auto; }
+/* Phones: keep the labels readable (>= ~10px) by letting the drawing keep a minimum width and scroll sideways, with a cue. */
+@media (max-width: 640px) {
+  .nf-stage:has(> .nf-pipes, > .nf-res) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .nf-stage > .nf-pipes { min-width: 700px; }
+  .nf-stage > .nf-res { min-width: 640px; }
+  .nf-stage:has(> .nf-pipes, > .nf-res)::after { content: "Swipe sideways to see the whole drawing \2192"; display: block; position: sticky; left: 0; width: max-content; text-align: left; max-width: 100%; margin-top: 4px; font: 600 12px var(--font-sans); color: var(--ink-3); }
+}
 .nf-pipe-wall { fill: none; stroke: color-mix(in srgb, var(--ink) 24%, var(--bg-elev)); stroke-linecap: butt; transition: stroke .3s; }
 .nf-pipe-chan { fill: none; stroke: var(--bg-sunken); stroke-linecap: butt; }
 .nf-pipe-water { fill: none; stroke: var(--st-active); stroke-linecap: butt; transition: stroke-width .35s var(--ease-out, ease); }
@@ -25,7 +32,7 @@
 .nf-node circle { fill: var(--el-fill); stroke: var(--el-stroke); stroke-width: 2.5; }
 .nf-node.is-end circle { fill: color-mix(in srgb, var(--st-key) 16%, var(--el-fill)); stroke: var(--st-key); }
 .nf-node text { font: 800 20px var(--font-sans); fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
-.nf-node .nf-node__sub { font: 600 13px var(--font-sans); fill: var(--ink-3); }
+.nf-node .nf-node__sub { font: 600 16px var(--font-sans); fill: var(--ink-3); }
 .nf-backed rect { fill: var(--st-error); }
 .nf-backed text { fill: var(--on-state); font: 800 15px var(--font-sans); text-anchor: middle; dominant-baseline: central; }
 .nf-backed { transition: opacity .3s; }

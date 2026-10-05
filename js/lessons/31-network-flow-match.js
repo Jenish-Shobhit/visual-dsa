@@ -47,6 +47,8 @@
     var seed = 5, residual = false, pairs = parsePairs(PRESETS[0].text).values.pairs;
     var m = NF.matchingNetwork(pairs), net = m.net;
     var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: { w: 1000, h: 600 }, maxHeight: 420, label: 'Workers and jobs as a flow network', nodeRadius: 26, minRadius: 15 });
+    function isMiddle(e) { return e.from.indexOf('w:') === 0 && e.to.indexOf('j:') === 0; }
+    var labelT = L.spreadLabels(net, isMiddle);
     var list = fig.querySelector('[data-assign]');
     var rowEls = {}, lastAssign = {};
     L.legend(fig.querySelector('[data-legend]'), [L.LEG.path, L.LEG.reverse, { state: 'done', shape: 'line', label: 'Assigned pair' }, L.LEG.flow, L.LEG.cut, L.LEG.side]);
@@ -119,7 +121,7 @@
       V.clear(list); rowEls = {}; lastAssign = {};
     }
     function render(step, ctx) {
-      view.render(L.flowState(net, step, { residual: residual }), { duration: ctx.duration });
+      view.render(L.flowState(net, step, { residual: residual, labelT: labelT }), { duration: ctx.duration });
       drawAssign(step, ctx.duration);
     }
     rebuildList();
@@ -152,7 +154,7 @@
     }, { id: 'nf-match-reroute' });
 
     function setPairs(p) {
-      pairs = p; m = NF.matchingNetwork(pairs); net = m.net;
+      pairs = p; m = NF.matchingNetwork(pairs); net = m.net; labelT = L.spreadLabels(net, isMiddle);
       if (view.resetPositions) view.resetPositions();
       rebuildList();
       player.setSteps(generate());
@@ -170,7 +172,7 @@
     });
     V.toggle(fig.querySelector('[data-residual]'), {
       label: 'Show the residual graph', checked: false,
-      onChange: function (on) { residual = on; view.render(L.flowState(net, player.step, { residual: residual }), { duration: 450 }); }
+      onChange: function (on) { residual = on; view.render(L.flowState(net, player.step, { residual: residual, labelT: labelT }), { duration: 450 }); }
     });
     void input;
   }

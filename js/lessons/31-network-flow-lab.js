@@ -141,7 +141,7 @@
     { label: 'Lesson network', net: L.MAIN },
     { label: 'Greedy trap', net: L.DIAMOND },
     { label: 'Three lanes', net: L.make('s-a:5, s-b:5, s-c:5, a-d:4, b-d:3, b-e:3, c-e:4, d-t:6, e-t:6', { s: [90, 300], a: [330, 100], b: [330, 300], c: [330, 500], d: [630, 200], e: [630, 400], t: [915, 300] }) },
-    { label: 'Hourglass', net: L.make('s-a:6, s-b:6, a-m:4, b-m:5, m-c:4, m-d:4, c-t:6, d-t:6', { s: [80, 300], a: [270, 140], b: [270, 460], m: [490, 300], c: [710, 140], d: [710, 460], t: [920, 300] }) },
+    { label: 'Hourglass', net: L.make('s-a:6, s-b:6, a-m:4, b-m:5, m-c:4, m-d:4, c-t:6, d-t:6', { s: [60, 300], a: [255, 85], b: [255, 515], m: [490, 300], c: [725, 85], d: [725, 515], t: [940, 300] }) },
     { label: 'With a cycle', net: L.make('s-a:9, a-b:6, b-c:5, c-a:4, b-t:3, c-t:6', { s: [90, 300], a: [330, 300], b: [590, 130], c: [590, 470], t: [915, 300] }) },
     { label: 'No route', net: L.make('s-a:5, b-t:5', { s: [90, 300], a: [340, 300], b: [610, 300], t: [915, 300] }) }
   ];
@@ -193,7 +193,7 @@
     computeByRound(steps0);
 
     function render(step, ctx) {
-      view.render(L.flowState(net, step, { residual: residual, levels: true, subs: true }), { duration: ctx.duration });
+      view.render(L.flowState(net, step, { residual: residual, levels: true, subs: true, spread: true }), { duration: ctx.duration });
       if (badgeV.textContent !== String(step.value)) { badgeV.textContent = step.value; badge.classList.remove('is-bump'); void badge.offsetWidth; badge.classList.add('is-bump'); }
       drawChart(step, ctx.duration);
     }
@@ -263,7 +263,7 @@
     });
     V.toggle(fig.querySelector('[data-residual]'), {
       label: 'Show the residual graph', checked: false,
-      onChange: function (on) { residual = on; view.render(L.flowState(net, player.step, { residual: residual, levels: true, subs: true }), { duration: 450 }); }
+      onChange: function (on) { residual = on; view.render(L.flowState(net, player.step, { residual: residual, levels: true, subs: true, spread: true }), { duration: 450 }); }
     });
     fig.querySelector('[data-layout]').addEventListener('click', function () { if (view.resetPositions) view.resetPositions(); });
 

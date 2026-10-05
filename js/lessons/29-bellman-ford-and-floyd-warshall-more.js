@@ -22,7 +22,7 @@
   /* ================================================================== currency arbitrage */
   function arbFigure(fig) {
     var cur = ['USD', 'EUR', 'GBP'];
-    var pos = { USD: [500, 100], EUR: [170, 470], GBP: [830, 470] };
+    var pos = { USD: [500, 50], EUR: [160, 550], GBP: [840, 550] };
     var fwd = { 'USD>EUR': 92, 'EUR>GBP': 86, 'GBP>USD': 128 };   // hundredths
     var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: { w: 1000, h: 600 }, maxHeight: 400, nodeRadius: 30, label: 'Three currencies and the exchange rate on every arrow' });
     var wbox = fig.querySelector('[data-weights]'), verdict = fig.querySelector('[data-verdict]');

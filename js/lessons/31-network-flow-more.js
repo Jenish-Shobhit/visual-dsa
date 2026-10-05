@@ -101,17 +101,17 @@
   function patterns(sec) {
     var tabs = V.$('#patterns-tabs');
     if (tabs) V.tabs(tabs);
-    function mini(sel, net, step, o) {
+    function mini(sel, net, step, o, fo) {
       var host = V.$(sel, sec);
       if (!host) return;
       var v = V.views.graph(host, Object.assign({ directed: true, bounds: { w: 1000, h: 600 }, maxHeight: 230, label: 'Pattern diagram', nodeRadius: 26, minRadius: 16 }, o || {}));
-      v.render(L.flowState(net, step, {}), { duration: 0 });
+      v.render(L.flowState(net, step, fo || {}), { duration: 0 });
       return v;
     }
     // 1: matching, final flow
     var pairs = [['Ana', 'Web'], ['Ana', 'Data'], ['Ben', 'Web'], ['Cy', 'Data']];
     var mm = NF.matchingNetwork(pairs), mt = NF.trace(mm.net, { detail: 'rounds' });
-    mini('[data-mini="match"]', mm.net, L.last(mt).kind === 'cut' ? mt[mt.length - 2] : L.last(mt));
+    mini('[data-mini="match"]', mm.net, L.last(mt).kind === 'cut' ? mt[mt.length - 2] : L.last(mt), null, { labelT: L.spreadLabels(mm.net, function (e) { return e.from.indexOf('w:') === 0 && e.to.indexOf('j:') === 0; }) });
     // 2: vertex capacity by splitting; a two-frame loop
     var host = V.$('[data-mini="split"]', sec);
     if (host) {

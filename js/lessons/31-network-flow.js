@@ -122,7 +122,87 @@
         return edge;
       });
     }
+    if (o.spread) L.spreadArcs(edges, N.positions, o.pos);
+    if (o.labelT) edges.forEach(function (e) {
+      var t = o.labelT[e.from + '-' + e.to], u = o.labelT[e.to + '-' + e.from];
+      if (t !== undefined) e.labelT = t; else if (u !== undefined) e.labelT = 1 - u;
+    });
     return { nodes: nodes, edges: edges };
+  };
+
+  /* Pill placement. A pill stays at its edge's midpoint unless that spot is crowded; then it slides along the
+     edge (labelT 0.2 .. 0.8) to the spot farthest from other pills and from the vertices. Distances are in
+     the 1000-wide box, scaled by roughly one pill (110 x 70) and one vertex (130 x 100).  */
+  function pickT(a, b, pills, nodes) {
+    function score(t) {
+      var x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t, sc = 9;
+      pills.forEach(function (q) { sc = Math.min(sc, Math.max(Math.abs(x - q.x) / 125, Math.abs(y - q.y) / 80)); });
+      nodes.forEach(function (q) { sc = Math.min(sc, Math.max(Math.abs(x - q.x) / 175, Math.abs(y - q.y) / 120)); });
+      return sc;
+    }
+    if (score(0.5) >= 1) return 0.5;
+    var best = 0.5, bs = -1;
+    for (var t = 0.2; t <= 0.8001; t += 0.02) { var sc = score(t) - Math.abs(t - 0.5) * 0.05; if (sc > bs) { bs = sc; best = t; } }
+    return Math.round(best * 100) / 100;
+  }
+  function nodePts(positions, over) {
+    return Object.keys(positions).map(function (id) { return (over && over[id]) || positions[id]; });
+  }
+  /* Greedy placement for a drawn edge list (flowState output): edges with a reverse partner are curved and keep
+     their pill at the bow, so they are fixed obstacles; straight edges may slide their pill. */
+  L.spreadArcs = function (edges, positions, over) {
+    var P = function (id) { return (over && over[id]) || positions[id]; }, has = {}, placed = [], lone = [], nodes = nodePts(positions, over);
+    edges.forEach(function (e) { has[e.from + '>' + e.to] = true; });
+    edges.forEach(function (e) {
+      var a = P(e.from), b = P(e.to);
+      if (!a || !b) return;
+      if (has[e.to + '>' + e.from] && e.from !== e.to) {
+        if (e.from > e.to) return;
+        var dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, off = 90, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        placed.push({ x: mx + dy / len * off, y: my - dx / len * off }, { x: mx - dy / len * off, y: my + dx / len * off });
+      } else lone.push(e);
+    });
+    lone.forEach(function (e) {
+      var a = P(e.from), b = P(e.to), t = pickT(a, b, placed, nodes);
+      if (t !== 0.5) e.labelT = t;
+      placed.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    });
+  };
+
+  /* Same for the plain network: returns {'from-to': t} for the edges `edgeFilter` accepts. */
+  L.spreadLabels = function (net, edgeFilter) {
+    var N = L.norm(net), P = N.positions, nodes = nodePts(P), list = N.edges.filter(function (e) { return (!edgeFilter || edgeFilter(e)) && P[e.from] && P[e.to]; });
+    function pt(i, t) { var a = P[list[i].from], b = P[list[i].to]; return { x: a.x + (b.x - a.x) * t[i], y: a.y + (b.y - a.y) * t[i] }; }
+    function worst(t) {
+      var w = 9, pts = list.map(function (e, i) { return pt(i, t); });
+      pts.forEach(function (p, i) {
+        for (var k = i + 1; k < pts.length; k++) w = Math.min(w, Math.max(Math.abs(p.x - pts[k].x) / 125, Math.abs(p.y - pts[k].y) / 80));
+        nodes.forEach(function (q) { w = Math.min(w, Math.max(Math.abs(p.x - q.x) / 150, Math.abs(p.y - q.y) / 110)); });
+      });
+      return w;
+    }
+    function descend(t) {
+      for (var pass = 0; pass < 4; pass++) {
+        list.forEach(function (e, i) {
+          var others = [];
+          list.forEach(function (f, k) { if (k !== i) others.push(pt(k, t)); });
+          t[i] = pickT(P[e.from], P[e.to], others, nodes);
+        });
+      }
+      return t;
+    }
+    var starts = [function () { return 0.5; }, function (i) { return 0.36 + 0.28 * (i % 2); }, function (i) { return 0.34 + 0.16 * (i % 3); }, function (i) { return 0.66 - 0.16 * (i % 3); }, function (i) { return 0.3 + 0.4 * ((i * 5) % 7) / 6; }];
+    var seed = 7;
+    function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+    for (var r = 0; r < 40; r++) starts.push(function () { return 0.25 + 0.5 * rnd(); });
+    var best = null, bw = -1;
+    starts.forEach(function (fn) {
+      var t = descend(list.map(function (e, i) { return fn(i); })), w = worst(t);
+      if (w > bw + 1e-9) { bw = w; best = t; }
+    });
+    var out = {};
+    list.forEach(function (e, i) { out[e.from + '-' + e.to] = best[i]; });
+    return out;
   };
 
   /* Steps carry `{__raw: text}` for variable-watch values that must not be quoted. */
@@ -168,8 +248,8 @@
       left: left, right: right,
       render: function (step, ctx, opts) {
         opts = opts || {};
-        left.render(L.flowState(net, step, Object.assign({}, opts, { residual: false })), { duration: ctx.duration });
-        right.render(L.flowState(net, step, Object.assign({}, opts, { residual: true })), { duration: ctx.duration });
+        left.render(L.flowState(net, step, Object.assign({ spread: true }, opts, { residual: false })), { duration: ctx.duration });
+        right.render(L.flowState(net, step, Object.assign({ spread: true }, opts, { residual: true })), { duration: ctx.duration });
       }
     };
   };

@@ -453,7 +453,7 @@
         if (seenE[key]) return;
         seenE[key] = true;
         edges.push({ key: key, from: String(e.from), to: String(e.to), directed: e.directed !== undefined ? !!e.directed : !!opts.directed,
-          weight: e.weight, label: e.label, flow: e.flow, capacity: e.capacity, state: e.state || 'default', pulse: !!e.pulse, dashed: !!e.dashed, raw: e });
+          weight: e.weight, label: e.label, flow: e.flow, capacity: e.capacity, state: e.state || 'default', pulse: !!e.pulse, dashed: !!e.dashed, labelT: e.labelT, raw: e });
       });
       L.assignBends(edges);
       // positions (layouts work in the declared box; with bounds: 'auto' in the default 1000 × 600)
@@ -595,6 +595,8 @@
           }
         }
         lx = g.mx; ly = g.my;
+        // opt-in: edge.labelT (0..1) slides the pill along the line between the two node centres (0 = source, 1 = target) instead of the midpoint
+        if (typeof rec.data.labelT === 'number' && g.straight) { lx = a.cur.x + (b.cur.x - a.cur.x) * rec.data.labelT; ly = a.cur.y + (b.cur.y - a.cur.y) * rec.data.labelT; }
         if (rec.pt !== null) { var pp = L.quadAt(g, vz.easeInOut(rec.pt)); pulse = pp; }
       }
       vz.opacity(rec.el, o);

@@ -227,7 +227,7 @@
     ctx.layer('edges'); ctx.layer('nulls'); ctx.layer('nodes'); ctx.layer('pointers');
     var S = { nodes: new vz.Store(true), edges: new vz.Store(), nulls: new vz.Store(), ptrs: new vz.Store() };
     var clickable = !!opts.onNodeClick;
-    var prepared = { units: 0, dotUnits: 0, depth: 0, ptr: false };
+    var prepared = { units: 0, dotUnits: 0, depth: 0, ptr: false, sub: false, ret: false, badge: false };
     var maxSeen = { depth: 0 };
     var textCache = new Map();
     var G = null;
@@ -243,7 +243,7 @@
       if (opts.labelFormatter) return String(opts.labelFormatter(n.value, n));
       return fmt(n.value);
     }
-    function fontFor(k) { return vz.clamp(Math.round(k * 0.4), 9, 16); }
+    function fontFor(k) { return vz.clamp(Math.round(k * 0.4), 11, 16); }   // 11px floor: nodes too small for it become dots (showText: k >= 18)
     /* node width in units (1 = circle) for a given diameter k */
     function unitsFor(n, k, dots) {
       if (opts.shape === 'circle' || dots) return 1;
@@ -276,7 +276,7 @@
         if (dots) k = Math.min(15.9, Math.max(k, avail / Math.max(lay.width, prepared.dotUnits || 0, 1)));
         else if (lay.width * k > avail) k = Math.max(opts.minNodeSize, avail / lay.width);
       }
-      var hasSub = false, hasRet = false, hasPtr = (state.pointers || []).length > 0, hasBadge = false;
+      var hasSub = !!prepared.sub, hasRet = !!prepared.ret, hasPtr = (state.pointers || []).length > 0, hasBadge = !!prepared.badge;
       Object.keys(map).forEach(function (id) {
         var n = map[id];
         if (n.sub !== undefined && n.sub !== null && n.sub !== '') hasSub = true;
@@ -285,9 +285,9 @@
       });
       var depth = Math.max(lay.depth, prepared.depth || 0, maxSeen.depth);
       if (!opts.height) maxSeen.depth = depth;
-      var extraBelow = (hasSub ? 13 : 0) + (hasRet ? 9 : 0);
+      var extraBelow = (hasSub ? 14 : 0) + (hasRet ? 10 : 0);
       var levelH = opts.levelHeight || vz.clamp(Math.round(k * 1.55), 40, 74) + extraBelow;
-      var top = pad + (hasBadge ? 6 : 0);
+      var top = pad + (hasBadge ? 7 : 0);
       var bottom = pad + extraBelow + (hasPtr || prepared.ptr ? 30 : 0);
       var height = top + k + depth * levelH + bottom;
       if (opts.height) {
@@ -308,7 +308,7 @@
       }
       return {
         map: map, rid: rid, lay: lay, k: k, levelH: levelH, top: top, height: height, ox: ox,
-        font: fontFor(k), showText: k >= 16, showBadges: k >= 20,
+        font: fontFor(k), showText: k >= 18, showBadges: k >= 20,
         px: function (p) { return { x: ox + p.x * k, y: top + k / 2 + p.depth * levelH }; }
       };
     }
@@ -336,9 +336,9 @@
       if (!has) { if (rec[key]) { rec[key].g.remove(); rec[key] = null; } return null; }
       if (!rec[key]) {
         var g = vz.svg('g', { class: 'vz-badge ' + cls }, rec.el);
-        rec[key] = { g: g, rect: vz.svg('rect', { rx: 7, ry: 7, height: 14, y: -7 }, g), text: vz.svg('text', { 'text-anchor': 'middle', dy: '.35em' }, g) };
+        rec[key] = { g: g, rect: vz.svg('rect', { rx: 8, ry: 8, height: 16, y: -8 }, g), text: vz.svg('text', { 'text-anchor': 'middle', dy: '.35em' }, g) };
       }
-      var t = String(text), w = Math.max(14, measure(t, 10, 650) + 9);
+      var t = String(text), w = Math.max(14, measure(t, 11.5, 650) + 9);
       vz.text(rec[key].text, t);
       vz.set(rec[key].rect, 'width', vz.n2(w)); vz.set(rec[key].rect, 'x', vz.n2(-w / 2));
       vz.state(rec[key].g, state || 'default');
@@ -352,7 +352,7 @@
       if (G.showText && label) {
         var maxW = rec.to.w - Math.max(6, G.k * 0.22);
         var w = measure(label, fs);
-        if (w > maxW) fs = Math.max(8, Math.floor(fs * maxW / w));
+        if (w > maxW) fs = Math.max(11, Math.floor(fs * maxW / w));
       }
       vz.set(rec.txt, 'font-size', fs);
       // one deterministic class string (state + colour flags), so history never changes token order
@@ -634,11 +634,17 @@
         prepared.dotUnits = Math.max(prepared.dotUnits || 0, runLayout(map, rid, opts.nodeSize, true).width);
         prepared.depth = Math.max(prepared.depth, lay.depth);
         if ((st.pointers || []).some(Boolean)) prepared.ptr = true;
+        Object.keys(map).forEach(function (id) {
+          var n = map[id];
+          if (n.sub !== undefined && n.sub !== null && n.sub !== '') prepared.sub = true;
+          if (n.returnValue !== undefined && n.returnValue !== null) prepared.ret = true;
+          if (n.badge !== undefined && n.badge !== null && n.badge !== '') prepared.badge = true;
+        });
       });
       api.refresh();
       return api;
     };
-    api.reset = function () { prepared = { units: 0, dotUnits: 0, depth: 0, ptr: false }; maxSeen = { depth: 0 }; return api; };
+    api.reset = function () { prepared = { units: 0, dotUnits: 0, depth: 0, ptr: false, sub: false, ret: false, badge: false }; maxSeen = { depth: 0 }; return api; };
     api.setOptions = function (o) { Object.assign(opts, o || {}); textCache.clear(); api.refresh(); return api; };
     api.positionOf = function (id) { var r = S.nodes.get(String(id)); return r ? { x: r.cur.x, y: r.cur.y } : null; };
     var baseOn = api.on;

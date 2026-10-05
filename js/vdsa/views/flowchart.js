@@ -45,7 +45,7 @@
     { font: 10.5, maxText: 60, colGap: 20, rowGap: 24 }
   ];
   L.LEVELS = LEVELS;
-  L.LABEL_FONT = 10.5;
+  L.LABEL_FONT = 11.5;
   var MIN_FONT = 11;   // smallest on-screen node text (px) before the view scrolls instead of shrinking
 
   function defaultMeasure(text, px, weight) {
@@ -195,7 +195,7 @@
       if (!width || g.width <= width) break;
     }
     g.overflowW = 0;
-    if (width && g.width > width) {
+    if (width && (g.width > width || g.font < (opts.minFont || MIN_FONT) - 1e-6)) {   // a level below the type floor never counts as fitting
       /* Nothing fits unscaled. Shrink the level that keeps the type largest, but never below minFont px on screen:
          beyond that the drawing keeps its size and the view scrolls horizontally, so nothing is ever cut off. */
       var minFont = opts.minFont || MIN_FONT, best = null, bestEff = -1;
@@ -609,7 +609,7 @@
           // edge labels share the node-text floor: never smaller than minFont px on screen once the chart is scaled down
           var lf = L.LABEL_FONT, lk = geo.scale > 0 && geo.scale < 1 ? Math.max(1, (opts.minFont || MIN_FONT) / geo.scale / lf) : 1;
           lf = Math.round(lf * lk * 100) / 100;
-          var t = String(e.label), w = Math.ceil(measure(t, lf, 650) + 14 * lk), ph = 17 * lk;
+          var t = String(e.label), w = Math.ceil(measure(t, lf, 650) + 14 * lk), ph = 18 * lk;
           vz.text(rec.labText, t);
           rec.labText.style.fontSize = lk > 1 ? lf + 'px' : '';
           vz.set(rec.labRect, 'width', w); vz.set(rec.labRect, 'x', -w / 2);

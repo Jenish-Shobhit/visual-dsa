@@ -221,8 +221,8 @@
       g.cellH = mode === 'cells' ? s - Math.max(1, s * 0.08) : s - Math.max(2, Math.min(6, s * 0.1));
       g.radius = Math.min(g.cellW, g.cellH) / 2;
       g.corner = mode === 'cells' ? Math.min(3, g.cellH * 0.12) : Math.min(9, g.cellH * 0.16);
-      g.font = mode === 'cells' ? vz.clamp(Math.round(s * 0.34), 8, 13) : vz.clamp(Math.round(s * 0.36), 10, 17);
-      g.showText = opts.showValues && !(mode === 'cells' && s < 22) && !(bars && sw < 16);
+      g.font = mode === 'cells' ? vz.clamp(Math.round(s * 0.34), 11, 13) : vz.clamp(Math.round(s * 0.36), 11, 17);   // 11px floor; cells too small for it show no text
+      g.showText = opts.showValues && !(mode === 'cells' && (s < 22 || g.cellW < 14)) && !(bars && sw < 16) && !(!bars && mode !== 'cells' && g.cellW < 14);
       g.gap = function (r) { return r.gap !== undefined ? r.gap : sw * 0.45; };
 
       // value scale for bars
@@ -390,15 +390,15 @@
       } else {
         var hasSub = it.label !== undefined && it.label !== null && it.label !== '' && G.cellH >= 30;
         var fs = G.font, maxW = (opts.mode === 'dots' ? G.radius * 1.7 : G.cellW * 0.86);
-        if (str) { var w = measure(str, fs, 650); if (w > maxW) fs = Math.max(8, Math.floor(fs * maxW / w)); }
+        if (str) { var w = measure(str, fs, 650); if (w > maxW) fs = Math.max(11, Math.floor(fs * maxW / w)); }
         vz.text(rec.txt, str);
         vz.set(rec.txt, 'font-size', fs);
-        vz.set(rec.txt, 'y', hasSub ? vz.n2(-G.cellH * 0.12) : 0);
+        vz.set(rec.txt, 'y', hasSub ? vz.n2(-G.cellH * 0.16) : 0);
         if (hasSub) {
           if (!rec.sub) rec.sub = vz.svg('text', { class: 'vz-ink vz-sub', 'text-anchor': 'middle', dy: '.35em' }, rec.el);
           vz.text(rec.sub, it.label);
-          vz.set(rec.sub, 'y', vz.n2(G.cellH * 0.25));
-          vz.set(rec.sub, 'font-size', vz.clamp(Math.round(G.font * 0.62), 8, 11));
+          vz.set(rec.sub, 'y', vz.n2(G.cellH * 0.27));
+          vz.set(rec.sub, 'font-size', 11);          // .vz-sub in viz.css is 11px too
         } else if (rec.sub) { rec.sub.remove(); rec.sub = null; }
       }
       setBadge(rec, it.badge, it.badgeState);

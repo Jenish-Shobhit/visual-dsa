@@ -16,6 +16,19 @@
     return { el: h('label', { class: 'cf-field' }, h('span', { class: 'cf-field__l' }, label), input), input: input };
   }
 
+  /* Height an element would have if `fill(ghost)` put its tallest content in it: measured on an invisible clone, so a
+     region that grows while a player runs can reserve that height up front and the figure stops jumping. */
+  function ghostHeight(el, fill) {
+    var g = el.cloneNode(false);
+    g.removeAttribute('id'); g.setAttribute('aria-hidden', 'true');
+    g.style.cssText += ';position:absolute;visibility:hidden;pointer-events:none;left:0;top:0;min-height:0;width:' + el.offsetWidth + 'px';
+    el.parentNode.appendChild(g);
+    fill(g);
+    var hh = g.offsetHeight;
+    g.remove();
+    return hh;
+  }
+
   /* ================================================================== 1. the loop tracer */
   CF.loopLab = function (fig) {
     var spec = { from: 1, to: 5, step: 1, body: 'sum' };
@@ -83,6 +96,24 @@
       trips.setAttribute('aria-label', step.cols.length ? 'Body runs so far: ' + step.cols.length : 'The body has not run yet');
       trips.classList.toggle('is-empty', !step.cols.length && step.kind !== 'done');
     }
+    /* The trace table gains a row per test and the chip strip a chip per body run: reserve the heights of the full run
+       (measured, so it follows the width) instead of letting the figure grow step by step. */
+    var ttWrap = tbody.closest('.cf-tt-wrap');
+    function reserve(steps) {
+      var rows = 0, chips = 0;
+      steps.forEach(function (st) { rows = Math.max(rows, st.rows.length); chips = Math.max(chips, st.cols.length); });
+      if (!ttWrap.offsetWidth || !trips.offsetWidth) return;
+      ttWrap.style.minHeight = ''; trips.style.minHeight = '';
+      var sample = '<tr><td class="num">9</td><td class="num cf-i">−20</td><td class="cf-test"><code>−20 &le; −20</code> <span class="cf-tv is-t">yes</span></td><td class="num cf-acc">−210</td></tr>';
+      ttWrap.style.minHeight = ghostHeight(ttWrap, function (g) {
+        var tb = ttWrap.querySelector('table').cloneNode(true);
+        tb.querySelector('tbody').innerHTML = new Array(rows + 1).join(sample);
+        g.appendChild(tb);
+      }) + 'px';
+      trips.style.minHeight = ghostHeight(trips, function (g) {
+        for (var k = 0; k <= chips; k++) g.appendChild(h('span', { class: 'cf-tchip' }, '+20'));
+      }) + 'px';
+    }
     finalChip = h('span', { class: 'cf-tchip cf-tchip--total is-off' }, '');
     trips.appendChild(finalChip);
     trips.appendChild(h('span', { class: 'cf-trips__none' }, 'the body has not run yet'));
@@ -90,6 +121,8 @@
     var player = V.player({ root: fig, steps: A.loopTrace(spec), render: render, code: code, vars: vars, flow: flow, caption: fig.querySelector('[data-caption]'),
       counters: fig.querySelector('[data-counters]'), counterLabels: { tests: 'Tests of i', runs: 'Body runs' }, counterStates: { tests: 'compare', runs: 'done' },
       baseStepMs: 1200, label: 'Loop tracer controls' });
+    reserve(player.steps);
+    V.onResize(fig, function () { reserve(player.steps); });
 
     /* Predict: the second time the body runs, what does the accumulator become? And: what will the last test say? */
     player.addCheckpoint(function (steps) {
@@ -125,6 +158,7 @@
       rowEls = {};
       Object.keys(chipEls).forEach(function (k) { chipEls[k].remove(); }); chipEls = {};
       player.setSteps(A.loopTrace(spec));
+      reserve(player.steps);
     }
     function load(sp) {
       fFrom.input.value = sp.from; fTo.input.value = sp.to; fStep.input.value = sp.step; bodySeg.set(sp.body);
@@ -201,29 +235,62 @@
   var FUEL_UPDATES = [{ value: '+1', label: 'i = i + 1' }, { value: '+2', label: 'i = i + 2' }, { value: '-1', label: 'i = i − 1' }, { value: 'same', label: 'i = i' }, { value: '*2', label: 'i = i * 2' }];
   CF.fuelLab = function (fig) {
     var cond = '!=', upd = '+1', TARGET = 10, START = 1, FUEL = 20;
-    var W = 560, H = 268, CELL = 18, GX = 56, BASE = 246, BW = 17, BX = 22, UNIT = 13, CAPD = 11;
-    var svg = s('svg', { class: 'vz cf-svg cf-fuel', viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Fuel gauge and distance-to-exit bars for a while loop' });
-    svg.style.maxWidth = '720px';
-    svg.appendChild(s('text', { class: 'vz-caption', x: 4, y: 24 }, 'FUEL'));
-    var cells = [];
-    for (var k = 0; k < FUEL; k++) {
-      var c = s('rect', { class: 'cf-cell', x: GX + k * (CELL + 2), y: 10, width: CELL, height: 22, rx: 4 });
-      svg.appendChild(c); cells.push(c);
+    /* Wide: one 560 x 268 drawing. Phones: a 300 x 252 drawing at about 1:1 (a 560-wide drawing shrunk to a phone made the
+       type about 6px): thinner cells and bars, two-line caption, and "above 9" bars labelled with a bare arrow. */
+    var D = null, narrow = null, lastStep = null, svg, cells, fuelTxt, exitLbl, bars;
+    var CAPD = 11;
+    function geom(nw) {
+      return nw ? { W: 300, H: 252, CELL: 11, CP: 14.7, GX: 4, BASE: 224, BW: 10, BX: 4, BP: 13.9, UNIT: 9.5, cellY: 28, cellH: 20 }
+        : { W: 560, H: 268, CELL: 18, CP: 20, GX: 56, BASE: 246, BW: 17, BX: 22, BP: 26.6, UNIT: 13, cellY: 10, cellH: 22 };
     }
-    var fuelTxt = s('text', { class: 'cf-total', x: W - 4, y: 26, 'text-anchor': 'end' }, '');
-    svg.appendChild(fuelTxt);
-    svg.appendChild(s('text', { class: 'vz-caption', x: 4, y: 72 }, 'DISTANCE FROM i TO THE EXIT, AFTER EACH TRIP'));
-    svg.appendChild(s('line', { class: 'cf-axis', x1: BX - 6, x2: W - 6, y1: BASE, y2: BASE }));
-    var exitLbl = s('text', { class: 'vz-label', x: W - 6, y: BASE + 14, 'text-anchor': 'end' }, 'exit: distance 0');
-    svg.appendChild(exitLbl);
-    var bars = [];
-    for (var b = 0; b <= FUEL; b++) {
-      var x = BX + b * (BW + 9.6);
-      var g = s('g', { class: 'is-default', opacity: 0 }, s('rect', { class: 'cf-bar', x: x, y: BASE, width: BW, height: 0, rx: 3 }), s('text', { class: 'cf-barv', x: x + BW / 2, y: BASE - 4, 'text-anchor': 'middle' }, ''));
-      svg.appendChild(g); bars.push({ g: g, r: g.firstChild, t: g.lastChild, x: x });
+    function build() {
+      D = geom(narrow);
+      V.clear(fig.querySelector('[data-stage]'));
+      svg = s('svg', { class: 'vz cf-svg cf-fuel' + (narrow ? ' is-narrow' : ''), viewBox: '0 0 ' + D.W + ' ' + D.H, role: 'img', 'aria-label': 'Fuel gauge and distance-to-exit bars for a while loop' });
+      svg.style.maxWidth = narrow ? '360px' : '720px';
+      svg.appendChild(s('text', { class: 'vz-caption', x: 4, y: narrow ? 16 : 24 }, 'FUEL'));
+      cells = [];
+      for (var k = 0; k < FUEL; k++) {
+        var c = s('rect', { class: 'cf-cell', x: D.GX + k * D.CP + (narrow ? 0 : 0), y: D.cellY, width: D.CELL, height: D.cellH, rx: narrow ? 3 : 4 });
+        svg.appendChild(c); cells.push(c);
+      }
+      fuelTxt = s('text', { class: 'cf-total', x: D.W - 4, y: narrow ? 16 : 26, 'text-anchor': 'end' }, '');
+      svg.appendChild(fuelTxt);
+      if (narrow) {
+        svg.appendChild(s('text', { class: 'vz-caption', x: 4, y: 74 }, 'DISTANCE FROM i TO THE EXIT,'));
+        svg.appendChild(s('text', { class: 'vz-caption', x: 4, y: 90 }, 'AFTER EACH TRIP'));
+      } else svg.appendChild(s('text', { class: 'vz-caption', x: 4, y: 72 }, 'DISTANCE FROM i TO THE EXIT, AFTER EACH TRIP'));
+      svg.appendChild(s('line', { class: 'cf-axis', x1: D.BX - 6, x2: D.W - 6, y1: D.BASE, y2: D.BASE }));
+      exitLbl = s('text', { class: 'vz-label', x: D.W - 6, y: D.BASE + (narrow ? 18 : 14), 'text-anchor': 'end' }, 'exit: distance 0');
+      svg.appendChild(exitLbl);
+      bars = [];
+      for (var b = 0; b <= FUEL; b++) {
+        var x = D.BX + b * D.BP;
+        var g = s('g', { class: 'is-default', opacity: 0 }, s('rect', { class: 'cf-bar', x: x, y: D.BASE, width: D.BW, height: 0, rx: 3 }), s('text', { class: 'cf-barv', x: x + D.BW / 2, y: D.BASE - 4, 'text-anchor': 'middle' }, ''));
+        svg.appendChild(g); bars.push({ g: g, r: g.firstChild, t: g.lastChild, x: x });
+      }
+      fig.querySelector('[data-stage]').appendChild(svg);
     }
-    fig.querySelector('[data-stage]').appendChild(svg);
+    function ensure() {
+      var stage = fig.querySelector('[data-stage]');
+      var nw = (stage.clientWidth || 800) < 470;
+      if (nw === narrow && svg) return false;
+      narrow = nw; build();
+      return true;
+    }
+    ensure();
+    V.onResize(fig.querySelector('[data-stage]'), function () { if (lastStep && ensure()) render(lastStep, { duration: 0 }); });
     var verdict = fig.querySelector('[data-verdict]');
+    /* The verdict line is 1 line while running and up to 3 on a phone once the tank runs dry: reserve the longest. */
+    function reserveVerdict() {
+      if (!verdict.offsetWidth) return;
+      var keep = verdict.innerHTML, mx = 0;
+      verdict.style.minHeight = '';
+      ['Running: the loop is using fuel…', '<b>Stops.</b> The test turned false after 20 trips.', '<b>Never stops.</b> The tank ran dry after 20 trips and the test is still true.'].forEach(function (html) { verdict.innerHTML = html; mx = Math.max(mx, verdict.offsetHeight); });
+      verdict.innerHTML = keep; verdict.style.minHeight = mx + 'px';
+    }
+    reserveVerdict();
+    V.onResize(verdict, reserveVerdict);
     var pre = fig.querySelector('[data-loopcode]');
     function dist(i) { return cond === '<' ? TARGET - i : Math.abs(TARGET - i); }
     function src() {
@@ -231,7 +298,10 @@
       V.codeBlock(pre, 'let i = ' + START + ';\nwhile (i ' + cond + ' ' + TARGET + ') {\n  ' + u + ';\n}', 'js');
     }
     function render(step, ctx) {
+      lastStep = step;
       var d = ctx.duration;
+      if (ensure()) d = 0;
+      var BASE = D.BASE, UNIT = D.UNIT;
       svg.style.setProperty('--vz-dur', d + 'ms');
       var burnt = step.fuelMax - step.fuel;
       cells.forEach(function (c, i) {
@@ -250,7 +320,7 @@
         bar.g.setAttribute('class', 'vz-item is-' + st);
         bar.g.setAttribute('opacity', 1);
         V.animate(bar.r, { attr: { y: BASE - hgt, height: Math.max(hgt, dv <= 0 ? 3 : 0) } }, { duration: d, ease: 'out' });
-        bar.t.textContent = dv > 99 ? '↑' : (dv > CAPD ? dv + '↑' : dv);
+        bar.t.textContent = dv > 99 || (narrow && dv > 9) ? '↑' : (dv > CAPD ? dv + '↑' : dv);
         V.animate(bar.t, { attr: { y: BASE - Math.max(hgt, 3) - 4 } }, { duration: d, ease: 'out' });
       });
       var last = step.kind;
@@ -393,7 +463,19 @@
     function build() {
       V.clear(out); tiles = [];
       for (var k = 1; k <= n; k++) { var t = h('span', { class: 'cf-tile', 'data-k': k }, String(k)); out.appendChild(t); tiles.push(t); }
+      fixWidths();
     }
+    /* A tile that later prints "FizzBuzz" is much wider than its number; give every tile its final width up front so the
+       strip wraps the same way on every step and the figure does not change height as the run prints. */
+    function fixWidths() {
+      if (!out.offsetWidth) return;
+      var fin = {};
+      A.fizzbuzzTrace(n).slice(-1)[0].out.forEach(function (o) { fin[o.i] = o.text; });
+      tiles.forEach(function (t) { t.style.minWidth = ''; });
+      var ws = tiles.map(function (t, k) { var was = t.textContent; t.textContent = fin[k + 1] || was; var w = t.getBoundingClientRect().width; t.textContent = was; return w; });
+      tiles.forEach(function (t, k) { t.style.minWidth = Math.ceil(ws[k]) + 'px'; });
+    }
+    V.onResize(out, function () { if (out.offsetWidth) fixWidths(); });
     function decorate(steps) { return steps.map(function (st) { return Object.assign({}, st, { line: st.flow, vars: { i: st.i, n: n } }); }); }
     function render(step, ctx) {
       var done = {};

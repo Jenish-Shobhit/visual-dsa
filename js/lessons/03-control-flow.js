@@ -56,11 +56,23 @@
     var big = h('span', { class: 'cf-hero__n' }, '0');
     var wrap = h('div', { class: 'cf-hero' }, flowHost, h('div', { class: 'cf-hero__count' }, h('span', { class: 'cf-hero__k' }, 'count'), big, h('div', { class: 'cf-pips' }, pips)));
     stage.appendChild(wrap);
-    var flow = V.views.flowchart(flowHost, CF.specs.hero, { label: 'A loop drawn as a flowchart' });
+    /* Wide stage: spread the flowchart over the width it has (larger column and row gaps) so it does not sit as a
+       small island beside the count tile; narrow stage: the view's own compact levels. */
+    var flow = null, wide = null, lastState = { active: null };
+    function mount() {
+      var w = stage.clientWidth >= 640;
+      if (w === wide && flow) return;
+      wide = w; V.clear(flowHost);
+      flow = V.views.flowchart(flowHost, CF.specs.hero, w ? { label: 'A loop drawn as a flowchart', colGap: 168, rowGap: 52 } : { label: 'A loop drawn as a flowchart' });
+      if (lastState.active) flow.render(lastState, { duration: 0 });
+    }
+    mount();
+    V.onResize(stage, mount);
     var last = -1;
     V.teaser(stage, {
       steps: A.countLoop(3), stepMs: 850, holdMs: 1500,
       render: function (st, ctx) {
+        lastState = { active: st.active };
         flow.render({ active: st.active }, { duration: ctx.duration });
         big.textContent = st.count;
         if (st.count !== last && ctx.duration) { big.classList.remove('is-bump'); void big.offsetWidth; big.classList.add('is-bump'); }

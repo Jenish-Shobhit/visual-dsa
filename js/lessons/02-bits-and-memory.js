@@ -354,13 +354,15 @@
         s('rect', { class: 'b2-odo__shade', x: 0, y: 0, width: DW, height: WH, rx: 9 }),
         s('rect', { class: 'b2-odo__ring', x: -3, y: -3, width: DW + 6, height: WH + 6, rx: 11 }));
       el.appendChild(txt(x + DW / 2, WY - 16, String(Math.pow(2, pos)), 'b2-odo__place'));
-      el.appendChild(txt(x + DW / 2, WY + WH + 22, 'bit ' + pos, 'b2-odo__idx'));
+      var idx = txt(x + DW / 2, WY + WH + 20, '', 'b2-odo__idx');   // "bit" over its number: short enough to stay clear of the next column when the type is bumped on phones
+      idx.appendChild(s('tspan', { x: x + DW / 2 }, 'bit')); idx.appendChild(s('tspan', { x: x + DW / 2, dy: '1.05em' }, String(pos)));
+      el.appendChild(idx);
       el.appendChild(g);
       V.place(strip, { y: 0 });
       drums.push({ g: g, strip: strip, pos: pos, x: x, bit: 0 });
     }
     var lost = s('g', { class: 'b2-odo__lost', opacity: 0 }, txt(0, 0, 'carry lost', 'b2-odo__lostt', { 'text-anchor': 'middle' }));
-    placeAt(lost, X0 - 4 + DW / 2 - 30, WY - 42);
+    placeAt(lost, Math.max(X0 - 4 + DW / 2 - 30, 58), WY - 42);   // keep the label inside the drawing
     el.appendChild(lost);
     var chips = [];
     for (var c = 0; c < 8; c++) {
@@ -437,10 +439,12 @@
   }
 
   /* ================================================================== the pattern tree */
-  function treeView(stage) {
-    var W = 440, H = 330, TOP = 32, HH = 278, DX = 78, X0 = 26;
-    var el = svg(W, H, 'b2-tree', 'Decode tree of bit patterns');
-    el.style.maxWidth = '520px';
+  function treeView(stage) { return responsive(stage, function (narrow) { return treeBuild(stage, narrow); }, 440); }
+  function treeBuild(stage, narrow) {
+    /* Phones get a 300-unit drawing at 1:1 scale (labels stay >= 11px); wider panels keep the 440-unit drawing. */
+    var W = narrow ? 300 : 440, H = 330, TOP = 32, HH = 278, DX = narrow ? 50 : 78, X0 = narrow ? 14 : 26;
+    var el = svg(W, H, 'b2-tree' + (narrow ? ' is-narrow' : ''), 'Decode tree of bit patterns');
+    el.style.maxWidth = narrow ? '340px' : '520px';
     var gE = s('g'), gN = s('g'), gL = s('g');
     var gAll = s('g'), ox = 0, ox1 = 0;   // gAll slides sideways so the tree sits centred while it is still narrow
     gAll.appendChild(gE); gAll.appendChild(gN); gAll.appendChild(gL); el.appendChild(gAll);
@@ -449,6 +453,10 @@
     for (var d = 1; d <= 4; d++) { var ht = txt(X0 + d * DX, 16, 'bit ' + d, 'b2-tree__head', { 'text-anchor': 'middle', opacity: 0 }); gAll.appendChild(ht); heads.push(ht); }
     var count = txt(W / 2, H - 8, '', 'b2-tree__count', { 'text-anchor': 'middle' });
     el.appendChild(count);
+    /* Step 1 shows a lone "start" dot; a hint fills the empty space until the first split. */
+    var hint = s('text', { class: 'b2-tree__hint', 'text-anchor': 'middle' });
+    ['Every new bit splits each', 'branch into 0 and 1.'].forEach(function (ln, i) { hint.appendChild(s('tspan', { x: W / 2, y: H / 2 + 44 + i * 18 }, ln)); });
+    el.appendChild(hint);
     stage.appendChild(el);
     var recs = {};
     function pos(id) {
@@ -507,6 +515,7 @@
         r.from = Object.assign({}, r.cur); r.to = { x: par ? par.to.x : r.cur.x, y: par ? par.to.y : r.cur.y, o: 0, lo: 0, eo: 0 }; r.dead = true;
       });
       heads.forEach(function (ht, i) { ht.setAttribute('opacity', i < k ? 1 : 0); });
+      hint.setAttribute('opacity', k === 0 ? 1 : 0);
       count.textContent = k ? '2' + ['', '¹', '²', '³', '⁴'][k] + ' = ' + step.count + ' patterns' : '1 possibility';
       if (tw) tw.cancel();
       var list = Object.keys(recs).map(function (id) { return recs[id]; });
@@ -677,7 +686,7 @@
   /* ================================================================== two's complement wheel */
   function wheelFigure(fig) {
     legend(fig.querySelector('[data-legend]'), [{ state: 'active', label: 'Current pattern' }, { state: 'error', shape: 'dash', label: 'Overflow seam' }, { state: 'muted', label: 'Negative half (top bit 1)' }]);
-    var W = 440, H = 440, CX = 220, CY = 220, R = 150;
+    var W = 440, H = 454, CX = 220, CY = 234, R = 150;   // 14 units of headroom for the seam label on phones
     var el = svg(W, H, 'b2-wheel', 'Wheel of all sixteen 4-bit patterns');
     el.setAttribute('role', 'group');
     function ang(k) { return (-90 + k * 22.5) * Math.PI / 180; }
@@ -712,11 +721,11 @@
         el.appendChild(ut); el.appendChild(st); uLabs.push(ut); sLabs.push(st);
       }(k));
     }
-    el.appendChild(s('circle', { class: 'b2-wheel__hub', cx: CX, cy: CY, r: 52 }));
-    var hubP = txt(CX, CY - 12, '0000', 'b2-wheel__hp'), hubU = txt(CX, CY + 12, 'unsigned 0', 'b2-wheel__hv'), hubS = txt(CX, CY + 28, 'signed 0', 'b2-wheel__hv');
+    el.appendChild(s('circle', { class: 'b2-wheel__hub', cx: CX, cy: CY, r: 60 }));
+    var hubP = txt(CX, CY - 14, '0000', 'b2-wheel__hp'), hubU = txt(CX, CY + 12, 'unsigned 0', 'b2-wheel__hv'), hubS = txt(CX, CY + 30, 'signed 0', 'b2-wheel__hv');
     [hubP, hubU, hubS].forEach(function (t) { el.appendChild(t); });
-    el.appendChild(txt(6, 12, 'outside: unsigned', 'b2-wheel__key', { 'text-anchor': 'start' }));
-    el.appendChild(txt(6, 28, 'inside: signed', 'b2-wheel__key', { 'text-anchor': 'start' }));
+    el.appendChild(txt(6, 16, 'outside: unsigned', 'b2-wheel__key', { 'text-anchor': 'start' }));
+    el.appendChild(txt(6, 34, 'inside: signed', 'b2-wheel__key', { 'text-anchor': 'start' }));
     fig.querySelector('[data-stage]').appendChild(el);
     var cap = fig.querySelector('[data-caption]');
     var stats = V.stats(fig.querySelector('[data-counters]'), { labels: { steps: 'Steps', wraps: 'Unsigned wraps', over: 'Signed overflows' }, states: { wraps: 'error', over: 'error' } });

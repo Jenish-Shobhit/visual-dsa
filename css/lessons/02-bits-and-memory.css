@@ -104,7 +104,7 @@
 @container fig (max-width: 560px) {
   .sw-challenge { grid-template-columns: minmax(0, 1fr); }
   .sw__bit { padding: 6px 0; border-radius: 10px; gap: 5px; }
-  .sw__place { font-size: 10.5px; }
+  .sw__place { font-size: 11.5px; }
   .sw__toggle { width: 22px; height: 40px; }
   .sw__knob { width: 16px; height: 16px; top: 19px; }
   .sw__digit { font-size: 16px; }
@@ -135,6 +135,7 @@
 .b2-tree__lab { font: 650 12.5px var(--font-mono); fill: var(--ink-2); }
 .b2-tree__lab.is-leaf { fill: var(--ink); }
 .b2-tree__head { font: 650 11px var(--font-sans); fill: var(--ink-3); letter-spacing: .04em; transition: opacity var(--t); }
+.b2-tree__hint { font: 600 13.5px var(--font-sans); fill: var(--ink-3); transition: opacity var(--t); }
 .b2-tree__count { font: 740 14px var(--font-mono); fill: color-mix(in srgb, var(--st-active) 70%, var(--ink)); }
 
 /* ---------- hex ---------- */
@@ -208,7 +209,7 @@
 .b2-add__sum.is-empty rect { fill: var(--bg-sunken); stroke-dasharray: 4 3; }
 .b2-add__sum.is-new rect { stroke: var(--st-swap); stroke-width: 2.5; }
 .b2-add__sum.is-lost rect { stroke: var(--st-error); stroke-width: 2; fill: color-mix(in srgb, var(--st-error) 8%, var(--bg-sunken)); }
-.b2-add__sum.is-lost .b2-cell__t { fill: var(--st-error); text-decoration: line-through; }
+.b2-add__sum.is-lost .b2-cell__t { fill: var(--st-error-text); text-decoration: line-through; }
 .b2-add__cs { font: 700 12px var(--font-mono); fill: color-mix(in srgb, var(--st-active) 75%, var(--ink)); }
 .b2-add__dec { font: 700 13.5px var(--font-mono); fill: var(--ink); }
 .b2-add__read { font: 600 12.5px var(--font-mono); fill: var(--ink-2); }
@@ -273,27 +274,32 @@
   .b2-odo__place { font-size: 18px; }
   .b2-odo__idx { font-size: 15px; }
   .b2-odo__read { font-size: 28px; }
-  .b2-wheel__pt { font-size: 13.5px; }
-  .b2-wheel__u { font-size: 14px; }
+  .b2-wheel__pt { font-size: 15px; }
+  .b2-wheel__u { font-size: 15px; }
   .b2-wheel__s { font-size: 16px; }
-  .b2-wheel__seamt, .b2-wheel__key { font-size: 13px; }
-  .b2-tree__lab { font-size: 14px; }
+  .b2-wheel__seamt, .b2-wheel__key, .b2-wheel__hv { font-size: 15px; }
 }
-.b2-add.is-narrow .b2-add__rowl { font-size: 10.5px; }
-.b2-add.is-narrow .b2-add__place { font-size: 10px; }
-.b2-add.is-narrow .b2-chip__t { font-size: 10px; }
+/* Phones: the tree is drawn 300 units wide at ~1:1, so 11.5px labels stay >= 11px on screen. */
+.b2-tree.is-narrow .b2-tree__lab { font-size: 12px; }
+.b2-tree.is-narrow .b2-tree__elab, .b2-tree.is-narrow .b2-tree__head { font-size: 11.5px; }
+.b2-tree.is-narrow .b2-tree__hint { font-size: 12.5px; }
+.b2-add.is-narrow .b2-add__rowl { font-size: 12px; }
+.b2-add.is-narrow .b2-add__place { font-size: 11.5px; }
+.b2-add.is-narrow .b2-chip__t { font-size: 11.5px; }
 .b2-add.is-narrow .b2-cell__t { font-size: 13px; }
 .b2-add.is-narrow .b2-add__read { font-size: 12px; }
-.b2-hex.is-narrow .b2-hex__brt { font-size: 11px; }
+.b2-hex.is-narrow .b2-hex__brt { font-size: 12.5px; }
+.b2-hex.is-narrow .b2-hex__kb { font-size: 12px; }
 #variants .btn-row { margin-top: 12px; }
 
 /* Phones: the odometer's 560-unit viewBox is scaled to ~0.64, so bump its small labels to stay legible (>= ~10px rendered). */
 @media (max-width: 520px) {
-  .b2-odo__place { font-size: 18px; }
-  .b2-odo__idx { font-size: 17px; }
+  .b2-odo__place { font-size: 19px; }
+  .b2-odo__idx { font-size: 19px; }
   .b2-odo__read { font-size: 30px; }
-  .b2-odo__lostt { font-size: 17px; }
-  .b2-odo .b2-chip__t { font-size: 15px; }
+  .b2-odo__lostt { font-size: 19px; }
+  .b2-odo .b2-chip__t { font-size: 19px; }
+  .b2-odo .b2-chip circle { r: 14px; }
 }
 
 /* ------------------------------------------------------------ hero layout
@@ -306,6 +312,21 @@
 
 /* The shared memory view scales its SVG to fit; keep its address labels legible after scaling. */
 .fig .vz-memory .vz-mem-addr { font-size: 13px; }
+#fig-meaning .vz-memory .vz-mem-bits, #fig-meaning .vz-memory .vz-mem-celladdr,
+#fig-click .vz-memory .vz-mem-bits, #fig-click .vz-memory .vz-mem-celladdr { font-size: 11.5px; }
 
 /* Keep the tape-and-RAM drawing inside its stage on phones (a grid item with a viewBox and no width sizes itself from its content). */
 #fig-race .fig__stage > svg { width: 100%; min-width: 0; }
+
+/* Phones: the hero's bulb strip is drawn at ~0.8 scale, so lift its labels and carry chip back to >= 11px on screen. */
+@media (max-width: 520px) {
+  #teaser .b2-bulbs__lab, #teaser .b2-bulb__place { font-size: 14px; }
+  #teaser .b2-carry circle { r: 11px; }
+  #teaser .b2-carry__t { font-size: 14px; }
+}
+
+/* Memory lab on phones: a leftover value such as "-1292235006  (leftover)   @0x100" wraps to a second line, which made the
+   variables list (and the whole figure) grow by one line on those steps. Reserve the three-row, one-wrapped-row height. */
+@container fig (max-width: 560px) {
+  #lab-mem .vars__list { min-height: 126px; }
+}

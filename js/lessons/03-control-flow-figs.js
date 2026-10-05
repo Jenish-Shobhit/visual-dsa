@@ -494,7 +494,7 @@
       arc('5-2', 5, 2, 74); arc('2-6', 2, 6, 44);
       svg.appendChild(s('text', { class: 'vz-caption', x: LX + RW + 78, y: (ry(2) + ry(5)) / 2, 'text-anchor': 'middle', transform: 'rotate(90 ' + (LX + RW + 78) + ' ' + (ry(2) + ry(5)) / 2 + ')' }, 'back 5 → 2'));
       svg.appendChild(s('text', { class: 'vz-caption', x: LX + RW + 38, y: ry(5) + ROW * 0.5 + 4, 'text-anchor': 'start' }, 'forward 2 → 6'));
-      pc = s('g', { class: 'cf-pc' }, s('path', { d: 'M-2 -11 L18 0 L-2 11 z' }), s('text', { x: -8, y: 30, 'text-anchor': 'middle' }, 'pc'));
+      pc = s('g', { class: 'cf-pc' }, s('path', { d: 'M-2 -11 L18 0 L-2 11 z' }), s('text', { x: 8, y: 30, 'text-anchor': 'middle' }, 'pc'));
       V.place(pc, { x: 2, y: ry(1) });
       svg.appendChild(pc);
       token = s('circle', { class: 'cf-token', r: 7, cx: 0, cy: 0, opacity: 0 });
@@ -554,33 +554,59 @@
     var stage = fig.querySelector('[data-stage]');
     var start = 5, player, flow, flowView, svg, tickets = {}, readout, emptyNote, boxG, N = 7;
     var CW = 46, CH = 58;
-    function boxPos(k) { return { x: 34 + ((k - 1) % 4) * 58, y: 50 + Math.floor((k - 1) / 4) * 70 }; }
-    function trayPos(t) { return { x: 316 + t * 33, y: 92 }; }
+    /* Two layouts. Wide: box and tray side by side (560 x 200). Phones: box above tray (300 x 282), drawn at about 1:1 so
+       the captions and ticket numbers stay readable instead of being shrunk to half size. */
+    var narrow = null, last = null;
+    var G;
+    function geometry(nw) {
+      return nw ? {
+        W: 300, H: 282, cls: ' is-narrow',
+        box: { x: 6, y: 28, w: 288, h: 154 }, tray: { x: 6, y: 218, w: 288, h: 56 },
+        cap1: { x: 8, y: 18 }, cap2: { x: 8, y: 210 }, read: { x: 292, y: 210, anchor: 'end' }, empty: { x: 150, y: 112 },
+        boxPos: function (k) { return { x: 17 + ((k - 1) % 4) * 68, y: 40 + Math.floor((k - 1) / 4) * 68 }; },
+        trayPos: function (n) { return { x: 14 + n * 39, y: 226 }; }
+      } : {
+        W: 560, H: 200, cls: '',
+        box: { x: 20, y: 38, w: 250, h: 150 }, tray: { x: 302, y: 84, w: 244, h: 80 },
+        cap1: { x: 28, y: 28 }, cap2: { x: 310, y: 28 }, read: { x: 310, y: 62 }, empty: { x: 145, y: 118 },
+        boxPos: function (k) { return { x: 34 + ((k - 1) % 4) * 58, y: 50 + Math.floor((k - 1) / 4) * 70 }; },
+        trayPos: function (n) { return { x: 316 + n * 33, y: 92 }; }
+      };
+    }
     function build() {
+      G = geometry(narrow);
       V.clear(stage);
-      svg = s('svg', { class: 'vz cf-svg cf-tickets', viewBox: '0 0 560 200', role: 'img', 'aria-label': 'A box of numbered tickets and a tray for tickets handed out' });
-      svg.style.maxWidth = '680px';
-      boxG = s('rect', { class: 'cf-box', x: 20, y: 38, width: 250, height: 150, rx: 14 });
+      svg = s('svg', { class: 'vz cf-svg cf-tickets' + G.cls, viewBox: '0 0 ' + G.W + ' ' + G.H, role: 'img', 'aria-label': 'A box of numbered tickets and a tray for tickets handed out' });
+      svg.style.maxWidth = narrow ? '360px' : '680px';
+      boxG = s('rect', { class: 'cf-box', x: G.box.x, y: G.box.y, width: G.box.w, height: G.box.h, rx: 14 });
       svg.appendChild(boxG);
-      svg.appendChild(s('text', { class: 'vz-caption', x: 28, y: 28 }, 'TICKET BOX'));
-      svg.appendChild(s('rect', { class: 'cf-tray', x: 302, y: 84, width: 244, height: 80, rx: 12 }));
-      svg.appendChild(s('text', { class: 'vz-caption', x: 310, y: 28 }, 'HANDED OUT'));
-      readout = s('text', { class: 'cf-readout', x: 310, y: 62 }, '');
+      svg.appendChild(s('text', { class: 'vz-caption', x: G.cap1.x, y: G.cap1.y }, 'TICKET BOX'));
+      svg.appendChild(s('rect', { class: 'cf-tray', x: G.tray.x, y: G.tray.y, width: G.tray.w, height: G.tray.h, rx: 12 }));
+      svg.appendChild(s('text', { class: 'vz-caption', x: G.cap2.x, y: G.cap2.y }, 'HANDED OUT'));
+      readout = s('text', { class: 'cf-readout', x: G.read.x, y: G.read.y, 'text-anchor': G.read.anchor || 'start' }, '');
       svg.appendChild(readout);
-      emptyNote = s('text', { class: 'vz-empty', x: 145, y: 118, 'text-anchor': 'middle', opacity: 0 }, 'the box is empty');
+      emptyNote = s('text', { class: 'vz-empty', x: G.empty.x, y: G.empty.y, 'text-anchor': 'middle', opacity: 0 }, 'the box is empty');
       svg.appendChild(emptyNote);
       tickets = {};
       for (var k = 1; k <= start; k++) {
         var g = s('g', { class: 'vz-item is-default' }, s('rect', { class: 'vz-shape', width: CW, height: CH, rx: 7 }),
           s('circle', { class: 'cf-notch', cx: 0, cy: CH / 2, r: 4 }), s('circle', { class: 'cf-notch', cx: CW, cy: CH / 2, r: 4 }),
           s('text', { class: 'vz-ink cf-tnum', x: CW / 2, y: CH / 2 + 1, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, k));
-        V.place(g, boxPos(k));
+        V.place(g, G.boxPos(k));
         svg.appendChild(g); tickets[k] = g;
       }
       stage.appendChild(svg);
     }
+    function ensure() {
+      var nw = (stage.clientWidth || 800) < 470;
+      if (nw === narrow && svg) return false;
+      narrow = nw; build();
+      return true;
+    }
     function render(step, ctx) {
+      last = step;
       var d = ctx.duration;
+      if (ensure()) d = 0;
       svg.style.setProperty('--vz-dur', d + 'ms');
       var top = step.left.length ? step.left[step.left.length - 1] : null;
       Object.keys(tickets).forEach(function (k) {
@@ -588,14 +614,15 @@
         var g = tickets[k], oi = step.out.indexOf(k);
         var st = oi >= 0 ? (step.kind === 'give' && oi === step.out.length - 1 ? 'active' : 'done') : (step.kind === 'test' && k === top ? 'compare' : 'default');
         g.setAttribute('class', 'vz-item is-' + st);
-        var p = oi >= 0 ? trayPos(oi) : boxPos(k);
+        var p = oi >= 0 ? G.trayPos(oi) : G.boxPos(k);
         V.animate(g, { x: p.x, y: p.y, scale: oi >= 0 ? 0.7 : 1 }, { duration: d, ease: 'inOut' });
       });
       readout.textContent = 'tickets = ' + step.tickets;
       V.animate(emptyNote, { opacity: step.left.length ? 0 : 1 }, { duration: d });
     }
     flowView = V.views.flowchart(fig.querySelector('[data-flow]'), S.tickets(start), { label: 'While loop flowchart' });
-    build();
+    ensure();
+    V.onResize(stage, function () { if (last && ensure()) render(last, { duration: 0 }); });
     flow = CF.flowLink(flowView);
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: TICKET_CODE, default: 'pseudo', maxHeight: 260 });
     player = V.player({ root: fig, steps: A.ticketTrace(start), render: render, code: code, flow: flow, caption: fig.querySelector('[data-caption]'),
@@ -686,6 +713,10 @@
     svg.appendChild(tot);
     stage.appendChild(svg);
     function sum(a) { return a.reduce(function (t, c) { return t + c.add; }, 0); }
+    var MID = 'Mid-trip the total and the squares may disagree for a moment. The invariant only has to hold when the test runs again.';
+    function checkText(parts, acc, squares) {
+      return 'Invariant check at the test: <code>total = ' + (parts.length ? parts.join(' + ') : '0') + ' = ' + acc + '</code>, and the columns hold <b>' + squares + '</b> squares <span class="cf-ok">✓ they match</span>';
+    }
     V.player({ root: fig, steps: steps, caption: fig.querySelector('[data-caption]'), baseStepMs: 1000, label: 'Invariant steps',
       render: function (step, ctx) {
         var d = ctx.duration;
@@ -698,10 +729,18 @@
         tot.textContent = 'total = ' + step.acc;
         var parts = step.cols.map(function (c) { return c.add; });
         var squares = sum(step.cols);
-        if (step.kind !== 'body' && step.kind !== 'update') {
-          inv.innerHTML = 'Invariant check at the test: <code>total = ' + (parts.length ? parts.join(' + ') : '0') + ' = ' + step.acc + '</code>, and the columns hold <b>' + squares + '</b> squares <span class="cf-ok">✓ they match</span>';
-        } else inv.innerHTML = 'Mid-trip the total and the squares may disagree for a moment. The invariant only has to hold when the test runs again.';
+        inv.innerHTML = step.kind !== 'body' && step.kind !== 'update' ? checkText(parts, step.acc, squares) : MID;
       } });
+    /* The two messages wrap to different line counts; keep the box as tall as the longer one so the figure stays put. */
+    function reserveInv() {
+      if (!inv.offsetWidth) return;
+      var keep = inv.innerHTML, mx = 0;
+      inv.style.minHeight = '';
+      [checkText([1, 2, 3, 4, 5], 15, 15), MID].forEach(function (html) { inv.innerHTML = html; mx = Math.max(mx, inv.offsetHeight); });
+      inv.innerHTML = keep; inv.style.minHeight = mx + 'px';
+    }
+    reserveInv();
+    V.onResize(inv, reserveInv);
   };
 
   /* ================================================================== fence posts and rails */

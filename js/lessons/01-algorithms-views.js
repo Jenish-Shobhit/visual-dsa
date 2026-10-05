@@ -101,8 +101,8 @@
         var body = s('rect', { class: 'c1-card__body', x: -cw / 2, y: -ch / 2, width: cw, height: ch, rx: r });
         var back = s('g', { class: 'c1-card__back' },
           s('rect', { class: 'c1-card__pat', x: -cw / 2 + 4, y: -ch / 2 + 4, width: cw - 8, height: ch - 8, rx: Math.max(2, r - 3), fill: 'url(#' + patId + ')' }),
-          s('circle', { class: 'c1-card__seal', cx: 0, cy: 0, r: Math.round(cw * 0.2) }),
-          s('text', { class: 'c1-card__q', x: 0, y: 1, style: 'font-size:' + Math.round(cw * 0.26) + 'px' }, '?'));
+          s('circle', { class: 'c1-card__seal', cx: 0, cy: 0, r: Math.max(9, Math.round(cw * 0.2)) }),
+          s('text', { class: 'c1-card__q', x: 0, y: 1, style: 'font-size:' + Math.max(11.5, Math.round(cw * 0.26)) + 'px' }, '?'));
         var val = s('text', { class: 'c1-card__val', x: 0, y: 1, style: 'font-size:' + fs + 'px' }, num(c.value));
         var front = s('g', { class: 'c1-card__front' }, val);
         var inner = s('g', { class: 'c1-card__inner' }, body, back, front);

@@ -81,7 +81,11 @@
       all.forEach(function (g) { var t = g.querySelector('.vz-mem-frame-title'); if (t && t.textContent === title) hit = g; });
       return hit;
     }
-    function fly(step, dur) {
+    /* Optional vertical centring (o.shiftFor(step) -> px): the memory view reserves room for its tallest state and draws
+       from the top, so shorter states slide down by half the spare room. Eased with the step; the flying value
+       is told how far its target will have moved. */
+    var shiftNow = 0, svgEl = null;
+    function fly(step, dur, delta) {
       var from = frameByTitle(step.fly.from), to = frameByTitle(step.fly.to);
       if (!from || !to) return;
       var target = null;
@@ -89,7 +93,7 @@
       var sr = stage.getBoundingClientRect(), fr = (from.querySelector('.vz-mem-frame-head') || from).getBoundingClientRect(), tr = (target || to).getBoundingClientRect();
       flyEl.textContent = '→ ' + (typeof step.fly.value === 'number' ? num(step.fly.value) : String(step.fly.value).replace(/^→ /, ''));
       var sx = fr.left + fr.width - 30 - sr.left, sy = fr.top + fr.height / 2 - sr.top;
-      var tx = tr.left + tr.width / 2 - sr.left, ty = tr.top + tr.height / 2 - sr.top;
+      var tx = tr.left + tr.width / 2 - sr.left, ty = tr.top + tr.height / 2 - sr.top + (delta || 0);
       V.place(flyEl, { x: sx, y: sy, opacity: 1, scale: 1 });
       mv(flyEl, { x: tx, y: ty }, dur * 0.9, 'inOut').then(function () { return mv(flyEl, { opacity: 0, scale: 0.8 }, 160, 'out'); });
     }
@@ -98,8 +102,17 @@
       prepare: function (steps) { view.reset(); view.prepare(steps); },
       render: function (step, ctx) {
         V.place(flyEl, { opacity: 0 });
+        var want = o.shiftFor ? o.shiftFor(step) : 0, delta = want - shiftNow;
         view.render(step, { duration: ctx.duration });
-        if (step.fly && ctx.duration > 0 && ctx.direction === 1 && ctx.prev) fly(step, ctx.duration);
+        if (step.fly && ctx.duration > 0 && ctx.direction === 1 && ctx.prev) fly(step, ctx.duration, delta);
+        if (o.shiftFor) {
+          svgEl = svgEl || stage.querySelector('svg');
+          if (svgEl) {
+            svgEl.style.transition = ctx.duration > 0 ? 'transform ' + ctx.duration + 'ms ease-in-out' : 'none';
+            svgEl.style.transform = want ? 'translateY(' + want + 'px)' : '';
+          }
+          shiftNow = want;
+        }
       }
     };
   };
@@ -290,7 +303,7 @@
     T(bodyX + 34 + 26 + 14 + 26, y2, ';  }');
     var slotNameW = T(pxW, y1 - 26, 'w', 'fn-slotname'), slotNameH = T(pxH, y1 - 26, 'h', 'fn-slotname');
     slotNameW.setAttribute('text-anchor', 'middle'); slotNameH.setAttribute('text-anchor', 'middle');
-    slotNameW.setAttribute('font-size', 11); slotNameH.setAttribute('font-size', 11);
+    slotNameW.setAttribute('font-size', 12.5); slotNameH.setAttribute('font-size', 12.5);
     // call:  kitchen = area( [3] , [4] )
     var yc = 240, kx = 22;
     T(kx, yc, 'kitchen =');
@@ -304,7 +317,7 @@
     var argA = chip(34, 28, '3', 'default'), argB = chip(34, 28, '4', 'default');
     V.place(argA, { x: ax, y: yc }); V.place(argB, { x: bx, y: yc });
     callG.appendChild(argA); callG.appendChild(argB);
-    var argNote = T(ax + 12, yc + 30, 'arguments', 'fn-slotname'); argNote.setAttribute('text-anchor', 'middle'); argNote.setAttribute('font-size', 11); argNote.style.opacity = 0;
+    var argNote = T(ax + 12, yc + 30, 'arguments', 'fn-slotname'); argNote.setAttribute('text-anchor', 'middle'); argNote.setAttribute('font-size', 12.5); argNote.style.opacity = 0;
     argNote.setAttribute('x', (ax + bx) / 2);
     var copyA = chip(34, 28, '3', 'active'), copyB = chip(34, 28, '4', 'active'); svg.appendChild(copyA); svg.appendChild(copyB);
     V.place(copyA, { x: ax, y: yc, opacity: 0 }); V.place(copyB, { x: bx, y: yc, opacity: 0 });
@@ -312,7 +325,7 @@
     var res = chip(46, 28, '12', 'done'); svg.appendChild(res); V.place(res, { x: bodyX + 34 + 26 + 14 + 80, y: y2, opacity: 0 });
     var prod = T(bodyX + 34 + 26 + 14 + 68, y2 + 26, '', 'fn-prod'); prod.setAttribute('font-size', 12); prod.style.opacity = 0;
     prod.setAttribute('x', bodyX + 2); prod.setAttribute('y', y2 + 30);
-    var callLabelNote = T(VW / 2, yc + 30, '', 'fn-slotname', 'middle'); callLabelNote.setAttribute('font-size', 11);
+    var callLabelNote = T(VW / 2, yc + 30, '', 'fn-slotname', 'middle'); callLabelNote.setAttribute('font-size', 12.5);
 
     function fill(el, text, st, name) { el.text.textContent = text; cls(el, 'vz-item fn-chip', st); }
     return function render(step, ctx) {
@@ -483,10 +496,10 @@
 
   /* ================================================================== process memory layout */
   FN.layoutFig = function (stage, info) {
-    var VW = 410, VH = 372, cx = 100, cw = 200, top = 30, bottom = 340;
+    var VW = 426, VH = 458, cx = 130, cw = 200, top = 30, bottom = 416;
     var svg = s('svg', { class: 'vz fn fn-layout', viewBox: '0 0 ' + VW + ' ' + VH, role: 'group', 'aria-label': 'Address space of a running program: code and globals at low addresses, the heap growing up, the stack growing down from high addresses.' });
     stage.appendChild(svg);
-    var stackMax = 12, heapMax = 8, SL = 17;
+    var stackMax = 12, heapMax = 8, SL = 22;
     var regions = {}, order = ['stack', 'free', 'heap', 'globals', 'code'];
     var infoEl = info;
     var texts = {
@@ -527,7 +540,7 @@
     var cur = null;
 
     function layout(frames, objs, crashed, dur) {
-      var fixedCode = 26, fixedGlob = 26, gap = 4;
+      var fixedCode = 30, fixedGlob = 30, gap = 4;
       var total = bottom - top;
       var hStackR = Math.max(SL * frames + 8, 26), hHeapR = Math.max(SL * objs + 8, 26);
       var rawFree = total - fixedCode - fixedGlob - hStackR - hHeapR;

@@ -77,8 +77,13 @@
   /* ================================================================== hero teaser */
   function teaser() {
     var stage = V.$('#teaser');
-    var mf = FN.memFig(stage, { label: 'Stack and heap', frameWidth: window.innerWidth > 900 ? 340 : undefined });
     var steps = A.teaser(3, 4);
+    /* The memory view reserves room for the tallest state and draws from the top. Centre every state in that room:
+       the shorter the stack, the further the drawing slides down (frame height mirrors the view: 28 + 26/row + 6). */
+    function stackH(step) { var h = 0; step.frames.forEach(function (f) { h += 28 + f.vars.length * 26 + (f.vars.length ? 6 : 8) + 10; }); return Math.max(0, h - 10); }
+    var tallest = Math.max.apply(null, steps.map(stackH));
+    var mf = FN.memFig(stage, { label: 'Stack and heap', frameWidth: window.innerWidth > 900 ? 380 : undefined,
+      shiftFor: function (step) { return Math.round((tallest - stackH(step)) / 2); } });
     mf.prepare(steps);
     V.teaser(stage, { steps: steps, render: function (step, ctx) { mf.render(step, ctx); }, stepMs: 1150, holdMs: 1800 });
   }
@@ -279,8 +284,8 @@
     edges: [
       { from: 'call', to: 'eval' }, { from: 'eval', to: 'push' }, { from: 'push', to: 'bind' }, { from: 'bind', to: 'run', via: { fromSide: 'bottom', toSide: 'top' } },
       { from: 'run', to: 'nested' },
-      { from: 'nested', to: 'eval', label: 'yes: a new call', via: { fromSide: 'left', toSide: 'left' } },
-      { from: 'nested', to: 'ret', label: 'no: return' },
+      { from: 'nested', to: 'eval', label: 'yes', via: { fromSide: 'left', toSide: 'left' } },
+      { from: 'nested', to: 'ret', label: 'no' },
       { from: 'ret', to: 'pop', via: { fromSide: 'bottom', toSide: 'top' } },
       { from: 'pop', to: 'resume' },
       { from: 'resume', to: 'nested', label: 'caller carries on', via: { fromSide: 'top', toSide: 'bottom' } }

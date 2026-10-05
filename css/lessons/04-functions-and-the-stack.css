@@ -13,6 +13,7 @@
 .fn-duo > div { min-width: 0; }
 @container fig (max-width: 640px) { .fn-duo { grid-template-columns: minmax(0, 1fr); } }
 .fn-memstage { position: relative; }
+.fn-memstage .vz-mem-idx { font-size: 11px; }   /* the shared view draws array indexes at 9.5px; lift them to the 11px floor */
 .fn-fly {
   position: absolute; left: 0; top: 0; margin: -12px 0 0 -22px; z-index: 5; pointer-events: none;
   padding: 3px 10px; border-radius: 999px; background: var(--st-done); border: 2px solid var(--bg-elev);
@@ -29,7 +30,7 @@
 .fn-console--bar { border-radius: 0; border-width: 1px 0 0; }
 .fn-quiz-code { margin: 10px 0 2px; padding: 10px 14px; background: var(--bg-sunken); border: 1px solid var(--line); border-radius: var(--r-md); font: 500 13.5px/1.55 var(--font-mono); white-space: pre-wrap; }
 .fn-labbar { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: end; }
-.fn-labbar__kind { display: grid; gap: 6px; }
+.fn-labbar__kind { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; max-width: 100%; }
 .fn-labbar__input { flex: 1 1 340px; min-width: 0; }
 .fn-sliders { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; }
 .fn-measure { display: inline-flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-left: auto; font-size: 14px; color: var(--ink-2); }
@@ -45,8 +46,8 @@
 .fn-jumps .fn-codeline:hover .fn-code { fill: var(--accent-ink, var(--accent)); }
 .fn-jumps .fn-codeline:focus-visible { outline: none; }
 .fn-jumps .fn-codeline:focus-visible .fn-code { text-decoration: underline; }
-.fn-jumps .fn-codeline.is-pick-right .fn-code, .fn-jumps .fn-codeline.is-pick-right .fn-ln { fill: var(--st-done); font-weight: 700; }
-.fn-jumps .fn-codeline.is-pick-wrong .fn-code { fill: var(--st-error); text-decoration: line-through; }
+.fn-jumps .fn-codeline.is-pick-right .fn-code, .fn-jumps .fn-codeline.is-pick-right .fn-ln { fill: var(--st-done-text); font-weight: 700; }
+.fn-jumps .fn-codeline.is-pick-wrong .fn-code { fill: var(--st-error-text); text-decoration: line-through; }
 .fn-jumps .fn-ptitle { font: 650 11px var(--font-sans); letter-spacing: .07em; text-transform: uppercase; fill: var(--ink-3); }
 .fn-jumps .fn-arrow__line { fill: none; stroke-width: 2.6px; stroke-linecap: round; stroke: var(--st-key); }
 .fn-jumps .fn-arrow__line.is-ret { stroke: var(--st-done); }
@@ -73,7 +74,7 @@
 .fn-args { width: 100%; max-width: 470px; margin: 0 auto; height: auto; }
 .fn-args .fn-panel { fill: var(--bg-elev); stroke: var(--line-strong); stroke-width: 1px; }
 .fn-args .fn-panel--call { fill: color-mix(in srgb, var(--st-active) 5%, var(--bg-elev)); }
-.fn-args .fn-sec { font: 650 10.5px var(--font-sans); letter-spacing: .07em; fill: var(--ink-3); }
+.fn-args .fn-sec { font: 650 11.5px var(--font-sans); letter-spacing: .03em; fill: var(--ink-3); }
 .fn-args .fn-t { fill: var(--ink); font-weight: 500; }
 .fn-args .fn-op { fill: var(--ink-3); }
 .fn-args .fn-slotname { fill: var(--ink-3); font-family: var(--font-sans); font-weight: 600; transition: opacity var(--vz-dur); }
@@ -161,17 +162,17 @@
 .fn-layout .fn-region.is-default .vz-shape { fill: transparent; stroke: var(--line-strong); stroke-dasharray: 4 4; }
 .fn-layout .fn-region.is-selected .vz-shape { stroke-width: 3px; }
 .fn-layout .fn-region:focus-visible .vz-shape { stroke: var(--accent); stroke-width: 3px; }
-.fn-layout .fn-rl { font: 650 13px var(--font-sans); fill: var(--ink-2); pointer-events: none; transition: opacity 200ms; }
-.fn-layout .fn-addr { font: 600 11px var(--font-mono); fill: var(--ink-3); }
+.fn-layout .fn-rl { font: 650 14px var(--font-sans); fill: var(--ink-2); pointer-events: none; transition: opacity 200ms; }
+.fn-layout .fn-addr { font: 600 14px var(--font-mono); fill: var(--ink-3); }
 .fn-layout .fn-grow { fill: none; stroke-width: 2.4px; stroke-linecap: round; stroke-linejoin: round; transition: opacity 200ms; }
 .fn-layout .fn-grow--stack { stroke: color-mix(in srgb, var(--st-frontier) 80%, var(--ink)); }
 .fn-layout .fn-grow--heap { stroke: color-mix(in srgb, var(--st-visited) 80%, var(--ink)); }
-.fn-layout .fn-gt { font: 600 11px var(--font-sans); fill: var(--ink-3); transition: opacity 200ms; }
-.fn-layout .fn-slab .vz-ink { font-size: 10.5px; font-weight: 650; }
+.fn-layout .fn-gt { font: 600 14px var(--font-sans); fill: var(--ink-3); transition: opacity 200ms; }
+.fn-layout .fn-slab .vz-ink { font-size: 14.5px; font-weight: 650; }
 .fn-layout .fn-slab.is-frontier { --vz-fill: color-mix(in srgb, var(--st-frontier) 28%, var(--bg-elev)); --vz-stroke: var(--st-frontier); --vz-ink: var(--el-ink); }
 .fn-layout .fn-slab.is-visited { --vz-fill: color-mix(in srgb, var(--st-visited) 22%, var(--bg-elev)); --vz-stroke: var(--st-visited); --vz-ink: var(--el-ink); }
 .fn-layout .fn-slab.is-error { --vz-fill: var(--st-error); --vz-stroke: var(--st-error); --vz-ink: var(--on-state); }
-.fn-layout .fn-crash text { font: 800 13px var(--font-mono); letter-spacing: .06em; fill: var(--st-error); }
+.fn-layout .fn-crash text { font: 800 13px var(--font-mono); letter-spacing: .06em; fill: var(--st-error-text); }
 
 /* ------------------------------------------------------------ overflow */
 #fig-overflow.is-crashed .fig__stage { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--st-error) 60%, transparent); }
@@ -193,7 +194,10 @@
    One column: the title sits on one or two lines and the teaser gets the full lesson width instead of a postage stamp. */
 .hero { grid-template-columns: minmax(0, 1fr); gap: clamp(22px, 3.5vw, 34px); align-items: start; }
 .hero__lede { max-width: 34em; }
-.hero__stage { aspect-ratio: 16 / 7; }
-@media (max-width: 900px) { .hero__stage { aspect-ratio: 16 / 10; } }
-.hero__stage { aspect-ratio: auto; min-height: 400px; align-items: start; padding: 28px 8% 28px 17%; }
-@media (max-width: 900px) { .hero__stage { min-height: 0; aspect-ratio: auto; padding: clamp(14px, 3vw, 28px); } }
+/* Wide: the stack and heap are centred in the stage (equal side padding, drawing centred vertically), not pinned to a corner.
+   The stage grows with its content when the memory view's reserved height is taller than the ratio allows. */
+@media (min-width: 901px) { .hero__stage { aspect-ratio: auto; min-height: 372px; align-items: center; padding: 24px 11% 24px 17%; } }
+@media (max-width: 900px) { .hero__stage { aspect-ratio: auto; min-height: 0; align-items: center; padding: clamp(14px, 3vw, 28px); } }
+
+/* The overflow figure's console grows from one line to its final output (up to 3 lines): reserve it. */
+#fig-overflow .fn-console__out { min-height: 48px; }

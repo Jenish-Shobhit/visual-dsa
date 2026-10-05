@@ -64,7 +64,7 @@
       var readH = opts.readout ? 46 : 0;
       var top = (opts.showBest ? 34 : 6) + opts.raise, bottom = (opts.showIndex ? 18 : 2) + (opts.showPtr ? 34 : 6);
       var rowH = top + ch + bottom;
-      var used = perRow * (cw + gap) - gap, x0 = Math.max(PAD, (w - used - endRoom) / 2) + cw / 2;
+      var used = perRow * (cw + gap) - gap, x0 = Math.max(PAD, (w - used) / 2) + cw / 2; // centred; endRoom only trims the usable width so the past-the-end marker still fits
       return {
         n: n, cw: cw, ch: ch, perRow: perRow, rows: rows, rowH: rowH, top: top, readH: readH, x0: x0, left: x0 - cw / 2, right: x0 - cw / 2 + used, H: readH + rows * rowH + (opts.note ? 30 : 0),
         pos: function (i) {

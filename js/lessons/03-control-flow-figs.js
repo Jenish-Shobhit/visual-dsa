@@ -492,7 +492,8 @@
         svg.appendChild(p); arcs[name] = p;
       }
       arc('5-2', 5, 2, 74); arc('2-6', 2, 6, 44);
-      svg.appendChild(s('text', { class: 'vz-caption', x: LX + RW + 78, y: (ry(2) + ry(5)) / 2, 'text-anchor': 'middle', transform: 'rotate(90 ' + (LX + RW + 78) + ' ' + (ry(2) + ry(5)) / 2 + ')' }, 'jump back'));
+      svg.appendChild(s('text', { class: 'vz-caption', x: LX + RW + 78, y: (ry(2) + ry(5)) / 2, 'text-anchor': 'middle', transform: 'rotate(90 ' + (LX + RW + 78) + ' ' + (ry(2) + ry(5)) / 2 + ')' }, 'back 5 → 2'));
+      svg.appendChild(s('text', { class: 'vz-caption', x: LX + RW + 38, y: ry(5) + ROW * 0.5 + 4, 'text-anchor': 'start' }, 'forward 2 → 6'));
       pc = s('g', { class: 'cf-pc' }, s('path', { d: 'M-2 -11 L18 0 L-2 11 z' }), s('text', { x: -8, y: 30, 'text-anchor': 'middle' }, 'pc'));
       V.place(pc, { x: 2, y: ry(1) });
       svg.appendChild(pc);
@@ -667,14 +668,21 @@
     svg.style.maxWidth = '520px';
     svg.appendChild(s('line', { class: 'cf-axis', x1: X0 - 10, x2: W - 10, y1: BASE + 4, y2: BASE + 4 }));
     var cols = [];
+    // dashed ghost columns show where each trip's squares will land, so step 1 is not an empty box
+    for (var gk = 1; gk <= 5; gk++) {
+      var gg = s('g', { class: 'cf-ghost' });
+      for (var gq = 0; gq < gk; gq++) gg.appendChild(s('rect', { x: 0, y: -(gq + 1) * U, width: U - 2, height: U - 2, rx: 4 }));
+      gg.appendChild(s('text', { class: 'vz-label cf-ghost__t', x: (U - 2) / 2, y: 22, 'text-anchor': 'middle' }, 'i = ' + gk));
+      V.place(gg, { x: X0 + (gk - 1) * (U + GAP + 22), y: BASE });
+      svg.appendChild(gg);
+    }
     for (var k = 1; k <= 5; k++) {
       var g = s('g', { class: 'is-default' });
       for (var q = 0; q < k; q++) g.appendChild(s('rect', { class: 'cf-sq', x: 0, y: -(q + 1) * U, width: U - 2, height: U - 2, rx: 4 }));
-      g.appendChild(s('text', { class: 'vz-label is-strong', x: (U - 2) / 2, y: 22, 'text-anchor': 'middle' }, 'i = ' + k));
       V.place(g, { x: X0 + (k - 1) * (U + GAP + 22), y: BASE - 60, opacity: 0 });
       svg.appendChild(g); cols.push(g);
     }
-    var tot = s('text', { class: 'cf-total', x: W - 20, y: 34, 'text-anchor': 'end' }, 'total = 0');
+    var tot = s('text', { class: 'cf-total', x: X0 - 10, y: 30, 'text-anchor': 'start' }, 'total = 0');
     svg.appendChild(tot);
     stage.appendChild(svg);
     function sum(a) { return a.reduce(function (t, c) { return t + c.add; }, 0); }
@@ -698,7 +706,7 @@
 
   /* ================================================================== fence posts and rails */
   CF.fencePostFigure = function (fig) {
-    var lg = fig.querySelector('[data-legend]'); if (lg) CF.legend(lg, [{ state: 'key', label: 'Posts' }, { state: 'visited', label: 'Rails' }]);
+    var lg = fig.querySelector('[data-legend]'); if (lg) CF.legend(lg, [{ state: 'key', label: 'Posts' }, { state: 'visited', label: 'Panels' }]);
     var stage = fig.querySelector('[data-stage]'), MAX = 10, PX = 46, X0 = 40, W = X0 * 2 + MAX * PX, H = 150;
     var svg = s('svg', { class: 'vz cf-svg', viewBox: '0 0 ' + W + ' ' + H, role: 'img' });
     svg.style.maxWidth = '660px';
@@ -725,8 +733,8 @@
       posts.forEach(function (p, i) { V.animate(p, { opacity: i < n ? 1 : 0, y: i < n ? 46 : 30 }, { duration: dur }); });
       rails.forEach(function (r, i) { var seg = Math.floor(i / 2); V.animate(r, { opacity: seg < n - 1 ? 1 : 0 }, { duration: dur }); });
       txt.textContent = n + ' posts, ' + (n - 1) + ' gaps';
-      msg.innerHTML = 'The fence has <b>' + n + ' posts</b> but only <b>' + (n - 1) + ' rails</b> between them. In the same way, the numbers <code>0</code> to <code>' + (n - 1) + '</code> are <b>' + n + '</b> numbers, not ' + (n - 1) + '. Count the things, or count the gaps: they differ by one.';
-      svg.setAttribute('aria-label', 'A fence with ' + n + ' posts and ' + (n - 1) + ' rails');
+      msg.innerHTML = 'The fence has <b>' + n + ' posts</b> but only <b>' + (n - 1) + ' panels</b> (gaps) between them. In the same way, the numbers <code>0</code> to <code>' + (n - 1) + '</code> are <b>' + n + '</b> numbers, not ' + (n - 1) + '. Count the things, or count the gaps: they differ by one.';
+      svg.setAttribute('aria-label', 'A fence with ' + n + ' posts and ' + (n - 1) + ' panels');
     }
     V.slider(fig.querySelector('[data-slider]'), { label: 'Posts', min: 2, max: MAX, value: 6, onInput: function (v) { set(v, 220); } });
     set(6, 0);

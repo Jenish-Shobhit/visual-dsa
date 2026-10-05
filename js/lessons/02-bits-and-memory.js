@@ -427,9 +427,8 @@
       counterStates: { flips: 'swap' },
       baseStepMs: 1000, speeds: speeds, speed: 1, label: 'Odometer controls'
     });
-    var slider = V.slider(fig.querySelector('[data-speed]'), { label: 'Speed', min: 0, max: speeds.length - 1, value: 1,
-      format: function (i) { return speeds[i] + '×'; }, onInput: function (i) { player.setSpeed(speeds[i]); } });
-    player.on('speed', function (sp) { var i = speeds.indexOf(sp); if (i >= 0) slider.set(i); });
+    // The player's own speed menu is the single speed control; drop the toolbar's spare slot.
+    var spare = fig.querySelector('[data-speed]'); if (spare && spare.parentNode) spare.parentNode.removeChild(spare);
     var jumps = fig.querySelector('[data-jumps]');
     [['Start at 0', 0], ['7 → 8', 7], ['15 → 16', 15], ['127 → 128', 127], ['255 → 0', 255]].forEach(function (j) {
       jumps.appendChild(h('button', { type: 'button', class: 'btn btn--sm', onclick: function () { player.pause(); player.goto(j[1]); } }, j[0]));
@@ -438,14 +437,16 @@
 
   /* ================================================================== the pattern tree */
   function treeView(stage) {
-    var W = 440, H = 356, TOP = 34, HH = 306, DX = 78, X0 = 26;
+    var W = 440, H = 330, TOP = 32, HH = 278, DX = 78, X0 = 26;
     var el = svg(W, H, 'b2-tree', 'Decode tree of bit patterns');
     el.style.maxWidth = '520px';
     var gE = s('g'), gN = s('g'), gL = s('g');
-    el.appendChild(gE); el.appendChild(gN); el.appendChild(gL);
+    var gAll = s('g'), ox = 0, ox1 = 0;   // gAll slides sideways so the tree sits centred while it is still narrow
+    gAll.appendChild(gE); gAll.appendChild(gN); gAll.appendChild(gL); el.appendChild(gAll);
+    function oxFor(k) { return Math.max(0, Math.round((W - (X0 + k * DX + 70)) / 2 - X0 / 2)); }
     var heads = [];
-    for (var d = 1; d <= 4; d++) { var ht = txt(X0 + d * DX, 16, 'bit ' + d, 'b2-tree__head', { 'text-anchor': 'middle', opacity: 0 }); el.appendChild(ht); heads.push(ht); }
-    var count = txt(4, H - 10, '', 'b2-tree__count', { 'text-anchor': 'start' });
+    for (var d = 1; d <= 4; d++) { var ht = txt(X0 + d * DX, 16, 'bit ' + d, 'b2-tree__head', { 'text-anchor': 'middle', opacity: 0 }); gAll.appendChild(ht); heads.push(ht); }
+    var count = txt(W / 2, H - 8, '', 'b2-tree__count', { 'text-anchor': 'middle' });
     el.appendChild(count);
     stage.appendChild(el);
     var recs = {};
@@ -482,6 +483,7 @@
     return function render(step, ctx) {
       var dur = ctx.duration, k = step.bits;
       setT(el, dur);
+      var oxFrom = ox; ox1 = oxFor(k);
       var want = {};
       step.nodes.forEach(function (n) { want[n.id] = n; });
       Object.keys(want).forEach(function (id) {
@@ -508,6 +510,7 @@
       if (tw) tw.cancel();
       var list = Object.keys(recs).map(function (id) { return recs[id]; });
       function frame(e) {
+        ox = oxFrom + (ox1 - oxFrom) * e; gAll.setAttribute('transform', 'translate(' + ox.toFixed(1) + ' 0)');
         list.forEach(function (r) { ['x', 'y', 'o', 'lo', 'eo'].forEach(function (q) { r.cur[q] = r.from[q] + (r.to[q] - r.from[q]) * e; }); });
         list.forEach(paint);
       }
@@ -543,7 +546,7 @@
   /* ================================================================== byte → hex */
   function hexView(stage) { return responsive(stage, function (narrow) { return hexBuild(stage, narrow); }, 470); }
   function hexBuild(stage, narrow) {
-    var W = narrow ? 350 : 560, H = narrow ? 356 : 312, C = narrow ? 34 : 40, P = narrow ? 38 : 46, Y = 30, GAP = narrow ? 12 : 20;
+    var W = narrow ? 350 : 560, H = narrow ? 356 : 292, C = narrow ? 34 : 40, P = narrow ? 38 : 46, Y = 30, GAP = narrow ? 12 : 20;
     var el = svg(W, H, 'b2-hex' + (narrow ? ' is-narrow' : ''), 'A byte converted to two hex digits');
     function bitX(i, split) { var base = (W - (8 * P - (P - C))) / 2; return base + i * P + (split ? (i < 4 ? -GAP : GAP) : 0); }
     var cells = [], places = [];

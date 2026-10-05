@@ -473,7 +473,7 @@
       B.CLASSES.forEach(function (c) {
         var r = rows[c.id], f = B.feasibleN(c.id, ops), w, label;
         if (f.unbounded) { w = 100; label = 'any n'; }
-        else if (f.n === Infinity) { w = 100; label = '≈ ' + B.formatBig(f.log10n); r.num.title = 'A number with about ' + B.withCommas(Math.round(f.log10n)) + ' digits: more than any memory can hold.'; }
+        else if (f.n === Infinity) { w = 100; label = c.id === 'logn' ? 'astronomically large (2^' + (ops < 1e15 ? B.withCommas(ops) : B.formatBig(Math.log10(ops))) + ')' : '≈ ' + B.formatBig(f.log10n); r.num.title = 'A number with about ' + B.withCommas(Math.round(f.log10n)) + ' digits: more than any memory can hold.'; }
         else if (f.n < 1) { w = 0; label = 'none'; }
         else { w = clamp(f.log10n / MAXLOG * 100, 1.5, 100); label = null; }
         r.fill.style.width = w + '%';
@@ -484,7 +484,7 @@
       });
       var bl = BUDGETS.filter(function (b) { return b.v === budget; })[0].label;
       var n2 = B.feasibleN('n2', ops), e2 = B.feasibleN('2n', ops), nl = B.feasibleN('nlogn', ops);
-      cap.innerHTML = 'With <b>' + bl + '</b> at ' + B.formatBig(Math.log10(speed)) + ' operations per second (' + B.formatBig(Math.log10(ops)) + ' operations): n log n reaches ' + B.formatBig(nl.log10n) + ' items, n² ' + B.formatBig(n2.log10n) + ', and 2ⁿ only <b>' + (e2.n || 0) + '</b>.';
+      cap.innerHTML = 'At ' + B.formatBig(Math.log10(speed)) + ' operations per second, <b>' + bl + '</b> ' + (budget === 1 ? 'allows' : 'buys ' + B.formatBig(Math.log10(ops)) + ' operations') + ': n log n reaches ' + B.formatBig(nl.log10n) + ' items, n² ' + B.formatBig(n2.log10n) + ', and 2ⁿ only <b>' + (e2.n || 0) + '</b>.';
     }
     V.segmented(fig.querySelector('[data-speed]'), { label: 'Speed', value: 1e8, options: [{ value: 1e6, label: '10⁶ ops/s' }, { value: 1e8, label: '10⁸ ops/s' }, { value: 1e10, label: '10¹⁰ ops/s' }],
       onChange: function (v) { speed = v; show(700); } });

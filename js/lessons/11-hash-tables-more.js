@@ -13,7 +13,7 @@
 
   /* ================================================================== clustering race */
   function raceView(stage) {
-    var M = 23, W = 640, LX = 104, PITCH = (W - LX - 10) / M, CW = PITCH - 2, RH = 92;
+    var M = 23, W = 640, LX = 104, PITCH = (W - LX - 10) / M, CW = Math.max(1, PITCH - 2), RH = 92;
     var KINDS = ['linear', 'quadratic', 'double'];
     var NAMES = { linear: 'Linear probing', quadratic: 'Quadratic probing', double: 'Double hashing' };
     var svg = L11.svg(W, 24 + 3 * RH + 8, 'Three rows of 23 slots, one per probe rule, filling with the same keys', 800), rows = {};
@@ -51,7 +51,7 @@
     var render = raceView(fig.querySelector('[data-stage]'));
     V.legend(fig.querySelector('[data-legend]'), [{ state: 'compare', label: 'Probed: slot was taken' }, { state: 'active', label: 'New key lands here' }, { state: 'default', shape: 'outline', label: 'Filled earlier' }]);
     var SETS = {
-      same: { label: 'All share one home slot', keys: [10, 33, 56, 79, 102, 125, 148, 171], note: 'These eight keys all have home slot 10, since they differ by multiples of 23.' },
+      same: { label: 'All share one home slot', keys: [10, 194, 79, 33, 102, 148, 263, 217], note: 'These eight keys all have home slot 10, since they differ by multiples of 23, but their second hashes differ, so double hashing sends each one down its own path.' },
       random: { label: 'Random keys', keys: V.presets.random(12, { min: 1, max: 200, unique: true, seed: 11 }), note: 'Twelve random keys: the table fills to 52%.' }
     };
     var which = 'same', player;

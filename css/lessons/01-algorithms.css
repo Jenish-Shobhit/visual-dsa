@@ -217,7 +217,13 @@
 .c1-state-box__row.is-changed { animation: var-flash 900ms var(--ease-out); }
 
 /* ================================================================== building blocks */
-.c1-blocks .mini__stage { min-height: 250px; padding: 10px; }
+.c1-blocks { grid-template-columns: 1fr; }
+.c1-blocks .mini__stage { min-height: 200px; padding: 12px; }
+/* One block per row (diagram left, caption right) so each flowchart gets the full column and keeps a readable font. */
+@media (min-width: 700px) {
+  .c1-blocks .mini { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); align-items: stretch; }
+  .c1-blocks .mini > figcaption { border-top: 0; border-left: 1px solid var(--line); align-self: center; padding: 14px 16px; font-size: 14.5px; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 8px; align-items: flex-start; }
+}
 .c1-blocks .mini__stage > svg { max-height: 300px; }
 .c1-chip { display: inline-block; margin-left: 4px; padding: 0 8px; border-radius: 999px; background: var(--bg-sunken); border: 1px solid var(--line); font: 600 12px var(--font-mono); color: var(--ink-2); white-space: nowrap; }
 .c1-chip:empty { display: none; }

@@ -256,7 +256,7 @@
     var fig = V.$('#fig-race'), n = 10, seed = 5, kind = 'late';
     var lanes = ['brute', 'pointers'].map(function (name) {
       var host = fig.querySelector('[data-lane="' + name + '"] [data-grid]');
-      var view = V.views.grid(host, { mode: 'table', cellSize: 34, showValues: false, label: name === 'brute' ? 'Brute force checking pairs in row order' : 'Two pointers walking the pair grid' });
+      var view = V.views.grid(host, { mode: 'table', cellSize: 28, showValues: false, label: name === 'brute' ? 'Brute force checking pairs in row order' : 'Two pointers walking the pair grid' });
       var stats = V.stats(fig.querySelector('[data-lane="' + name + '"] [data-stats]'), { labels: { checks: 'Pairs checked' }, states: { checks: 'compare' } });
       return { name: name, view: view, stats: stats, status: fig.querySelector('[data-lane="' + name + '"] [data-status]'), total: 0, trace: null };
     });
@@ -543,11 +543,11 @@
     var fig = V.$('#fig-choose');
     var spec = {
       nodes: [
-        { id: 'q1', type: 'decision', text: 'Keep only some of\nthe items, in place?', col: 0, row: 0, maxWidth: 150 },
-        { id: 'q2', type: 'decision', text: 'Sorted input, or a\npair / mirror question?', col: 0, row: 1, maxWidth: 150 },
-        { id: 'q3', type: 'decision', text: 'Is the answer one\ncontiguous piece?', col: 0, row: 2, maxWidth: 150 },
-        { id: 'q4', type: 'decision', text: 'Many range-sum\nqueries, same array?', col: 0, row: 3, maxWidth: 150 },
-        { id: 'q5', type: 'decision', text: 'Is the piece a\nfixed size k?', col: 0, row: 4, maxWidth: 150 },
+        { id: 'q1', type: 'decision', text: 'Keep only some of\nthe items, in place?', col: 0, row: 0, maxWidth: 200 },
+        { id: 'q2', type: 'decision', text: 'Sorted input, or a\npair / mirror question?', col: 0, row: 1, maxWidth: 200 },
+        { id: 'q3', type: 'decision', text: 'Is the answer one\ncontiguous piece?', col: 0, row: 2, maxWidth: 200 },
+        { id: 'q4', type: 'decision', text: 'Many range-sum\nqueries, same array?', col: 0, row: 3, maxWidth: 200 },
+        { id: 'q5', type: 'decision', text: 'Is the piece a\nfixed size k?', col: 0, row: 4, maxWidth: 200 },
         { id: 'rw', type: 'end', text: 'Read / write\npointers', col: 1, row: 0 },
         { id: 'conv', type: 'end', text: 'Converging\npointers', col: 1, row: 1 },
         { id: 'other', type: 'end', text: 'Counts / hash map,\nor another lesson', col: 1, row: 2 },
@@ -579,7 +579,7 @@
       other: '<b>Something else.</b> Need to look values up by content, not position? Reach for counts or a hash map (lesson 11 on hashing).'
     };
     var path, taken;
-    function reset() { path = ['q1']; taken = {}; view.render({ active: 'q1' }, { duration: 0 }); answer.innerHTML = 'Click <b>yes</b> or <b>no</b> on the diagram to answer each question about your problem. The first question that gets a yes decides.'; }
+    function reset() { path = ['q1']; taken = {}; view.render({ active: 'q1' }, { duration: 0 }); answer.innerHTML = 'Click <b>yes</b> or <b>no</b> on the diagram to answer each question about your problem; the path ends at the pattern that fits.'; }
     view.on('choose', function (e) {
       path.push(e.to); taken[e.node + '->' + e.to] = 'path';
       view.render({ active: e.to, visited: path.slice(0, -1), edgeStates: taken }, { duration: 500 });

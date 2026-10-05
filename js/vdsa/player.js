@@ -327,7 +327,7 @@
       var host = root.querySelector('[data-predict]');
       if (host) return host;
       host = h('div', { class: 'predict-slot', 'data-predict': '' });
-      controlsHost.parentNode.insertBefore(host, controlsHost);
+      controlsHost.parentNode.insertBefore(host, controlsHost.nextSibling); // below the controls so Next/Play never move
       return host;
     }
     function openCheckpoint(cp, target, resume) {
@@ -341,6 +341,7 @@
       root.classList.add('is-predicting');
       updateUI();
       emit('checkpoint', spec, target);
+      try { var pr = ctrl.el.getBoundingClientRect(); if (pr.bottom > (window.innerHeight || 800) || pr.top < 0) ctrl.el.scrollIntoView({ block: 'nearest' }); } catch (e) {}
       var first = ctrl.el.querySelector('.quiz__opt');
       if (first) first.focus({ preventScroll: true });
       ctrl.promise.then(function (res) {

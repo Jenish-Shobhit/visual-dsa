@@ -375,9 +375,10 @@
     shake.chordG = s('g'); shake.dotG = s('g');
     shake.svg.appendChild(shake.chordG); shake.svg.appendChild(shake.dotG);
     /* find: a pile of cards + halving brackets */
-    var find = { svg: svgRoot(R, R, 'A sorted pile of name cards halved until one is left', 'l05-party'), cards: [], brackets: [] };
+    var FH = 204;   // the card pile is taller than the other two drawings so its labels stay readable
+    var find = { svg: svgRoot(R, FH, 'A sorted pile of name cards halved until one is left', 'l05-party'), cards: [], brackets: [] };
     panels[2].stage.appendChild(find.svg);
-    var LETTERS = 'ABCDEFGHIJKL';
+    var NAMES = ['Ana', 'Ben', 'Cy', 'Dee', 'Eli', 'Fay', 'Gus', 'Hal', 'Ivy', 'Jo', 'Kai', 'Liv'];
 
     function circlePos(k, m) { var a = -Math.PI / 2 + (m ? k / m : 0) * Math.PI * 2, r = R / 2 - 20; return { x: R / 2 + (m === 1 ? 0 : r * Math.cos(a)), y: R / 2 + (m === 1 ? 0 : r * Math.sin(a)) }; }
     var tw = null;
@@ -436,19 +437,19 @@
       tw = V.tween(V.dur(ms), function (t, e) { frame(e); });
       if (!V.dur(ms)) frame(1);
       /* find: cards + brackets for the worst case (the last card) */
-      var ch = Math.min(12.5, (R - 20) / MAXN), cw = 80, top = (R - n * ch) / 2;
+      var ch = Math.min(17, (FH - 16) / MAXN), cw = 70, top = (FH - n * ch) / 2;
       while (find.cards.length < MAXN) {
         var cg = s('g', { class: 'p-card' }, s('rect', { x: 0, y: 0, width: cw, height: ch - 2, rx: 2.5 }), text(cw / 2, (ch - 2) / 2, '', { class: 'p-card-t', 'text-anchor': 'middle', dy: '.35em' }));
-        V.place(cg, { x: 22, y: R, opacity: 0 });
+        V.place(cg, { x: 18, y: FH, opacity: 0 });
         find.svg.appendChild(cg); find.cards.push(cg);
       }
       var lo = 0, hi = n - 1, looks = [];
       while (lo <= hi) { var mid = Math.floor((lo + hi) / 2); looks.push({ lo: lo, hi: hi, mid: mid }); if (mid === n - 1) break; lo = mid + 1; }
       var looked = {}; looks.forEach(function (lk) { looked[lk.mid] = true; });
       find.cards.forEach(function (cg, k) {
-        cg.lastChild.textContent = LETTERS[k] + '…';
+        cg.lastChild.textContent = NAMES[k];
         cg.setAttribute('class', 'p-card' + (looked[k] && k < n ? ' is-looked' : ''));
-        V.animate(cg, { x: 22, y: top + k * ch, opacity: k < n ? 1 : 0 }, { duration: ms, ease: 'out' });
+        V.animate(cg, { x: 18, y: top + k * ch, opacity: k < n ? 1 : 0 }, { duration: ms, ease: 'out' });
       });
       while (find.brackets.length < 5) {
         var bg = s('g', { class: 'p-bracket' }, s('path', { d: '' }));
@@ -456,10 +457,10 @@
         find.svg.appendChild(bg); find.brackets.push(bg);
       }
       find.brackets.forEach(function (bg, i) {
-        var lk = looks[i], x = 22 + cw + 10 + i * 13;
+        var lk = looks[i], x = 18 + cw + 14 + i * 15;
         if (!lk || !n) { V.animate(bg, { opacity: 0 }, { duration: ms }); return; }
         var y1 = top + lk.lo * ch + 1, y2 = top + (lk.hi + 1) * ch - 3;
-        bg.firstChild.setAttribute('d', 'M' + (x - 4) + ' ' + y1 + ' H' + x + ' V' + y2 + ' H' + (x - 4));
+        bg.firstChild.setAttribute('d', 'M' + (x - 6) + ' ' + y1 + ' H' + x + ' V' + y2 + ' H' + (x - 6));
         V.animate(bg, { opacity: 1 }, { duration: ms, delay: i * 60 });
       });
       /* counts */

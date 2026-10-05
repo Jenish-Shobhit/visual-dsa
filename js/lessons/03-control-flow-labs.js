@@ -245,7 +245,7 @@
         if (!on) { bar.g.setAttribute('opacity', 0); V.animate(bar.r, { attr: { y: BASE, height: 0 } }, { duration: d }); return; }
         var dv = dist(hops[k]), prev = k ? dist(hops[k - 1]) : null;
         var hgt = Math.min(dv, CAPD) * UNIT;
-        var st = k === 0 ? 'active' : dv < prev ? 'done' : dv === prev ? 'compare' : 'error';
+        var st = k === 0 ? 'active' : dv < prev ? 'frontier' : dv === prev ? 'compare' : 'error';
         if (dv <= 0 && k) st = 'found';
         bar.g.setAttribute('class', 'vz-item is-' + st);
         bar.g.setAttribute('opacity', 1);
@@ -261,7 +261,7 @@
     var player;
     function make() { return A.fuelTrace(cond, upd, { start: START, target: TARGET, fuel: FUEL }); }
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { i: 'compare' } });
-    CF.legend(fig.querySelector('[data-legend]'), [{ state: 'done', label: 'Closer to the exit' }, { state: 'compare', label: 'No progress' }, { state: 'error', label: 'Further away' }, { state: 'found', label: 'Exit reached' }]);
+    CF.legend(fig.querySelector('[data-legend]'), [{ state: 'frontier', label: 'Closer to the exit' }, { state: 'compare', label: 'No progress' }, { state: 'error', label: 'Further away' }, { state: 'found', label: 'Exit reached' }]);
     player = V.player({ root: fig, steps: make(), render: render, vars: vars, caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterLabels: { trips: 'Trips', fuel: 'Fuel left' }, counterStates: { trips: 'active', fuel: 'compare' }, baseStepMs: 520, label: 'Fuel gauge controls' });
     src();

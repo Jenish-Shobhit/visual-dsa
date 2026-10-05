@@ -223,9 +223,9 @@
   /* ================================================================== 2. bookshelf analogy */
   /* state: {shelves: [{id, cap, row, wall?}], books: [{id, label, shelf, slot, lifted?, state}], ruler: {shelf, to}|null} */
   function shelfView(stage) {
-    var W = 600, BW = 52, BH = 74, SLOT = 58, X0 = 40, ROWY = [180, 332], H = 364;
+    var W = 600, BW = 52, BH = 74, SLOT = 58, X0 = 40, ROWY = [170, 286], H = 318;
     var svg = svgRoot(W, H, 'A bookshelf: books of equal width packed side by side', 'a6-shelf');
-    svg.style.maxWidth = '680px';
+    svg.style.maxWidth = '600px';
     var shelfLayer = s('g'), bookLayer = s('g'), top = s('g');
     svg.appendChild(shelfLayer); svg.appendChild(bookLayer); svg.appendChild(top);
     var shelves = {}, books = {};
@@ -534,10 +534,10 @@
       var narrow = W < 640, per = narrow ? 8 : 16, pad = 8;
       var PITCH = Math.min(46, Math.floor((W - 2 * pad - 12) / per)), CW = PITCH - 5, X0 = Math.round((W - per * PITCH) / 2) + 2;
       var coinRx = Math.max(8, Math.min(13, CW * 0.32)), coinRy = coinRx * 0.4, coinStep = coinRy * 1.6;
-      var ROWH = CW + 64, GAP = 30;
+      var ROWH = CW + 52, GAP = 22;
       var SW = narrow ? W - 2 * pad - 30 : Math.min(320, W * 0.36), SH = 64;
       var SX = narrow ? pad + 22 : W - pad - SW - 8, SY = narrow ? 34 : 20;
-      var Y0 = narrow ? SY + SH + 118 : 146;
+      var Y0 = narrow ? SY + SH + 112 : 132;
       function rowsOf(cap) { return Math.max(1, Math.ceil(cap / per)); }
       var H = Y0 + rowsOf(8) * ROWH + GAP + rowsOf(16) * ROWH - 10;
       var svg = svgRoot(W, H, 'A dynamic array with coins stacked on its elements, and the bank balance over time', 'a6-bank');

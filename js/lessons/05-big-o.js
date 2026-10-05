@@ -208,7 +208,7 @@
       }
       b.appendChild(s('path', { class: 'sum-line', d: d, style: '--cc:' + col(id) }));
     });
-    tile(b, 'The growth ladder', '1 < log n < n < n log n < n² < 2ⁿ < n!. The rung decides what scales.');
+    tile(b, 'The growth ladder', '1 < log n < n < n log n < n² < n³ < 2ⁿ < n!. The rung decides what scales.');
     // 3 doubling
     var c = svgRoot(W, H, null, 'l05-sum');
     [['n', 2], ['n2', 4]].forEach(function (p, i) {

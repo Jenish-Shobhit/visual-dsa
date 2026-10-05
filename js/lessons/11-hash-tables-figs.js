@@ -61,7 +61,7 @@
     var buckets = s('g', { class: 'l11-buckets' });
     for (var b = 0; b < M; b++) {
       buckets.appendChild(s('g', { class: 'l11-bucket', transform: 'translate(' + (BX + b * BP) + ' ' + BY + ')' },
-        s('rect', { width: BP - 4, height: 26, rx: 6 }), s('text', { x: (BP - 4) / 2, y: 18, 'text-anchor': 'middle' }, b)));
+        s('rect', { width: Math.max(0, BP - 4), height: 26, rx: 6 }), s('text', { x: (BP - 4) / 2, y: 18, 'text-anchor': 'middle' }, b)));
     }
     var direct = s('g', { class: 'l11-directnote', transform: 'translate(' + W / 2 + ' 372)' },
       s('text', { class: 'l11-big', x: 0, y: 0, 'text-anchor': 'middle' }, '6 of 100 slots used'),
@@ -145,7 +145,7 @@
         svg.appendChild(g); tiles.push(g);
       });
       svg.appendChild(s('text', { class: 'l11-note', x: C.BX, y: C.BOXY - 10, style: 'font-size:' + C.LBL + 'px' }, n ? 'characters and their codes' : ''));
-      svg.appendChild(s('g', { class: 'l11-machine' }, s('rect', { x: C.BX, y: C.BOXY, width: W - 2 * C.BX, height: C.BOXH, rx: 16 }),
+      svg.appendChild(s('g', { class: 'l11-machine' }, s('rect', { x: C.BX, y: C.BOXY, width: Math.max(0, W - 2 * C.BX), height: C.BOXH, rx: 16 }),
         s('text', { class: 'l11-note', x: C.BX + 16, y: C.BOXY + 22, style: 'font-size:' + C.LBL + 'px' }, 'the number so far')));
       numText = s('text', { class: 'l11-num', x: W / 2, y: C.BOXY + C.BOXH * 0.6, 'text-anchor': 'middle', style: 'font-size:' + C.NUM + 'px' }, '0');
       formula = s('text', { class: 'l11-formula', x: W / 2, y: C.BOXY + C.BOXH * 0.86, 'text-anchor': 'middle', style: 'font-size:' + C.FORM + 'px' }, '');
@@ -153,7 +153,7 @@
       modText = s('g', { class: 'l11-modbox' }, s('rect', { x: -C.MODW / 2, y: -19, width: C.MODW, height: 38, rx: 19 }), s('text', { x: 0, y: 6, 'text-anchor': 'middle', style: 'font-size:' + C.MODF + 'px' }, ''));
       V.place(modText, { x: W / 2, y: C.MODY, opacity: 0 });
       svg.appendChild(modText);
-      var pitch = (W - 2 * (narrow ? 8 : 20)) / m, bw = Math.min(narrow ? 34 : 46, pitch - (narrow ? 3 : 4));
+      var pitch = (W - 2 * (narrow ? 8 : 20)) / m, bw = Math.max(2, Math.min(narrow ? 34 : 46, pitch - (narrow ? 3 : 4)));
       geom = { pitch: pitch, bw: bw, x0: (narrow ? 8 : 20) + (pitch - bw) / 2 };
       for (var b = 0; b < m; b++) {
         var g2 = s('g', { class: 'l11-bucket', transform: 'translate(' + (geom.x0 + b * pitch) + ' ' + C.BUCKY + ')' },
@@ -233,7 +233,7 @@
   L11.spreadFigure = function () {
     var fig = V.$('#fig-spread'), stage = fig.querySelector('[data-stage]'), A = H();
     var M = 13, W = 640, HH = 316, BASE = 262, L = 24, PITCH = (W - 2 * L) / M, TW = Math.min(44, PITCH - 8), narrow = false;
-    function dims() { narrow = stage.clientWidth > 0 && stage.clientWidth < 520; W = narrow ? 380 : 640; L = narrow ? 12 : 24; PITCH = (W - 2 * L) / M; TW = Math.min(44, PITCH - (narrow ? 5 : 8)); }
+    function dims() { narrow = stage.clientWidth > 0 && stage.clientWidth < 520; W = narrow ? 380 : 640; L = narrow ? 12 : 24; PITCH = (W - 2 * L) / M; TW = Math.max(2, Math.min(44, PITCH - (narrow ? 5 : 8))); }
     var setName = 'usernames', fnName = 'first';
     var svg, tiles = [], counts = [], ideal, idealText, keys = [], maxAll = 1, tileH = 10;
     var stats = V.stats(fig.querySelector('[data-stats]'), { labels: { max: 'Fullest bucket', empty: 'Empty buckets', avg: 'Average per bucket' }, states: { max: 'error', empty: 'muted' } });
@@ -263,7 +263,7 @@
       idealText = s('text', { class: 'l11-note', x: L - 6, y: 16 }, 'dashed line: an even spread (keys ÷ buckets)');
       svg.appendChild(ideal); svg.appendChild(idealText);
       tiles = keys.map(function (k) {
-        var g = s('g', { class: 'l11-keytile' }, s('title', null, k), s('rect', { width: TW, height: tileH - 1.5, rx: Math.min(3, tileH / 3) }));
+        var g = s('g', { class: 'l11-keytile' }, s('title', null, k), s('rect', { width: Math.max(0, TW), height: Math.max(1, tileH - 1.5), rx: Math.min(3, tileH / 3) }));
         V.place(g, { x: L + PITCH / 2 - TW / 2, y: BASE - 4 });
         svg.appendChild(g); return g;
       });
@@ -305,7 +305,7 @@
     svg.appendChild(s('text', { class: 'l11-note', x: 14, y: 20 }, 'h(k) = k mod 7'));
     for (var b = 0; b < 7; b++) {
       var g = s('g', { class: 'l11-bucket l11-pick', 'data-id': 'b' + b, 'data-label': 'Bucket ' + b + (existing[b] ? ', holds ' + existing[b].join(', ') : ', empty'), transform: 'translate(' + (X0 + b * P) + ' 34)' },
-        s('rect', { width: P - 6, height: 46, rx: 9 }), s('text', { class: 'l11-bidx', x: (P - 6) / 2, y: 17, 'text-anchor': 'middle' }, b));
+        s('rect', { width: Math.max(0, P - 6), height: 46, rx: 9 }), s('text', { class: 'l11-bidx', x: (P - 6) / 2, y: 17, 'text-anchor': 'middle' }, b));
       if (existing[b]) g.appendChild(s('text', { class: 'l11-bval', x: (P - 6) / 2, y: 36, 'text-anchor': 'middle' }, existing[b].join(',')));
       svg.appendChild(g);
     }

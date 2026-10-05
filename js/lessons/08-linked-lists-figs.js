@@ -216,17 +216,25 @@
       var h0 = recs[0].cur;
       var hx = G.gutter, hy = 12;
       vz.set(hg, 'transform', 'translate(' + hx + ' ' + hy + ')');
-      var P0 = [hx + 124, hy + 15], P3 = [h0.x, h0.y + G.ch / 2];
-      var mem1 = [P0[0] + 60, P0[1]], mem2 = [P3[0] - 60, P3[1] - 20];
-      var lis1 = [P0[0] + 40, P0[1]], lis2 = [P3[0] - 40, P3[1] - 10];
-      drawCurve(hA, P0, [lerp(mem1[0], lis1[0], mCur), lerp(mem1[1], lis1[1], mCur)], [lerp(mem2[0], lis2[0], mCur), lerp(mem2[1], lis2[1], mCur)], P3);
+      /* memory view: out of the head box's right edge, onto the top of the node's pointer half;
+         list view: out of the box's bottom edge, straight down onto the top of the first node */
+      var P0 = [lerp(hx + 124, hx + 62, mCur), lerp(hy + 15, hy + 30, mCur)];
+      var P3 = [lerp(h0.x + 1.5 * h0.cw, h0.x + h0.cw, mCur), h0.y];
+      var m1 = [P0[0] + 50, P0[1]], m2 = [P3[0], P3[1] - 34];
+      var l1 = [P0[0], P0[1] + 24], l2 = [P3[0], P3[1] - 24];
+      drawCurve(hA, P0, [lerp(m1[0], l1[0], mCur), lerp(m1[1], l1[1], mCur)], [lerp(m2[0], l2[0], mCur), lerp(m2[1], l2[1], mCur)], P3);
     }
+    /* Memory view: leave the pointer cell straight up and land straight down on the target's pointer half, so an arrow
+       never curls round the node it points at, whichever side or row the target is on. List view: short horizontal hop. */
     function route(a, s0, t0) {
       var ch = G.ch;
       var P0 = [s0.x + 1.5 * s0.cw, s0.y + ch / 2 - 7 * (1 - mCur)];
-      var P3 = [t0.x, t0.y + ch / 2];
-      var lift = ch / 2 + 16 + 6 * a.from, dx = Math.max(36, Math.min(90, Math.abs(P3[0] - P0[0]) * 0.35));
-      var m1 = [P0[0] + 6, P0[1] - lift], m2 = [P3[0] - dx, P3[1] - (P3[1] < P0[1] ? -10 : 18)];
+      var P3 = [lerp(t0.x + 1.5 * t0.cw, t0.x, mCur), lerp(t0.y, t0.y + ch / 2, mCur)];
+      var up = ch / 2 + 14 + 7 * a.from, down = 24 + 5 * a.from;
+      /* target in a lower row: leave through the bottom edge of the pointer cell instead of looping over the top */
+      var w = Math.max(0, Math.min(1, (t0.y - s0.y - ch * 0.3) / (ch * 0.5))) * (1 - mCur);
+      P0 = [P0[0], lerp(P0[1], s0.y + ch, w)];
+      var m1 = [P0[0], lerp(P0[1] - up, P0[1] + 16, w)], m2 = [P3[0], P3[1] - down];
       var l1 = [P0[0] + 14, P0[1]], l2 = [P3[0] - 14, P3[1]];
       drawCurve(a, P0, [lerp(m1[0], l1[0], mCur), lerp(m1[1], l1[1], mCur)], [lerp(m2[0], l2[0], mCur), lerp(m2[1], l2[1], mCur)], P3);
     }

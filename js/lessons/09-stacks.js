@@ -539,13 +539,13 @@
     });
     V.quiz('#quiz-postfix', {
       question: 'What does the postfix expression <code>8 2 3 * −</code> evaluate to?',
-      options: ['2', '18', '−10', '30'],
+      options: ['2', '18', '−2', '14'],
       answer: 0,
       explain: [
         '2 × 3 = 6 is applied first, because <code>*</code> arrives when 2 and 3 are the top two values. Then 8 − 6 = 2.',
         'That is (8 − 2) × 3, which reads the tokens as if the operators came in the middle. In postfix, an operator always uses the two newest values.',
         'That subtracts in the wrong order. The value popped second (8) is the left operand: 8 − 6, not 6 − 8.',
-        'Nothing adds 8 and 22. Follow the stack: 8, 2, 3, then <code>*</code> replaces 2 and 3 with 6.'
+        'That adds 6 to 8. The last token is <code>−</code>, so subtract: 8 − 6, not 8 + 6.'
       ],
       id: 'postfix-value'
     });

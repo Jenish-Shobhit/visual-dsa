@@ -576,7 +576,7 @@
       var: '<b>Variable window.</b> Expand r until a rule breaks, then shrink l until it holds again. Example: the longest substring without a repeated character.',
       conv: '<b>Converging pointers.</b> Start at both ends and move inward, each move justified by sorted order or symmetry. Example: palindromes, two-sum on sorted data.',
       rw: '<b>Read / write pointers.</b> One pointer reads every item, a second marks where the next kept item goes. Example: removing duplicates in place.',
-      other: '<b>Something else.</b> Need to look values up by content, not position? Reach for counts or a hash map (lesson 22 on hashing).'
+      other: '<b>Something else.</b> Need to look values up by content, not position? Reach for counts or a hash map (lesson 11 on hashing).'
     };
     var path, taken;
     function reset() { path = ['q1']; taken = {}; view.render({ active: 'q1' }, { duration: 0 }); answer.innerHTML = 'Click <b>yes</b> or <b>no</b> on the diagram to answer each question about your problem. The first question that gets a yes decides.'; }

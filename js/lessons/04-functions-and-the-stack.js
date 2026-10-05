@@ -532,7 +532,7 @@
       question: 'How many frames are on the stack at the deepest moment, counting only calls to <code>a</code>, <code>b</code> and <code>c</code>?' + block('function c() { return 1; }\nfunction b() { return c() + c(); }\nfunction a() { return b(); }\na();'),
       options: ['1', '2', '3', '4'],
       answer: 2,
-      explain: ['Only one function is running at a time, but its callers wait underneath it.', 'At the deepest moment c is running, b is waiting for it, and a is waiting for b.', 'a calls b, and b calls c: three frames at once. b calls c twice, but one after the other, so the two c frames never coexist.', 'There are four calls to c or b in total (a, b, c, c), but the stack never holds all four: the first c is popped before the second starts.'],
+      explain: ['Only one function is running at a time, but its callers wait underneath it.', 'At the deepest moment c is running, b is waiting for it, and a is waiting for b.', 'a calls b, and b calls c: three frames at once. b calls c twice, but one after the other, so the two c frames never coexist.', 'There are four calls in total (a, b, c, c), but the stack never holds all four: the first c is popped before the second starts.'],
       id: 'fn-depth'
     });
     V.quiz('#quiz-survive', {

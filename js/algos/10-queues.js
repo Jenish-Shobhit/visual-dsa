@@ -880,7 +880,7 @@
       }
     });
     var last = steps[steps.length - 1];
-    steps.push(Object.assign({}, last, { kind: 'done', caption: 'A single dequeue can be slow (it may move every value), but each value is pushed and popped at most twice on each stack, so the average over many operations is constant: about ' + (transfers ? ((pushes + pops) / Math.max(1, n)).toFixed(1) : '1–2') + ' stack operations per value here. That is <em>amortized</em> O(1).' }));
+    steps.push(Object.assign({}, last, { kind: 'done', caption: 'A single dequeue can be slow (it may move every value), but each value is pushed and popped at most once on each stack, so the average over many operations is constant: about ' + (transfers ? ((pushes + pops) / Math.max(1, n)).toFixed(1) : '1–2') + ' stack operations per value here. That is <em>amortized</em> O(1).' }));
     steps.dequeued = outVals;
     return steps;
   }

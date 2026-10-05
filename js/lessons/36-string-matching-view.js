@@ -141,7 +141,7 @@
       var svgW = Math.max(W, Math.ceil(labelW + 2 * pad + N * pitch));
       var y = 6, g = { W: W, N: N, labelW: labelW, pad: pad, pitch: pitch, gap: gap, cw: pitch - gap, ch: ch, svgW: svgW };
       g.offX = Math.max(pad, Math.floor((svgW - labelW - N * pitch) / 2));
-      g.font = clamp(Math.round(ch * 0.52), 10, 20);
+      g.font = clamp(Math.round(ch * 0.52), 11, 20);
       if (res.bands) y += 16;
       g.ptrTop = y + 1;
       if (res.ptrText) y += 30;
@@ -174,7 +174,7 @@
       }
       T.forEach(function (r, i) { size(r, G.ch); V.place(r.g, { x: xText(i), y: G.y0 }); TI[i].setAttribute('x', n2(xText(i) + G.cw / 2)); TI[i].setAttribute('y', G.y0 - 5); TI[i].style.display = o.indices && G.cw >= 19 ? '' : 'none'; });
       P.forEach(function (r, j) { size(r, G.ch); r.x = null; });
-      B.forEach(function (r) { size(r, G.th || G.ch); r.txt.style.fontSize = clamp(Math.round((G.th || G.ch) * 0.52), 9, 16) + 'px'; r.x = null; });
+      B.forEach(function (r) { size(r, G.th || G.ch); r.txt.style.fontSize = clamp(Math.round((G.th || G.ch) * 0.52), 11, 16) + 'px'; r.x = null; });
       // row labels
       function label(name, text, y, hgt) {
         var el = rowLabels[name];

@@ -56,7 +56,7 @@
           { from: 'fill', to: 'more', via: { fromSide: 'right', toSide: 'right' } },
           { from: 'replace', to: 'more', via: { fromSide: 'right', toSide: 'right' } },
           { from: 'skip', to: 'more' },
-          { from: 'more', to: 'room', label: 'yes', via: { fromSide: 'right', toSide: 'right', points: [[2.5, 3], [2.5, 1]] } },
+          { from: 'more', to: 'room', label: 'yes', via: { fromSide: 'right', toSide: 'left', points: [[2.5, 3], [2.5, 0.5], [-0.5, 0.5], [-0.5, 1]] } },
           { from: 'more', to: 'end', label: 'no' }
         ]
       }, { label: 'Reservoir sampling decision flow' });
@@ -91,7 +91,7 @@
     var chip = h('span', { class: 'chip chip--sm', 'aria-live': 'off' }, seedChip(seed));
     function regen() { var s = steps(); view.prepare(s); player.setSteps(s); chip.textContent = seedChip(seed); }
     var inputHost = fig.querySelector('[data-input]');
-    var inputEl = h('div', { class: 'rz-grow' });
+    var inputEl = h('div', { class: 'rz-grow', style: { flexBasis: '100%' } });
     var sliderEl = h('div', { style: { flex: '0 1 240px' } });
     inputHost.appendChild(inputEl); inputHost.appendChild(sliderEl);
     inputHost.appendChild(h('div', { class: 'btn-row' }, toolbarButton('New seed', function () { seed = newSeed(); regen(); }), chip));

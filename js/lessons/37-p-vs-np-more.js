@@ -18,7 +18,7 @@
     { id: 'tsp', name: 'TSP (tour ≤ k?)', x: 505, y: 295, where: 'NPC', kind: 'proven', text: '<b>NP-complete</b> in its decision form, through Hamiltonian cycle. <em>Proven.</em>' },
     { id: 'subset', name: 'Subset sum', x: 610, y: 320, where: 'NPC', kind: 'proven', text: '<b>NP-complete</b>. It has a pseudo-polynomial dynamic programme, but that is exponential in the number of bits. <em>Proven.</em>' },
     { id: 'col', name: '3-colouring', x: 505, y: 365, where: 'NPC', kind: 'proven', text: '<b>NP-complete</b> (from 3-SAT). Two colours is easy (bipartite test), three is hard. <em>Proven.</em>' },
-    { id: 'opt', name: 'Shortest tour (find it)', x: 830, y: 355, where: 'NPH', kind: 'proven', text: '<b>NP-hard</b> but not in NP as stated: the answer is a tour, not yes or no. Its decision version is the NP-complete problem above. <em>Proven.</em>' },
+    { id: 'opt', name: 'Shortest tour (find it)', x: 745, y: 362, where: 'NPH', kind: 'proven', text: '<b>NP-hard</b> but not in NP as stated: the answer is a tour, not yes or no. Its decision version is the NP-complete problem above. <em>Proven.</em>' },
     { id: 'halt', name: 'Halting problem', x: 820, y: 200, where: 'NPH', kind: 'proven', text: '<b>NP-hard</b> and <b>undecidable</b>: no algorithm at all decides it (Turing, 1936), so it is not in NP. <em>Proven.</em>' }
   ];
   var REGION_TEXT = {

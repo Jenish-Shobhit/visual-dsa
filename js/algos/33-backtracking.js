@@ -242,7 +242,7 @@
     // the full tree: ids are 'r' followed by the column digits of the path
     (function grow(r, id, parentId, keptPath) {
       var safe = keptPath;
-      full.push({ id: id, parent: parentId, depth: r, label: r === 0 ? 'start' : id.slice(-1), kept: safe, cutRoot: false });
+      full.push({ id: id, parent: parentId, depth: r, label: r === 0 ? '∅' : id.slice(-1), kept: safe, cutRoot: false });
       if (r === n) return;
       for (var c = 0; c < n; c++) {
         var ok = safe && !attackerOf(cols, r, c);

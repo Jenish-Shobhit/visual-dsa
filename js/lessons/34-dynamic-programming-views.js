@@ -414,7 +414,7 @@
       var c = rec.cur;
       vz.set(rec.r, 'x', n2(c.x - c.w / 2)); vz.set(rec.r, 'y', n2(c.y - c.w / 2)); vz.set(rec.r, 'width', n2(c.w)); vz.set(rec.r, 'height', n2(c.w)); vz.set(rec.r, 'rx', n2(c.w * 0.2));
       vz.set(rec.lab, 'x', n2(c.x)); vz.set(rec.lab, 'y', n2(c.y + c.w / 2 + 16));
-      vz.set(rec.lab, 'style', 'font-size:' + n2(clamp(c.w * 0.3, 9.5, 13)) + 'px');
+      vz.set(rec.lab, 'style', 'font-size:' + n2(clamp(c.w * 0.3, 11, 13)) + 'px');
       vz.opacity(rec.r, c.so);
     }
     function paintEdge(rec) {

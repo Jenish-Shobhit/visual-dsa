@@ -265,9 +265,19 @@
       caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterLabels: { calls: 'Calls made', distinct: 'Different questions', hits: 'Memo hits' }, counterStates: { hits: 'found', calls: 'active' }
     });
+    var treeHost = fig.querySelector('[data-tree]');
+    /* The tree view sizes itself per snapshot (badges, return values and pointers add rows as the trace runs), so
+       dry-run every snapshot once and reserve the tallest, which keeps the page from jumping while it plays. */
+    function reserveTreeHeight(states) {
+      treeHost.style.minHeight = '';
+      var tallest = 0;
+      states.forEach(function (st) { tree.render(st, { duration: 0 }); tallest = Math.max(tallest, treeHost.offsetHeight); });
+      treeHost.style.minHeight = tallest + 'px';
+    }
     function load() {
       var steps = A.fibTrace(n, { memo: mode === 'memo' });
       tree.reset(); tree.prepare(steps.map(function (x) { return x.tree; }));
+      reserveTreeHeight(steps.map(function (x) { return x.tree; }));
       row.reset(); row.prepare(steps.map(function (x) { return x.row; }));
       player.setSteps(steps);
     }

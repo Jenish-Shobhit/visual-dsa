@@ -334,12 +334,24 @@
     return { root: list[0].id, nodes: nodes, edges: edges };
   };
   /* Sample a long trace for tree.prepare: every step where the tree first reaches a new size, plus an even spread. */
-  B.prepareTree = function (view, steps, get) {
-    var picked = [], maxN = -1, stride = Math.max(1, Math.floor(steps.length / 260));
+  B.prepareTree = function (view, steps, get, host) {
+    var picked = [], maxN = -1, stride = Math.max(1, Math.floor(steps.length / 260)), seen = {}, probe = [];
     steps.forEach(function (st, i) {
       var list = get(st), len = list.length;
       if (len > maxN || i % stride === 0) { picked.push(B.toTree(list)); if (len > maxN) maxN = len; }
+      if (host) {
+        /* the tree view adds rows for badges, return values and sub-labels, so one snapshot per combination is enough to find the tallest */
+        var sig = list.map(function (n) { return (n.badge ? 1 : 0) | (n.ret ? 2 : 0) | (n.sub ? 4 : 0); }).reduce(function (a, b) { return a | b; }, 0);
+        if (!seen[sig]) { seen[sig] = true; probe.push(B.toTree(list)); }
+      }
     });
     view.prepare(picked);
+    if (host) {
+      /* reserve the tallest height so the page does not jump while the trace plays */
+      host.style.minHeight = '';
+      var tallest = 0;
+      probe.concat(picked.slice(-1)).forEach(function (t) { view.render(t, { duration: 0 }); tallest = Math.max(tallest, host.offsetHeight); });
+      host.style.minHeight = tallest + 'px';
+    }
   };
 }());

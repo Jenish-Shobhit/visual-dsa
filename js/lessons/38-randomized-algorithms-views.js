@@ -165,7 +165,7 @@
       var n = step.stream.length, k = step.k;
       built = n + ':' + k;
       var sw = clamp((W - 2 * PAD) / Math.max(1, n), 28, 56), tw = sw - 6, th = 42;
-      var yDie = 34, yStream = 158, yRes = 284, H = 352;
+      var yDie = 34, yStream = 120, yRes = 252, H = 322;
       var rw = 68, rgap = 12, resW = k * rw + (k - 1) * rgap, resX0 = W / 2 - resW / 2;
       var x0 = W / 2 - (n * sw) / 2;
       geo = { n: n, k: k, sw: sw, tw: tw, th: th, yStream: yStream, yRes: yRes, yDie: yDie, rw: rw,
@@ -176,12 +176,12 @@
         g0.appendChild(s('rect', { class: 'rz-slot', x: geo.sx(t) - tw / 2, y: yStream - th / 2, width: tw, height: th, rx: 8 }));
         g0.appendChild(s('text', { class: 'rz-idx', x: geo.sx(t), y: yStream + th / 2 + 14, 'text-anchor': 'middle' }, String(t + 1)));
       }
-      g0.appendChild(s('text', { class: 'rz-head', x: x0, y: yStream + th / 2 + 36 }, 'THE STREAM  ·  numbers are arrival order'));
+      g0.appendChild(s('text', { class: 'rz-head', x: x0, y: yStream + th / 2 + 42 }, 'THE STREAM  ·  numbers are arrival order'));
       for (var q = 0; q < k; q++) {
         g0.appendChild(s('rect', { class: 'rz-slot rz-slot--res', x: geo.rx(q) - rw / 2, y: yRes - th / 2 - 4, width: rw, height: th + 8, rx: 10 }));
         g0.appendChild(s('text', { class: 'rz-idx', x: geo.rx(q), y: yRes + th / 2 + 18, 'text-anchor': 'middle' }, 'slot ' + (q + 1)));
       }
-      resTitle = s('text', { class: 'rz-head', x: W / 2, y: yRes - th / 2 - 22, 'text-anchor': 'middle' }, 'THE RESERVOIR  ·  keeps ' + k);
+      resTitle = s('text', { class: 'rz-head', x: W / 2, y: yRes - th / 2 - 20, 'text-anchor': 'middle' }, 'THE RESERVOIR  ·  keeps ' + k);
       g0.appendChild(resTitle);
       dieHint = s('text', { class: 'rz-head', x: PAD, y: yDie + 4 }, 'THE DIE  ·  item i rolls a number from 1 to i');
       g0.appendChild(dieHint);
@@ -516,7 +516,7 @@
   L38.heatmap = function (stage, opts) {
     opts = opts || {};
     var n = opts.n || 6, scale = opts.scale || 0.05, svg, cells = [], letters = 'ABCDEFGHIJKL';
-    var CS = 48, LM = 34, TM = 34, BM = 44;
+    var CS = 48, LM = 34, TM = 34, BM = 64;
     function build() {
       if (svg) svg.remove();
       var W = LM + n * CS + 10, H = TM + n * CS + BM;
@@ -544,7 +544,7 @@
       var by = TM + n * CS + 16, bw = Math.min(n * CS, 240), bx0 = LM + (n * CS - bw) / 2;
       svg.appendChild(s('rect', { class: 'rz-scale', x: bx0, y: by, width: bw, height: 10, rx: 5, fill: 'url(#' + gid + ')' }));
       svg.appendChild(s('text', { class: 'rz-idx', x: bx0, y: by + 24 }, 'rarer'));
-      svg.appendChild(s('text', { class: 'rz-idx', x: bx0 + bw / 2, y: by + 24, 'text-anchor': 'middle' }, 'fair: 1/' + n));
+      svg.appendChild(s('text', { class: 'rz-idx', x: bx0 + bw / 2, y: by + 44, 'text-anchor': 'middle' }, 'fair: 1/' + n));
       svg.appendChild(s('text', { class: 'rz-idx', x: bx0 + bw, y: by + 24, 'text-anchor': 'end' }, 'more likely'));
       stage.appendChild(svg);
     }

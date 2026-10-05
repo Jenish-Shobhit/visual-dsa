@@ -31,7 +31,7 @@
       rep: { text: 'aaaaaaaaab', pat: 'aaab' }
     };
     var ex = 'plain', off = 0, visited = {};
-    var stats = V.stats(fig.querySelector('[data-stats]'), { labels: { alignments: 'Alignments tried', comparisons: 'Comparisons so far', worst: 'Worst case n·m' }, states: { comparisons: 'compare', alignments: 'active' } });
+    var stats = V.stats(fig.querySelector('[data-stats]'), { labels: { alignments: 'Alignments tried', comparisons: 'Comparisons so far', worst: 'Worst case (n−m+1)·m' }, states: { comparisons: 'compare', alignments: 'active' } });
     var msg = fig.querySelector('[data-msg]');
     var left = fig.querySelector('[data-left]'), right = fig.querySelector('[data-right]');
     function lead(text, pat, o) { var j = 0; while (j < pat.length && text[o + j] === pat[j]) j++; return j; }

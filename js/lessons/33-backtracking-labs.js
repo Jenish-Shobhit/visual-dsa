@@ -393,7 +393,7 @@
     function load(keepIndex) {
       gen = A.queens(cfg.n, { all: cfg.all, collapse: cfg.collapse, cap: 5000 });
       treeV.reset();
-      B.prepareTree(treeV, gen.steps, function (s) { return s.tree; });
+      B.prepareTree(treeV, gen.steps, function (s) { return s.tree; }, fig.querySelector('[data-tree]'));
       player.setSteps(gen.steps);
       fig.querySelector('[data-note]').textContent = gen.capped ? 'This search has more than 5,000 steps, so the trace stops early and summarises the rest.' :
         gen.steps.length + ' steps. ' + (gen.steps.length > 300 ? 'Try Turbo or the 64× speed.' : '');
@@ -494,7 +494,7 @@
     function load() {
       total = gen();
       treeV.reset();
-      B.prepareTree(treeV, total.steps, function (s) { return s.tree; });
+      B.prepareTree(treeV, total.steps, function (s) { return s.tree; }, fig.querySelector('[data-tree]'));
       code.setSource(CODE[cfg.kind]);
       var title = fig.querySelector('.fig__title');
       title.textContent = 'Recursion tree of the ' + TITLE[cfg.kind] + ' of ' + cfg.items.join(' ') + (cfg.kind === 'combinations' ? ', choose ' + cfg.k : '');

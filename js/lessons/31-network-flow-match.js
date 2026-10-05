@@ -46,7 +46,7 @@
   function matchFigure(fig) {
     var seed = 5, residual = false, pairs = parsePairs(PRESETS[0].text).values.pairs;
     var m = NF.matchingNetwork(pairs), net = m.net;
-    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: { w: 1000, h: 600 }, maxHeight: 420, label: 'Workers and jobs as a flow network', nodeRadius: 26, minRadius: 15 });
+    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: { w: 1000, h: 600 }, maxHeight: 420, label: 'Workers and jobs as a flow network', nodeRadius: 26, minRadius: 18 });
     function isMiddle(e) { return e.from.indexOf('w:') === 0 && e.to.indexOf('j:') === 0; }
     var labelT = L.spreadLabels(net, isMiddle);
     var list = fig.querySelector('[data-assign]');

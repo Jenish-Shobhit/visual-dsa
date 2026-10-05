@@ -180,7 +180,7 @@
       for (var k = 1; k <= R; k++) { cats.push(String(k)); vals.push(k <= doneRounds && byRound[k - 1] !== undefined ? byRound[k - 1] : 0); }
       chart.render({
         categories: cats, series: [{ id: 'flow', label: 'Total flow', values: vals, state: 'active' }],
-        y: { label: 'total flow', min: 0, max: Math.max(result.value, 1) },
+        y: { label: '', min: 0, max: result.value <= 10 ? Math.max(result.value, 1) : Math.ceil(result.value / 5) * 5 },
         highlight: doneRounds > 0 ? { category: String(doneRounds) } : undefined
       }, { duration: ms });
     }

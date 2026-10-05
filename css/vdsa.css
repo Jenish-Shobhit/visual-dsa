@@ -24,6 +24,7 @@
   --header-h: 56px;
   --gutter: clamp(16px, 4vw, 32px);
   --wing: calc((var(--wide) - var(--measure)) / 2);
+  --lesson-w: 760px;   /* one column for lesson prose, figures, labs, hero and pager */
   --fs-xs: .8125rem;   /* 13 */
   --fs-sm: .9375rem;   /* 15 */
   --fs-md: 1rem;       /* 16 */
@@ -358,10 +359,18 @@ main { display: block; }
     minmax(var(--gutter), 1fr) [full-end];
   align-content: start;
 }
+/* Lessons use a single column: .wide matches the prose, so every block shares one left and right edge. */
+.lesson-body > section {
+  grid-template-columns:
+    [full-start] minmax(var(--gutter), 1fr)
+    [wide-start content-start] min(var(--lesson-w), 100% - 2 * var(--gutter)) [content-end wide-end]
+    minmax(var(--gutter), 1fr) [full-end];
+}
 .flow > *, .lesson-body > section > * { grid-column: content; min-width: 0; }
 .flow > .wide, .lesson-body > section > .wide { grid-column: wide; }
 .flow > .full, .lesson-body > section > .full { grid-column: full; width: min(var(--full), 100% - 2 * var(--gutter)); justify-self: center; }
 .flow > .measure, .lesson-body > section > .measure { grid-column: content; }
+.lesson-body > section > .full { grid-column: content; width: auto; justify-self: stretch; }
 
 .lesson { position: relative; padding-bottom: var(--space-6); }
 .lesson-body { counter-reset: fig; }
@@ -407,7 +416,7 @@ h2:hover > .anchor, h3:hover > .anchor, .anchor:focus-visible { opacity: 1; }
 
 /* Hero */
 .hero {
-  width: min(var(--wide), 100% - 2 * var(--gutter));
+  width: min(var(--lesson-w), 100% - 2 * var(--gutter));
   margin: 0 auto;
   padding: clamp(32px, 6vw, 72px) 0 clamp(16px, 3vw, 32px);
   display: grid;
@@ -1299,7 +1308,7 @@ ol.practice { list-style: none; margin: 0; padding: 0; counter-reset: practice; 
 .deeper:hover .deeper__arrow { transform: translateX(3px); color: var(--accent); }
 
 /* Lesson end: complete button + prev/next pager (built by the shell) */
-.lesson-end { width: min(var(--wide), 100% - 2 * var(--gutter)); margin: var(--space-8) auto 0; }
+.lesson-end { width: min(var(--lesson-w), 100% - 2 * var(--gutter)); margin: var(--space-8) auto 0; }
 .complete-card {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px;
   padding: 22px 24px;

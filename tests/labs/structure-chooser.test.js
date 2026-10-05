@@ -41,3 +41,17 @@ test('every leaf is the answer to some scenario or path', () => {
   const leaves = C.NODES.filter((x) => x.rec).map((x) => x.rec);
   assert.equal(leaves.length, 16);
 });
+test('the doubly linked list needs middle edits, and a plain sequence falls to the dynamic array', () => {
+  assert.equal(C.step('q_pos', 'no').to, 'q_mid');
+  assert.equal(C.step('q_mid', 'yes').to, 'dll');
+  assert.equal(C.step('q_mid', 'no').to, 'dynamic-array');
+  const parents = C.EDGES.filter((e) => e.to === 'dll');
+  assert.deepEqual(parents.map((e) => e.id), ['q_mid.yes']);
+  const q = C.node('q_mid');
+  assert.match(q.q, /middle/);
+});
+test('every leaf is reachable by some answer sequence', () => {
+  const reached = new Set();
+  (function go(id) { if (C.isLeaf(id)) { reached.add(id); return; } C.out(id).forEach((e) => go(e.to)); })('q_key');
+  for (const n of C.NODES.filter((x) => x.rec)) assert.ok(reached.has(n.id), n.id);
+});

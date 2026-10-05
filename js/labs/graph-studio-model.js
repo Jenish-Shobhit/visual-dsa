@@ -424,6 +424,8 @@
     });
     var last = steps[steps.length - 1], rows = [], reach = list.filter(function (id) { return last.dist[id] !== null && last.dist[id] !== undefined; });
     rows.push(['Visit order', last.order.map(esc).join(' → ')]);
+    var pending = list.filter(function (id) { return last.order.indexOf(id) < 0 && last.dist[id] !== null && last.dist[id] !== undefined; });
+    if (pending.length) rows.push(['Queued, not yet visited', pending.map(esc).join(', ') + ' (found and waiting in the queue when the search stopped at ' + esc(sel.dst) + ')']);
     var far = 0; reach.forEach(function (id) { far = Math.max(far, last.dist[id]); });
     rows.push(['Reached', plural(reach.length, 'vertex', 'vertices') + ' of ' + list.length + (reach.length < list.length ? '; ' + list.filter(function (id) { return reach.indexOf(id) < 0; }).map(esc).join(', ') + ' not reachable from ' + esc(src) : '')]);
     rows.push(['Farthest', far + ' edge' + (far === 1 ? '' : 's') + ' from ' + esc(src)]);
@@ -492,7 +494,7 @@
     if (last.acyclic) {
       headline = 'A valid order exists: ' + last.order.map(b).join(' → ');
       rows.push(['Order', last.order.map(esc).join(' → ')]);
-      rows.push(['Others', 'Ties are broken alphabetically. ' + (L.T.countOrders && list.length <= 20 ? plural(L.T.countOrders(genGraph(g)), 'valid order') + ' exist for this graph.' : '')]);
+      rows.push(['Others', 'Ties are broken alphabetically. ' + (L.T.countOrders && list.length <= 20 ? (function (n) { return n + ' valid order' + (n === 1 ? ' exists' : 's exist') + ' for this graph.'; }(L.T.countOrders(genGraph(g)))) : '')]);
     } else {
       headline = 'No topological order: the graph has a cycle.';
       rows.push(['Cycle', last.cycle ? last.cycle.nodes.map(esc).join(' → ') + ' → ' + esc(last.cycle.nodes[0]) : 'yes']);
@@ -576,9 +578,13 @@
   function dijkstraSummary(g, sel, last, list) {
     var L = lib(), rows = [], neg = g.weighted && g.edges.some(function (e) { return e.w < 0; });
     var gi = genGraph(g, true), ref = L.SP.bellmanFord(gi, sel.src);
-    var dists = list.filter(function (id) { return last.dist[id] !== null && last.dist[id] !== undefined; }).map(function (id) { return esc(id) + ' = ' + fd(last.dist[id]); });
-    rows.push(['Distances from ' + esc(sel.src), dists.join(', ') || 'none']);
-    var unreach = list.filter(function (id) { return last.dist[id] === null || last.dist[id] === undefined; });
+    var known = function (id) { return last.dist[id] !== null && last.dist[id] !== undefined; };
+    /* stopped at the target: only settled vertices are final; the rest are the best found so far */
+    var early = !neg && !!last.settled && list.some(function (id) { return known(id) && !last.settled[id]; });
+    var dists = list.filter(function (id) { return known(id) && (!early || last.settled[id]); }).map(function (id) { return esc(id) + ' = ' + fd(last.dist[id]); });
+    rows.push(['Distances from ' + esc(sel.src), (dists.join(', ') || 'none') + (early ? ' (final)' : '')]);
+    if (early) rows.push(['Not final', list.filter(function (id) { return known(id) && !last.settled[id]; }).map(function (id) { return esc(id) + ' ≤ ' + fd(last.dist[id]); }).join(', ') + ': the search stopped at ' + esc(sel.dst) + ' before they were settled, so they may still shrink.']);
+    var unreach = early ? [] : list.filter(function (id) { return !known(id); });
     if (unreach.length) rows.push(['Unreachable', unreach.map(esc).join(', ')]);
     var wrong = [];
     if (neg && !ref.negativeCycle) list.forEach(function (id) { if (ref.dist[id] !== undefined && ref.dist[id] !== null && last.dist[id] !== ref.dist[id]) wrong.push(id); });
@@ -591,7 +597,7 @@
       else if (wrong.length) rows.push(['Wrong answers', wrong.map(function (id) { return esc(id) + ': Dijkstra says ' + fd(last.dist[id]) + ', truth is ' + fd(ref.dist[id]); }).join('; ') + '. A negative edge lets a settled vertex get cheaper later.']);
       else rows.push(['Truth', 'The answers happen to be right on this graph, but nothing guaranteed it. Try the Negative edge preset.']);
     }
-    return { rows: rows, wrong: wrong };
+    return { rows: rows, wrong: wrong, early: early };
   }
   function runDijkstra(g, sel) {
     var L = lib(), list = ids(g), src = sel.src;
@@ -619,7 +625,7 @@
     });
     var last = steps[steps.length - 1], sm = dijkstraSummary(g, sel, last, list);
     if (sm.wrong.length) frames[frames.length - 1].nodes = nodeFrame(null, list, function (id) { var o = Object.assign({}, frames[frames.length - 1].nodes[id]); if (sm.wrong.indexOf(id) >= 0) { o.state = 'error'; } return o; });
-    var headline = neg ? (sm.wrong.length ? 'Dijkstra answered wrongly for ' + sm.wrong.map(b).join(', ') + ' because of a negative edge.' : 'Dijkstra finished, but it is unsafe with negative edges.') : 'Shortest distances from ' + b(src) + ' to every reachable vertex.';
+    var headline = neg ? (sm.wrong.length ? 'Dijkstra answered wrongly for ' + sm.wrong.map(b).join(', ') + ' because of a negative edge.' : 'Dijkstra finished, but it is unsafe with negative edges.') : (sel.dst && sel.dst !== src && sm.early ? 'Shortest route from ' + b(src) + ' to ' + b(sel.dst) + ' found; the search stopped there.' : 'Shortest distances from ' + b(src) + ' to every reachable vertex.');
     return { ok: true, frames: frames, summary: { headline: headline, rows: sm.rows } };
   }
 

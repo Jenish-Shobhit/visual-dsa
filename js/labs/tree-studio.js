@@ -100,11 +100,35 @@
     });
   }
 
+  /* Node size follows the number of levels: a three-level tree gets big nodes (readable balance labels), a deep one
+     falls back to the compact size. The view still shrinks nodes further when the width runs out. */
+  function levelsOf(view) {
+    if (!view || !view.nodes || !view.nodes.length) return 0;
+    var map = {}, best = 0;
+    view.nodes.forEach(function (n) { map[n.id] = n; });
+    (function walk(id, d) {
+      var n = map[id]; if (!n || d > 40) return;
+      if (d > best) best = d;
+      if (n.children) n.children.forEach(function (c) { walk(c, d + 1); });
+      else { if (n.left !== undefined && n.left !== null) walk(n.left, d + 1); if (n.right !== undefined && n.right !== null) walk(n.right, d + 1); }
+    }(view.root, 1));
+    return best;
+  }
+  function nodeSizeFor(levels) {
+    var table = mode.compare ? [46, 46, 46, 42, 38, 34, 32] : [76, 76, 72, 66, 58, 50, 44];
+    return table[Math.min(Math.max(levels, 0), table.length - 1)];
+  }
+
   function render(step, ctx) {
     var dur = ctx && !ctx.instant ? ctx.duration : 0;
+    var lv = 0;
+    step.panes.forEach(function (f) { if (f) lv = Math.max(lv, levelsOf(f.view)); });
+    var empty = step.panes.every(function (f) { return !f || !f.nodes; });
+    var want = empty ? 40 : nodeSizeFor(lv);           /* the empty-state hint sits over the middle of the stage */
     panes.forEach(function (p, i) {
       var f = step.panes[i];
       if (!f) return;
+      if (p.nodeSize !== want) { p.nodeSize = want; p.view.setOptions({ nodeSize: want }); }
       p.view.render(f.view, { duration: dur });
       updateChips(p, f);
       p.hint.hidden = f.nodes > 0;
@@ -394,7 +418,7 @@
 
     player = V.player({
       root: root, steps: [restingStep('')], render: render, caption: '[data-caption]',
-      baseStepMs: 900, speed: 1, label: 'Tree studio step controls'
+      baseStepMs: 550, speed: 1, label: 'Tree studio step controls'
     });
     syncButtons();
     showResting(example ? 'An example to start from: nine keys already inserted. Insert, delete or search, or press Clear to begin empty.' : init.keys.length ? 'Loaded ' + plural(init.keys.length, M.KINDS[init.kind].word && !init.compare ? 'word' : 'key') + ' from the link.' : 'Insert a value to begin, or try “Insert 1 to 15 in order”.');

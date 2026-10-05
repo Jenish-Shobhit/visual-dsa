@@ -23,7 +23,8 @@
     Q('q_fifo', 'First in, first out?', 0, 11, 'Do you always take the item that arrived first?', 'A print queue, breadth-first search.'),
     Q('q_ends', 'Need both ends?', 1, 11, 'Do you need to add or remove at both ends?', 'Sliding-window maximum, a work-stealing pool.'),
     Q('q_pos', 'Jump to items by position?', 0, 12, 'Do you jump straight to “the k-th item”?', 'The 5th photo in an album, pixel (x, y).'),
-    Q('q_grow', 'Does the size change?', 1, 13, 'Does the number of items change while the program runs?', 'A shopping cart versus a fixed 8 × 8 board.'),
+    Q('q_mid', 'Edit the middle often?', 0, 13, 'Do you insert or remove in the middle of the sequence a lot, with a handle on the spot rather than searching for it?', 'A playlist, a text editor’s cursor, an LRU cache’s recency list.'),
+    Q('q_grow', 'Does the size change?', 1, 12, 'Does the number of items change while the program runs?', 'A shopping cart versus a fixed 8 × 8 board.'),
     L('hash-table', 'Hash table', 1, 2),
     L('trie', 'Trie', 3, 1),
     L('sorted-array', 'Sorted array', 3, 2),
@@ -37,9 +38,9 @@
     L('stack', 'Stack', 1, 10),
     L('deque', 'Deque', 2, 11),
     L('queue', 'Queue', 2, 12),
-    L('dynamic-array', 'Dynamic array', 2, 13),
-    L('array', 'Array', 1, 14),
-    L('dll', 'Doubly linked list', 0, 13)
+    L('dynamic-array', 'Dynamic array', 1, 13),
+    L('array', 'Array', 2, 13),
+    L('dll', 'Doubly linked list', 0, 14)
   ];
 
   function E(from, to, label) { return { from: from, to: to, label: label, id: from + '.' + label }; }
@@ -58,7 +59,8 @@
     E('q_lifo', 'stack', 'yes'), E('q_lifo', 'q_fifo', 'no'),
     E('q_fifo', 'q_ends', 'yes'), E('q_fifo', 'q_pos', 'no'),
     E('q_ends', 'deque', 'yes'), E('q_ends', 'queue', 'no'),
-    E('q_pos', 'q_grow', 'yes'), E('q_pos', 'dll', 'no'),
+    E('q_pos', 'q_grow', 'yes'), E('q_pos', 'q_mid', 'no'),
+    E('q_mid', 'dll', 'yes'), E('q_mid', 'dynamic-array', 'no'),
     E('q_grow', 'dynamic-array', 'yes'), E('q_grow', 'array', 'no')
   ];
 
@@ -76,7 +78,9 @@
     { id: 'sales', label: 'Sales totals', blurb: 'Revenue between two dates, after edits.', answers: ['no', 'no', 'yes', 'yes'], leaf: 'fenwick', why: 'Sums can be undone by subtracting two prefixes, so the compact Fenwick tree does range sums and updates in O(log n).' },
     { id: 'sensor', label: 'Coldest reading', blurb: 'The minimum temperature in a time range.', answers: ['no', 'no', 'yes', 'no'], leaf: 'segment-tree', why: 'A minimum cannot be subtracted away, so use a segment tree: any range splits into O(log n) stored answers.' },
     { id: 'album', label: 'Photo album', blurb: 'Open photo number 5, add photos over time.', answers: ['no', 'no', 'no', 'no', 'no', 'no', 'no', 'yes', 'yes'], leaf: 'dynamic-array', why: 'Jump by index in O(1) and append in O(1) amortized: the everyday dynamic array.' },
-    { id: 'pricelist', label: 'Read-only price list', blurb: 'Loaded once, searched a million times.', answers: ['yes', 'yes', 'no', 'yes'], leaf: 'sorted-array', why: 'Nothing is inserted, so binary search on a sorted array gives O(log n) with the least memory and best cache behaviour.' }
+    { id: 'pricelist', label: 'Read-only price list', blurb: 'Loaded once, searched a million times.', answers: ['yes', 'yes', 'no', 'yes'], leaf: 'sorted-array', why: 'Nothing is inserted, so binary search on a sorted array gives O(log n) with the least memory and best cache behaviour.' },
+    { id: 'playlist', label: 'Playlist editor', blurb: 'Drag songs in and out of the middle of a queue.', answers: ['no', 'no', 'no', 'no', 'no', 'no', 'no', 'no', 'yes'], leaf: 'dll', why: 'You never ask for “song number k”, but you often unhook or splice a song at a spot you already hold: a doubly linked list does that in O(1) with no shifting.' },
+    { id: 'log', label: 'Collect, then scan', blurb: 'Gather readings, then read them front to back.', answers: ['no', 'no', 'no', 'no', 'no', 'no', 'no', 'no', 'no'], leaf: 'dynamic-array', why: 'No lookups by key or position and no editing in the middle: just append and scan, which a dynamic array does with the best cache behaviour.' }
   ];
 
   var byId = {};

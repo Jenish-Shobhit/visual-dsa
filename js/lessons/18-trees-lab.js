@@ -197,6 +197,8 @@
         if (layer) layer.update({ pos: s.tour, ms: c.duration, focus: st.order });
         outView.render(outState(s), { duration: c.duration });
         struct(st.structure).render(structState(st.structure, s), { duration: c.duration });
+        var sh = hosts[st.structure], none = (s.frames || []).length + (s.stack || []).length + (s.queue || []).length === 0;
+        if (sh && sh.parentNode) sh.parentNode.toggleAttribute('data-empty', none);
       }
     });
 

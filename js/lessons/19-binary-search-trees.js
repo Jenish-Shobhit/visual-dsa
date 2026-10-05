@@ -73,7 +73,7 @@
       var cs = getComputedStyle(stage);
       return Math.max(160, stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
     }
-    var view = bstView(stage, { nodeSize: 46, gap: 2.4, height: innerHeight(), describe: false, pad: 8, label: 'A key dropping into a binary search tree' });
+    var view = bstView(stage, { nodeSize: 60, gap: 1.6, height: innerHeight(), describe: false, pad: 8, label: 'A key dropping into a binary search tree' });
     view.el.setAttribute('aria-hidden', 'true');
     /* level order of the balanced tree over sorted keys: the first three make a bushy start */
     function levelOrder(sorted) {
@@ -189,17 +189,46 @@
     steps.push({ arr: arrState(), tree: Object.assign({}, lastStep.tree, { nodes: lastStep.tree.nodes.map(function (n) { var c = Object.assign({}, n); delete c.state; return c; }), edges: {}, pointers: [] }), stats: lastStep.stats,
       caption: 'Three inserts: the array shifted <b>' + aMov + '</b> scores; the tree moved <b>none</b>. Both made a similar number of comparisons (' + aCmp + ' and ' + tCmp + '). The gap grows with the array: an insert near the front of a million scores shifts almost a million.' });
 
-    var aView = V.views.array(fig.querySelector('[data-stage="array"]'), { mode: 'boxes', cellSize: 44, label: 'Sorted array of scores' });
-    aView.prepare(steps.map(function (s) { return s.arr; }));
+    var aStage = fig.querySelector('[data-stage="array"]');
+    var aView = V.views.array(aStage, { mode: 'boxes', cellSize: 44, label: 'Sorted array of scores' });
+    // On a phone twelve cells would shrink to ~20px with 9px labels, so the array wraps into two rows of six.
+    var PER = 6, wrapped = aStage.clientWidth < 480, shown = steps[0];
+    function shape(a) {
+      if (!wrapped) return a;
+      var rows = [0, 1].map(function (r) {
+        return { id: 'r' + r, length: r ? cap - PER : PER, indexStart: r * PER, items: [], ghosts: [], regions: [] };
+      });
+      a.items.forEach(function (it, i) {
+        var slot = typeof it.index === 'number' ? it.index : i, r = slot < PER ? 0 : 1;
+        rows[r].items.push(Object.assign({}, it, { index: slot - r * PER }));
+      });
+      (a.ghosts || []).forEach(function (g) { var r = g < PER ? 0 : 1; rows[r].ghosts.push(g - r * PER); });
+      (a.regions || []).forEach(function (g) {
+        [0, 1].forEach(function (r) {
+          var lo = Math.max(g.from, r * PER), hi = Math.min(g.to, r * PER + PER - 1);
+          if (lo <= hi) rows[r].regions.push(Object.assign({}, g, { from: lo - r * PER, to: hi - r * PER, label: lo === g.from ? g.label : undefined }));
+        });
+      });
+      var out = { rows: rows };
+      if (a.held) out.held = Object.assign({}, a.held, { row: 'r' + (a.held.over < PER ? 0 : 1), over: a.held.over % PER });
+      return out;
+    }
+    aView.prepare(steps.map(function (s) { return shape(s.arr); }));
     var tView = bstView(fig.querySelector('[data-stage="tree"]'), { nodeSize: 40, gap: 1.7, levelHeight: 82, label: 'Binary search tree of the same scores' });
     tView.prepare(steps.map(function (s) { return s.tree; }));
     var aStats = V.stats(fig.querySelector('[data-stats="array"]'), { labels: LABELS, states: { moves: 'swap' } });
     var tStats = V.stats(fig.querySelector('[data-stats="tree"]'), { labels: LABELS, states: { moves: 'swap' } });
+    V.onResize(aStage, function () {
+      var w = aStage.clientWidth < 480;
+      if (w === wrapped) return;
+      wrapped = w; aView.prepare(steps.map(function (s) { return shape(s.arr); })); aView.render(shape(shown.arr), { duration: 0 });
+    });
     V.player({
       root: fig, steps: steps, baseStepMs: 1300, label: 'Array versus tree controls',
       caption: fig.querySelector('[data-caption]'),
       render: function (s, c) {
-        aView.render(s.arr, { duration: c.duration });
+        shown = s;
+        aView.render(shape(s.arr), { duration: c.duration });
         tView.render(s.tree, { duration: c.duration });
         aStats.update(s.stats.array); tStats.update(s.stats.tree);
       }
@@ -499,8 +528,8 @@
       return B.medianFirst(keys);
     }
     var views = {
-      a: bstView(fig.querySelector('[data-stage="a"]'), { nodeSize: 34, gap: 0.3, maxHeight: 640, label: 'Tree built from a random insertion order' }),
-      b: bstView(fig.querySelector('[data-stage="b"]'), { nodeSize: 34, gap: 0.3, maxHeight: 640, label: 'Tree built from the second insertion order' })
+      a: bstView(fig.querySelector('[data-stage="a"]'), { nodeSize: 38, gap: 0.3, maxHeight: 640, label: 'Tree built from a random insertion order' }),
+      b: bstView(fig.querySelector('[data-stage="b"]'), { nodeSize: 38, gap: 0.3, maxHeight: 640, label: 'Tree built from the second insertion order' })
     };
     var stats = {
       a: V.stats(fig.querySelector('[data-stats="a"]'), { labels: { height: 'Height', comparisons: 'Comparisons so far', search: 'Search for ' + keys[n - 1] } }),

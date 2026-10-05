@@ -50,11 +50,11 @@
 .tr-node-code { margin: 0; }
 
 /* two stages side by side: the tree and a call stack */
-.tr-two { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(200px, 1fr); }
+.tr-two { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(190px, 1fr); }
 .tr-two > * { min-width: 0; }
 .tr-two > * + * { border-left: 1px solid var(--line); }
 .tr-stack-stage { align-items: start; place-items: start center; }
-@container fig (max-width: 900px) {
+@container fig (max-width: 640px) {
   .tr-two { grid-template-columns: minmax(0, 1fr); }
   .tr-two > * + * { border-left: 0; border-top: 1px solid var(--line); }
 }
@@ -68,7 +68,9 @@
 .tr-pane__title { color: var(--ink); }
 .tr-pane .fig__stage { flex: 1; }
 .lab__side .tr-pane { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: var(--bg-elev); }
-.tr-struct-stage { min-height: 200px; align-items: start; place-items: start center; }
+.tr-struct-stage { position: relative; min-height: 120px; align-items: start; place-items: start center; }
+/* nothing on the structure yet: say so instead of showing a blank box */
+.tr-struct-stage[data-empty]::after { content: 'empty'; position: absolute; left: 0; right: 0; top: 14px; text-align: center; font: 600 13px var(--font-mono); letter-spacing: .04em; color: var(--ink-3); pointer-events: none; }
 .tr-struct-stage > [data-host] { width: 100%; }
 .tr-struct-stage > [hidden] { display: none; }
 

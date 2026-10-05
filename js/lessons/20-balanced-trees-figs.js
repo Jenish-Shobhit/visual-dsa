@@ -117,9 +117,9 @@
     legend(fig, [RED, BLACK, { state: 'key', label: 'key just inserted' }]);
     var stages = { bst: fig.querySelector('[data-stage="bst"]'), avl: fig.querySelector('[data-stage="avl"]'), rb: fig.querySelector('[data-stage="rb"]') };
     var views = {
-      bst: V.views.tree(stages.bst, { nodeSize: 26, minNodeSize: 16, levelHeight: 25, gap: 0.5, label: 'Plain binary search tree' }),
-      avl: V.views.tree(stages.avl, { nodeSize: 34, minNodeSize: 16, gap: 0.5, label: 'AVL tree' }),
-      rb: V.views.tree(stages.rb, { nodeSize: 34, minNodeSize: 16, gap: 0.5, label: 'Red-black tree' })
+      bst: V.views.tree(stages.bst, { nodeSize: 28, minNodeSize: 24, levelHeight: 29, gap: 0, label: 'Plain binary search tree' }),
+      avl: V.views.tree(stages.avl, { nodeSize: 34, minNodeSize: 24, gap: 0, label: 'AVL tree' }),
+      rb: V.views.tree(stages.rb, { nodeSize: 34, minNodeSize: 24, gap: 0, label: 'Red-black tree' })
     };
     var meters = {};
     ['bst', 'avl', 'rb'].forEach(function (k) { meters[k] = fig.querySelector('[data-meter="' + k + '"]'); });

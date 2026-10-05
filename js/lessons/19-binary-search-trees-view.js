@@ -362,12 +362,18 @@
       var noteO = rec.note ? vz.clamp((frameT - 0.55) / 0.35, 0, 1) : 0;
       if (rec.noteShown) noteO = rec.note ? 1 : 0;
       vz.set(rec.noteG, 'opacity', noteO.toFixed(2));
+      if (rec.note) placeNote(rec, r);
+    }
+    /* the note chip stays full size while the probe shrinks as it flies: undo the parent's scale on the chip itself */
+    function placeNote(rec, r) {
+      var s = (rec.cur && rec.cur.s) || 1, off = r + (5 + rec.noteW / 2) / s;
+      vz.place(rec.noteG, rec.noteRight ? off : -off, 0, 1 / s);
     }
     function setFloatContent(rec, f, big) {
       rec.big = big;
       var label = fmt(f.value);
       vz.text(rec.txt, label);
-      var r = big ? G.k / 2 : G.probeR, fs = Math.max(9, Math.round(r * 0.9)), w = vz.textWidth(label, fs, false, 650);
+      var r = big ? G.k / 2 : G.probeR, fs = Math.max(11, Math.round(r * 0.9)), w = vz.textWidth(label, fs, false, 650);
       if (w > r * 1.7) fs = Math.max(8, Math.floor(fs * r * 1.7 / w));
       vz.set(rec.txt, 'font-size', fs);
       vz.set(rec.el, 'class', 'vz-item vz-node bst-float ' + (big ? 'bst-chip' : 'bst-probe') + ' is-' + (f.state || 'key'));
@@ -377,10 +383,9 @@
         vz.text(rec.noteTxt, note);
         var nw = vz.textWidth(note, 11.5, true, 700) + 14;
         vz.set(rec.noteRect, 'width', vz.n2(nw));
-        var right = note.charAt(0) !== '>';
-        var off = r + 5 + nw / 2;
+        rec.noteRight = note.charAt(0) !== '>'; rec.noteW = nw;
         vz.set(rec.noteRect, 'x', vz.n2(-nw / 2));
-        vz.place(rec.noteG, right ? off : -off, 0);
+        placeNote(rec, r);
       }
     }
 

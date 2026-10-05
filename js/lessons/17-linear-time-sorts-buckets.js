@@ -126,7 +126,7 @@
       } else vz.set(rec.hl2, 'visibility', 'hidden');
       var lab = it.label !== undefined && it.label !== null && it.label !== '' ? String(it.label) : '';
       vz.text(rec.sub, lab);
-      vz.set(rec.sub, 'x', vz.n2(w / 2 - 3)); vz.set(rec.sub, 'y', vz.n2(h / 2 - 5)); vz.set(rec.sub, 'font-size', 9);
+      vz.set(rec.sub, 'x', vz.n2(w / 2 - 3)); vz.set(rec.sub, 'y', vz.n2(h / 2 - 5)); vz.set(rec.sub, 'font-size', 11);
       vz.set(rec.el, 'data-id', it.id);
       vz.set(rec.el, 'aria-label', 'Number ' + (it.text || L17.fmt(it.value)) + (lab ? ' ' + lab : ''));
     }
@@ -146,7 +146,7 @@
       var anim = [];
       function upd(rec, t, from) {
         if (rec.isNew) rec.cur = Object.assign({}, t, from || { o: 0 });
-        vz.retarget(rec, t); rec.arc = 0; rec.delay = 0; anim.push(rec);
+        vz.retarget(rec, t); rec.arc = 0; rec.delay = 0; rec.span = undefined; anim.push(rec);
       }
       /* header, row labels */
       if (!headText) {
@@ -205,9 +205,17 @@
       });
       chips.end().forEach(function (rec) { rec.from = Object.assign({}, rec.cur); rec.to = Object.assign({}, rec.cur, { o: 0 }); anim.push(rec); });
       if (ms > 0) movers.forEach(function (rec) { ctx.layers.items.appendChild(rec.el); });
+      /* a batch of chips flies one after another, each along its own arc, so they never pile onto each other or onto the bucket numbers */
+      if (ms > 0 && movers.length > 1) {
+        movers.sort(function (a, b) { return a.to.x - b.to.x || a.to.y - b.to.y; });
+        movers.forEach(function (rec, k) {
+          rec.delay = 0.5 * k / (movers.length - 1); rec.span = 0.5;
+          rec.arc = k % 2 ? 6 : 16;
+        });
+      }
 
       tr.run(ms, function (t) {
-        for (var i = 0; i < anim.length; i++) { var r = anim[i]; vz.step(r, vz.local(t, r.delay || 0)); r.paint(r); }
+        for (var i = 0; i < anim.length; i++) { var r = anim[i]; vz.step(r, vz.local(t, r.delay || 0, r.span)); r.paint(r); }
       }, function () { chips.purge(); });
     }
 

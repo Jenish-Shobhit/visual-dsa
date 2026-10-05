@@ -311,8 +311,8 @@
     var N = 15, input = 'sorted';
     var views = {}, stats = {};
     ['good', 'bad'].forEach(function (k) {
-      views[k] = V.views.tree(sides[k].querySelector('[data-tree]'), { nodeSize: 30, minNodeSize: 14, gap: 0.35, levelHeight: 36,   /* no fixed height: the stage grows to the deepest prepared frame, so a 15-deep chain is never clipped */ label: k === 'good' ? 'Recursion tree with the middle value as pivot' : 'Recursion tree with the last value as pivot' });
-      stats[k] = V.stats(sides[k].querySelector('[data-stats]'), { labels: { comparisons: 'Comparisons so far', depth: 'Levels deep', calls: 'Calls' }, states: { comparisons: 'compare', depth: 'pivot', calls: 'active' } });
+      views[k] = V.views.tree(sides[k].querySelector('[data-tree]'), { nodeSize: 40, minNodeSize: 22, gap: 0.12, levelHeight: 46,   /* no fixed height: the stage grows to the deepest prepared frame, so a 15-deep chain is never clipped */ label: k === 'good' ? 'Recursion tree with the middle value as pivot' : 'Recursion tree with the last value as pivot' });
+      stats[k] = V.stats(sides[k].querySelector('[data-stats]'), { labels: { comparisons: 'Comparisons', depth: 'Levels deep', calls: 'Calls' }, states: { comparisons: 'compare', depth: 'pivot', calls: 'active' } });
     });
     var pair, caption = fig.querySelector('[data-caption]');
     function build() {

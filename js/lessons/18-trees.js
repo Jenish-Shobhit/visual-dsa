@@ -15,7 +15,7 @@
       var cs = getComputedStyle(stage);
       return Math.max(200, stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
     }
-    var view = V.views.tree(stage, { nodeSize: 50, gap: 2.2, height: innerHeight(), describe: false, label: 'A tree growing and being walked' });
+    var view = V.views.tree(stage, { nodeSize: 50, gap: 1.0, height: innerHeight(), describe: false, label: 'A tree growing and being walked' });
     view.el.setAttribute('aria-hidden', 'true');
     var layer = L.tourLayer(view, tree);
     var steps = A.teaserSteps(tree);
@@ -189,7 +189,8 @@
         ['Height', f.height + (f.height === 1 ? ' link down to the deepest leaf' : ' links down to the deepest leaf')],
         ['Level', 'level ' + f.depth + ': ' + list(f.level)],
         ['Subtree size', f.subtreeSize + (f.subtreeSize === 1 ? ' node (just itself)' : ' nodes, itself included')],
-        ['Ancestors', list(f.ancestors)]
+        ['Ancestors', list(f.ancestors)],
+        ['Descendants', list(f.descendants)]
       ];
       VDSA_clear(factsEl);
       cells.forEach(function (c) { factsEl.appendChild(h('div', { class: 'tr-fact' }, h('dt', null, c[0]), h('dd', null, String(c[1])))); });

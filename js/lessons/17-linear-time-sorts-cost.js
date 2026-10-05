@@ -79,15 +79,15 @@
 
   /* ================================================================== the grand table */
   var ROWS = [
-    { id: 'bubble', name: 'Bubble sort', best: ['n', 'O(n)'], avg: ['n2', 'O(n²)'], worst: ['n2', 'O(n²)'], space: ['1', 'O(1)'], stable: 1, inplace: 1, adaptive: 1, linear: 0, f: function (n) { return n * n / 2; }, note: 'early exit on sorted input' },
+    { id: 'bubble', name: 'Bubble sort', best: ['n', 'O(n)'], avg: ['n2', 'O(n²)'], worst: ['n2', 'O(n²)'], space: ['1', 'O(1)'], stable: 1, inplace: 1, adaptive: 1, linear: 0, f: function (n) { return n * n / 2; }, note: 'early exit' },
     { id: 'selection', name: 'Selection sort', best: ['n2', 'O(n²)'], avg: ['n2', 'O(n²)'], worst: ['n2', 'O(n²)'], space: ['1', 'O(1)'], stable: 0, inplace: 1, adaptive: 0, linear: 0, f: function (n) { return n * n / 2; }, note: 'at most n − 1 swaps' },
     { id: 'insertion', name: 'Insertion sort', best: ['n', 'O(n)'], avg: ['n2', 'O(n²)'], worst: ['n2', 'O(n²)'], space: ['1', 'O(1)'], stable: 1, inplace: 1, adaptive: 1, linear: 0, f: function (n) { return n * n / 4; }, note: 'n + inversions' },
-    { id: 'merge', name: 'Merge sort', best: ['nlogn', 'O(n log n)'], avg: ['nlogn', 'O(n log n)'], worst: ['nlogn', 'O(n log n)'], space: ['n', 'O(n)'], stable: 1, inplace: 0, adaptive: 0, linear: 0, f: function (n) { return n * Math.log2(Math.max(2, n)); }, note: 'the stable n log n sort' },
-    { id: 'quick', name: 'Quicksort', best: ['nlogn', 'O(n log n)'], avg: ['nlogn', 'O(n log n)'], worst: ['n2', 'O(n²)'], space: ['logn', 'O(log n)'], stable: 0, inplace: 1, adaptive: 0, linear: 0, f: function (n) { return 1.39 * n * Math.log2(Math.max(2, n)); }, note: 'fastest in practice; in place except for its O(log n) stack' },
-    { id: 'heap', name: 'Heapsort', best: ['nlogn', 'O(n log n)'], avg: ['nlogn', 'O(n log n)'], worst: ['nlogn', 'O(n log n)'], space: ['1', 'O(1)'], stable: 0, inplace: 1, adaptive: 0, linear: 0, f: function (n) { return 2 * n * Math.log2(Math.max(2, n)); }, note: 'n log n worst case, no extra memory' },
+    { id: 'merge', name: 'Merge sort', best: ['nlogn', 'O(n log n)'], avg: ['nlogn', 'O(n log n)'], worst: ['nlogn', 'O(n log n)'], space: ['n', 'O(n)'], stable: 1, inplace: 0, adaptive: 0, linear: 0, f: function (n) { return n * Math.log2(Math.max(2, n)); }, note: 'the stable one' },
+    { id: 'quick', name: 'Quicksort', best: ['nlogn', 'O(n log n)'], avg: ['nlogn', 'O(n log n)'], worst: ['n2', 'O(n²)'], space: ['logn', 'O(log n)'], stable: 0, inplace: 1, adaptive: 0, linear: 0, f: function (n) { return 1.39 * n * Math.log2(Math.max(2, n)); }, note: 'fastest in practice' },
+    { id: 'heap', name: 'Heapsort', best: ['nlogn', 'O(n log n)'], avg: ['nlogn', 'O(n log n)'], worst: ['nlogn', 'O(n log n)'], space: ['1', 'O(1)'], stable: 0, inplace: 1, adaptive: 0, linear: 0, f: function (n) { return 2 * n * Math.log2(Math.max(2, n)); }, note: 'no extra memory' },
     { id: 'counting', name: 'Counting sort', best: ['n', 'O(n + k)'], avg: ['n', 'O(n + k)'], worst: ['n', 'O(n + k)'], space: ['n', 'O(n + k)'], stable: 1, inplace: 0, adaptive: 0, linear: 1, f: function (n) { return 3 * n; }, note: 'small integer keys' },
     { id: 'radix', name: 'Radix sort (LSD)', best: ['n', 'O(d(n + b))'], avg: ['n', 'O(d(n + b))'], worst: ['n', 'O(d(n + b))'], space: ['n', 'O(n + b)'], stable: 1, inplace: 0, adaptive: 0, linear: 1, f: function (n) { return 3 * (2 * n + 10); }, note: 'fixed-width keys' },
-    { id: 'bucket', name: 'Bucket sort', best: ['n', 'O(n + k)'], avg: ['n', 'O(n + k)'], worst: ['n2', 'O(n²)'], space: ['n', 'O(n + k)'], stable: 1, inplace: 0, adaptive: 0, linear: 1, f: function (n) { return 3 * n; }, note: 'evenly spread numbers' }
+    { id: 'bucket', name: 'Bucket sort', best: ['n', 'O(n + k)'], avg: ['n', 'O(n + k)'], worst: ['n2', 'O(n²)'], space: ['n', 'O(n + k)'], stable: 1, inplace: 0, adaptive: 0, linear: 1, f: function (n) { return 3 * n; }, note: 'even spread' }
   ];
   var FILTERS = [
     { id: 'stable', label: 'Stable' }, { id: 'inplace', label: 'In place' }, { id: 'adaptive', label: 'Adaptive' }, { id: 'linear', label: 'Linear time' }
@@ -99,7 +99,7 @@
     var toolbarSeg = fig.querySelector('[data-seg]');
     var note = fig.querySelector('[data-note]');
     var active = {}, scale = 'shared', N = 64;
-    var wrap = h('div', { class: 'table-wrap l17-compare-wrap' });
+    var wrap = h('div', { class: 'table-wrap l17-compare-wrap', 'data-scroll-fade': '' });
     var table = h('table', { class: 'table table--compact l17-compare' });
     wrap.appendChild(table); stage.appendChild(wrap);
     function yes(v, label) { return h('td', { class: 'l17-yn ' + (v ? 'is-yes' : 'is-no'), 'aria-label': label + (v ? ': yes' : ': no') }, h('span', { 'aria-hidden': 'true' }, v ? '●' : '○'), h('span', { class: 'sr-only' }, v ? 'Yes' : 'No')); }
@@ -124,7 +124,7 @@
       V.clear(table);
       var ymax = Math.max.apply(null, ROWS.map(function (r) { return r.f(N); }));
       table.appendChild(h('thead', {}, h('tr', {},
-        h('th', { scope: 'col' }, 'Sort'), h('th', { scope: 'col' }, 'Growth as n rises to ' + N), h('th', { scope: 'col' }, 'Best'), h('th', { scope: 'col' }, 'Average'), h('th', { scope: 'col' }, 'Worst'),
+        h('th', { scope: 'col' }, 'Sort'), h('th', { scope: 'col' }, 'Growth, n up to ' + N), h('th', { scope: 'col' }, 'Best'), h('th', { scope: 'col' }, 'Average'), h('th', { scope: 'col' }, 'Worst'),
         h('th', { scope: 'col' }, 'Extra space'), h('th', { scope: 'col', class: 'l17-yn' }, 'Stable'), h('th', { scope: 'col', class: 'l17-yn' }, 'In place'), h('th', { scope: 'col', class: 'l17-yn' }, 'Adaptive')
       )));
       var body = h('tbody', {});
@@ -134,7 +134,7 @@
         if (match) kept++;
         var tr = h('tr', { class: 'l17-row' + (match ? '' : ' is-dim'), 'data-row': r.id },
           h('th', { scope: 'row' }, h('span', { class: 'l17-rowname' }, r.name), h('small', { class: 'l17-rownote' }, r.note)),
-          h('td', { class: 'l17-sparkcell' }, sparkline(r, i, ymax), h('small', { class: 'l17-sparkcap' }, '≈ ' + int(r.f(N)) + ' steps at n = ' + N)),
+          h('td', { class: 'l17-sparkcell' }, sparkline(r, i, ymax), h('small', { class: 'l17-sparkcap' }, '≈ ' + int(r.f(N)) + ' steps')),
           h('td', {}, badge(r.best)), h('td', {}, badge(r.avg)), h('td', {}, badge(r.worst)), h('td', {}, badge(r.space)),
           yes(r.stable, 'Stable'), yes(r.inplace, 'In place'), yes(r.adaptive, 'Adaptive'));
         body.appendChild(tr);

@@ -58,14 +58,14 @@
 .bt-case__name { font: 750 18px var(--font-mono); color: var(--ink); min-width: 3ch; }
 .bt-case__fix { color: var(--ink-2); }
 .bt-case[data-state="error"] { background: color-mix(in srgb, var(--st-error) 10%, var(--bg-elev)); }
-.bt-case[data-state="error"] .bt-case__name { color: var(--st-error); }
+.bt-case[data-state="error"] .bt-case__name { color: var(--st-error-text); }
 .bt-case[data-state="ok"] { background: color-mix(in srgb, var(--st-done) 8%, var(--bg-elev)); }
 .bt-ops { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; width: 100%; }
 .bt-ops__key { display: flex; flex-direction: column; }
 .bt-ops__key .field { width: 88px; }
 .bt-ops__btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .bt-ops__tog { display: flex; align-items: center; min-height: 40px; }
-.bt-ops__err { flex-basis: 100%; margin: -2px 0 0; font-size: 13.5px; color: var(--st-error); min-height: 0; }
+.bt-ops__err { flex-basis: 100%; margin: -2px 0 0; font-size: 13.5px; color: var(--st-error-text); min-height: 0; }
 .bt-ops__err:empty { display: none; }
 .bt-ops__hint { flex-basis: 100%; margin: -4px 0 0; font-size: 13px; color: var(--ink-3); }
 
@@ -80,7 +80,7 @@
 .bt-rule.is-ok .bt-rule__dot { background: var(--st-done); }
 .bt-rule.is-bad { background: color-mix(in srgb, var(--st-error) 10%, var(--bg-elev)); border-color: color-mix(in srgb, var(--st-error) 45%, transparent); color: var(--ink); }
 .bt-rule.is-bad .bt-rule__dot { background: var(--st-error); box-shadow: 0 0 0 4px color-mix(in srgb, var(--st-error) 22%, transparent); }
-.bt-rule.is-bad .bt-rule__note { color: var(--st-error); font-weight: 650; }
+.bt-rule.is-bad .bt-rule__note { color: var(--st-error-text); font-weight: 650; }
 .bt-checker__live { margin: 4px 0 0; font-size: 13px; color: var(--ink-2); }
 @media (max-width: 520px) { .bt-rule { grid-template-columns: 14px 14px minmax(0, 1fr); } .bt-rule__note { grid-column: 3; white-space: normal; } }
 ol.bt-rules { margin: 6px 0 0; padding-left: 1.3em; display: grid; gap: 4px; }
@@ -111,3 +111,11 @@ ol.bt-rules { margin: 6px 0 0; padding-left: 1.3em; display: grid; gap: 4px; }
 .bt-bars__l { text-align: right; }
 .bt-bars__b { display: block; height: 10px; border-radius: 8px; background: color-mix(in srgb, var(--ink) 9%, transparent); overflow: hidden; }
 .bt-bars__b > i { display: block; height: 100%; border-radius: inherit; }
+
+/* sub-labels under nodes ("h 2", "bf −1"): never below 11px */
+.vz.vz-tree .vz-node-sub { font-size: 11.5px; }
+
+/* the three race panes are narrow: give the trees every pixel so the node labels stay readable */
+#fig-race .bt-pane .fig__stage { padding-inline: 4px; }
+#fig-race .vz-tree .vz-node .vz-value { font-size: 11px; }
+#fig-fib .vz-tree .vz-node .vz-value, #fig-stick .vz-tree .vz-node .vz-value { font-size: max(11px, 0.4em); }

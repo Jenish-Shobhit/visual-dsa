@@ -72,7 +72,7 @@
       var cs = getComputedStyle(stage);
       return Math.max(170, stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
     }
-    var view = V.views.tree(stage, { nodeSize: 48, gap: 2.4, height: innerHeight(), describe: false, label: 'A tree balancing itself' });
+    var view = V.views.tree(stage, { nodeSize: 62, gap: 1.6, height: innerHeight(), describe: false, label: 'A tree balancing itself' });
     view.el.setAttribute('aria-hidden', 'true');
     var laps = [
       [10, 20, 30, 40, 50, 60, 70],
@@ -88,7 +88,7 @@
       return steps;
     }
     V.teaser(stage, {
-      steps: lap(), stepMs: 700, holdMs: 2000, instantWrap: true, regenerate: lap,
+      steps: lap(), stepMs: 520, holdMs: 2000, instantWrap: true, regenerate: lap,
       render: function (s, c) { view.render(s, { duration: c.duration }); }
     });
     V.onResize(stage, function () { view.setOptions({ height: innerHeight() }); });
@@ -100,8 +100,8 @@
     legend(fig, [{ state: 'compare', label: 'compared now' }, { state: 'visited', label: 'already passed' }, { state: 'found', label: 'found' }]);
     var res = A.stickRace(15);
     var stageA = fig.querySelector('[data-stage="a"]'), stageB = fig.querySelector('[data-stage="b"]');
-    var vA = V.views.tree(stageA, { nodeSize: 24, minNodeSize: 16, levelHeight: 27, label: 'Plain binary search tree holding 1 to 15 as a single right-leaning branch' });
-    var vB = V.views.tree(stageB, { nodeSize: 34, label: 'AVL tree holding 1 to 15, height 3' });
+    var vA = V.views.tree(stageA, { nodeSize: 32, minNodeSize: 24, gap: 0, levelHeight: 31, label: 'Plain binary search tree holding 1 to 15 as a single right-leaning branch' });
+    var vB = V.views.tree(stageB, { nodeSize: 40, gap: 0, levelHeight: 66, label: 'AVL tree holding 1 to 15, height 3' });
     vA.prepare(res.steps.map(function (s) { return s.a; }));
     vB.prepare(res.steps.map(function (s) { return s.b; }));
     var sA = V.stats(fig.querySelector('[data-stats="a"]'), { labels: LABELS, states: { comparisons: 'compare' } });

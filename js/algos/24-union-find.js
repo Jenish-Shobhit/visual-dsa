@@ -521,11 +521,12 @@
     return out;
   }
 
-  /* inverse Ackermann: A(0)=2, A(1)=3, A(2)=5, A(3)=13, A(4)=2^65533 - 3 (a number with about 19,700 digits).
-     alpha(n) = smallest k with A(k) >= n. Everything from 14 to far beyond the atoms in the universe gives 4. */
+  /* inverse Ackermann, CLRS version: A_k(1) = 2, 3, 7, 2047, then A_4(1) = 2^2059 - 1 (about 620 digits).
+     alpha(n) = smallest k with A_k(1) >= n. So n = 3 gives 1, 4..7 give 2, 8..2047 give 3, and everything from
+     2048 to about 10^620 (far beyond the atoms in the universe) gives 4. */
   function alpha(n) {
-    if (n <= 2) return 0; if (n <= 3) return 1; if (n <= 5) return 2; if (n <= 13) return 3;
-    return 4;   // n up to ~2^65533; larger inputs cannot be stored
+    if (n <= 2) return 0; if (n <= 3) return 1; if (n <= 7) return 2; if (n <= 2047) return 3;
+    return 4;   // n up to ~2^2059; larger inputs cannot be stored
   }
 
   /* ================================================================== percolation */

@@ -71,9 +71,9 @@
       return (cache[w] = { ops: ops.length, curves: CFGS.map(function (c) { return UF.curve(ops, W.n, c.cfg, 48); }) });
     }
     var notes = {
-      random: 'On random operations the naive structure is fine: random links rarely build tall trees. Rank and compression still help, but you would hardly notice.',
+      random: 'On random operations the naive structure is not a disaster, but its trees still grow tall enough to cost several hops per find. Rank keeps finds near one hop, and compression trims them a little more.',
       chain: 'A chain of unions is the naive structure’s nightmare: the tree grows into a line, so each find pays for it. Rank keeps every tree flat by construction.',
-      balanced: 'Merging equal trees in rounds is the worst case for rank alone: the height reaches log₂ n. Compression then flattens the paths that finds actually walk.'
+      balanced: 'Merging equal trees in rounds is the worst case for rank alone: the height reaches log₂ n. Here naive and rank only build the same trees, so their lines coincide. Compression then flattens the paths that finds actually walk.'
     };
     function show(dur) {
       var d = data(work), key = metric;

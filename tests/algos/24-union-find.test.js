@@ -279,7 +279,7 @@ test('curve: chain workload separates naive from rank + compression; random does
 });
 
 test('alpha: inverse Ackermann thresholds and the "at most 4" claim', () => {
-  assert.deepEqual([1, 2, 3, 4, 5, 6, 13, 14, 1e6, 1e80].map(UF.alpha), [0, 0, 1, 2, 2, 3, 3, 4, 4, 4]);
+  assert.deepEqual([1, 2, 3, 4, 7, 8, 2047, 2048, 1e6, 1e80].map(UF.alpha), [0, 0, 1, 2, 2, 3, 3, 4, 4, 4]);
 });
 
 /* ------------------------------------------------------------------ percolation */

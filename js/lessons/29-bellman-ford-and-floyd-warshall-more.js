@@ -467,7 +467,7 @@
       explain: [
         'd[i][i] starts at 0 (the empty route). If it ever becomes negative, there is a route from i back to i that costs less than nothing: a negative cycle through i.',
         '∞ only means j cannot be reached from i. That happens in perfectly ordinary graphs.',
-        'Negative distances are fine: an edge with a reward makes d[i][j] negative without any cycle (in the lab’s lesson graph, d[Z][T] is −4).',
+        'Negative distances are fine: an edge with a reward makes d[i][j] negative without any cycle (in the lab’s lesson graph, d[T][Z] is −4).',
         'No extra loop is needed. The diagonal already holds the answer.'
       ]
     });

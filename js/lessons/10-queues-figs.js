@@ -92,7 +92,7 @@
   /* ================================================================== shifting array vs moving front index */
   L10.initNaive = function () {
     var fig = V.$('#fig-naive');
-    var view = V.views.array(fig.querySelector('[data-stage]'), { mode: 'boxes', cellSize: 50, label: 'Two arrays of eight slots running the same queue operations' });
+    var view = V.views.array(fig.querySelector('[data-stage]'), { mode: 'boxes', cellSize: 50, reserve: { above: 3 }, label: 'Two arrays of eight slots running the same queue operations' });
     var steps = Q().arrayQueues(V.algos.queues.parseOps(Q().ARRAY_DEFAULT).ops);
     view.prepare(steps);
     var player = V.player({

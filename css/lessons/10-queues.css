@@ -4,12 +4,21 @@
 .l10-btnbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .l10-sep { width: 1px; align-self: stretch; min-height: 24px; background: var(--line-strong); margin: 0 4px; }
 .l10-input { flex: 1 1 460px; min-width: 0; }
+.l10-input .input-row__field { flex: 1 1 360px; }
 .l10-opts { align-items: flex-end; }
 .l10-opt { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .l10-opt[hidden] { display: none; }
-.l10-sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px 20px; align-items: end; }
+.l10-sliders { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-items: center; }
+.l10-sliders .slider { grid-template-columns: 200px minmax(120px, 1fr) 3ch; }
+.l10-sliders .slider__label { white-space: normal; }
+@container fig (max-width: 520px) {
+  .l10-sliders .slider { grid-template-columns: minmax(0, 1fr) 3ch; gap: 2px 10px; }
+  .l10-sliders .slider__label { grid-column: 1 / -1; }
+}
 .l10-note { margin: 0; font-size: 13.5px; color: var(--ink-3); align-self: center; }
 .fig__toolbar .seg { flex-wrap: wrap; }
+#fig-line .l10-btnbar [data-toggle] { flex: 1 1 250px; min-width: 0; }
+#fig-line .l10-btnbar [data-reset] { margin-left: auto; }
 
 /* ---------------------------------------------------------------- messages, chips */
 .fig__caption.l10-msg { min-height: calc(1.55em * 2 + 26px); }
@@ -72,7 +81,7 @@
 .l10-svq__col { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); }
 .l10-svq__title { margin: 0; font-size: 14px; font-weight: 750; color: var(--ink); }
 .l10-svq__title span { font-weight: 600; color: var(--ink-3); }
-.l10-svq__served { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); min-height: 34px; }
+.l10-svq__served { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); min-height: 34px; }
 .l10-served { display: inline-flex; align-items: baseline; gap: 5px; padding: 2px 9px; border-radius: 999px; background: color-mix(in srgb, var(--st-done) 13%, var(--bg-elev)); border: 1px solid color-mix(in srgb, var(--st-done) 45%, var(--line)); color: var(--ink); font-variant-numeric: tabular-nums; }
 .l10-served b { font-weight: 750; }
 .l10-served small { font-size: 12px; color: var(--ink-3); }
@@ -82,6 +91,7 @@
 
 .l10-pair { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-content: start; place-items: stretch; padding: 16px 18px; }
 .l10-pair__col { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); }
+.l10-pair__col > div { margin-top: auto; }
 .l10-pair__arrow { align-self: center; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-3); line-height: 1.3; }
 @container fig (max-width: 520px) {
   .l10-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding: 10px; }
@@ -92,9 +102,10 @@
 .l10-bfs__queue { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); min-width: 0; }
 .l10-bfs [data-grid] { max-width: 460px; width: 100%; margin: 0 auto; }
 
-.l10-deque { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 14px; align-content: start; align-items: start; place-items: stretch; padding: 14px 18px; }
+.l10-deque { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; align-items: start; place-items: stretch; padding: 14px 18px; }
 .l10-deque__logical, .l10-deque__ring { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg-sunken) 40%, var(--bg-elev)); }
-@container fig (max-width: 720px) { .l10-deque { grid-template-columns: minmax(0, 1fr); } .l10-deque__ring { max-width: 340px; width: 100%; margin: 0 auto; } }
+.l10-deque__ring [data-ring] { max-width: 380px; width: 100%; margin: 0 auto; padding-top: 6px; }
+.l10-deque__logical [data-deque] { overflow-x: auto; }
 
 /* ---------------------------------------------------------------- sliding window lab */
 .l10-winstage { display: flex; flex-direction: column; gap: 10px; align-items: stretch; padding: 14px 18px; place-items: stretch; }

@@ -119,12 +119,14 @@
     V.legend(flowFig.querySelector('[data-legend]'), [{ state: 'active', label: 'Step running in the lab' }, { state: 'visited', label: 'Already run' }]);
     var flowAdapter = {
       highlight: function (id, ctx) {
-        var visited = [];
+        var visited = [], states = {}, also = [];
         if (ctx && ctx.player) {
           var st = ctx.player.steps;
-          for (var k = 0; k < ctx.index && k < st.length; k++) if (st[k].flow && visited.indexOf(st[k].flow) === -1 && st[k].flow !== id) visited.push(st[k].flow);
+          also = (st[ctx.index] && st[ctx.index].flowAlso) || [];   // decisions this step evaluates on its way to `flow`
+          also.forEach(function (x) { states[x] = 'active'; });
+          for (var k = 0; k < ctx.index && k < st.length; k++) [st[k].flow].concat(st[k].flowAlso || []).forEach(function (x) { if (x && visited.indexOf(x) === -1 && x !== id && also.indexOf(x) === -1) visited.push(x); });
         }
-        flowView.render({ active: id || undefined, visited: visited }, { duration: ctx ? ctx.duration : 0 });
+        flowView.render({ active: id || undefined, states: states, visited: visited }, { duration: ctx ? ctx.duration : 0 });
       }
     };
 

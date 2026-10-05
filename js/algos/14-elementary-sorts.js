@@ -268,6 +268,7 @@
         caption: verdict + (o.caption || ''),
         line: o.line === undefined ? null : o.line,
         flow: o.flow || null,
+        flowAlso: o.flowAlso || null,   // further flowchart nodes this step passes through (decisions evaluated on the way)
         vars: o.vars || { i: NA, j: NA, 'a[j]': NA, 'a[j+1]': NA, swapped: NA },
         varStates: vs,
         counters: { comparisons: ops.comparisons, swaps: ops.swaps },
@@ -281,6 +282,7 @@
       snap('done', { caption: 'The array is empty, so there is nothing to sort: an empty array is already in order.', line: 'done', flow: 'done' });
       return steps;
     }
+    var stoppedEarly = false;   // the swapped? test ended the sort, so the outer test is not evaluated again
     snap('start', {
       caption: n === 1 ? 'One value on its own is already sorted.' : 'Each pass walks left to right and swaps any two neighbours that are out of order. Watch the largest values drift right.',
       flow: 'start'
@@ -292,7 +294,7 @@
         caption: 'Pass ' + round + ': sweep a[0..' + last + ']. ' + (i === 0
           ? 'Whatever the largest value is, each comparison carries it one step right, so it will end at index ' + last + '.'
           : 'Index ' + (last + 1) + ' onward is already final, so this pass stops one position earlier than the last one.'),
-        line: ['pass', 'reset'], flow: 'pass',
+        line: ['pass', 'reset'], flow: 'pass', flowAlso: ['outer'],
         vars: { i: i, j: NA, 'a[j]': NA, 'a[j+1]': NA, swapped: false }
       });
       for (var j = 0; j < last; j++) {
@@ -302,7 +304,7 @@
         var mk = {}; mk[j] = 'compare'; mk[j + 1] = 'compare';
         snap('compare', {
           caption: 'Compare neighbours a[' + j + '] = ' + b(L) + ' and a[' + (j + 1) + '] = ' + b(R) + '.',
-          line: 'cmp', flow: 'cmp', mark: mk, pointers: ptrs,
+          line: 'cmp', flow: 'cmp', flowAlso: j > 0 ? ['more'] : null, mark: mk, pointers: ptrs,
           vars: { i: i, j: j, 'a[j]': L.value, 'a[j+1]': R.value, swapped: swapped }
         });
         if (L.value > R.value) {
@@ -321,11 +323,11 @@
         }
       }
       if (!swapped && early) {
-        allFinal = true;
+        allFinal = true; stoppedEarly = true;
         snap('passEnd', {
           roundEnd: true,
           caption: 'Pass ' + round + ' made no swaps, so every neighbour pair is in order: the whole array is sorted. ' + (i < n - 2 ? 'Stop early and skip the remaining passes.' : 'Stop.'),
-          line: 'exit', flow: 'exitQ',
+          line: 'exit', flow: 'exitQ', flowAlso: ['more'],
           vars: { i: i, j: NA, 'a[j]': NA, 'a[j+1]': NA, swapped: false }
         });
         break;
@@ -336,14 +338,14 @@
         roundEnd: true,
         caption: 'Pass ' + round + ' is over. ' + b(a[last]) + ' is the largest of a[0..' + last + '], so index ' + last + ' is final: nothing to its left will ever pass it.' +
           (swapped ? '' : ' (No swaps happened, but the early exit is switched off, so the passes continue.)'),
-        line: 'exit', flow: 'exitQ', mark: mEnd,
+        line: 'exit', flow: 'exitQ', flowAlso: ['more'], mark: mEnd,
         vars: { i: i, j: NA, 'a[j]': NA, 'a[j+1]': NA, swapped: swapped }
       });
     }
     allFinal = true;
     snap('done', {
       caption: n === 1 ? 'Done, with zero comparisons.' : 'Sorted, using ' + plural(ops.comparisons, 'comparison') + ' and ' + plural(ops.swaps, 'swap') + ' in ' + plural(round, 'pass', 'passes') + '.',
-      line: 'done', flow: 'done'
+      line: 'done', flow: 'done', flowAlso: stoppedEarly ? null : ['outer']
     });
     return steps;
   }
@@ -373,6 +375,7 @@
         caption: verdict + (o.caption || ''),
         line: o.line === undefined ? null : o.line,
         flow: o.flow || null,
+        flowAlso: o.flowAlso || null,   // further flowchart nodes this step passes through (decisions evaluated on the way)
         vars: o.vars || { i: NA, j: NA, min: NA, 'a[j]': NA, 'a[min]': NA },
         varStates: vs,
         counters: { comparisons: ops.comparisons, swaps: ops.swaps },
@@ -402,7 +405,7 @@
       var m0 = {}; m0[i] = 'key';
       snap('pass', {
         caption: 'Pass ' + round + ': find the smallest value in a[' + i + '..' + (n - 1) + ']. Until the scan finds something smaller, a[' + i + '] = ' + b(a[i]) + ' is the smallest so far.',
-        line: ['pass', 'init'], flow: 'pass', mark: m0, pointers: pointers(i, null, min),
+        line: ['pass', 'init'], flow: 'pass', flowAlso: ['outer'], mark: m0, pointers: pointers(i, null, min),
         vars: { i: i, j: NA, min: min, 'a[j]': NA, 'a[min]': a[min].value }
       });
       for (var j = i + 1; j < n; j++) {
@@ -410,7 +413,7 @@
         var mk = {}; mk[min] = 'key'; mk[j] = 'compare';
         snap('compare', {
           caption: 'Is a[' + j + '] = ' + b(a[j]) + ' smaller than the smallest so far, a[' + min + '] = ' + b(a[min]) + '?',
-          line: 'cmp', flow: 'cmp', mark: mk, pointers: pointers(i, j, min),
+          line: 'cmp', flow: 'cmp', flowAlso: j > i + 1 ? ['more'] : null, mark: mk, pointers: pointers(i, j, min),
           vars: { i: i, j: j, min: min, 'a[j]': a[j].value, 'a[min]': a[min].value }
         });
         if (a[j].value < a[min].value) {
@@ -437,7 +440,7 @@
         snap('swap', {
           roundEnd: true,
           caption: 'The scan is over: ' + b(M) + ' is the smallest in a[' + i + '..' + (n - 1) + ']. Swap it with a[' + i + '] = ' + b(A) + ', which jumps to index ' + min + '. Index ' + i + ' is now final.',
-          line: 'swap', flow: 'swap', mark: sw, pointers: pointers(i, null, min),
+          line: 'swap', flow: 'swap', flowAlso: ['more'], mark: sw, pointers: pointers(i, null, min),
           vars: { i: i, j: NA, min: min, 'a[j]': NA, 'a[min]': A.value }
         });
       } else {
@@ -445,7 +448,7 @@
         snap('noSwap', {
           roundEnd: true,
           caption: 'The scan is over and the smallest value, ' + b(a[i]) + ', is already at index ' + i + ', so no swap is needed. Index ' + i + ' is final.',
-          line: 'check', flow: 'swap', pointers: pointers(i, null, min),
+          line: 'check', flow: 'swap', flowAlso: ['more'], pointers: pointers(i, null, min),
           vars: { i: i, j: NA, min: min, 'a[j]': NA, 'a[min]': a[min].value }
         });
       }
@@ -453,7 +456,7 @@
     allFinal = true;
     snap('done', {
       caption: n === 1 ? 'Done, with zero comparisons.' : 'The last value is the largest left, so it is already final. Sorted, using ' + plural(ops.comparisons, 'comparison') + ' and ' + plural(ops.swaps, 'swap') + '.',
-      line: 'done', flow: 'done'
+      line: 'done', flow: 'done', flowAlso: ['outer']
     });
     return steps;
   }
@@ -489,6 +492,7 @@
         caption: verdict + (o.caption || ''),
         line: o.line === undefined ? null : o.line,
         flow: o.flow || null,
+        flowAlso: o.flowAlso || null,   // further flowchart nodes this step passes through (decisions evaluated on the way)
         vars: o.vars || { i: NA, key: NA, j: NA, 'a[j]': NA },
         varStates: vs,
         counters: { comparisons: ops.comparisons, shifts: ops.shifts },
@@ -514,7 +518,7 @@
       var j = i - 1;
       snap('lift', {
         caption: 'Round ' + round + ': lift the key ' + b(key) + ' out of index ' + i + ', leaving a hole. The values to its left are sorted; the key must find its place among them.',
-        line: ['outer', 'lift'], flow: 'lift', hole: i, held: { it: key, over: i },
+        line: ['outer', 'lift'], flow: 'lift', flowAlso: ['outer'], hole: i, held: { it: key, over: i },
         pointers: [{ name: 'i', index: i, state: 'active' }, { name: 'j', index: j, state: 'compare' }],
         vars: { i: i, key: key.value, j: j, 'a[j]': slots[j].value }
       });
@@ -565,7 +569,7 @@
     allFinal = true;
     snap('done', {
       caption: n === 1 ? 'Done, with zero comparisons.' : 'The last key is in place, so the prefix is the whole array: sorted, using ' + plural(ops.comparisons, 'comparison') + ' and ' + plural(ops.shifts, 'shift') + '.',
-      line: 'done', flow: 'done'
+      line: 'done', flow: 'done', flowAlso: ['outer']
     });
     return steps;
   }

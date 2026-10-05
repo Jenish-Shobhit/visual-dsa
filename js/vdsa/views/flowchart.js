@@ -59,9 +59,20 @@
     var font = lv.font, lineH = Math.round(font * 1.32 * 10) / 10;
     var mt = n.maxWidth || lv.maxText;
     if (type === 'decision') mt *= decisionShape === 'diamond' ? 0.86 : 0.95;
-    var m = function (s) { return measure(s, font, 550); };
+    var GLUE = '\u0001';   // a space that must not break: inside [ ] or before a trailing ?
+    var m = function (s) { return measure(s.split(GLUE).join(' '), font, 550); };
     var lines = [];
-    String(n.text === undefined ? '' : n.text).split('\n').forEach(function (part) { lines = lines.concat(vzp.wrap(part, mt, font, m)); });
+    var parts = String(n.text === undefined ? '' : n.text).split('\n').map(function (part) {
+      var glue = function (t) { return t.split(' ').join(GLUE); };
+      return part
+        .replace(/\[[^\]]*\]/g, glue)                           // a[j + 1]
+        .replace(/\([^()]{0,20}\)/g, glue)                      // mergeSort(lo, hi), (lo + hi)
+        .replace(/ (?=\?)/g, GLUE)                              // keep a trailing ? with its word
+        .replace(/([−+*\/]) (?=[\w(])/g, '$1' + GLUE);          // "n − 1": the operand stays with its operator
+    });
+    // never break a code token mid-identifier: widen the node to its longest unbreakable word instead
+    parts.forEach(function (part) { part.split(/\s+/).forEach(function (w) { if (w) mt = Math.max(mt, m(w)); }); });
+    parts.forEach(function (part) { lines = lines.concat(vzp.wrap(part, mt, font, m).map(function (l) { return l.split(GLUE).join(' '); })); });
     var widths = lines.map(m);
     var tw = Math.max.apply(null, widths.concat([0])), th = lines.length * lineH;
     var out = { id: String(n.id), type: type, lines: lines, lineH: lineH, font: font, shape: type, skew: 0 };

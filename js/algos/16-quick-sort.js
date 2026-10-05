@@ -460,6 +460,7 @@
         caption: R.verdict + (o.caption || ''),
         line: o.line === undefined ? null : o.line,
         flow: o.flow || null,
+        flowAlso: o.flowAlso || null,   // further flowchart nodes this step passes through (decisions evaluated on the way)
         vars: vars, varStates: R.vs,
         counters: { comparisons: R.ops.comparisons, swaps: R.ops.swaps },
         ops: { comparisons: R.ops.comparisons, swaps: R.ops.swaps, shifts: 0, writes: R.ops.swaps * 2 }
@@ -546,7 +547,7 @@
       var cm = {}; cm[hi] = 'pivot'; cm[j] = 'compare';
       R.snap('compare', {
         caption: 'Compare <code>a[' + j + ']</code> = ' + b(x) + ' with the pivot ' + b(P) + '. Is it ≤ ' + fmt(P.value) + '?',
-        mark: cm, pointers: pointers(j), regions: regionsFor(j, false), line: 'cmp', flow: 'cmp', vars: vars(j, { 'a[j]': x.value })
+        mark: cm, pointers: pointers(j), regions: regionsFor(j, false), line: 'cmp', flow: 'cmp', flowAlso: ['more'], vars: vars(j, { 'a[j]': x.value })
       });
       if (x.value <= P.value) {
         i++;
@@ -580,7 +581,7 @@
     R.snap('place', {
       caption: 'The scan is over. Swap the pivot ' + b(P) + ' with a[' + p + '], the first value of the big zone' + (swapped ? ' (' + b(other) + ')' : ' (the pivot is already there: the big zone is empty)') +
         '. Now the pivot sits at index <b>' + p + '</b>, its final place: ' + plural(nSmall, 'value') + ' at most ' + fmt(P.value) + ' on its left, ' + plural(nBig, 'value') + ' larger on its right.',
-      mark: pm, pointers: [{ name: 'p', index: p, state: 'done' }].concat(tgt), regions: pr, line: 'place', flow: 'place', vars: vars(null, { i: i, p: p }),
+      mark: pm, pointers: [{ name: 'p', index: p, state: 'done' }].concat(tgt), regions: pr, line: 'place', flow: 'place', flowAlso: ['more'], vars: vars(null, { i: i, p: p }),
       extra: { split: p }
     });
     if (node) { node.sub = fmt(P.value); }
@@ -634,7 +635,7 @@
         var cm = {}; cm[lo] = 'pivot'; cm[i] = stop ? 'active' : 'compare';
         R.snap('scanI', {
           caption: '<code>a[' + i + ']</code> = ' + b(a[i]) + (stop ? ' is not smaller than the pivot ' + b(P) + ': i stops here, on a value that belongs on the right.' : ' &lt; ' + fmt(P.value) + ': already on the correct side, so i walks on.'),
-          mark: cm, pointers: pp(stop ? 'active' : 'compare'), regions: regs(i - 1, j + 1, i, j), line: 'scanI', flow: 'scanI', vars: vars({ 'a[i]': a[i].value })
+          mark: cm, pointers: pp(stop ? 'active' : 'compare'), regions: regs(i - 1, j + 1, i, j), line: 'scanI', flow: 'scanI', flowAlso: stop ? null : ['inci'], vars: vars({ 'a[i]': a[i].value })
         });
         if (stop) break;
         i++;
@@ -647,7 +648,7 @@
         var cj = {}; cj[lo] = 'pivot'; cj[i] = 'active'; cj[j] = stopJ ? 'active' : 'compare';
         R.snap('scanJ', {
           caption: '<code>a[' + j + ']</code> = ' + b(a[j]) + (stopJ ? ' is not larger than the pivot ' + b(P) + ': j stops here, on a value that belongs on the left.' : ' &gt; ' + fmt(P.value) + ': already on the correct side, so j walks left.'),
-          mark: cj, pointers: pp('active', stopJ ? 'active' : 'compare'), regions: regs(i - 1, j + 1, i, j), line: 'scanJ', flow: 'scanJ', vars: vars({ 'a[j]': a[j].value })
+          mark: cj, pointers: pp('active', stopJ ? 'active' : 'compare'), regions: regs(i - 1, j + 1, i, j), line: 'scanJ', flow: 'scanJ', flowAlso: stopJ ? null : ['decj'], vars: vars({ 'a[j]': a[j].value })
         });
         if (stopJ) break;
         j--;
@@ -686,7 +687,7 @@
     var R = createRun(values, opts, kind === 'lomuto' ? 'quickLomuto' : 'quickHoare', kind);
     var n = R.n;
     if (!n) {
-      R.snap('done', { caption: 'The array is empty, so there is nothing to sort: an empty array is already in order.', line: 'base', flow: 'ret' });
+      R.snap('done', { caption: 'The array is empty, so there is nothing to sort: an empty array is already in order.', line: 'base', flow: 'ret', flowAlso: ['base'] });
       return R.steps;
     }
     R.snap('start', {
@@ -706,7 +707,7 @@
         var m = {}; m[lo] = 'done';
         R.snap('base', {
           caption: 'A range of one value (index ' + lo + ') is sorted by itself, and everything around it is already settled, so this value is in its final place.',
-          mark: m, line: 'base', flow: 'ret', vars: { lo: lo, hi: hi }
+          mark: m, line: 'base', flow: 'ret', flowAlso: ['base'], vars: { lo: lo, hi: hi }
         });
         R.popFrame();
         return;
@@ -714,7 +715,7 @@
       var callWhy = 'quicksort(' + lo + ', ' + hi + '): the whole array, ' + (hi - lo + 1) + ' values.';
       if (parent) callWhy = 'quicksort(' + lo + ', ' + hi + '): the ' + (side === 'L' ? 'left' : 'right') + ' part has ' + (hi - lo + 1) + ' values, so it needs partitioning.';
       else callWhy += ' More than one value, so it needs partitioning.';
-      R.snap('call', { caption: callWhy, line: 'call', flow: parent ? 'rec' : 'start', vars: { lo: lo, hi: hi } });
+      R.snap('call', { caption: callWhy, line: 'call', flow: parent ? 'rec' : 'start', flowAlso: ['base'], vars: { lo: lo, hi: hi } });
       var p = part(R, lo, hi, nd);
       R.frames[R.frames.length - 1].locals = { p: p };
       nd.state = 'frontier';

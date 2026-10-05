@@ -224,11 +224,11 @@
       var cand = [sp, sp + 1, lo].filter(function (x, k, a) { return a.indexOf(x) === k && x >= lo && x < hi; });
       return {
         question: 'Both pointers have stopped: i is at index ' + ip + ' and j at index ' + jp + ', and i is no longer left of j. Where does Hoare split the array?',
-        options: cand.map(function (x) { return 'After index ' + x + (x === sp ? ', at j' : x === sp + 1 ? ', at i' : ', where the pivot started'); }),
+        options: cand.map(function (x) { return 'After index ' + x + (x === sp ? ', at j' : x === sp + 1 ? (ip === sp + 1 ? ', at i' : ', one past j') : ', where the pivot started'); }),
         answer: 0,
         explain: cand.map(function (x, k) {
           if (!k) return 'Right. The rule is: when i ≥ j, return j. Everything up to index j is ≤ pivot and everything after it is ≥ pivot, so the two sides are sorted separately. The pivot is not guaranteed to be at j.';
-          if (x === sp + 1) return 'That is the position of i. Hoare splits after j, so the left side is a[lo..j] and the right side a[j + 1..hi].';
+          if (x === sp + 1) return (ip === sp + 1 ? 'That is the position of i. ' : 'That is one slot past j (i has not moved past j here). ') + 'Hoare splits after j, so the left side is a[lo..j] and the right side a[j + 1..hi].';
           return 'The pivot started at the front, but it may have been swapped away. Hoare does not track it: it only promises left ≤ pivot ≤ right.';
         })
       };
@@ -311,7 +311,7 @@
     var N = 15, input = 'sorted';
     var views = {}, stats = {};
     ['good', 'bad'].forEach(function (k) {
-      views[k] = V.views.tree(sides[k].querySelector('[data-tree]'), { nodeSize: 30, minNodeSize: 14, gap: 0.35, height: 300, label: k === 'good' ? 'Recursion tree with the middle value as pivot' : 'Recursion tree with the last value as pivot' });
+      views[k] = V.views.tree(sides[k].querySelector('[data-tree]'), { nodeSize: 30, minNodeSize: 14, gap: 0.35, levelHeight: 36,   /* no fixed height: the stage grows to the deepest prepared frame, so a 15-deep chain is never clipped */ label: k === 'good' ? 'Recursion tree with the middle value as pivot' : 'Recursion tree with the last value as pivot' });
       stats[k] = V.stats(sides[k].querySelector('[data-stats]'), { labels: { comparisons: 'Comparisons so far', depth: 'Levels deep', calls: 'Calls' }, states: { comparisons: 'compare', depth: 'pivot', calls: 'active' } });
     });
     var pair, caption = fig.querySelector('[data-caption]');

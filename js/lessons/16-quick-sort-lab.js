@@ -28,8 +28,8 @@
         { id: 'cmp', type: 'decision', text: 'a[j] ≤ pivot ?', col: 0, row: 4 },
         { id: 'small', type: 'process', text: 'i = i + 1\nswap a[i], a[j]', col: 1, row: 4 },
         { id: 'inc', type: 'process', text: 'j = j + 1', col: 0, row: 5 },
-        { id: 'place', type: 'process', text: 'swap a[i + 1], a[hi]\np = i + 1', col: 0, row: 6 },
-        { id: 'rec', type: 'process', text: 'quicksort(lo, p − 1)\nquicksort(p + 1, hi)', col: 0, row: 7 }
+        { id: 'place', type: 'process', text: 'swap a[i + 1], a[hi]\np = i + 1', col: 1, row: 3 },
+        { id: 'rec', type: 'process', text: 'quicksort(lo, p − 1)\nquicksort(p + 1, hi)', col: 1, row: 2 }
       ],
       edges: [
         { from: 'start', to: 'base' },
@@ -37,13 +37,13 @@
         { from: 'base', to: 'pivot', label: 'no' },
         { from: 'pivot', to: 'more' },
         { from: 'more', to: 'cmp', label: 'yes' },
-        { from: 'more', to: 'place', label: 'no', via: { fromSide: 'right', toSide: 'right' } },
+        { from: 'more', to: 'place', label: 'no' },
         { from: 'cmp', to: 'small', label: 'yes' },
         { from: 'cmp', to: 'inc', label: 'no' },
         { from: 'small', to: 'inc', via: { fromSide: 'bottom', toSide: 'right' } },
         { from: 'inc', to: 'more', via: { fromSide: 'left', toSide: 'left' } },
         { from: 'place', to: 'rec' },
-        { from: 'rec', to: 'ret', via: { fromSide: 'right', toSide: 'bottom' } }
+        { from: 'rec', to: 'ret' }
       ]
     },
     hoare: {
@@ -93,7 +93,7 @@
     var stage = fig.querySelector('[data-stage]');
     var algo = 'lomuto', pivot = 'last', values = DEFAULT_INPUT.slice(), mode = 'boxes';
     var view = V.views.array(stage, { mode: mode, label: 'Array being sorted', barHeight: 200 });
-    var tree = V.views.tree(fig.querySelector('[data-tree]'), { nodeSize: 30, minNodeSize: 12, gap: 0.3, height: 190, label: 'Recursion tree of the lab run' });
+    var tree = V.views.tree(fig.querySelector('[data-tree]'), { nodeSize: 30, minNodeSize: 12, gap: 0.3, levelHeight: 36,   /* height follows the deepest prepared step, so the worst case is never clipped */ label: 'Recursion tree of the lab run' });
     var stack = V.views.callstack(fig.querySelector('[data-stack]'), { frameWidth: 210, maxVisible: 5, label: 'Call stack of the lab run' });
     var legendEl = fig.querySelector('[data-legend]');
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: S().CODE_QUICK.lomuto, default: 'pseudo', maxHeight: 360 });
@@ -105,12 +105,14 @@
     V.legend(flowFig.querySelector('[data-legend]'), [{ state: 'active', label: 'Step running in the lab' }, { state: 'visited', label: 'Already run' }]);
     var flowAdapter = {
       highlight: function (id, ctx) {
-        var visited = [];
+        var visited = [], states = {}, also = [];
         if (ctx && ctx.player) {
           var st = ctx.player.steps;
-          for (var k = 0; k < ctx.index && k < st.length; k++) if (st[k].flow && visited.indexOf(st[k].flow) === -1 && st[k].flow !== id) visited.push(st[k].flow);
+          also = (st[ctx.index] && st[ctx.index].flowAlso) || [];   // decisions this step evaluates on its way to `flow`
+          also.forEach(function (x) { states[x] = 'active'; });
+          for (var k = 0; k < ctx.index && k < st.length; k++) [st[k].flow].concat(st[k].flowAlso || []).forEach(function (x) { if (x && visited.indexOf(x) === -1 && x !== id && also.indexOf(x) === -1) visited.push(x); });
         }
-        flowView.render({ active: id || undefined, visited: visited }, { duration: ctx ? ctx.duration : 0 });
+        flowView.render({ active: id || undefined, states: states, visited: visited }, { duration: ctx ? ctx.duration : 0 });
       }
     };
 

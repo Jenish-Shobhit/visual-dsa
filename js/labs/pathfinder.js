@@ -23,7 +23,7 @@
   };
 
   var S = {
-    algo: 'astar', heur: 'manhattan', hw: 1, mudCost: 5, size: 'm', R: 25, C: 45,
+    algo: 'astar', heur: 'manhattan', hw: 1, mudCost: 5, size: narrow ? 's' : 'm', R: narrow ? 12 : 25, C: narrow ? 15 : 45,
     walls: {}, mud: {}, start: [12, 2], goal: [12, 42], brush: 'wall', heat: true, turbo: false, speed: 7, preset: 'twogaps',
     density: 0.25, loops: 0.06
   };
@@ -368,6 +368,7 @@
   function toggleCompare(force) {
     cmpOpen = force === undefined ? !cmpOpen : force;
     cmpBody.hidden = !cmpOpen; raceBtn.hidden = !cmpOpen;
+    var cmpHint = $('[data-cmp-hint]'); if (cmpHint) cmpHint.hidden = cmpOpen;
     cmpBtn.setAttribute('aria-expanded', String(cmpOpen));
     cmpBtn.textContent = cmpOpen ? 'Hide comparison' : 'Compare on this map';
     if (cmpOpen) updateCompare();

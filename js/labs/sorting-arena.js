@@ -6,7 +6,7 @@
   if (!A || !window.VDSA) return;
   var V = window.VDSA, h = V.h, $ = function (s, r) { return (r || document).querySelector(s); };
 
-  var DETAIL_MAX = 40, MAX_LANES = 6, MIN_LANES = 2;
+  var DETAIL_MAX = 40, MERGE_DETAIL_MAX = 16, MAX_LANES = 6, MIN_LANES = 2;
   var LANE_STATES = ['active', 'compare', 'done', 'pivot', 'frontier', 'visited', 'path', 'error'];   // the chart's colour slots
   var LANE_SLOT = [0, 3, 4, 2, 5, 1];                     // blue, magenta, cyan, green, purple, amber: none is red, none is orange
   var SPEEDS = { slow: 25, normal: 90, fast: 420 };
@@ -21,7 +21,7 @@
   var st = {
     mode: 'race', algos: ['insertion', 'merge', 'quick', 'heap'], algo: 'merge',
     preset: 'random', n: 48, seed: 7, custom: null, pivot: 'last',
-    speed: 'fast', speedSet: false, view: 'auto', metric: 'work', log: false
+    speed: 'normal', speedSet: false, view: 'auto', metric: 'work', log: false
   };
   function readUrl() {
     var q = new URLSearchParams(location.search), g = function (k) { return q.get(k); };
@@ -39,7 +39,7 @@
     if (g('view') === 'bars' || g('view') === 'boxes') st.view = g('view');
     if (METRICS.some(function (m) { return m.value === g('metric'); })) st.metric = g('metric');
     if (g('log') === '1') st.log = true;
-    if (!g('speed')) st.speed = st.n > 24 ? 'fast' : 'normal';
+    if (!g('speed')) st.speed = 'normal';
   }
   var urlTimer = 0;
   function syncUrl() {
@@ -61,7 +61,7 @@
   }
 
   /* ------------------------------------------------------------------ values */
-  function cap() { return st.mode === 'detail' ? DETAIL_MAX : A.MAX_N; }
+  function cap() { return st.mode === 'detail' ? (st.algo === 'merge' ? MERGE_DETAIL_MAX : DETAIL_MAX) : A.MAX_N; }
   function values() {
     if (st.custom) return st.custom.slice(0, cap());
     return A.makeInput(st.preset, Math.min(st.n, cap()), st.seed);
@@ -120,7 +120,7 @@
       if (p.error) { err.textContent = p.error; input.setAttribute('aria-invalid', 'true'); return; }
       err.textContent = ''; input.removeAttribute('aria-invalid');
       st.custom = p.values; st.preset = 'custom';
-      if (st.mode === 'detail' && p.values.length > DETAIL_MAX) err.textContent = 'Detail mode uses the first ' + DETAIL_MAX + ' numbers.';
+      if (st.mode === 'detail' && p.values.length > cap()) err.textContent = 'Detail mode uses the first ' + cap() + ' numbers.';
       paintPresets(); rebuildNow();
     });
     input.addEventListener('input', function () { err.textContent = ''; input.removeAttribute('aria-invalid'); });
@@ -182,7 +182,7 @@
   }
   function hint(msg) { el('[data-hint]').textContent = msg || ''; }
   function pickAlgo(id) {
-    if (st.mode === 'detail') { st.algo = id; paintAlgos(); buildDetail(); syncUrl(); return; }
+    if (st.mode === 'detail') { st.algo = id; paintAlgos(); paintPresets(); buildDetail(); syncUrl(); return; }
     var i = st.algos.indexOf(id);
     if (i >= 0) {
       if (st.algos.length <= MIN_LANES) { hint('A race needs at least two racers.'); return; }
@@ -224,6 +224,10 @@
     b.setAttribute('aria-pressed', race.playing ? 'true' : 'false');
   }
 
+  /* Range inputs paint their fill from --p (percent), like the other labs. */
+  function setRange(r, v) { r.value = v; r.style.setProperty('--p', (+r.max > 0 ? 100 * (+r.value) / (+r.max) : 0) + '%'); }
+  function paintRange(r) { r.style.setProperty('--p', (+r.max > 0 ? 100 * (+r.value) / (+r.max) : 0) + '%'); }
+
   function buildRace() {
     var box = el('[data-lanes]'), vals = values(), t0 = performance.now();
     race.vals = vals;
@@ -251,7 +255,8 @@
           h('span', { class: 'sa-lane__ct' }, 'Writes ', lane.wrEl),
           h('span', { class: 'sa-lane__cost', title: info.note }, info.cost)),
         h('div', { class: 'sa-lane__mini' }, lane.prevBtn, lane.range, lane.nextBtn, lane.followBtn));
-      lane.range.addEventListener('input', function () { pause(); lane.lock = +lane.range.value; race.dirty = true; });
+      paintRange(lane.range);
+      lane.range.addEventListener('input', function () { paintRange(lane.range); pause(); lane.lock = +lane.range.value; race.dirty = true; });
       lane.prevBtn.addEventListener('click', function () { pause(); stepLane(lane, -1); });
       lane.nextBtn.addEventListener('click', function () { pause(); stepLane(lane, 1); });
       lane.followBtn.addEventListener('click', function () { lane.lock = null; race.dirty = true; });
@@ -263,7 +268,7 @@
     race.max = Math.max.apply(null, race.lanes.map(function (l) { return l.total; }));
     race.podium = A.podium(race.lanes);
     race.t = 0; race.playing = false; race.dirty = true;
-    var scrub = el('[data-scrub]'); scrub.max = race.max; scrub.value = 0;
+    var scrub = el('[data-scrub]'); scrub.max = race.max; setRange(scrub, 0);
     el('[data-race-title]').textContent = 'Same ' + vals.length + ' numbers, one clock';
     paintPlay(); paintAlgos();
     renderResults();
@@ -301,7 +306,7 @@
     lane.el.classList.toggle('is-done', fin);
     lane.el.classList.toggle('is-locked', lane.lock !== null);
     lane.followBtn.hidden = lane.lock === null;
-    if (+lane.range.value !== Math.round(tl) && document.activeElement !== lane.range) lane.range.value = Math.round(tl);
+    if (+lane.range.value !== Math.round(tl) && document.activeElement !== lane.range) setRange(lane.range, Math.round(tl));
     lane.prevBtn.disabled = idx <= 0; lane.nextBtn.disabled = idx >= lane.F - 1;
     var rk = race.podium.filter(function (p) { return p.id === lane.id; })[0];
     lane.rankEl.hidden = !fin;
@@ -311,7 +316,7 @@
   function paintRace() {
     race.lanes.forEach(drawLane);
     var scrub = el('[data-scrub]');
-    if (document.activeElement !== scrub) scrub.value = Math.round(race.t);
+    if (document.activeElement !== scrub) setRange(scrub, Math.round(race.t));
     el('[data-clock]').textContent = num(Math.round(race.t)) + ' / ' + num(race.max);
     paintPodium();
   }
@@ -429,6 +434,7 @@
     if (todo.length) el('[data-growth-note]').textContent = 'Counting…';
     setTimeout(next, 0);
   }
+  var growthDrawn = false;
   function drawGrowth(ids, preset) {
     if (!chartGrowth) chartGrowth = V.views.chart(el('[data-growth-chart]'), { type: 'line', label: 'Operations against input size for each algorithm', height: 340, labels: 'auto' });
     var ns = A.GROWTH_NS, log = st.log;
@@ -443,7 +449,8 @@
       y: log ? { label: (st.metric === 'work' ? 'ticks' : st.metric === 'cmp' ? 'comparisons' : 'writes') + ' (log scale)', scale: 'log', min: 1, max: Math.pow(10, Math.ceil(Math.log10(Math.max(10, top)))) }
         : { label: st.metric === 'work' ? 'ticks' : st.metric === 'cmp' ? 'comparisons' : 'writes', min: 0 },
       series: series
-    }, { duration: 500 });
+    }, { duration: growthDrawn ? 500 : 0 });
+    growthDrawn = true;
     var at256 = series.map(function (s) { return { id: s.id, v: s.points[s.points.length - 1][1] }; }).sort(function (a, b) { return a.v - b.v; });
     el('[data-growth-note]').textContent = 'At n = 256: ' + at256.map(function (s) { return A.get(s.id).short + ' ' + num(s.v); }).join(', ') + '.';
   }
@@ -488,7 +495,7 @@
       det.mode = mode;
     } else det.view.reset();
     var langs = A.codeOf(st.algo);
-    if (!det.code) det.code = V.codePanel(el('#detail-fig [data-code]'), { languages: langs, default: 'pseudo', title: info.name, maxHeight: 420 });
+    if (!det.code) det.code = V.codePanel(el('#detail-fig [data-code]'), { languages: langs, default: 'pseudo', maxHeight: 420 });
     else { det.code.setSource(langs); }
     if (!det.vars) det.vars = V.varsPanel(el('#detail-fig [data-vars]'), { title: 'Variables' });
     det.view.prepare(steps.map(function (s) { return viewState(s, n); }));
@@ -554,7 +561,7 @@
     $('[data-act="play"]').addEventListener('click', toggle);
     $('[data-act="back"]').addEventListener('click', function () { stepClock(-1); });
     $('[data-act="fwd"]').addEventListener('click', function () { stepClock(1); });
-    el('[data-scrub]').addEventListener('input', function () { pause(); clockTo(+el('[data-scrub]').value); });
+    el('[data-scrub]').addEventListener('input', function () { paintRange(el('[data-scrub]')); pause(); clockTo(+el('[data-scrub]').value); });
     keys(); lessonLinks();
     el('[data-group="race"]').hidden = st.mode !== 'race';
     el('[data-group="detail"]').hidden = st.mode !== 'detail';

@@ -194,11 +194,13 @@
         for (r = mr - 2; r <= mr + 2; r++) for (c = cm - 4; c <= cm + 4; c++) if (c !== cm) mud[key(r, c)] = true;
         break;
       case 'cup': {
-        var cx = cm + Math.max(1, Math.floor(C / 14)), a = Math.max(3, Math.floor(R / 3)), depth = Math.max(4, Math.floor(C / 6));
-        for (r = mr - a; r <= mr + a; r++) walls[key(r, cx)] = true;
-        for (c = cx - depth; c <= cx; c++) { walls[key(mr - a, c)] = true; walls[key(mr + a, c)] = true; }
-        delete walls[key(mr, cx)];
-        goal = [mr, Math.min(C - 3, cx + 5)];
+        /* A long, narrow cup around the goal. Its mouth faces the start but a short baffle covers it, so the way in
+           is a small sidestep that points away from the goal. Greedy hugs the cup's outside walls (they are the cells
+           closest to the goal) and floods the whole neighbourhood before it tries the sidestep; A* walks to the door. */
+        var gc = C - 3, xl = Math.max(7, gc - Math.max(4, C - 9)), bx = xl - 2, ba = 1;
+        for (c = xl; c <= gc + 1; c++) { walls[key(mr - 1, c)] = true; walls[key(mr + 1, c)] = true; }
+        walls[key(mr, gc + 1)] = true;
+        for (r = mr - ba; r <= mr + ba; r++) walls[key(r, bx)] = true;
         break;
       }
       case 'maze': {

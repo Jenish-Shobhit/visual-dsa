@@ -183,7 +183,7 @@
     A('timsort', 'sorting', 'Timsort', 'O(n)', 'O(n log n)', 'O(n log n)', 'O(n)', 'Stable. Merges natural runs, so already-sorted input is O(n). The sort in Python, Java (objects) and JavaScript engines.', '15-merge-sort'),
     A('counting', 'sorting', 'Counting sort', 'O(n + k)', 'O(n + k)', 'O(n + k)', 'O(n + k)', 'Stable. Not comparison-based: keys are integers in 0..k − 1, so it beats n log n when k = O(n).', '17-linear-time-sorts'),
     A('radix', 'sorting', 'Radix sort (LSD)', 'O(d(n + b))', 'O(d(n + b))', 'O(d(n + b))', 'O(n + b)', 'Stable. d digits in base b; one stable counting pass per digit.', '17-linear-time-sorts'),
-    A('bucket', 'sorting', 'Bucket sort', 'O(n + k)', 'O(n + k)', 'O(n²)', 'O(n + k)', 'Stable if the bucket sort is. Fast for uniformly spread input; everything in one bucket costs O(n²) with insertion sort.', '17-linear-time-sorts'),
+    A('bucket', 'sorting', 'Bucket sort', 'O(n + k)', 'O(n + k)', 'O(n²)', 'O(n + k)', 'Stable if the per-bucket sort is stable. Fast for uniformly spread input; everything in one bucket costs O(n²) with insertion sort.', '17-linear-time-sorts'),
     A('quickselect', 'sorting', 'Quickselect (k-th smallest)', 'O(n)', 'O(n)', 'O(n²)', 'O(1)', 'Selection, not sorting. Expected linear with a random pivot; median of medians guarantees O(n) worst case.', '16-quick-sort'),
     /* searching */
     A('linear', 'searching', 'Linear search', 'O(1)', 'O(n)', 'O(n)', 'O(1)', 'Works on anything, sorted or not. Best case: the target is first.', '13-binary-search'),

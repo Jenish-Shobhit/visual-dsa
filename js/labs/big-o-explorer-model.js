@@ -126,7 +126,11 @@
     while (i < s.length) {
       var c = s[i];
       if (/\s/.test(c)) { i++; continue; }
-      if ((m = /^(\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/.exec(s.slice(i)))) { t.push({ k: 'num', v: parseFloat(m[0]), pos: i }); i += m[0].length; continue; }
+      if ((m = /^(\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/.exec(s.slice(i)))) {
+        var nv = parseFloat(m[0]);
+        if (!isFinite(nv)) fail('That number is too large (the limit is about 10^308).', i);
+        t.push({ k: 'num', v: nv, pos: i }); i += m[0].length; continue;
+      }
       if (/[A-Za-z]/.test(c)) {
         var lower = s.slice(i).toLowerCase(), hit = null;
         for (var f = 0; f < FN_NAMES.length; f++) if (lower.indexOf(FN_NAMES[f]) === 0) { hit = FN_NAMES[f]; break; }
@@ -253,17 +257,17 @@
   /* log10 of |f(n)| when f is a product of huge pieces would overflow: use the symbolic terms instead (see termLog10). */
 
   /* ------------------------------------------------------------------ symbolic analysis */
-  /* term: { c, a, b, e, f } = c · n^a · (log₂ n)^b · e^n · (n!)^f */
-  function T(c, a, b, e, f) { return { c: c, a: a || 0, b: b || 0, e: e === undefined ? 1 : e, f: f || 0 }; }
+  /* term: { c, a, b, e, f, g } = c · n^a · (log₂ n)^b · e^n · (n!)^f · (log₂ log₂ n)^g */
+  function T(c, a, b, e, f, g) { return { c: c, a: a || 0, b: b || 0, e: e === undefined ? 1 : e, f: f || 0, g: g || 0 }; }
   function Unsupported(why) { this.why = why; }
-  function isConst(t) { return t.a === 0 && t.b === 0 && t.e === 1 && t.f === 0; }
-  function keyOfTerm(t) { return [Math.round(t.a * 1e6), Math.round(t.b * 1e6), Math.round(Math.log(t.e) * 1e6), Math.round(t.f * 1e6)].join('|'); }
+  function isConst(t) { return t.a === 0 && t.b === 0 && t.e === 1 && t.f === 0 && t.g === 0; }
+  function keyOfTerm(t) { return [Math.round(t.a * 1e6), Math.round(t.b * 1e6), Math.round(Math.log(t.e) * 1e6), Math.round(t.f * 1e6), Math.round(t.g * 1e6)].join('|'); }
   function combine(list) {
     var map = {}, order = [];
-    list.forEach(function (t) { var k = keyOfTerm(t); if (map[k]) map[k].c += t.c; else { map[k] = T(t.c, t.a, t.b, t.e, t.f); order.push(k); } });
-    return order.map(function (k) { return map[k]; }).filter(function (t) { return t.c !== 0 && isFinite(t.c); });
+    list.forEach(function (t) { var k = keyOfTerm(t); if (map[k]) map[k].c += t.c; else { map[k] = T(t.c, t.a, t.b, t.e, t.f, t.g); order.push(k); } });
+    return order.map(function (k) { if (!isFinite(map[k].c)) throw new Unsupported('a number too large to hold'); return map[k]; }).filter(function (t) { return t.c !== 0; });
   }
-  function mulT(x, y) { return T(x.c * y.c, x.a + y.a, x.b + y.b, x.e * y.e, x.f + y.f); }
+  function mulT(x, y) { return T(x.c * y.c, x.a + y.a, x.b + y.b, x.e * y.e, x.f + y.f, x.g + y.g); }
   function mulL(A, B) {
     var out = [];
     if (A.length * B.length > 400) throw new Unsupported('too many terms');
@@ -275,22 +279,22 @@
     switch (ast.t) {
       case 'num': return ast.v === 0 ? [] : [T(ast.v)];
       case 'n': return [T(1, 1)];
-      case 'neg': return sym(ast.a).map(function (t) { return T(-t.c, t.a, t.b, t.e, t.f); });
+      case 'neg': return sym(ast.a).map(function (t) { return T(-t.c, t.a, t.b, t.e, t.f, t.g); });
       case 'fact':
         var A = sym(ast.a);
-        if (A.length === 1 && A[0].c === 1 && A[0].a === 1 && A[0].b === 0 && A[0].e === 1 && A[0].f === 0) return [T(1, 0, 0, 1, 1)];
+        if (A.length === 1 && A[0].c === 1 && A[0].a === 1 && A[0].b === 0 && A[0].e === 1 && A[0].f === 0 && A[0].g === 0) return [T(1, 0, 0, 1, 1)];
         var k = constOf(A); if (k !== null && k >= 0) return [T(factorial(k))];
         throw new Unsupported('factorial');
       case 'fn': return symFn(ast);
       case 'bin':
         var L = sym(ast.a), R;
         if (ast.op === '+') return combine(L.concat(sym(ast.b)));
-        if (ast.op === '-') return combine(L.concat(sym(ast.b).map(function (t) { return T(-t.c, t.a, t.b, t.e, t.f); })));
+        if (ast.op === '-') return combine(L.concat(sym(ast.b).map(function (t) { return T(-t.c, t.a, t.b, t.e, t.f, t.g); })));
         if (ast.op === '*') return mulL(L, sym(ast.b));
         if (ast.op === '/') {
           R = sym(ast.b);
           if (R.length !== 1) throw new Unsupported('division by a sum');
-          var d = R[0], inv = T(1 / d.c, -d.a, -d.b, 1 / d.e, -d.f);
+          var d = R[0], inv = T(1 / d.c, -d.a, -d.b, 1 / d.e, -d.f, -d.g);
           if (d.f !== 0) throw new Unsupported('division by a factorial');
           return mulL(L, [inv]);
         }
@@ -305,7 +309,7 @@
       if (L.length === 1) {
         var t = L[0];
         if (t.c < 0 && p !== Math.floor(p)) throw new Unsupported('root of a negative');
-        return [T(Math.pow(t.c, p), t.a * p, t.b * p, Math.pow(t.e, p), t.f * p)];
+        return [T(Math.pow(t.c, p), t.a * p, t.b * p, Math.pow(t.e, p), t.f * p, t.g * p)];
       }
       if (p === Math.floor(p) && p >= 0 && p <= 8) { var out = [T(1)], i; for (i = 0; i < p; i++) out = mulL(out, L); return out; }
       throw new Unsupported('power of a sum');
@@ -317,7 +321,7 @@
       for (var j = 0; j < E.length; j++) {
         var u = E[j];
         if (isConst(u)) c *= Math.pow(base, u.c);
-        else if (u.a === 1 && u.b === 0 && u.e === 1 && u.f === 0) e *= Math.pow(base, u.c);
+        else if (u.a === 1 && u.b === 0 && u.e === 1 && u.f === 0 && u.g === 0) e *= Math.pow(base, u.c);
         else throw new Unsupported('exponent');
       }
       return e === 1 ? [T(c)] : [T(c, 0, 0, e, 0)];
@@ -329,10 +333,10 @@
     L.forEach(function (t) { if (!best || cmpGrowth(t, best) > 0) best = t; });
     return best;
   }
-  function growthKey(t) { return [t.f, Math.log(t.e), t.a, t.b]; }
+  function growthKey(t) { return [t.f, Math.log(t.e), t.a, t.b, t.g]; }
   function cmpGrowth(x, y) {
     var a = growthKey(x), b = growthKey(y);
-    for (var i = 0; i < 4; i++) { var d = a[i] - b[i]; if (Math.abs(d) > 1e-9) return d > 0 ? 1 : -1; }
+    for (var i = 0; i < 5; i++) { var d = a[i] - b[i]; if (Math.abs(d) > 1e-9) return d > 0 ? 1 : -1; }
     return 0;
   }
   function symFn(ast) {
@@ -349,7 +353,12 @@
         var t = single(), lg = ast.name === 'ln' ? Math.LN2 : ast.name === 'log10' ? Math.LN2 / LN10 : 1;   /* log_b x = log2 x · (log_b 2) */
         if (t.c <= 0) throw new Unsupported('log of a non-positive');
         var out = [];
+        if (t.g !== 0) throw new Unsupported('log of log log');
         if (t.f !== 0 && t.a === 0 && t.b === 0 && t.e === 1) out.push(T(t.f * lg, 1, 1));
+        else if (t.b !== 0 && t.a === 0 && t.e === 1 && t.f === 0) {   /* log(c · (log n)^b) = b · log log n + log c */
+          out.push(T(t.b * lg, 0, 0, 1, 0, 1));
+          out.push(T(log2(t.c) * lg));
+        }
         else if (t.b !== 0) throw new Unsupported('log of log');
         else {
           if (t.a !== 0) out.push(T(t.a * lg, 0, 1));
@@ -378,23 +387,27 @@
     if (Math.abs(Math.log(t.e)) > 1e-9) parts.push((Math.abs(t.e - Math.round(t.e)) < 1e-9 ? String(Math.round(t.e)) : '(' + +t.e.toPrecision(3) + ')') + 'ⁿ');
     if (t.a) parts.push(powStr(t.a));
     if (t.b) parts.push(logStr(t.b));
+    if (t.g) parts.push(t.g === 1 ? 'log log n' : '(log log n)' + sup(t.g));
     var body = parts.join(' ');
     if (withCoef === false) return body || '1';
     var c = t.c;
     if (!body) return fmtCoef(c);
     if (c === 1) return body;
     if (c === -1) return '−' + body;
-    return fmtCoef(c) + (/^[a-z√(]/.test(body) && body.charAt(0) !== '√' ? '' : ' ') + body;
+    var cs = fmtCoef(c);
+    return cs + (cs.indexOf('×') >= 0 ? ' ' : /^[n√]/.test(body) ? '' : /^[a-z]/.test(body) ? ' ' : ' · ') + body;
   }
   /* The growth class of a dominant term: { id (for badge colour), label }. */
   function classOfTerm(t) {
     if (t.f > 0) return { id: 'nfact', label: 'O(' + (t.f === 1 ? 'n!' : '(n!)' + sup(t.f)) + ')' };
-    if (t.e > 1 + 1e-9) return { id: '2n', label: 'O(' + (Math.abs(t.e - Math.round(t.e)) < 1e-9 ? Math.round(t.e) : '(' + +t.e.toPrecision(3) + ')') + 'ⁿ' + (t.a || t.b ? ' ' + termText(T(1, t.a, t.b), false) : '') + ')' };
+    if (t.e > 1 + 1e-9) return { id: '2n', label: 'O(' + (Math.abs(t.e - Math.round(t.e)) < 1e-9 ? Math.round(t.e) : '(' + +t.e.toPrecision(3) + ')') + 'ⁿ' + (t.a || t.b || t.g ? ' ' + termText(T(1, t.a, t.b, 1, 0, t.g), false) : '') + ')' };
     if (t.e < 1 - 1e-9) return { id: '1', label: 'O(1)' };
-    var a = t.a, b = t.b, s;
+    var a = t.a, b = t.b, g = t.g, s;
+    if (a === 0 && b === 0 && g > 0) return { id: 'logn', label: 'O(' + termText(T(1, 0, 0, 1, 0, g), false) + ')' };
     if (a < 0 || (a === 0 && b === 0) || (a === 0 && b < 0)) return { id: '1', label: 'O(1)' };
-    if (a === 0) return { id: 'logn', label: 'O(' + logStr(b) + ')' };
-    s = termText(T(1, a, b), false);
+    if (a === 0) return { id: 'logn', label: 'O(' + termText(T(1, 0, b, 1, 0, g), false) + ')' };
+    s = termText(T(1, a, b, 1, 0, g), false);
+    if (g !== 0) return { id: 'nk', label: 'O(' + s + ')' };
     if (a === 0.5 && b === 0) return { id: 'sqrtn', label: 'O(√n)' };
     if (a === 1 && b === 0) return { id: 'n', label: 'O(n)' };
     if (a === 1 && b === 1) return { id: 'nlogn', label: 'O(n log n)' };
@@ -405,7 +418,8 @@
   /* log10 |term(n)| without overflow. */
   function termLog10(t, n) {
     if (t.c === 0) return -Infinity;
-    return Math.log10(Math.abs(t.c)) + t.a * Math.log10(n) + (t.b ? t.b * Math.log10(Math.max(log2(n), 1e-12)) : 0) + n * Math.log10(t.e) + t.f * lgamma(n + 1) / LN10;
+    return Math.log10(Math.abs(t.c)) + t.a * Math.log10(n) + (t.b ? t.b * Math.log10(Math.max(log2(n), 1e-12)) : 0) + n * Math.log10(t.e) + t.f * lgamma(n + 1) / LN10
+      + (t.g ? t.g * Math.log10(Math.max(log2(Math.max(log2(n), 1e-12)), 1e-12)) : 0);
   }
   function termValue(t, n) {
     var l = termLog10(t, n);
@@ -439,7 +453,8 @@
       if (!L.length) return { terms: [], dominant: null, id: '1', label: 'O(1)', dominantText: '0', exact: true, zero: true };
       var d = dominantOf(L), cls = classOfTerm(d);
       L.sort(function (x, y) { return cmpGrowth(y, x); });
-      return { terms: L, dominant: d, id: cls.id, label: cls.label, dominantText: termText(d), exact: !approx, negative: d.c < 0 };
+      if (d.c < 0) return { terms: L, dominant: d, id: 'invalid', label: 'Not a valid cost', magnitudeLabel: cls.label, magnitudeId: cls.id, dominantText: termText(d), exact: !approx, negative: true };
+      return { terms: L, dominant: d, id: cls.id, label: cls.label, dominantText: termText(d), exact: !approx, negative: false };
     } catch (e) {
       if (!(e instanceof Unsupported)) throw e;
       var c = numericClass(ast);

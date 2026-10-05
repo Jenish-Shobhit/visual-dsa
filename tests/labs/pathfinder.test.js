@@ -122,3 +122,14 @@ test('expandOrder ranks each expanded cell once', () => {
   assert.equal(seen.length, total);
   assert.deepEqual(seen, seen.map((_, i) => i));
 });
+
+test('Cup trap: Greedy floods around the cup, A* walks to the door and stays optimal', () => {
+  for (const [R, C] of [[12, 15], [18, 21], [15, 27], [26, 30], [25, 45]]) {
+    const m = P.presetMap('cup', R, C);
+    const cmp = P.compareAll(P.toGrid(R, C, m.walls, m.mud), m.start, m.goal);
+    const by = Object.fromEntries(cmp.rows.map((r) => [r.algo, r]));
+    assert.ok(by.astar.found && by.greedy.found, `${R}x${C}: both find a path`);
+    assert.ok(by.astar.optimal && by.astar.cost === by.dijkstra.cost, `${R}x${C}: A* path is optimal`);
+    assert.ok(by.greedy.expanded >= 2 * by.astar.expanded, `${R}x${C}: greedy ${by.greedy.expanded} vs A* ${by.astar.expanded}`);
+  }
+});

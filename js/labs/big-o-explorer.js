@@ -411,12 +411,19 @@
     if (an.terms && an.terms.length) {
       var sh = B.shares(an.terms, S.n);
       var main = h('p', { class: 'bx-own-sentence' });
-      main.appendChild(document.createTextNode('The dominant term is '));
-      main.appendChild(h('b', null, an.dominantText));
-      main.appendChild(document.createTextNode(', so the cost is '));
-      main.appendChild(h('span', { class: 'big-o', 'data-o': an.id }, an.label));
-      main.appendChild(document.createTextNode('. '));
-      if (an.negative) main.appendChild(document.createTextNode('Its coefficient is negative, so the cost would eventually go below zero: check the formula. '));
+      if (an.negative) {
+        main.appendChild(document.createTextNode('The dominant term is '));
+        main.appendChild(h('b', null, an.dominantText));
+        main.appendChild(document.createTextNode(', which is negative, so this is not a valid cost function: the cost would eventually drop below zero. Ignoring the sign, its growth is '));
+        main.appendChild(h('span', { class: 'big-o', 'data-o': an.magnitudeId }, an.magnitudeLabel));
+        main.appendChild(document.createTextNode('. '));
+      } else {
+        main.appendChild(document.createTextNode('The dominant term is '));
+        main.appendChild(h('b', null, an.dominantText));
+        main.appendChild(document.createTextNode(', so the cost is '));
+        main.appendChild(h('span', { class: 'big-o', 'data-o': an.id }, an.label));
+        main.appendChild(document.createTextNode('. '));
+      }
       if (an.terms.length > 1 && sh) {
         var dom = sh.filter(function (s) { return s.term === an.dominant; })[0];
         main.appendChild(document.createTextNode('At n = ' + fmtN(S.n) + ' it makes up ' + sharePct(dom.share) + ' of the cost.'));

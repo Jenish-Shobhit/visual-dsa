@@ -187,3 +187,38 @@ test('formatCount never prints a mantissa of 10', () => {
   assert.equal(B.formatCount(30102.9999), '1 × 10³⁰¹⁰³');
   assert.equal(B.formatCount(30102 + Math.log10(9.96)), '1 × 10³⁰¹⁰³');
 });
+
+test('n log log n has its own growth class and orders between n and n log n', () => {
+  const a = cls('n log log n');
+  assert.equal(a.label, 'O(n log log n)');
+  assert.ok(a.exact);
+  assert.equal(cls('log(log n)').label, 'O(log log n)');
+  assert.equal(cls('n log(log n) + n').label, 'O(n log log n)');
+  assert.equal(cls('n log log n + n log n').label, 'O(n log n)');
+  assert.equal(cls('n log log n + n').label, 'O(n log log n)');
+  const d = a.dominant, n = 2 ** 20;
+  assert.ok(B.termLog10(d, n) > Math.log10(n) && B.termLog10(d, n) < Math.log10(n * 20));
+});
+test('numbers beyond the float range are rejected instead of becoming O(1)', () => {
+  assert.equal(B.tryParse('1e400n').ok, false);
+  assert.match(B.tryParse('1e400n').error, /too large/);
+  assert.equal(B.tryParse('n^1e999').ok, false);
+  assert.notEqual(cls('1e200 n * 1e200').label, 'O(1)');
+});
+test('a negative leading term is flagged as not a valid cost, consistently', () => {
+  for (const src of ['-n^2', 'n^2 - n^3']) {
+    const a = cls(src);
+    assert.equal(a.negative, true);
+    assert.equal(a.label, 'Not a valid cost');
+    assert.equal(a.id, 'invalid');
+  }
+  assert.equal(cls('-n^2').magnitudeLabel, 'O(n²)');
+  assert.equal(cls('n^3 - n^2').label, 'O(n³)');
+  assert.equal(cls('n^3 - n^2').negative, false);
+});
+test('termText separates a coefficient from log and keeps products readable', () => {
+  assert.equal(B.termText(cls('ln n').dominant), '0.6931 log n');
+  assert.equal(B.termText(cls('3n^2').dominant), '3n²');
+  assert.equal(B.termText(cls('5 n log n').dominant), '5n log n');
+  assert.equal(B.termText(cls('3 * 2^n').dominant), '3 · 2ⁿ');
+});

@@ -580,18 +580,86 @@
       if (el.innerHTML.trim() === '' && BIG_O[el.getAttribute('data-o')]) el.innerHTML = BIG_O[el.getAttribute('data-o')];
     });
   }
+  /* ---------------------------------------------------------------- footer
+     Brand block + four link columns + a unit-colour rule that echoes the course map.
+     Every href goes through VDSA.url, so it resolves from any depth. */
+  var REPO = 'https://github.com/Jenish-Shobhit/visual-dsa';
+  function footLink(href, text, extra) {
+    var attrs = { href: href };
+    if (extra) for (var k in extra) attrs[k] = extra[k];
+    return h('li', null, h('a', attrs, text));
+  }
+  function footExternal(href, text) {
+    return footLink(href, [text, h('span', { class: 'sf-ext', 'aria-hidden': 'true' }, ' ↗'), h('span', { class: 'sr-only' }, ' (opens GitHub in a new tab)')], { target: '_blank', rel: 'noopener noreferrer' });
+  }
+  function footCol(title, id, items) {
+    return h('nav', { class: 'sf-col', 'aria-labelledby': id },
+      h('h2', { class: 'sf-col__title', id: id }, title),
+      h('ul', { class: 'sf-list' }, items));
+  }
   function buildFooter() {
     if (body.getAttribute('data-footer') === 'false') return;
-    body.appendChild(h('footer', { class: 'site-footer' },
-      h('div', { class: 'site-footer__inner' },
-        h('span', null, 'Visual DSA: data structures and algorithms you can watch, step and change.'),
-        h('nav', { 'aria-label': 'Site' },
-          h('a', { href: VDSA.url('index.html') }, 'Home'),
-          h('a', { href: VDSA.url('index.html#labs') }, 'Labs'),
-          h('a', { href: VDSA.url('studies/index.html') }, 'Deep studies'),
-          h('a', { href: VDSA.url('labs/history.html') }, 'History'),
-          h('a', { href: VDSA.url('about.html') }, 'About'),
-          h('button', { type: 'button', onclick: showShortcuts }, 'Keyboard shortcuts')))));
+    var labById = {};
+    if (C && C.labs) C.labs.forEach(function (l) { labById[l.id] = l; });
+    function labLinks(ids) {
+      return ids.filter(function (id) { return labById[id]; }).map(function (id) { return footLink(VDSA.url(labById[id].href), labById[id].title); });
+    }
+
+    var unitItems = [];
+    if (C) C.units.forEach(function (u) {
+      var first = C.lessonsIn(u.id)[0];
+      var here = unit && unit.id === u.id;
+      unitItems.push(h('li', null, h('a', { class: 'sf-unit' + (here ? ' is-here' : ''), href: VDSA.url(first ? first.href : 'index.html#' + u.id), 'aria-current': here ? 'true' : null, style: { '--c': u.color } },
+        h('span', { class: 'sf-dot', 'aria-hidden': 'true' }),
+        h('span', { class: 'sf-unit__n', 'aria-hidden': 'true' }, String(u.number)),
+        h('span', { class: 'sf-unit__t' }, u.title, here ? h('span', { class: 'sr-only' }, ' (current unit)') : null))));
+    });
+    if (!unitItems.length) unitItems.push(footLink(VDSA.url('index.html'), 'All lessons'));
+
+    var themeLbl = h('span', null);
+    var themeBtnF = h('button', { type: 'button', class: 'sf-btn', onclick: function () { VDSA.theme.toggle(); } },
+      h('span', { class: 'sf-btn__sw', 'aria-hidden': 'true' }), themeLbl);
+    function syncFootTheme() {
+      var attr = doc.documentElement.getAttribute('data-theme');
+      var dark = attr ? attr === 'dark' : !!(win.matchMedia && win.matchMedia('(prefers-color-scheme: dark)').matches);
+      themeLbl.textContent = dark ? 'Light theme' : 'Dark theme';
+    }
+    syncFootTheme();
+    VDSA.theme.onChange(syncFootTheme);
+    try { var mq = win.matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', syncFootTheme); } catch (e) {}
+    new MutationObserver(syncFootTheme).observe(doc.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    var stripe = h('div', { class: 'sf-rule', 'aria-hidden': 'true' });
+    if (C) C.units.forEach(function (u) { stripe.appendChild(h('i', { style: { background: u.color } })); });
+
+    var year = String(new Date().getFullYear());
+    var brand = h('div', { class: 'sf-brand' },
+      h('a', { class: 'brand sf-brand__logo', href: VDSA.url('index.html'), 'aria-label': 'Visual DSA home' }, brandMark(), h('span', { class: 'brand__name' }, 'Visual DSA')),
+      h('p', { class: 'sf-brand__tag' }, 'Data structures and algorithms you can watch, step and change.'),
+      unit ? h('p', { class: 'sf-here', style: { '--c': unit.color } }, h('span', { class: 'sf-dot', 'aria-hidden': 'true' }), 'You are in Unit ' + unit.number + ': ' + unit.title) : null,
+      h('p', { class: 'sf-brand__oss' }, 'Free and open source, ',
+        h('a', { href: 'https://github.com/Jenish-Shobhit/visual-dsa/blob/main/LICENSE', target: '_blank', rel: 'noopener noreferrer' }, 'MIT licensed'),
+        '. ',
+        h('a', { href: REPO, target: '_blank', rel: 'noopener noreferrer' }, 'View the source on GitHub')));
+
+    var cols = h('div', { class: 'sf-cols' },
+      footCol('Course', 'sf-h-course', unitItems),
+      footCol('Practice', 'sf-h-practice', [footLink(VDSA.url('index.html#labs'), 'All labs')].concat(labLinks(['sorting-arena', 'pathfinder', 'graph-studio', 'tree-studio', 'big-o-explorer']))),
+      footCol('Go deeper', 'sf-h-deeper', [footLink(VDSA.url('studies/index.html'), 'Deep studies'), footLink(VDSA.url('labs/history.html'), 'History of algorithms'), footLink(VDSA.url('labs/cheatsheet.html'), 'Cheat sheet')].concat(labLinks(['structure-chooser', 'code-machine']))),
+      footCol('Site', 'sf-h-site', [
+        footLink(VDSA.url('about.html'), 'About'),
+        h('li', null, h('button', { type: 'button', class: 'sf-btn', onclick: showShortcuts }, 'Keyboard shortcuts', h('kbd', null, '?'))),
+        h('li', null, themeBtnF),
+        footExternal(REPO + '/issues', 'Report an issue'),
+        footExternal(REPO, 'GitHub')]));
+
+    var bottom = h('div', { class: 'sf-bottom' },
+      h('p', null, '© ' + year + ' Visual DSA. Made to be watched, stepped and changed.'),
+      h('button', { type: 'button', class: 'sf-btn sf-top', onclick: function () { win.scrollTo({ top: 0, behavior: doc.documentElement.getAttribute('data-motion') === 'reduce' || (win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' }); } }, 'Back to top ', h('span', { 'aria-hidden': 'true' }, '↑')));
+
+    body.appendChild(h('footer', { class: 'site-footer', role: 'contentinfo' }, stripe,
+      h('div', { class: 'site-footer__inner sf-main' }, brand, cols),
+      h('div', { class: 'site-footer__inner' }, bottom)));
   }
 
   /* ---------------------------------------------------------------- scroll: progress bar + scroll spy */

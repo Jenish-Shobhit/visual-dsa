@@ -319,7 +319,7 @@
     }
     if (mode === 'delete') {
       var victim = slots[i];
-      snap('Delete index <b>' + i + '</b> (the value ' + victim.value + ') from ' + n + ' values.', 'start');
+      snap('Delete index <b>' + i + '</b> (the value ' + victim.value + ') from ' + plural(n, 'value') + '.', 'start');
       slots[i] = null; held = { id: victim.id, value: victim.value, over: i, state: 'muted' }; ghosts = [i];
       snap('Take ' + victim.value + ' out. The gap at slot ' + i + ' breaks the rule that element k sits at base + k × size, so everything after it must slide left.', 'take');
       for (var j = i; j < n - 1; j++) {

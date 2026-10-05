@@ -419,8 +419,8 @@
     var out = [{ k: 0, costs: costs, policy: policy, caption: policy === 'add1' ? 'Now the array grows by <b>one slot</b> each time it is full. Press play.' : 'An empty array that <b>doubles</b> when full. Press play and watch each append’s real cost appear as a bar.', counters: { k: 0, cost: '–', total: 0, avg: '–' } }];
     costs.forEach(function (c) {
       var cap;
-      if (policy === 'add1') cap = 'Append #' + c.k + ' finds the array full again and copies all ' + c.copies + ' elements: cost ' + c.cost + '. The average is ' + c.avg.toFixed(1) + ' and keeps climbing, about k / 2.';
-      else if (c.copies > 0) cap = 'Append #' + c.k + ' is a <b>spike</b>: the array was full, so it copied ' + c.copies + ' elements and wrote 1, cost <b>' + c.cost + '</b>. But the new capacity (' + c.cap + ') buys ' + (c.cap - c.size) + ' cheap appends. Average so far: ' + c.avg.toFixed(2) + '.';
+      if (policy === 'add1') cap = 'Append #' + c.k + (c.copies === 0 ? ' finds no storage at all, so it allocates one slot and writes: cost ' + c.cost + '.' : ' finds the array full again and copies all ' + plural(c.copies, 'element') + ': cost ' + c.cost + '.') + ' The average is ' + c.avg.toFixed(1) + ' and keeps climbing, about k / 2.';
+      else if (c.copies > 0) cap = 'Append #' + c.k + ' is a <b>spike</b>: the array was full, so it copied ' + c.copies + ' ' + (c.copies === 1 ? 'element' : 'elements') + ' and wrote 1, cost <b>' + c.cost + '</b>. But the new capacity (' + c.cap + ') buys ' + (c.cap - c.size === 0 ? 'no cheap appends' : plural(c.cap - c.size, 'cheap append')) + '. Average so far: ' + c.avg.toFixed(2) + '.';
       else if (c.k === 1) cap = 'Append #1 allocates a first slot and writes: cost 1.';
       else cap = 'Append #' + c.k + ' has room: cost 1. The average drifts down to ' + c.avg.toFixed(2) + ' as the last spike is spread over more appends.';
       out.push({ k: c.k, costs: costs, policy: policy, caption: cap, counters: { k: c.k, cost: c.cost, total: c.total, avg: c.avg.toFixed(2) } });
@@ -492,7 +492,7 @@
       (function (n) {
         var counters = {};
         rules.forEach(function (r) { counters[r.id] = r.costs[n - 1].totalCopies; });
-        steps.push({ n: n, caption: 'After <b>' + n + '</b> appends: +1 has copied ' + counters.add1.toLocaleString('en-US') + ' elements, +10 has copied ' + counters.add10 + ', ×1.5 ' + counters.f15 + ' and ×2 ' + counters.x2 + '. ' +
+        steps.push({ n: n, caption: 'After <b>' + n + '</b> ' + (n === 1 ? 'append' : 'appends') + ': +1 has copied ' + counters.add1.toLocaleString('en-US') + (counters.add1 === 1 ? ' element,' : ' elements,') + ' +10 has copied ' + counters.add10 + ', ×1.5 ' + counters.f15 + ' and ×2 ' + counters.x2 + '. ' +
           (n === N ? 'Double n and the +k totals roughly quadruple; the ×2 total only doubles.' : n >= 50 ? 'The adders curve upward like n²; the multipliers stay close to straight lines.' : 'Early on the rules look similar.'), counters: counters });
       }(n));
     }

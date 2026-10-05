@@ -342,7 +342,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa1">
+<link rel="stylesheet" href="studies.css?v=vdsa2">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 21">
@@ -647,7 +647,7 @@
         uncovered -= best                  <span class="tok-com"># &ge; |uncovered|/OPT removed this step</span>
     <span class="tok-kw">return</span> chosen                       <span class="tok-com"># |chosen| &le; H_n &middot; OPT,  H_n &asymp; ln n</span></code></pre>
 
-        <p>Unlike the MST, greed here is <em>not</em> exactly optimal &mdash; Set Cover is NP-hard, so no efficient method can be. But greed is provably close, and the proof is a beautiful charging argument that pins the ratio to the harmonic number <code class="inl">H<sub>n</sub>=1+\tfrac12+\cdots+\tfrac1n&asymp;ln&nbsp;n</code>.</p>
+        <p>Unlike the MST, greed here is <em>not</em> exactly optimal &mdash; Set Cover is NP-hard, so no efficient method can be. But greed is provably close, and the proof is a beautiful charging argument that pins the ratio to the harmonic number <code class="inl">H<sub>n</sub>=1+&frac12;+&hellip;+1/n&asymp;ln&nbsp;n</code>.</p>
 
         <h3>The charging argument</h3>
         <p>Let <code class="inl">OPT=k</code> (the optimal number of sets &mdash; unknown, but we only reason <em>about</em> it). Distribute a unit of cost. Each time greedy picks a set that covers <code class="inl">t</code> new elements, charge a price of <code class="inl">1/t</code> to each of those <code class="inl">t</code> newly covered elements. Then the total price summed over all elements equals the number of sets greedy chose &mdash; each chosen set contributes <code class="inl">t&middot;(1/t)=1</code>:</p>
@@ -682,7 +682,7 @@
           </math></div>
         </div>
 
-        <p>So greedy Set Cover is an <code class="inl">H<sub>n</sub></code>-approximation, roughly <code class="inl">ln&nbsp;n</code>. A quick trace: universe <code class="inl">{1..12}</code> with sets <code class="inl">A=\{1..6\}, B=\{5..10\}, C=\{1,2,3,11\}, D=\{4,8,12\}, E=\{9,10,11,12\}</code>. Greedy takes <code class="inl">A</code> (6 new), then <code class="inl">B</code> (4 new: 7,8,9,10), then <code class="inl">E</code> (2 new: 11,12), then <code class="inl">D</code> covers the last one... checking, after <code class="inl">A,B,E</code> only <code class="inl">4</code> is left, and <code class="inl">D</code> covers it &mdash; four sets. The reasoning never needed the true optimum; it only compared greedy&rsquo;s coverage to whatever the optimum&rsquo;s must have been.</p>
+        <p>So greedy Set Cover is an <code class="inl">H<sub>n</sub></code>-approximation, roughly <code class="inl">ln&nbsp;n</code>. A quick trace: universe <code class="inl">{1..12}</code> with sets <code class="inl">A={1..6}, B={5..10}, C={1,2,3,11}, D={4,8,12}, E={9,10,11,12}</code>. Greedy takes <code class="inl">A</code> (6 new), then <code class="inl">B</code> (4 new: 7,8,9,10), then <code class="inl">E</code> (2 new: 11,12), then <code class="inl">D</code> covers the last one... checking, after <code class="inl">A,B,E</code> only <code class="inl">4</code> is left, and <code class="inl">D</code> covers it &mdash; four sets. The reasoning never needed the true optimum; it only compared greedy&rsquo;s coverage to whatever the optimum&rsquo;s must have been.</p>
 
         <p>And the ceiling is real. In 2014 Dinur and Steurer proved &mdash; sharpening Feige&rsquo;s 1998 result through the PCP machinery &mdash; that no polynomial algorithm approximates Set Cover to better than <code class="inl">(1&minus;o(1))ln&nbsp;n</code> unless <code class="inl">P=NP</code>. The dumb greedy is, up to lower-order terms, <strong>the best any polynomial algorithm will ever do.</strong> That is a rare and bracing thing: a one-line algorithm sitting exactly on a proven wall.</p>
 
@@ -779,7 +779,7 @@
 
         <h3>Christofides&ndash;Serdyukov: 3/2 with one clever patch</h3>
         <p>Doubling is wasteful: it makes <em>every</em> vertex even when only the <em>odd-degree</em> ones in <code class="inl">T</code> actually need fixing. The number of odd-degree vertices in any tree is even (the handshake lemma: degrees sum to twice the edge count, so odds come in pairs). Let <code class="inl">O</code> be that even-sized set. Instead of doubling, add a <strong>minimum-weight perfect matching</strong> <code class="inl">M</code> on <code class="inl">O</code> alone. Then every vertex of <code class="inl">T&cup;M</code> has even degree &mdash; Eulerian again &mdash; and we Euler-tour and shortcut as before, for cost <code class="inl">&le;MST+M</code>.</p>
-        <p>The patch is cheap. Walk the optimal tour and look only at the vertices of <code class="inl">O</code> in the order it visits them: shortcutting (triangle inequality) gives a closed tour on <code class="inl">O</code> of cost <code class="inl">&le;OPT</code>. Since <code class="inl">|O|</code> is even, that cycle splits into <em>two</em> perfect matchings on <code class="inl">O</code> (alternate edges); the cheaper one costs <code class="inl">&le;OPT/2</code>, and the minimum matching is no costlier still. So <code class="inl">M&le;OPT/2</code> and the tour costs <code class="inl">&le;MST+M&le;OPT+OPT/2=\tfrac32 OPT</code>.</p>
+        <p>The patch is cheap. Walk the optimal tour and look only at the vertices of <code class="inl">O</code> in the order it visits them: shortcutting (triangle inequality) gives a closed tour on <code class="inl">O</code> of cost <code class="inl">&le;OPT</code>. Since <code class="inl">|O|</code> is even, that cycle splits into <em>two</em> perfect matchings on <code class="inl">O</code> (alternate edges); the cheaper one costs <code class="inl">&le;OPT/2</code>, and the minimum matching is no costlier still. So <code class="inl">M&le;OPT/2</code> and the tour costs <code class="inl">&le;MST+M&le;OPT+OPT/2=3/2 OPT</code>.</p>
 
         <figure>
           <svg viewBox="0 0 720 250" role="img" aria-labelledby="f5t f5d">
@@ -819,7 +819,7 @@
               <line class="dg-matchedge" x1="0" y1="56" x2="28" y2="56"/><text class="dg-label sm" x="34" y="60">matching M</text>
             </g>
           </svg>
-          <figcaption><b>Figure 4 &mdash; Christofides&rsquo; patch.</b> Only the odd-degree vertices of the MST (red rings) violate the Eulerian even-degree condition. A minimum perfect matching among <em>just those</em> (red dashed) repairs all of them at cost <code class="inl">&le;OPT/2</code>, giving a tour <code class="inl">&le;\tfrac32 OPT</code> instead of <code class="inl">2&middot;OPT</code>.</figcaption>
+          <figcaption><b>Figure 4 &mdash; Christofides&rsquo; patch.</b> Only the odd-degree vertices of the MST (red rings) violate the Eulerian even-degree condition. A minimum perfect matching among <em>just those</em> (red dashed) repairs all of them at cost <code class="inl">&le;OPT/2</code>, giving a tour <code class="inl">&le;3/2 OPT</code> instead of <code class="inl">2&middot;OPT</code>.</figcaption>
         </figure>
 
         <p>Christofides (1976) held the record for <em>forty-five years</em>. Only in 2020&ndash;21 did Karlin, Klein, and Oveis Gharan break <code class="inl">3/2</code> &mdash; by a famously microscopic <code class="inl">&epsilon;&asymp;10<sup>&minus;36</sup></code>, via a randomized variant. That a constant so small was front-page news tells you how hard the wall is to move.</p>
@@ -1021,7 +1021,7 @@
         <p>MST-doubling and Christofides are <em>load-bearing</em> on the triangle inequality &mdash; every shortcut step invokes it. Hand them a graph with arbitrary costs (penalties, one-way surcharges, costs that violate <code class="inl">c(x,z)&le;c(x,y)+c(y,z)</code>) and the ratio evaporates; you are back in general TSP, where <em>no</em> constant factor is possible. Before you quote &ldquo;<code class="inl">3/2</code>,&rdquo; verify the metric. If asymmetric (<code class="inl">c(x,y)&ne;c(y,x)</code>), Christofides does not even apply &mdash; that is a different, harder world.</p>
 
         <h3>Mistaking n<sup>k</sup> for FPT</h3>
-        <p>&ldquo;Try all <code class="inl">k</code>-subsets&rdquo; runs in <code class="inl">\binom{n}{k}=&Theta;(n<sup>k</sup>)</code> &mdash; this is XP, <em>not</em> FPT, and it is genuinely intractable for, say, <code class="inl">k=15, n=10<sup>4</sup></code>. FPT demands the parameter <em>out</em> of <code class="inl">n</code>&rsquo;s exponent: <code class="inl">2<sup>k</sup>&middot;n</code>, not <code class="inl">n<sup>k</sup></code>. If your &ldquo;parameterized&rdquo; algorithm has <code class="inl">k</code> in the exponent of <code class="inl">n</code>, you have not parameterized anything &mdash; and for W[1]-hard problems like Clique, <code class="inl">n<sup>k</sup></code> is essentially the best you can hope for.</p>
+        <p>&ldquo;Try all <code class="inl">k</code>-subsets&rdquo; runs in <code class="inl">C(n,&nbsp;k)=&Theta;(n<sup>k</sup>)</code> &mdash; this is XP, <em>not</em> FPT, and it is genuinely intractable for, say, <code class="inl">k=15, n=10<sup>4</sup></code>. FPT demands the parameter <em>out</em> of <code class="inl">n</code>&rsquo;s exponent: <code class="inl">2<sup>k</sup>&middot;n</code>, not <code class="inl">n<sup>k</sup></code>. If your &ldquo;parameterized&rdquo; algorithm has <code class="inl">k</code> in the exponent of <code class="inl">n</code>, you have not parameterized anything &mdash; and for W[1]-hard problems like Clique, <code class="inl">n<sup>k</sup></code> is essentially the best you can hope for.</p>
 
         <h3>A reduction rule that changes the answer</h3>
         <p>Kernelization rules must be <em>sound</em>: <code class="inl">(G,k)</code> is a YES-instance iff the reduced <code class="inl">(G',k')</code> is. It is easy to write a plausible rule that quietly alters the optimum (e.g. deleting a degree-1 vertex without taking its neighbour, or forgetting to decrement <code class="inl">k</code> when you commit a forced vertex). Each rule needs the little theorem attached, exactly as Buss&rsquo;s two rules carry theirs. An unsound kernel is not a faster algorithm; it is a wrong one.</p>

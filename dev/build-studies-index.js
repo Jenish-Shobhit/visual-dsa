@@ -193,7 +193,7 @@ const GROUPS = [
 
 const lessonChips = file => {
   const rel = C.lessons.filter(l => l.study === 'studies/' + file);
-  if (!rel.length) return '<span class="is-soon">Stands on its own</span>';
+  if (!rel.length) return '<span class="is-solo">Stands on its own &mdash; no companion lesson</span>';
   return rel.map(l => {
     const label = 'Lesson ' + l.number + ' · ' + esc(l.title);
     return fs.existsSync(path.join(root, 'lessons', l.id + '.html'))
@@ -213,7 +213,7 @@ const groups = GROUPS.map((g, i) => {
 </li>`).join('\n');
   return `<section class="lib-group" aria-labelledby="group-${n}">
 <div class="lib-group__head"><span class="lib-group__num">${n} / 0${GROUPS.length}</span><h2 id="group-${n}">${esc(g.title)}</h2><p>${esc(g.desc)}</p></div>
-<ol class="lib-grid">
+<ol class="lib-grid${g.items.length % 3 === 1 ? " lib-grid--pairs" : ""}">
 ${cards}
 </ol>
 </section>`;

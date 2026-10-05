@@ -331,7 +331,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa1">
+<link rel="stylesheet" href="studies.css?v=vdsa2">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 08">
@@ -1023,7 +1023,7 @@
           </math></div>
         </div>
 
-        <p>So the expected total table space is <code class="inl">O(n)</code>; pick a level-1 <code class="inl">h</code> whose <code class="inl">&#x3A3; n&#11388;&#xB2;</code> is below <code class="inl">2n</code> (Markov again — at least half of the draws qualify) and the bound becomes a guarantee. The result is the striking combination the section promised: <strong><code class="inl">O(n)</code> space and <code class="inl">O(1)</code> worst-case lookup</strong>, with all the probability spent once, at build time, never at query time. Modern variants (cuckoo hashing, and the minimal-perfect-hash generators behind compilers and search indexes) descend directly from this idea.</p>
+        <p>So the expected total table space is <code class="inl">O(n)</code>; pick a level-1 <code class="inl">h</code> whose <code class="inl">&#x3A3; n&#11388;&#xB2;</code> is below <code class="inl">4n</code> (Markov again: since the expectation is below <code class="inl">2n</code>, at most half of the draws can reach <code class="inl">4n</code>, so at least half qualify) and the bound becomes a guarantee. The result is the striking combination the section promised: <strong><code class="inl">O(n)</code> space and <code class="inl">O(1)</code> worst-case lookup</strong>, with all the probability spent once, at build time, never at query time. Modern variants (cuckoo hashing, and the minimal-perfect-hash generators behind compilers and search indexes) descend directly from this idea.</p>
       </div>
     </section>
 
@@ -1054,14 +1054,15 @@
       <div class="eyebrow"><span class="n">11</span> the field, at a glance</div>
       <h2>The hashing zoo, tabulated</h2>
       <div class="col">
-        <p>One table to hold the landscape. Read the worst-case and deletion columns as the deciding ones in practice: they are where the strategies genuinely differ, long after their averages have converged.</p>
+        <p>One table to hold the landscape. Averages are expected probes under the usual models (uniform hashing for the probing schemes; &alpha; = load factor; &ldquo;hit&rdquo; = key present, &ldquo;miss&rdquo; = key absent). Read the worst-case and deletion columns as the deciding ones in practice: they are where the strategies genuinely differ, long after their averages have converged.</p>
         <div class="tbl-wrap">
           <table>
             <caption>Collision strategies &amp; hashing schemes — the essential profile</caption>
             <thead>
               <tr>
                 <th scope="col">scheme</th>
-                <th scope="col">search (avg)</th>
+                <th scope="col">search, hit (avg)</th>
+                <th scope="col">search, miss (avg)</th>
                 <th scope="col">search (worst)</th>
                 <th scope="col">extra space</th>
                 <th scope="col">load &alpha;</th>
@@ -1070,14 +1071,14 @@
               </tr>
             </thead>
             <tbody>
-              <tr><th scope="row">Chaining</th><td class="good mono">1+&alpha;</td><td class="bad mono">&#x398;(n)</td><td class="mono">n ptrs</td><td>any</td><td class="good">easy</td><td class="mid">poor</td></tr>
-              <tr><th scope="row">Linear probing</th><td class="good mono">&#8776;&#189;(1+1/(1&minus;&alpha;))</td><td class="bad mono">&#x398;(n)</td><td class="good mono">0</td><td>&lt; 1</td><td class="bad">tombstone</td><td class="good">excellent</td></tr>
-              <tr><th scope="row">Quadratic probing</th><td class="good mono">&#8776;1/(1&minus;&alpha;)</td><td class="bad mono">&#x398;(n)</td><td class="good mono">0</td><td>&lt; 1</td><td class="bad">tombstone</td><td class="mid">good</td></tr>
-              <tr><th scope="row">Double hashing</th><td class="good mono">1/(1&minus;&alpha;)</td><td class="bad mono">&#x398;(n)</td><td class="good mono">0</td><td>&lt; 1</td><td class="bad">tombstone</td><td class="mid">fair</td></tr>
-              <tr class="wrap-row"><th scope="row">Universal (any above)</th><td class="good mono">1+&alpha;</td><td class="mid mono">&#x398;(n)*</td><td class="mono">&mdash;</td><td>any</td><td class="mid">&mdash;</td><td class="mid">&mdash;</td></tr>
-              <tr class="wrap-row"><th scope="row">FKS perfect (static)</th><td class="good mono">2</td><td class="good mono">2</td><td class="good mono">O(n)</td><td>&mdash;</td><td class="bad">rebuild</td><td class="good">good</td></tr>
+              <tr><th scope="row">Chaining</th><td class="good mono">1+&alpha;/2</td><td class="good mono">1+&alpha;</td><td class="bad mono">&#x398;(n)</td><td class="mono">n ptrs</td><td>any</td><td class="good">easy</td><td class="mid">poor</td></tr>
+              <tr><th scope="row">Linear probing</th><td class="good mono">&#189;(1+1/(1&minus;&alpha;))</td><td class="good mono">&#189;(1+1/(1&minus;&alpha;)&sup2;)</td><td class="bad mono">&#x398;(n)</td><td class="good mono">0</td><td>&lt; 1</td><td class="bad">tombstone</td><td class="good">excellent</td></tr>
+              <tr><th scope="row">Quadratic probing</th><td class="good mono">&#8776;(1/&alpha;)ln(1/(1&minus;&alpha;))</td><td class="good mono">&#8776;1/(1&minus;&alpha;)</td><td class="bad mono">&#x398;(n)</td><td class="good mono">0</td><td>&lt; 1</td><td class="bad">tombstone</td><td class="mid">good</td></tr>
+              <tr><th scope="row">Double hashing</th><td class="good mono">(1/&alpha;)ln(1/(1&minus;&alpha;))</td><td class="good mono">1/(1&minus;&alpha;)</td><td class="bad mono">&#x398;(n)</td><td class="good mono">0</td><td>&lt; 1</td><td class="bad">tombstone</td><td class="mid">fair</td></tr>
+              <tr class="wrap-row"><th scope="row">Universal (any above)</th><td class="good mono">1+&alpha;/2</td><td class="good mono">1+&alpha;</td><td class="mid mono">&#x398;(n)*</td><td class="mono">&mdash;</td><td>any</td><td class="mid">&mdash;</td><td class="mid">&mdash;</td></tr>
+              <tr class="wrap-row"><th scope="row">FKS perfect (static)</th><td class="good mono">2</td><td class="good mono">2</td><td class="good mono">2</td><td class="good mono">O(n)</td><td>&mdash;</td><td class="bad">rebuild</td><td class="good">good</td></tr>
             </tbody>
-            <tfoot><tr><td colspan="7">* universal hashing keeps the <code>&#x398;(n)</code> worst case but makes it occur only with vanishing probability over the chosen <code>h</code>, for <em>every</em> input — it removes the adversary, not the tail. The shaded rows are guarantees layered on top of a base scheme, not standalone tables.</td></tr></tfoot>
+            <tfoot><tr><td colspan="8">* universal hashing keeps the <code>&#x398;(n)</code> worst case but makes it occur only with vanishing probability over the chosen <code>h</code>, for <em>every</em> input — it removes the adversary, not the tail. The shaded rows are guarantees layered on top of a base scheme, not standalone tables.</td></tr></tfoot>
           </table>
         </div>
         <p>A practitioner's reading: <strong>open addressing wins on small, cache-friendly tables</strong> with a known load ceiling and few deletions — linear probing's sequential memory access often beats chaining's pointer-chasing despite its worse clustering math (recall the locality lessons of Lecture&nbsp;1). <strong>Chaining wins when deletions are frequent</strong> or the load factor is hard to bound, because removing a node is trivial and <code class="inl">&alpha; &gt; 1</code> degrades gracefully. <strong>Universal hashing is not optional</strong> anywhere untrusted input reaches the keys. And <strong>perfect hashing is the specialist</strong> for fixed dictionaries that are built once and queried forever.</p>

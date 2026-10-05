@@ -325,7 +325,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa1">
+<link rel="stylesheet" href="studies.css?v=vdsa2">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 03">
@@ -362,7 +362,7 @@
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
-        <p style="margin-bottom:.5em"><strong>A conjecture broken in a week.</strong> For as long as anyone had multiplied, two <code class="inl">n</code>-digit numbers cost <code class="inl">n&#xB2;</code> single-digit products &mdash; it is exactly the long-multiplication you were taught. In 1960 Andrei Kolmogorov, one of the century's great mathematicians, conjectured this <code class="inl">&#x3A9;(n&#xB2;)</code> was <em>unavoidable</em>. A few days later his student Anatoly Karatsuba demolished it with one line of algebra and a recurrence, reaching <code class="inl">n&#x1D58;&#x1D52;&#x1D4D;&#x2082;&#xB3; &#x2248; n&#xB9;&#x22C5;&#x2075;&#x2078;&#x2075;</code>.</p>
+        <p style="margin-bottom:.5em"><strong>A conjecture broken in a week.</strong> For as long as anyone had multiplied, two <code class="inl">n</code>-digit numbers cost <code class="inl">n&#xB2;</code> single-digit products &mdash; it is exactly the long-multiplication you were taught. In 1960 Andrei Kolmogorov, one of the century's great mathematicians, conjectured this <code class="inl">&#x3A9;(n&#xB2;)</code> was <em>unavoidable</em>. A few days later his student Anatoly Karatsuba demolished it with one line of algebra and a recurrence, reaching <code class="inl">n<sup>log<sub>2</sub>3</sup> &#x2248; n<sup>1.585</sup></code>.</p>
         <p style="margin-bottom:0">For two thousand-digit numbers that is the difference between <strong>1,000,000</strong> and roughly <strong>57,000</strong> digit-products &mdash; about <strong>18&times;</strong> fewer &mdash; and the gap widens without bound: at a million digits it is near <strong>300&times;</strong>. The entire speedup is <em>proved</em> by the single tool of this lecture. By the end you will wield it &mdash; and see the question it leaves open: can we multiply faster still?</p>
       </div>
     </div>
@@ -439,8 +439,8 @@
         <ul class="obj">
           <li><strong>Read off</strong> <code class="inl">a</code>, <code class="inl">b</code>, and <code class="inl">f(n)</code> from any divide-and-conquer algorithm and write its recurrence <code class="inl">T(n) = a&#x22C5;T(n/b) + f(n)</code>.</li>
           <li><strong>Solve</strong> that recurrence two independent ways &mdash; by drawing and summing a <em>recursion tree</em>, and by applying the <em>Master Theorem</em> &mdash; and check one against the other.</li>
-          <li><strong>Compute</strong> the critical exponent <code class="inl">log&#8203;_b&#8203;a</code> and decide which of three regimes (leaf-heavy, balanced, root-heavy) a recurrence lands in.</li>
-          <li><strong>Derive</strong> the cost of <em>merge sort</em> (<code class="inl">&#x398;(n&#160;log&#160;n)</code>), <em>binary search</em> (<code class="inl">&#x398;(log&#160;n)</code>), and <em>Karatsuba multiplication</em> (<code class="inl">&#x398;(n&#185;&#183;&#8309;&#8312;&#8309;)</code>) from first principles.</li>
+          <li><strong>Compute</strong> the critical exponent <code class="inl">log<sub>b</sub>&nbsp;a</code> and decide which of three regimes (leaf-heavy, balanced, root-heavy) a recurrence lands in.</li>
+          <li><strong>Derive</strong> the cost of <em>merge sort</em> (<code class="inl">&#x398;(n&#160;log&#160;n)</code>), <em>binary search</em> (<code class="inl">&#x398;(log&#160;n)</code>), and <em>Karatsuba multiplication</em> (<code class="inl">&#x398;(n<sup>1.585</sup>)</code>) from first principles.</li>
           <li><strong>Name</strong> three situations where the Master Theorem does <em>not</em> apply, and fall back to the recursion tree instead.</li>
           <li><strong>Explain</strong> why lowering the branching factor <code class="inl">a</code> &mdash; as Karatsuba does, 4&#8594;3 &mdash; lowers the exponent, and why that sets up the next lecture.</li>
         </ul>
@@ -637,7 +637,7 @@
           <figcaption><b>Figure 2 &mdash; the master picture.</b> Going down, the node count multiplies by <code class="inl">a=2</code> while each node's size divides by <code class="inl">b=2</code>; the two effects cancel, so <em>every level sums to <code class="inl">n</code></em>. With <code class="inl">log&#8322;n + 1</code> levels, the grand total is <code class="inl">n&#160;log&#8322;n</code>. The whole of merge sort is in this one diagram.</figcaption>
         </figure>
 
-        <p>This generalises exactly. At depth <code class="inl">i</code> there are <code class="inl">a&#8305;</code> nodes, each of size <code class="inl">n/b&#8305;</code>, each charging <code class="inl">f(n/b&#8305;)</code>; the leaves sit at depth <code class="inl">log&#8203;_b&#8203;n</code>. Summing label by label gives the one formula every solution specialises:</p>
+        <p>This generalises exactly. At depth <code class="inl">i</code> there are <code class="inl">a&#8305;</code> nodes, each of size <code class="inl">n/b&#8305;</code>, each charging <code class="inl">f(n/b&#8305;)</code>; the leaves sit at depth <code class="inl">log<sub>b</sub>&nbsp;n</code>. Summing label by label gives the one formula every solution specialises:</p>
 
         <div class="eq" role="group" aria-label="The recursion-tree sum">
           <span class="lbl">recursion-tree master sum</span>
@@ -653,14 +653,12 @@
               <mspace width="0.2em"/>
               <mi>f</mi><mo>(</mo><mfrac><mi>n</mi><msup><mi>b</mi><mi>i</mi></msup></mfrac><mo>)</mo>
               <mspace width="0.6em"/><mo>+</mo><mspace width="0.6em"/>
-              <munder><mo>&#x238B;</mo><mtext>leaves</mtext></munder>
-              <mspace width="0.2em"/>
-              <mi>&#x398;</mi><mo>(</mo><msup><mi>n</mi><mrow><msub><mi>log</mi><mi>b</mi></msub><mo>&#x2061;</mo><mi>a</mi></mrow></msup><mo>)</mo>
+              <munder><munder><mrow><mi>&#x398;</mi><mo>(</mo><msup><mi>n</mi><mrow><msub><mi>log</mi><mi>b</mi></msub><mo>&#x2061;</mo><mi>a</mi></mrow></msup><mo>)</mo></mrow><mo>&#x23DF;</mo></munder><mtext>leaves</mtext></munder>
             </mrow>
           </math></div>
         </div>
 
-        <p>The first term sums the combine work of every internal node, level by level; the second is the cost of the leaves. Read this sum and you can already feel the three possible outcomes: either the per-level terms <em>grow</em> toward the leaves, or they <em>stay level</em>, or they <em>shrink</em> toward the leaves. Which of the three happens is settled by one quantity &mdash; the exponent <code class="inl">log&#8203;_b&#8203;a</code> &mdash; so it deserves its own section.</p>
+        <p>The first term sums the combine work of every internal node, level by level; the second is the cost of the leaves. Read this sum and you can already feel the three possible outcomes: either the per-level terms <em>grow</em> toward the leaves, or they <em>stay level</em>, or they <em>shrink</em> toward the leaves. Which of the three happens is settled by one quantity &mdash; the exponent <code class="inl">log<sub>b</sub>&nbsp;a</code> &mdash; so it deserves its own section.</p>
       </div>
     </section>
 
@@ -669,7 +667,7 @@
       <div class="eyebrow"><span class="n">05</span> counting the leaves</div>
       <h2>The critical exponent</h2>
       <div class="col">
-        <p>How many leaves does the tree have? The tree has depth <code class="inl">log&#8203;_b&#8203;n</code> (you can divide <code class="inl">n</code> by <code class="inl">b</code> only that many times before reaching <code class="inl">1</code>), and the node count multiplies by <code class="inl">a</code> at each step, so there are <code class="inl">a&#8319;&#7497;&#7510;&#7511;&#7716;</code> leaves. The small miracle is what that equals:</p>
+        <p>How many leaves does the tree have? The tree has depth <code class="inl">log<sub>b</sub>&nbsp;n</code> (you can divide <code class="inl">n</code> by <code class="inl">b</code> only that many times before reaching <code class="inl">1</code>), and the node count multiplies by <code class="inl">a</code> at each step, so there are <code class="inl">a<sup>log<sub>b</sub>&nbsp;n</sup></code> leaves. The small miracle is what that equals:</p>
 
         <div class="eq red" role="group" aria-label="The leaf-count identity">
           <span class="lbl">leaf count &mdash; the identity that powers everything</span>
@@ -682,12 +680,12 @@
           </math></div>
         </div>
 
-        <p>The number of leaves is <code class="inl">n</code> raised to the <span class="term">critical exponent</span> <code class="inl">log&#8203;_b&#8203;a</code>. This single number is the cost of <em>pure recursion</em> &mdash; the price of all the leaf-work, before any combine step has been paid for. The entire question of solving the recurrence reduces to a contest between this leaf cost, <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</code>, and the combine cost, <code class="inl">f(n)</code>.</p>
+        <p>The number of leaves is <code class="inl">n</code> raised to the <span class="term">critical exponent</span> <code class="inl">log<sub>b</sub>&nbsp;a</code>. This single number is the cost of <em>pure recursion</em> &mdash; the price of all the leaf-work, before any combine step has been paid for. The entire question of solving the recurrence reduces to a contest between this leaf cost, <code class="inl">n<sup>log<sub>b</sub>&nbsp;a</sup></code>, and the combine cost, <code class="inl">f(n)</code>.</p>
 
         <details>
-          <summary>why a^(log_b n) = n^(log_b a)</summary>
+          <summary>why a<sup>log<sub>b</sub>&nbsp;n</sup> = n<sup>log<sub>b</sub>&nbsp;a</sup></summary>
           <div class="body">
-            <p style="margin-top:.8em">Take <code class="inl">log&#8203;_b</code> of each side. Left: <code class="inl">log&#8203;_b(a&#8319;&#7497;&#7510;&#7511;&#7716;) = (log&#8203;_b&#8203;n)(log&#8203;_b&#8203;a)</code>. Right: <code class="inl">log&#8203;_b(n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;) = (log&#8203;_b&#8203;a)(log&#8203;_b&#8203;n)</code>. The two are the same product, so the original quantities are equal. The identity is nothing more than &ldquo;exponents multiply commutatively,&rdquo; but it is what lets us write the leaf cost as a clean power of <code class="inl">n</code>.</p>
+            <p style="margin-top:.8em">Take <code class="inl">log<sub>b</sub></code> of each side. Left: <code class="inl">log<sub>b</sub>(a<sup>log<sub>b</sub>&nbsp;n</sup>) = (log<sub>b</sub>&nbsp;n)(log<sub>b</sub>&nbsp;a)</code>. Right: <code class="inl">log<sub>b</sub>(n<sup>log<sub>b</sub>&nbsp;a</sup>) = (log<sub>b</sub>&nbsp;a)(log<sub>b</sub>&nbsp;n)</code>. The two are the same product, so the original quantities are equal. The identity is nothing more than &ldquo;exponents multiply commutatively,&rdquo; but it is what lets us write the leaf cost as a clean power of <code class="inl">n</code>.</p>
           </div>
         </details>
 
@@ -695,7 +693,7 @@
         <ul class="obj">
           <li><strong>Merge sort</strong> &mdash; <code class="inl">a=2, b=2</code>: critical exponent <code class="inl">log&#8322;2 = 1</code>, so <code class="inl">n&#185;= n</code> leaves. The leaf cost is linear.</li>
           <li><strong>Binary search</strong> &mdash; <code class="inl">a=1, b=2</code>: exponent <code class="inl">log&#8322;1 = 0</code>, so <code class="inl">n&#8304;= 1</code> leaf. There is a single path, not a tree &mdash; recursion that never branches.</li>
-          <li><strong>Karatsuba</strong> &mdash; <code class="inl">a=3, b=2</code>: exponent <code class="inl">log&#8322;3 &#x2248; 1.585</code>, so <code class="inl">n&#185;&#183;&#8309;&#8312;&#8309;</code> leaves &mdash; superlinear, but well under <code class="inl">n&#xB2;</code>. The recursion alone already commits Karatsuba to its famous exponent.</li>
+          <li><strong>Karatsuba</strong> &mdash; <code class="inl">a=3, b=2</code>: exponent <code class="inl">log&#8322;3 &#x2248; 1.585</code>, so <code class="inl">n<sup>1.585</sup></code> leaves &mdash; superlinear, but well under <code class="inl">n&#xB2;</code>. The recursion alone already commits Karatsuba to its famous exponent.</li>
         </ul>
 
         <p>Hold onto that last line. In a divide-and-conquer algorithm the branching factor <code class="inl">a</code> is not a footnote &mdash; it sits <em>in the exponent of the running time</em>. Halving the input is cheap leverage; spawning one extra subproblem is dear. The whole drama of Karatsuba, and of the next lecture, is a fight to keep <code class="inl">a</code> small.</p>
@@ -707,9 +705,9 @@
       <div class="eyebrow"><span class="n">06</span> the master theorem</div>
       <h2>Mechanizing the answer</h2>
       <div class="col">
-        <p>We can now state the procedure that closes the recurrence in the common case &mdash; the <span class="term">Master Theorem</span>. It is exactly the contest just described: compare the combine cost <code class="inl">f(n)</code> against the leaf cost <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</code>, and whichever wins, by a polynomial margin, dictates the total.</p>
+        <p>We can now state the procedure that closes the recurrence in the common case &mdash; the <span class="term">Master Theorem</span>. It is exactly the contest just described: compare the combine cost <code class="inl">f(n)</code> against the leaf cost <code class="inl">n<sup>log<sub>b</sub>&nbsp;a</sup></code>, and whichever wins, by a polynomial margin, dictates the total.</p>
 
-        <p>Let <code class="inl">T(n) = a&#x22C5;T(n/b) + f(n)</code> with <code class="inl">a&#x2265;1</code>, <code class="inl">b&gt;1</code> constants and <code class="inl">f</code> positive. Write the critical exponent as <code class="inl">c&#42; = log&#8203;_b&#8203;a</code>. Then:</p>
+        <p>Let <code class="inl">T(n) = a&#x22C5;T(n/b) + f(n)</code> with <code class="inl">a&#x2265;1</code>, <code class="inl">b&gt;1</code> constants and <code class="inl">f</code> positive. Write the critical exponent as <code class="inl">c&#42; = log<sub>b</sub>&nbsp;a</code>. Then:</p>
 
         <div class="eq" role="group" aria-label="Master Theorem case 1">
           <span class="lbl">case 1 &mdash; leaves win (f is polynomially smaller)</span>
@@ -771,7 +769,7 @@
               <text x="14" y="100" class="dg-label sm dg-muted">root</text>
               <text x="6"  y="260" class="dg-label sm dg-muted">leaf</text>
               <rect x="40" y="290" width="200" height="46" rx="8" fill="var(--surface-2)" stroke="var(--bau-red)" stroke-width="1.5"/>
-              <text x="140" y="318" text-anchor="middle" class="dg-val dg-red-f">&#x398;(n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;)</text>
+              <text x="140" y="318" text-anchor="middle" class="dg-val dg-red-f">&#x398;(n<tspan dy="-6" font-size="11">log</tspan><tspan dy="4" font-size="8">b</tspan><tspan dy="-2" font-size="11">&#160;a</tspan><tspan dy="4">)</tspan>)</text>
             </g>
 
             <!-- PANEL B: case 2 -->
@@ -787,7 +785,7 @@
               <text x="170" y="180" class="dg-label sm">all the same</text>
               <text x="170" y="198" class="dg-label sm">&#8594; &times; (log n) levels</text>
               <rect x="40" y="290" width="220" height="46" rx="8" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="1.5"/>
-              <text x="150" y="318" text-anchor="middle" class="dg-val dg-blue-f">&#x398;(n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491; &#xB7; log n)</text>
+              <text x="150" y="318" text-anchor="middle" class="dg-val dg-blue-f">&#x398;(n<tspan dy="-6" font-size="11">log</tspan><tspan dy="4" font-size="8">b</tspan><tspan dy="-2" font-size="11">&#160;a</tspan><tspan dy="4">)</tspan> &#xB7; log n)</text>
             </g>
 
             <!-- PANEL C: case 3 -->
@@ -810,10 +808,10 @@
 
         <div class="note info">
           <span class="tag">read the cases as a comparison</span>
-          <p style="margin-bottom:0">Always compute <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</code> first, then ask where <code class="inl">f(n)</code> stands relative to it. Case&#160;1: <code class="inl">f</code> is below by a polynomial factor &#8594; answer is the leaf cost. Case&#160;2: <code class="inl">f</code> ties (up to a power of <code class="inl">log</code>) &#8594; multiply by one extra <code class="inl">log</code>. Case&#160;3: <code class="inl">f</code> is above by a polynomial factor (and well-behaved) &#8594; answer is <code class="inl">f</code> itself.</p>
+          <p style="margin-bottom:0">Always compute <code class="inl">n<sup>log<sub>b</sub>&nbsp;a</sup></code> first, then ask where <code class="inl">f(n)</code> stands relative to it. Case&#160;1: <code class="inl">f</code> is below by a polynomial factor &#8594; answer is the leaf cost. Case&#160;2: <code class="inl">f</code> ties (up to a power of <code class="inl">log</code>) &#8594; multiply by one extra <code class="inl">log</code>. Case&#160;3: <code class="inl">f</code> is above by a polynomial factor (and well-behaved) &#8594; answer is <code class="inl">f</code> itself.</p>
         </div>
 
-        <p class="pull">The leaves cost <span>n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</span>; the combine costs <span>f(n)</span>. The Master Theorem is the referee that declares which one wins.</p>
+        <p class="pull">The leaves cost <span>n<sup>log<sub>b</sub>&nbsp;a</sup></span>; the combine costs <span>f(n)</span>. The Master Theorem is the referee that declares which one wins.</p>
       </div>
     </section>
 
@@ -824,9 +822,9 @@
       <div class="col">
         <p>Now the payoff: one tool resolves three different algorithms by changing only <code class="inl">a</code>, <code class="inl">b</code>, and <code class="inl">f</code>. Two of them land in the balanced case from opposite corners; the third tips to the leaves.</p>
 
-        <p><strong>Merge sort</strong>, <code class="inl">T(n)=2T(n/2)+&#x398;(n)</code>. Here <code class="inl">c&#42;=log&#8322;2=1</code>, so <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;=n</code>, and <code class="inl">f(n)=&#x398;(n)=&#x398;(n&#185;)</code> ties it. Case&#160;2 with <code class="inl">k=0</code> gives <code class="inl">T(n)=&#x398;(n&#160;log&#160;n)</code> &mdash; the same answer the tree gave us by hand.</p>
+        <p><strong>Merge sort</strong>, <code class="inl">T(n)=2T(n/2)+&#x398;(n)</code>. Here <code class="inl">c&#42;=log&#8322;2=1</code>, so <code class="inl">n<sup>log<sub>b</sub>&nbsp;a</sup>=n</code>, and <code class="inl">f(n)=&#x398;(n)=&#x398;(n&#185;)</code> ties it. Case&#160;2 with <code class="inl">k=0</code> gives <code class="inl">T(n)=&#x398;(n&#160;log&#160;n)</code> &mdash; the same answer the tree gave us by hand.</p>
 
-        <p><strong>Binary search</strong>, <code class="inl">T(n)=T(n/2)+&#x398;(1)</code>. Search a sorted array by probing the middle and recursing into the <em>one</em> half that can contain the target. Crucially <code class="inl">a=1</code> &mdash; we make a single recursive call, discarding the other half untouched &mdash; so <code class="inl">c&#42;=log&#8322;1=0</code> and <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;=n&#8304;=1</code>. The combine <code class="inl">f(n)=&#x398;(1)=&#x398;(n&#8304;)</code> ties it: Case&#160;2 again, giving <code class="inl">T(n)=&#x398;(1&#x22C5;log&#160;n)=&#x398;(log&#160;n)</code>. The recursion tree degenerates to a single path of length <code class="inl">log&#8322;n</code> &mdash; a chain, not a branching tree &mdash; and its length <em>is</em> the answer.</p>
+        <p><strong>Binary search</strong>, <code class="inl">T(n)=T(n/2)+&#x398;(1)</code>. Search a sorted array by probing the middle and recursing into the <em>one</em> half that can contain the target. Crucially <code class="inl">a=1</code> &mdash; we make a single recursive call, discarding the other half untouched &mdash; so <code class="inl">c&#42;=log&#8322;1=0</code> and <code class="inl">n<sup>log<sub>b</sub>&nbsp;a</sup>=n&#8304;=1</code>. The combine <code class="inl">f(n)=&#x398;(1)=&#x398;(n&#8304;)</code> ties it: Case&#160;2 again, giving <code class="inl">T(n)=&#x398;(1&#x22C5;log&#160;n)=&#x398;(log&#160;n)</code>. The recursion tree degenerates to a single path of length <code class="inl">log&#8322;n</code> &mdash; a chain, not a branching tree &mdash; and its length <em>is</em> the answer.</p>
 
         <pre aria-label="Binary search pseudocode"><code><span class="tok-kw">function</span> <span class="tok-fn">binarySearch</span>(A, target):     <span class="tok-com"># A sorted ascending, half-open [lo, hi)</span>
     lo <span class="tok-op">=</span> <span class="tok-num">0</span> ; hi <span class="tok-op">=</span> len(A)
@@ -837,13 +835,13 @@
         <span class="tok-kw">else</span>:                 hi <span class="tok-op">=</span> mid       <span class="tok-com"># discard the right half</span>
     <span class="tok-kw">return</span> -<span class="tok-num">1</span></code></pre>
 
-        <p><strong>Karatsuba</strong>, <code class="inl">T(n)=3T(n/2)+&#x398;(n)</code> &mdash; the next section earns this recurrence. Here <code class="inl">c&#42;=log&#8322;3&#x2248;1.585</code>, so <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;=n&#185;&#183;&#8309;&#8312;&#8309;</code>, which <em>dominates</em> the linear combine <code class="inl">f(n)=&#x398;(n)=O(n&#185;&#183;&#8309;&#8312;&#8309;&#8315;&#x3B5;)</code>. Case&#160;1: <code class="inl">T(n)=&#x398;(n&#185;&#183;&#8309;&#8312;&#8309;)</code>. The leaves &mdash; the recursion itself &mdash; set the price.</p>
+        <p><strong>Karatsuba</strong>, <code class="inl">T(n)=3T(n/2)+&#x398;(n)</code> &mdash; the next section earns this recurrence. Here <code class="inl">c&#42;=log&#8322;3&#x2248;1.585</code>, so <code class="inl">n<sup>log<sub>b</sub>&nbsp;a</sup>=n<sup>1.585</sup></code>, which <em>dominates</em> the linear combine <code class="inl">f(n)=&#x398;(n)=O(n<sup>1.585&minus;&epsilon;</sup>)</code>. Case&#160;1: <code class="inl">T(n)=&#x398;(n<sup>1.585</sup>)</code>. The leaves &mdash; the recursion itself &mdash; set the price.</p>
 
         <div class="tbl-wrap">
           <table>
             <caption>Reading a, b, f and the case off five recurrences</caption>
             <thead>
-              <tr><th scope="col">algorithm</th><th scope="col">recurrence</th><th scope="col">a</th><th scope="col">b</th><th scope="col">c&#42; = log&#8203;_b&#8203;a</th><th scope="col">f(n)</th><th scope="col">case</th><th scope="col">T(n)</th></tr>
+              <tr><th scope="col">algorithm</th><th scope="col">recurrence</th><th scope="col">a</th><th scope="col">b</th><th scope="col">c&#42; = log<sub>b</sub>&nbsp;a</th><th scope="col">f(n)</th><th scope="col">case</th><th scope="col">T(n)</th></tr>
             </thead>
             <tbody>
               <tr><th scope="row">binary search</th><td class="mono">T(n/2)+&#x398;(1)</td><td>1</td><td>2</td><td>0</td><td class="mono">&#x398;(1)</td><td class="mid">2</td><td class="good mono">&#x398;(log n)</td></tr>
@@ -943,7 +941,7 @@
               <rect x="0" y="0" width="296" height="120" rx="10" fill="var(--surface)" stroke="var(--bau-blue)" stroke-width="2"/>
               <text x="18" y="34" class="dg-label">Karatsuba: a = 3</text>
               <text x="18" y="62" class="dg-val">T = 3T(n/2) + n</text>
-              <text x="18" y="92" class="dg-cap dg-blue-f">&#8594; &#x398;(n&#185;&#183;&#8309;&#8312;&#8309;)</text>
+              <text x="18" y="92" class="dg-cap dg-blue-f">&#8594; &#x398;(n<tspan dy="-6" font-size="11">1.585</tspan><tspan dy="6">)</tspan></text>
             </g>
             <text x="620" y="356" class="dg-label sm">one fewer subproblem, paid for with a</text>
             <text x="620" y="376" class="dg-label sm">few extra &#x398;(n) additions in the combine.</text>
@@ -955,7 +953,8 @@
           <figcaption><b>Figure 4 &mdash; the trade that lowers the exponent.</b> <code class="inl">P&#8323;=(x&#8321;+x&#8320;)(y&#8321;+y&#8320;)</code> expands to <code class="inl">x&#8321;y&#8321;+x&#8321;y&#8320;+x&#8320;y&#8321;+x&#8320;y&#8320;</code>; subtract off <code class="inl">P&#8321;</code> and <code class="inl">P&#8322;</code> and the middle term <code class="inl">x&#8321;y&#8320;+x&#8320;y&#8321;</code> falls out. Three recursive multiplications, a handful of linear-time additions, and the branching factor drops from 4 to 3.</figcaption>
         </figure>
 
-        <pre aria-label="Karatsuba pseudocode"><code><span class="tok-kw">function</span> <span class="tok-fn">karatsuba</span>(x, y):             <span class="tok-com"># x, y are n-digit numbers</span>
+        <pre aria-label="Karatsuba pseudocode"><code><span class="tok-kw">function</span> <span class="tok-fn">karatsuba</span>(x, y):             <span class="tok-com"># x, y: non-negative integers</span>
+    n <span class="tok-op">=</span> max(digits(x), digits(y))     <span class="tok-com"># digit count of the larger operand</span>
     <span class="tok-kw">if</span> n <span class="tok-op">==</span> <span class="tok-num">1</span>: <span class="tok-kw">return</span> x <span class="tok-op">*</span> y           <span class="tok-com"># base case: one digit-multiply</span>
     m <span class="tok-op">=</span> n <span class="tok-op">//</span> <span class="tok-num">2</span> ; B <span class="tok-op">=</span> <span class="tok-num">10</span><span class="tok-op">**</span>m
     x1, x0 <span class="tok-op">=</span> divmod(x, B)             <span class="tok-com"># x = x1*B + x0</span>
@@ -974,11 +973,11 @@
           <p class="mono" style="margin:0 0 .4em; font-size:14px">middle = P&#8323; &#8722; P&#8321; &#8722; P&#8322; = 21 &#8722; 3 &#8722; 8 = 10</p>
           <p class="mono" style="margin:0; font-size:14px">xy = 3&#xD7;100 + 10&#xD7;10 + 8 = 300 + 100 + 8 = <strong>408</strong> &#160;&#10003;&#160; (12&#xD7;34 = 408)</p>
         </div>
-        <p>Three multiplications, not four &mdash; and on larger inputs each of those three is itself done by the same trick, recursively. The recurrence is <code class="inl">T(n)=3T(n/2)+&#x398;(n)</code>, and the Master Theorem's Case&#160;1 closes it at <code class="inl">&#x398;(n&#x1D58;&#x1D52;&#x1D4D;&#x2082;&#xB3;) = &#x398;(n&#185;&#183;&#8309;&#8312;&#8309;)</code>.</p>
+        <p>Three multiplications, not four &mdash; and on larger inputs each of those three is itself done by the same trick, recursively. The recurrence is <code class="inl">T(n)=3T(n/2)+&#x398;(n)</code>, and the Master Theorem's Case&#160;1 closes it at <code class="inl">&#x398;(n<sup>log<sub>2</sub>3</sup>) = &#x398;(n<sup>1.585</sup>)</code>.</p>
 
         <div class="note">
           <span class="tag">the lesson worth carrying</span>
-          <p style="margin-bottom:0">Karatsuba did not make the combine <em>cheaper</em> &mdash; it made it slightly more expensive (more additions). It made the recursion <em>narrower</em>, dropping <code class="inl">a</code> from 4 to 3. Because <code class="inl">a</code> lives in the exponent <code class="inl">log&#8203;_b&#8203;a</code> and <code class="inl">f</code> does not, that is a trade always worth making. This is the strategic core of divide and conquer: <strong>spend linear work in the combine to buy a smaller branching factor.</strong> The natural next question &mdash; can we push the exponent toward <code class="inl">1</code>? &mdash; is exactly where the next lecture begins.</p>
+          <p style="margin-bottom:0">Karatsuba did not make the combine <em>cheaper</em> &mdash; it made it slightly more expensive (more additions). It made the recursion <em>narrower</em>, dropping <code class="inl">a</code> from 4 to 3. Because <code class="inl">a</code> lives in the exponent <code class="inl">log<sub>b</sub>&nbsp;a</code> and <code class="inl">f</code> does not, that is a trade always worth making. This is the strategic core of divide and conquer: <strong>spend linear work in the combine to buy a smaller branching factor.</strong> The natural next question &mdash; can we push the exponent toward <code class="inl">1</code>? &mdash; is exactly where the next lecture begins.</p>
         </div>
       </div>
     </section>
@@ -997,7 +996,7 @@
         <p>The combine cost <code class="inl">f(n)</code> is the work at <em>this level only</em> &mdash; the divide plus the merge &mdash; explicitly <strong>not</strong> the cost of the recursive calls. Folding the children's cost into <code class="inl">f</code> double-counts the entire tree. Write <code class="inl">f(n)</code> as what you would pay if the recursive calls were free.</p>
 
         <h3>3. The polynomial-gap requirement &mdash; the &ldquo;Case&#160;2&frac12;&rdquo; hole</h3>
-        <p>Cases&#160;1 and&#160;3 demand that <code class="inl">f</code> differ from <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</code> by a factor of <code class="inl">n&#x3B5;</code> &mdash; a <em>polynomial</em> gap. A merely logarithmic gap falls between the cracks. The classic offender:</p>
+        <p>Cases&#160;1 and&#160;3 demand that <code class="inl">f</code> differ from <code class="inl">n<sup>log<sub>b</sub>&nbsp;a</sup></code> by a factor of <code class="inl">n<sup>&epsilon;</sup></code> &mdash; a <em>polynomial</em> gap. A merely logarithmic gap falls between the cracks. The classic offender:</p>
         <div class="eq red" role="group" aria-label="A recurrence the Master Theorem cannot solve">
           <span class="lbl">Master Theorem does NOT apply</span>
           <div class="math-scroll"><math display="block">
@@ -1008,13 +1007,13 @@
             </mrow>
           </math></div>
         </div>
-        <p>Here <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;=n</code> and <code class="inl">f=n/log&#160;n</code> is smaller &mdash; but only by <code class="inl">log&#160;n</code>, not by any <code class="inl">n&#x3B5;</code>. Case&#160;1 fails (no polynomial gap), Case&#160;2 fails (<code class="inl">f</code> is not <code class="inl">&#x398;(n&#160;log&#7484;n)</code>). You must sum the tree directly: level <code class="inl">i</code> costs <code class="inl">n/(log&#160;n - i)</code>, and the sum is the harmonic series, <code class="inl">n&#x22C5;H&#8336;&#8338;&#8348;&#8345; = &#x398;(n&#160;log&#160;log&#160;n)</code>. The tree never lies; the theorem sometimes abstains.</p>
+        <p>Here <code class="inl">n<sup>log<sub>b</sub>&nbsp;a</sup>=n</code> and <code class="inl">f=n/log&#160;n</code> is smaller &mdash; but only by <code class="inl">log&#160;n</code>, not by any <code class="inl">n<sup>&epsilon;</sup></code>. Case&#160;1 fails (no polynomial gap), Case&#160;2 fails (<code class="inl">f</code> is not <code class="inl">&#x398;(n&#160;log<sup>k</sup>&nbsp;n)</code>). You must sum the tree directly: level <code class="inl">i</code> costs <code class="inl">n/(log&#160;n - i)</code>, and the sum is the harmonic series, <code class="inl">n&#x22C5;H<sub>log&nbsp;n</sub> = &#x398;(n&#160;log&#160;log&#160;n)</code>. The tree never lies; the theorem sometimes abstains.</p>
 
         <h3>4. Unequal subproblem sizes</h3>
-        <p>The Master Theorem assumes <em>all</em> subproblems share the size <code class="inl">n/b</code>. A recurrence like <code class="inl">T(n)=T(n/3)+T(2n/3)+&#x398;(n)</code> &mdash; the shape that arises in median-finding and some quickselect analyses &mdash; is <strong>not</strong> of the form <code class="inl">a&#x22C5;T(n/b)</code> and is out of scope. Draw the (now lopsided) tree, or reach for the <span class="term">Akra&#8211;Bazzi</span> method, the generalisation built for unequal splits. (For that example the longest root-to-leaf path has length <code class="inl">log&#8203;_{3/2}&#8203;n</code> and every level still costs <code class="inl">&#x398;(n)</code>, giving <code class="inl">&#x398;(n&#160;log&#160;n)</code>.)</p>
+        <p>The Master Theorem assumes <em>all</em> subproblems share the size <code class="inl">n/b</code>. A recurrence like <code class="inl">T(n)=T(n/3)+T(2n/3)+&#x398;(n)</code> &mdash; the shape that arises in median-finding and some quickselect analyses &mdash; is <strong>not</strong> of the form <code class="inl">a&#x22C5;T(n/b)</code> and is out of scope. Draw the (now lopsided) tree, or reach for the <span class="term">Akra&#8211;Bazzi</span> method, the generalisation built for unequal splits. (For that example the longest root-to-leaf path has length <code class="inl">log<sub>3/2</sub>&nbsp;n</code> and every level still costs <code class="inl">&#x398;(n)</code>, giving <code class="inl">&#x398;(n&#160;log&#160;n)</code>.)</p>
 
         <h3>5. Case&#160;3 without the regularity check</h3>
-        <p>Case&#160;3 needs <em>two</em> conditions: <code class="inl">f=&#x3A9;(n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;&#8314;&#x3B5;)</code> <strong>and</strong> the regularity condition <code class="inl">a&#x22C5;f(n/b) &#x2264; c&#x22C5;f(n)</code> for some <code class="inl">c&lt;1</code>. For every polynomial <code class="inl">f</code> you will meet in practice, regularity holds automatically &mdash; but for contrived or oscillating <code class="inl">f</code> it can fail even when <code class="inl">f</code> is polynomially larger, and then Case&#160;3's conclusion is not licensed. Do not skip the check on exotic <code class="inl">f</code>.</p>
+        <p>Case&#160;3 needs <em>two</em> conditions: <code class="inl">f=&#x3A9;(n<sup>log<sub>b</sub>&nbsp;a+&epsilon;</sup>)</code> <strong>and</strong> the regularity condition <code class="inl">a&#x22C5;f(n/b) &#x2264; c&#x22C5;f(n)</code> for some <code class="inl">c&lt;1</code>. For every polynomial <code class="inl">f</code> you will meet in practice, regularity holds automatically &mdash; but for contrived or oscillating <code class="inl">f</code> it can fail even when <code class="inl">f</code> is polynomially larger, and then Case&#160;3's conclusion is not licensed. Do not skip the check on exotic <code class="inl">f</code>.</p>
 
         <h3>6. Floors, ceilings, and a forgotten base case</h3>
         <p>Real splits give <code class="inl">T(&#8970;n/2&#8971;)</code> and <code class="inl">T(&#8968;n/2&#8969;)</code>, not an exact <code class="inl">n/2</code>. It is a theorem that the floors and ceilings do not change the asymptotic answer, so we derive on powers of <code class="inl">b</code> and quote the general result &mdash; but you must <em>know</em> that is what you are doing. And never omit the base case: a recurrence with no anchor describes infinite recursion, and <code class="inl">T(1)=&#x398;(1)</code> is what makes the leaf level finite.</p>
@@ -1033,7 +1032,7 @@
         <div>
           <h3>Solve the battery &mdash; and find the one that resists</h3>
           <p class="meta">master theorem &middot; recursion tree &middot; the polynomial-gap rule</p>
-          <p>For each recurrence give a tight <code class="inl">&#x398;</code> bound. State <code class="inl">a</code>, <code class="inl">b</code>, the critical exponent <code class="inl">log&#8203;_b&#8203;a</code>, and which Master-Theorem case applies (or why none does):</p>
+          <p>For each recurrence give a tight <code class="inl">&#x398;</code> bound. State <code class="inl">a</code>, <code class="inl">b</code>, the critical exponent <code class="inl">log<sub>b</sub>&nbsp;a</code>, and which Master-Theorem case applies (or why none does):</p>
           <p class="mono" style="font-size:13.5px; margin:.2em 0 0">(a)&#160; T(n) = 4T(n/2) + n<br>
           (b)&#160; T(n) = 4T(n/2) + n&#xB2;<br>
           (c)&#160; T(n) = 4T(n/2) + n&#xB3;<br>
@@ -1090,7 +1089,7 @@
       <div class="col">
         <div class="band flush">
           <div class="accentbar" aria-hidden="true"></div>
-          <p style="margin-bottom:0; font-size:1.12rem"><strong>A divide-and-conquer algorithm is a recurrence <code class="inl">T(n)=a&#x22C5;T(n/b)+f(n)</code>, and you solve it by a single contest:</strong> compare the leaf cost <code class="inl">n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;</code> against the combine cost <code class="inl">f(n)</code>. Leaves win by a polynomial margin &#8594; <code class="inl">&#x398;(n&#8319;&#7497;&#7510;&#7511;&#7716;&#7491;)</code>; a tie &#8594; one extra <code class="inl">log</code>; the combine wins &#8594; <code class="inl">&#x398;(f(n))</code>. When the theorem abstains, the recursion tree always answers. And remember the branching factor <code class="inl">a</code> sits in the exponent &mdash; which is why Karatsuba's 4&#8594;3 is worth a few extra additions.</p>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>A divide-and-conquer algorithm is a recurrence <code class="inl">T(n)=a&#x22C5;T(n/b)+f(n)</code>, and you solve it by a single contest:</strong> compare the leaf cost <code class="inl">n<sup>log<sub>b</sub>&nbsp;a</sup></code> against the combine cost <code class="inl">f(n)</code>. Leaves win by a polynomial margin &#8594; <code class="inl">&#x398;(n<sup>log<sub>b</sub>&nbsp;a</sup>)</code>; a tie &#8594; one extra <code class="inl">log</code>; the combine wins &#8594; <code class="inl">&#x398;(f(n))</code>. When the theorem abstains, the recursion tree always answers. And remember the branching factor <code class="inl">a</code> sits in the exponent &mdash; which is why Karatsuba's 4&#8594;3 is worth a few extra additions.</p>
         </div>
 
         <div class="next">
@@ -1100,7 +1099,7 @@
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">Karatsuba dragged multiplication from <code class="inl">n&#xB2;</code> down to <code class="inl">n&#185;&#183;&#8309;&#8312;&#8309;</code> by shaving the branching factor. Can we reach <code class="inl">n&#160;log&#160;n</code>? Yes &mdash; but it takes a different kind of divide and conquer: not splitting the digits, but <em>changing representation</em>, evaluating a polynomial at the complex roots of unity so that the costly convolution becomes a cheap pointwise product. The FFT is the most beautiful recurrence in this course, and it answers the question this lecture leaves hanging.</p>
+        <p style="margin-top:1em">Karatsuba dragged multiplication from <code class="inl">n&#xB2;</code> down to <code class="inl">n<sup>1.585</sup></code> by shaving the branching factor. Can we reach <code class="inl">n&#160;log&#160;n</code>? Yes &mdash; but it takes a different kind of divide and conquer: not splitting the digits, but <em>changing representation</em>, evaluating a polynomial at the complex roots of unity so that the costly convolution becomes a cheap pointwise product. The FFT is the most beautiful recurrence in this course, and it answers the question this lecture leaves hanging.</p>
       </div>
     </section>
 

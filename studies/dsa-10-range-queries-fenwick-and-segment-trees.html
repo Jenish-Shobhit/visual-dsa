@@ -336,7 +336,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa1">
+<link rel="stylesheet" href="studies.css?v=vdsa2">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 10">
@@ -491,7 +491,7 @@
           <li>any query interval is the disjoint union of <code class="inl">O(log&nbsp;n)</code> canonical ranges (so a query is a fold of <code class="inl">O(log&nbsp;n)</code> stored values), and</li>
           <li>any single index belongs to only <code class="inl">O(log&nbsp;n)</code> canonical ranges (so an update repairs only <code class="inl">O(log&nbsp;n)</code> stored values).</li>
         </ul>
-        <p>The two structures differ <em>only</em> in which family of canonical ranges they pick &mdash; and how they store it. The segment tree uses the dyadic intervals of a binary tree, held in an array of nodes. The Fenwick uses the intervals <code class="inl">(i&minus;\text{lowbit}(i),\,i]</code>, held in nothing but an array indexed by <code class="inl">i</code>, with the structure smuggled into the binary digits of <code class="inl">i</code>. Same idea, two encodings. Hold that and neither will ever feel like a trick.</p>
+        <p>The two structures differ <em>only</em> in which family of canonical ranges they pick &mdash; and how they store it. The segment tree uses the dyadic intervals of a binary tree, held in an array of nodes. The Fenwick uses the intervals <code class="inl">(i&minus;lowbit(i),&#8201;i]</code>, held in nothing but an array indexed by <code class="inl">i</code>, with the structure smuggled into the binary digits of <code class="inl">i</code>. Same idea, two encodings. Hold that and neither will ever feel like a trick.</p>
 
         <div class="pull">Store neither the whole nor the parts, but a logarithmic ladder of partial answers &mdash; <span>so that every interval is a short sum of rungs, and every rung sits on a short ladder of intervals.</span></div>
       </div>
@@ -601,7 +601,7 @@
         </figure>
 
         <h3>Prefix query: peel the set bits off</h3>
-        <p>To get <code class="inl">prefix(i) = a[1]+&hellip;+a[i]</code>, stand at <code class="inl">i</code>, add <code class="inl">tree[i]</code> (the block ending at <code class="inl">i</code>), then jump to the index just left of that block: <code class="inl">i &larr; i &minus; lowbit(i)</code>. Each jump clears the lowest set bit, so you take exactly <code class="inl">\text{popcount}(i)</code> steps &mdash; at most <code class="inl">&lfloor;log&#8322;n&rfloor;{+}1</code>. To get an arbitrary range, subtract two prefixes (this is the step that demands invertibility):</p>
+        <p>To get <code class="inl">prefix(i) = a[1]+&hellip;+a[i]</code>, stand at <code class="inl">i</code>, add <code class="inl">tree[i]</code> (the block ending at <code class="inl">i</code>), then jump to the index just left of that block: <code class="inl">i &larr; i &minus; lowbit(i)</code>. Each jump clears the lowest set bit, so you take exactly <code class="inl">popcount(i)</code> steps &mdash; at most <code class="inl">&lfloor;log&#8322;n&rfloor;{+}1</code>. To get an arbitrary range, subtract two prefixes (this is the step that demands invertibility):</p>
 
         <pre><code><span class="tok-kw">def</span> <span class="tok-fn">lowbit</span>(i): <span class="tok-kw">return</span> i <span class="tok-op">&amp;</span> (<span class="tok-op">-</span>i)              <span class="tok-com"># least significant set bit</span>
 
@@ -645,7 +645,7 @@
         </div>
 
         <h3>Step 1 &mdash; the Fenwick array</h3>
-        <p>Fill each <code class="inl">tree[i]</code> with the sum of its responsibility range <code class="inl">(i&minus;lowbit(i),\,i]</code>:</p>
+        <p>Fill each <code class="inl">tree[i]</code> with the sum of its responsibility range <code class="inl">(i&minus;lowbit(i),&#8201;i]</code>:</p>
         <div class="cells" aria-hidden="true">
           <span class="c"><span class="ix">t1</span>5</span><span class="c"><span class="ix">t2</span>8</span><span class="c"><span class="ix">t3</span>7</span><span class="c"><span class="ix">t4</span>24</span><span class="c"><span class="ix">t5</span>6</span><span class="c"><span class="ix">t6</span>10</span><span class="c"><span class="ix">t7</span>8</span><span class="c"><span class="ix">t8</span>44</span>
         </div>
@@ -803,7 +803,7 @@
       <div class="eyebrow"><span class="n">07</span> defer the work you can</div>
       <h2>Lazy propagation: range updates in O(log n)</h2>
       <div class="col">
-        <p>Point update we can do. But suppose the update itself is a range: <em>add <code class="inl">&delta;</code> to every element of <code class="inl">[l,r)</code></em>, then keep answering range sums. Touching every leaf in the range is <code class="inl">O(\text{range})</code> &mdash; back to linear. The fix is the same canonical-decomposition idea applied to <em>updates</em>: when a range-add fully covers a node, record the obligation <em>on that node</em> and stop, instead of pushing it down to its leaves. The node's own aggregate is corrected immediately; the promise to its children is stored in a <span class="term">lazy tag</span> and only honored (&ldquo;pushed down&rdquo;) if a later operation actually needs to descend through it.</p>
+        <p>Point update we can do. But suppose the update itself is a range: <em>add <code class="inl">&delta;</code> to every element of <code class="inl">[l,r)</code></em>, then keep answering range sums. Touching every leaf in the range is <code class="inl">O(range)</code> &mdash; back to linear. The fix is the same canonical-decomposition idea applied to <em>updates</em>: when a range-add fully covers a node, record the obligation <em>on that node</em> and stop, instead of pushing it down to its leaves. The node's own aggregate is corrected immediately; the promise to its children is stored in a <span class="term">lazy tag</span> and only honored (&ldquo;pushed down&rdquo;) if a later operation actually needs to descend through it.</p>
 
         <p>For range-add / range-sum the bookkeeping is exact. A node covering <code class="inl">len</code> elements, told to add <code class="inl">&delta;</code> to all of them, updates <code class="inl">sum &mathbin{+}= &delta; &middot; len</code> and remembers <code class="inl">lazy &mathbin{+}= &delta;</code>. Before <em>ever</em> recursing into its children, it first flushes that pending <code class="inl">lazy</code> to both of them. That single discipline &mdash; <strong>push down before you descend</strong> &mdash; keeps every node's stored sum correct-as-seen and the children correct-when-visited.</p>
 
@@ -887,7 +887,7 @@
         <p>The point of these structures is not range sums for their own sake &mdash; it is that a Fenwick over <em>value space</em> becomes a live, sorted multiset you can interrogate. Two classic uses make this vivid.</p>
 
         <h3>A &mdash; Counting inversions in O(n log n)</h3>
-        <p>An <span class="term">inversion</span> is a pair <code class="inl">i&lt;j</code> with <code class="inl">a[i]&gt;a[j]</code> &mdash; a measure of how unsorted a sequence is. You met inversion counting through the <a class="inline" href="dsa-03-divide-solve-combine.html">merge-sort &ldquo;count while you merge&rdquo;</a> trick in Lecture&nbsp;03. Here is the Fenwick way, often simpler to reason about. Sweep <code class="inl">j</code> from left to right, keeping a Fenwick over <em>ranks</em> that counts how many already-seen elements have each rank. At step <code class="inl">j</code>, the elements already inserted are exactly those at indices <code class="inl">&lt;j</code>; among them the ones <em>greater</em> than <code class="inl">a[j]</code> are inversions ending at <code class="inl">j</code>. That count is <code class="inl">(\text{seen}) &minus; \text{prefix}(\text{rank}(a[j]))</code>.</p>
+        <p>An <span class="term">inversion</span> is a pair <code class="inl">i&lt;j</code> with <code class="inl">a[i]&gt;a[j]</code> &mdash; a measure of how unsorted a sequence is. You met inversion counting through the <a class="inline" href="dsa-03-divide-solve-combine.html">merge-sort &ldquo;count while you merge&rdquo;</a> trick in Lecture&nbsp;03. Here is the Fenwick way, often simpler to reason about. Sweep <code class="inl">j</code> from left to right, keeping a Fenwick over <em>ranks</em> that counts how many already-seen elements have each rank. At step <code class="inl">j</code>, the elements already inserted are exactly those at indices <code class="inl">&lt;j</code>; among them the ones <em>greater</em> than <code class="inl">a[j]</code> are inversions ending at <code class="inl">j</code>. That count is <code class="inl">(seen) &minus; prefix(rank(a[j]))</code>.</p>
 
         <pre><code><span class="tok-kw">def</span> <span class="tok-fn">count_inversions</span>(a):              <span class="tok-com"># O(n log n)</span>
     rank <span class="tok-op">=</span> <span class="tok-fn">compress</span>(a)               <span class="tok-com"># map values &rarr; 1..m, order-preserving</span>
@@ -1040,7 +1040,7 @@
           <p>Support two operations on an array of length <code class="inl">n</code>, each in <code class="inl">O(log&nbsp;n)</code>: <code class="inl">rangeAdd(l, r, delta)</code> adds <code class="inl">delta</code> to every element of <code class="inl">[l, r]</code>, and <code class="inl">rangeSum(l, r)</code> returns the sum over <code class="inl">[l, r]</code>. Give <em>two</em> designs: a lazy segment tree, and a Fenwick-only solution using the difference-array / two-BIT identity.</p>
           <p class="meta">Signature: <code class="inl">class RangeArray { RangeArray(int n); void rangeAdd(int l, int r, long delta); long rangeSum(int l, int r); }</code></p>
           <p class="meta">Constraints: <code class="inl">1 &le; n, q &le; 2&times;10&#8309;</code>; <code class="inl">|delta| &le; 10&#8313;</code> (use 64-bit). Example: start all zeros, <code class="inl">rangeAdd(1,3,2)</code>, <code class="inl">rangeAdd(2,4,3)</code>; then <code class="inl">rangeSum(0,4)=2{+}5{+}5{+}3{=}15</code>.</p>
-          <p class="meta">Hint lens: for the two-BIT trick, derive <code class="inl">&#x2211;_{k=0}^{r} a[k]</code> as a linear function of difference-array prefix sums; maintain one BIT for the constant part and one for the <code class="inl">k</code>-weighted part.</p>
+          <p class="meta">Hint lens: for the two-BIT trick, derive <code class="inl">&#x2211;<sub>k=0</sub><sup>r</sup> a[k]</code> as a linear function of difference-array prefix sums; maintain one BIT for the constant part and one for the <code class="inl">k</code>-weighted part.</p>
         </div>
       </div>
 

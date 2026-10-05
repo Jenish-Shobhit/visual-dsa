@@ -197,14 +197,17 @@ html:has(.study-page) { overflow-x: hidden; }
 .lib-card__title a { color: var(--ink); text-decoration: none; }
 .lib-card__title a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }   /* whole card is the click target */
 .lib-card__note { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
-.lib-card__lessons { position: relative; z-index: 1; margin-top: auto; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.lib-card__lessons { position: relative; z-index: 1; margin-top: auto; padding-top: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .lib-card__lessons a, .lib-card__lessons span {
-  display: inline-flex; align-items: center; min-height: 28px; padding: 2px 10px; border-radius: 999px;
+  display: inline-block; max-width: 100%; padding: 4px 10px; border-radius: var(--r-sm, 8px); line-height: 1.35;
   font-size: 12.5px; font-weight: 600; text-decoration: none; border: 1px solid var(--line-strong); color: var(--ink-2); background: var(--bg);
 }
 .lib-card__lessons a { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
 .lib-card__lessons a:hover { background: var(--accent-soft); }
 .lib-card__lessons .is-soon { color: var(--ink-3); border-style: dashed; font-weight: 500; }
+.lib-card__lessons .is-solo { padding: 0; border: 0; background: none; color: var(--ink-3); font-weight: 500; font-size: 12.5px; }
+/* groups of 4 (3+1 orphan) lay out as 2 x 2 on wide screens */
+@media (min-width: 760px) { .lib-grid--pairs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .lib [hidden] { display: none !important; }
 .lib-empty { padding: 32px; text-align: center; color: var(--ink-2); border: 1px dashed var(--line-strong); border-radius: var(--r-lg); }
 
@@ -228,3 +231,9 @@ html:has(.study-page) { overflow-x: hidden; }
   .study-page .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
   .lib-card { transition: none; }
 }
+/* Never leave content blank: print, anchor jumps (#section or any #id inside a section), and no-JS. */
+@media print, (scripting: none) {
+  .study-page .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+.study-page .reveal:target,
+.study-page .reveal:has(:target) { opacity: 1; transform: none; transition: none; }

@@ -348,7 +348,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa1">
+<link rel="stylesheet" href="studies.css?v=vdsa2">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 14">
@@ -471,7 +471,7 @@
       <div class="col">
         <ul class="obj">
           <li><strong>State</strong> the APSP problem and price its two SSSP-repetition baselines (<code class="inl">n&times;</code>Dijkstra, <code class="inl">n&times;</code>Bellman&ndash;Ford), knowing exactly which one each weight regime permits.</li>
-          <li><strong>Derive</strong> the Floyd&ndash;Warshall recurrence over <em>permitted intermediate vertices</em> <code class="inl">d&#8317;&#8338;&#8318;(i,j)=min(d&#8317;&#8338;&#8315;&#185;&#8318;(i,j),&nbsp;d&#8317;&#8338;&#8315;&#185;&#8318;(i,k)+d&#8317;&#8338;&#8315;&#185;&#8318;(k,j))</code> and prove it correct by induction on <code class="inl">k</code>.</li>
+          <li><strong>Derive</strong> the Floyd&ndash;Warshall recurrence over <em>permitted intermediate vertices</em> <code class="inl">d<sup>(k)</sup>(i,j)=min(d<sup>(k&minus;1)</sup>(i,j),&nbsp;d<sup>(k&minus;1)</sup>(i,k)+d<sup>(k&minus;1)</sup>(k,j))</code> and prove it correct by induction on <code class="inl">k</code>.</li>
           <li><strong>Implement</strong> it in <code class="inl">&#x398;(n&sup3;)</code> time and <code class="inl">&#x398;(n&sup2;)</code> space, justify the in-place collapse of the <code class="inl">k</code>-index, reconstruct paths via a successor matrix, and detect negative cycles on the diagonal.</li>
           <li><strong>Derive</strong> Johnson&rsquo;s reweighting: why a potential <code class="inl">h(v)</code> makes every reduced weight <code class="inl">&#373;(u,v)=w(u,v)+h(u)&minus;h(v)&nbsp;&ge;&nbsp;0</code> while preserving every shortest path, and why Bellman&ndash;Ford from a super-source yields a valid <code class="inl">h</code>.</li>
           <li><strong>Choose</strong> between Floyd&ndash;Warshall and Johnson from the graph&rsquo;s density, locating the crossover where <code class="inl">O(nm + n&sup2; log n)</code> overtakes <code class="inl">&#x398;(n&sup3;)</code>.</li>
@@ -512,12 +512,12 @@
           </math></div>
         </div>
 
-        <p>Read the two ends of that ladder. At <code class="inl">k=0</code> <em>no</em> vertex may be used as an intermediate, so the only legal <code class="inl">i&#x21DD;j</code> path is the direct edge: <code class="inl">d&#8317;&#8304;&#8318;(i,j)=w(i,j)</code> (with <code class="inl">0</code> on the diagonal and <code class="inl">&infin;</code> where no edge exists). At <code class="inl">k=n</code> <em>every</em> vertex is permitted, so the restriction is no restriction at all: <code class="inl">d&#8317;&#8319;&#8318;(i,j)=&delta;(i,j)</code>, the true answer. The plan writes itself: start at the trivial layer <code class="inl">d&#8317;&#8304;&#8318;</code> and climb to <code class="inl">d&#8317;&#8319;&#8318;</code>, admitting one more vertex into the permitted set at each step.</p>
+        <p>Read the two ends of that ladder. At <code class="inl">k=0</code> <em>no</em> vertex may be used as an intermediate, so the only legal <code class="inl">i&#x21DD;j</code> path is the direct edge: <code class="inl">d<sup>(0)</sup>(i,j)=w(i,j)</code> (with <code class="inl">0</code> on the diagonal and <code class="inl">&infin;</code> where no edge exists). At <code class="inl">k=n</code> <em>every</em> vertex is permitted, so the restriction is no restriction at all: <code class="inl">d<sup>(n)</sup>(i,j)=&delta;(i,j)</code>, the true answer. The plan writes itself: start at the trivial layer <code class="inl">d<sup>(0)</sup></code> and climb to <code class="inl">d<sup>(n)</sup></code>, admitting one more vertex into the permitted set at each step.</p>
 
         <p>The climb &mdash; from layer <code class="inl">k&minus;1</code> to layer <code class="inl">k</code> &mdash; is a single binary choice. We are about to let paths use vertex <code class="inl">k</code> as an intermediate, on top of everything in <code class="inl">{1,&hellip;,k&minus;1}</code> they could already use. For a given pair <code class="inl">(i,j)</code>, the best path permitted at layer <code class="inl">k</code> either ignores the new option or seizes it:</p>
         <ul>
-          <li><strong>It does not pass through <code class="inl">k</code>.</strong> Then its intermediates already lie in <code class="inl">{1,&hellip;,k&minus;1}</code>, and its length is exactly <code class="inl">d&#8317;&#8338;&#8315;&#185;&#8318;(i,j)</code> &mdash; nothing changed.</li>
-          <li><strong>It passes through <code class="inl">k</code>.</strong> Because the path is simple (no negative cycle), it visits <code class="inl">k</code> <em>exactly once</em>. Split it there: <code class="inl">i &#x21DD; k</code> then <code class="inl">k &#x21DD; j</code>. Neither half uses <code class="inl">k</code> as an interior vertex, so each half&rsquo;s intermediates lie in <code class="inl">{1,&hellip;,k&minus;1}</code>, and each half is itself shortest under that restriction. The length is <code class="inl">d&#8317;&#8338;&#8315;&#185;&#8318;(i,k) + d&#8317;&#8338;&#8315;&#185;&#8318;(k,j)</code>.</li>
+          <li><strong>It does not pass through <code class="inl">k</code>.</strong> Then its intermediates already lie in <code class="inl">{1,&hellip;,k&minus;1}</code>, and its length is exactly <code class="inl">d<sup>(k&minus;1)</sup>(i,j)</code> &mdash; nothing changed.</li>
+          <li><strong>It passes through <code class="inl">k</code>.</strong> Because the path is simple (no negative cycle), it visits <code class="inl">k</code> <em>exactly once</em>. Split it there: <code class="inl">i &#x21DD; k</code> then <code class="inl">k &#x21DD; j</code>. Neither half uses <code class="inl">k</code> as an interior vertex, so each half&rsquo;s intermediates lie in <code class="inl">{1,&hellip;,k&minus;1}</code>, and each half is itself shortest under that restriction. The length is <code class="inl">d<sup>(k&minus;1)</sup>(i,k) + d<sup>(k&minus;1)</sup>(k,j)</code>.</li>
         </ul>
         <p>Take the smaller. That single line is the entire algorithm:</p>
 
@@ -569,16 +569,16 @@
 
             <!-- direct route (does not use k) -->
             <path d="M136 207 Q 380 250 624 207" class="dg-stroke" marker-end="url(#ah)"/>
-            <text x="380" y="262" text-anchor="middle" class="dg-label sm">d&#8317;&#8338;&#8315;&#185;&#8318;(i, j) &mdash; intermediates &sube; {1&hellip;k&minus;1}</text>
+            <text x="380" y="262" text-anchor="middle" class="dg-label sm">d<tspan baseline-shift="super" font-size="70%">(k&minus;1)</tspan>(i, j) &mdash; intermediates &sube; {1&hellip;k&minus;1}</text>
 
             <!-- route through k -->
             <path d="M128 178 Q 230 96 354 92" class="dg-blue" stroke-width="2.5" fill="none" marker-end="url(#ahb)"/>
             <path d="M406 92 Q 530 96 632 178" class="dg-blue" stroke-width="2.5" fill="none" marker-end="url(#ahb)"/>
-            <text x="210" y="120" text-anchor="middle" class="dg-label sm" fill="var(--bau-blue)">d&#8317;&#8338;&#8315;&#185;&#8318;(i, k)</text>
-            <text x="556" y="120" text-anchor="middle" class="dg-label sm" fill="var(--bau-blue)">d&#8317;&#8338;&#8315;&#185;&#8318;(k, j)</text>
+            <text x="210" y="120" text-anchor="middle" class="dg-label sm" fill="var(--bau-blue)">d<tspan baseline-shift="super" font-size="70%">(k&minus;1)</tspan>(i, k)</text>
+            <text x="556" y="120" text-anchor="middle" class="dg-label sm" fill="var(--bau-blue)">d<tspan baseline-shift="super" font-size="70%">(k&minus;1)</tspan>(k, j)</text>
 
             <!-- min brace -->
-            <text x="380" y="200" text-anchor="middle" class="dg-label">d&#8317;&#8338;&#8318;(i,j) = min( &darr; , &uarr; )</text>
+            <text x="380" y="200" text-anchor="middle" class="dg-label">d<tspan baseline-shift="super" font-size="70%">(k)</tspan>(i,j) = min( &darr; , &uarr; )</text>
           </svg>
           <figcaption><b>Figure 1 &mdash; the only decision the algorithm ever makes.</b> Admitting vertex <code class="inl">k</code> gives each pair one new candidate route &mdash; bend the path through <code class="inl">k</code> &mdash; weighed against the best route that ignores it. Everything else is sweeping this choice across all <code class="inl">i,j</code> for <code class="inl">k=1&hellip;n</code>.</figcaption>
         </figure>
@@ -610,9 +610,9 @@
         <details>
           <summary>Proof &mdash; the recurrence is correct (induction on k)</summary>
           <div class="body">
-            <p><strong>Claim.</strong> After the recurrence has processed layer <code class="inl">k</code>, the entry holds <code class="inl">d&#8317;&#8338;&#8318;(i,j)</code> = the shortest <code class="inl">i&#x21DD;j</code> distance using intermediates only in <code class="inl">{1,&hellip;,k}</code>.</p>
-            <p><strong>Base (<code class="inl">k=0</code>).</strong> With no permitted intermediates, the only candidate path is the single edge <code class="inl">i&rarr;j</code> (or the empty path when <code class="inl">i=j</code>). So <code class="inl">d&#8317;&#8304;&#8318;(i,j)=w(i,j)</code>, which is exactly the initial matrix. &#10003;</p>
-            <p><strong>Step.</strong> Assume the entries equal <code class="inl">d&#8317;&#8338;&#8315;&#185;&#8318;</code> before we process <code class="inl">k</code>. Fix <code class="inl">(i,j)</code> and let <code class="inl">P</code> be a shortest <code class="inl">i&#x21DD;j</code> path with intermediates in <code class="inl">{1,&hellip;,k}</code>. Either <code class="inl">k</code> is not an interior vertex of <code class="inl">P</code> &mdash; then <code class="inl">P</code>&rsquo;s intermediates lie in <code class="inl">{1,&hellip;,k&minus;1}</code> and <code class="inl">w(P) &ge; d&#8317;&#8338;&#8315;&#185;&#8318;(i,j)</code> &mdash; or <code class="inl">k</code> is interior. In the latter case, since there is no negative cycle a shortest path is simple, so <code class="inl">k</code> appears once; the prefix <code class="inl">i&#x21DD;k</code> and suffix <code class="inl">k&#x21DD;j</code> each have interior vertices in <code class="inl">{1,&hellip;,k&minus;1}</code> and must each be shortest under that restriction (else swap in a shorter sub-path and shorten <code class="inl">P</code>, a contradiction). Hence <code class="inl">w(P)=d&#8317;&#8338;&#8315;&#185;&#8318;(i,k)+d&#8317;&#8338;&#8315;&#185;&#8318;(k,j)</code>. The minimum of the two cases is precisely the recurrence, and conversely both cases are achievable, so the minimum is attained. &#10003;</p>
+            <p><strong>Claim.</strong> After the recurrence has processed layer <code class="inl">k</code>, the entry holds <code class="inl">d<sup>(k)</sup>(i,j)</code> = the shortest <code class="inl">i&#x21DD;j</code> distance using intermediates only in <code class="inl">{1,&hellip;,k}</code>.</p>
+            <p><strong>Base (<code class="inl">k=0</code>).</strong> With no permitted intermediates, the only candidate path is the single edge <code class="inl">i&rarr;j</code> (or the empty path when <code class="inl">i=j</code>). So <code class="inl">d<sup>(0)</sup>(i,j)=w(i,j)</code>, which is exactly the initial matrix. &#10003;</p>
+            <p><strong>Step.</strong> Assume the entries equal <code class="inl">d<sup>(k&minus;1)</sup></code> before we process <code class="inl">k</code>. Fix <code class="inl">(i,j)</code> and let <code class="inl">P</code> be a shortest <code class="inl">i&#x21DD;j</code> path with intermediates in <code class="inl">{1,&hellip;,k}</code>. Either <code class="inl">k</code> is not an interior vertex of <code class="inl">P</code> &mdash; then <code class="inl">P</code>&rsquo;s intermediates lie in <code class="inl">{1,&hellip;,k&minus;1}</code> and <code class="inl">w(P) &ge; d<sup>(k&minus;1)</sup>(i,j)</code> &mdash; or <code class="inl">k</code> is interior. In the latter case, since there is no negative cycle a shortest path is simple, so <code class="inl">k</code> appears once; the prefix <code class="inl">i&#x21DD;k</code> and suffix <code class="inl">k&#x21DD;j</code> each have interior vertices in <code class="inl">{1,&hellip;,k&minus;1}</code> and must each be shortest under that restriction (else swap in a shorter sub-path and shorten <code class="inl">P</code>, a contradiction). Hence <code class="inl">w(P)=d<sup>(k&minus;1)</sup>(i,k)+d<sup>(k&minus;1)</sup>(k,j)</code>. The minimum of the two cases is precisely the recurrence, and conversely both cases are achievable, so the minimum is attained. &#10003;</p>
           </div>
         </details>
 
@@ -636,7 +636,7 @@
           </math></div>
         </div>
 
-        <p>Because <code class="inl">d&#8317;&#8338;&#8315;&#185;&#8318;(k,k)=0</code> (no negative cycle through <code class="inl">k</code>), routing <code class="inl">i&#x21DD;k</code> &ldquo;through <code class="inl">k</code>&rdquo; adds nothing, so the column-<code class="inl">k</code> entry cannot improve during pass <code class="inl">k</code>; the symmetric argument freezes row <code class="inl">k</code>. The values we read are therefore exactly the layer-<code class="inl">(k&minus;1)</code> values, whether or not they have already been &ldquo;updated&rdquo; &mdash; the update is a no-op. One matrix suffices. <code class="inl">&#x398;(n&sup2;)</code> space, <code class="inl">&#x398;(n&sup3;)</code> time, and the inner two lines are branch-free.</p>
+        <p>Because <code class="inl">d<sup>(k&minus;1)</sup>(k,k)=0</code> (no negative cycle through <code class="inl">k</code>), routing <code class="inl">i&#x21DD;k</code> &ldquo;through <code class="inl">k</code>&rdquo; adds nothing, so the column-<code class="inl">k</code> entry cannot improve during pass <code class="inl">k</code>; the symmetric argument freezes row <code class="inl">k</code>. The values we read are therefore exactly the layer-<code class="inl">(k&minus;1)</code> values, whether or not they have already been &ldquo;updated&rdquo; &mdash; the update is a no-op. One matrix suffices. <code class="inl">&#x398;(n&sup2;)</code> space, <code class="inl">&#x398;(n&sup3;)</code> time, and the inner two lines are branch-free.</p>
 
         <div class="note warn"><span class="tag">the one ordering that must hold</span><code class="inl">k</code> is the <strong>outermost</strong> loop &mdash; not <code class="inl">i</code>, not <code class="inl">j</code>. The induction is over <em>layers</em>: every pair must finish absorbing vertex <code class="inl">k&minus;1</code> before <em>any</em> pair is allowed to use vertex <code class="inl">k</code>. Swap the loops so <code class="inl">i</code> or <code class="inl">j</code> is outermost and you let some pairs race ahead to later waypoints before earlier ones are settled &mdash; the matrix fills with confident, wrong numbers. &sect;09 shows the exact failure.</p></div>
       </div>
@@ -704,7 +704,7 @@
           <span style="color:var(--bau-red)">red &middot; a negative entry</span>
         </div>
 
-        <p class="klabel">D&#8317;&#8304;&#8318; &mdash; direct edges only. <code class="inl">&infin;</code> = no edge.</p>
+        <p class="klabel">D<sup>(0)</sup> &mdash; direct edges only. <code class="inl">&infin;</code> = no edge.</p>
         <div class="mwrap">
           <div class="mtx"><table>
             <caption><b>k = 0</b>&nbsp;&middot; initial</caption>
@@ -837,7 +837,7 @@
             </mrow>
           </math></div>
         </div>
-        <p>Why this exact form? Sum it along any path <code class="inl">p = v&#8320;&rarr;v&#8321;&rarr;&hellip;&rarr;v&#8343;</code> and the interior potentials <strong>telescope</strong>: each <code class="inl">h(v&#7522;)</code> is added once (as the head&rsquo;s <code class="inl">+h(u)</code>) and subtracted once (as the tail&rsquo;s <code class="inl">&minus;h(v)</code>), so everything cancels except the endpoints.</p>
+        <p>Why this exact form? Sum it along any path <code class="inl">p = v&#8320;&rarr;v&#8321;&rarr;&hellip;&rarr;v&#8342;</code> and the interior potentials <strong>telescope</strong>: each <code class="inl">h(v&#7522;)</code> is added once (as the head&rsquo;s <code class="inl">+h(u)</code>) and subtracted once (as the tail&rsquo;s <code class="inl">&minus;h(v)</code>), so everything cancels except the endpoints.</p>
         <div class="eq">
           <span class="lbl">telescoping &mdash; every path&rsquo;s length shifts by the same endpoint constant</span>
           <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -927,7 +927,7 @@
       <div class="eyebrow"><span class="n">08</span> the density crossover</div>
       <h2>Which one, and when</h2>
       <div class="col">
-        <p>The choice is governed by one variable: the edge count <code class="inl">m</code>, relative to <code class="inl">n&sup2;</code>. Floyd&ndash;Warshall is flat at <code class="inl">&#x398;(n&sup3;)</code> &mdash; insensitive to <code class="inl">m</code>. Johnson is <code class="inl">O(nm + n&sup2; log n)</code> &mdash; it rides up with density. They meet where <code class="inl">nm &asymp; n&sup3;</code>, i.e. <code class="inl">m &asymp; n&sup2;/\!\log n</code>.</p>
+        <p>The choice is governed by one variable: the edge count <code class="inl">m</code>, relative to <code class="inl">n&sup2;</code>. Floyd&ndash;Warshall is flat at <code class="inl">&#x398;(n&sup3;)</code> &mdash; insensitive to <code class="inl">m</code>. Johnson is <code class="inl">O(nm + n&sup2; log n)</code> &mdash; it rides up with density. They meet where <code class="inl">nm &asymp; n&sup3;</code>, i.e. <code class="inl">m &asymp; n&sup2;/log n</code>.</p>
 
         <figure class="reveal">
           <svg viewBox="0 0 760 360" role="img" aria-labelledby="f5t f5d">

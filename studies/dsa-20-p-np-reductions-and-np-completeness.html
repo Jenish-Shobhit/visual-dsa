@@ -347,7 +347,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa1">
+<link rel="stylesheet" href="studies.css?v=vdsa2">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 20">
@@ -430,7 +430,7 @@
           <li><strong>State</strong> what a <span class="term">polynomial-time reduction</span> <code class="inl">A &le;<sub>p</sub> B</code> is, and read its direction correctly: it certifies that <code class="inl">B</code> is <em>at least as hard as</em> <code class="inl">A</code>.</li>
           <li><strong>Distinguish</strong> <span class="term">NP-hard</span> from <span class="term">NP-complete</span>, and explain why a single polynomial algorithm for one NP-complete problem would prove <code class="inl">P = NP</code>.</li>
           <li><strong>Recount</strong> the <span class="term">Cook&ndash;Levin theorem</span> &mdash; that SAT is NP-complete &mdash; and the one idea that powers its proof: computation is <em>locally checkable</em>.</li>
-          <li><strong>Execute</strong> the five-step NP-completeness proof recipe on a new problem, building the gadget reduction <code class="inl">3\text{-}SAT &le;<sub>p</sub> Independent&nbsp;Set</code> end to end and proving both directions.</li>
+          <li><strong>Execute</strong> the five-step NP-completeness proof recipe on a new problem, building the gadget reduction <code class="inl">3-SAT &le;<sub>p</sub> Independent&nbsp;Set</code> end to end and proving both directions.</li>
           <li><strong>Diagnose</strong> the classic errors: reducing the wrong way, confusing NP with &ldquo;not polynomial,&rdquo; and mistaking a <em>pseudo</em>-polynomial algorithm for a polynomial one.</li>
         </ul>
 
@@ -751,7 +751,7 @@
               <g>
                 <rect class="dg-cell-acc" x="60" y="252" width="44" height="34"/><rect class="dg-cell-acc" x="104" y="252" width="44" height="34"/><rect class="dg-cell-acc" x="148" y="252" width="44" height="34"/><rect class="dg-cell-acc" x="192" y="252" width="44" height="34"/><rect class="dg-cell-acc" x="236" y="252" width="44" height="34"/><rect class="dg-cell-acc" x="280" y="252" width="44" height="34"/><rect class="dg-cell-acc" x="324" y="252" width="44" height="34"/><rect class="dg-cell-acc" x="368" y="252" width="44" height="34"/>
               </g>
-              <text class="dg-nt" x="82" y="269" font-size="13" fill="var(--bau-red)">q&#7506;</text>
+              <text class="dg-nt" x="82" y="269" font-size="13" fill="var(--bau-red)">q<tspan baseline-shift="sub" font-size="70%">acc</tspan></text>
               <text class="dg-label sm" x="540" y="274" fill="var(--bau-red)">row T = some accepting config</text>
 
               <!-- left brace labels -->
@@ -995,7 +995,7 @@
         <p>This material is treacherous in a particular way: the errors are not arithmetic but <em>conceptual</em>, and a confident proof can be entirely backwards. The formal lens flags each of these early &mdash; usually as a violated direction or a confused class boundary.</p>
 
         <h3>1. Reducing the wrong direction &mdash; the cardinal sin</h3>
-        <p>To prove <code class="inl">X</code> is NP-hard you must reduce a known-hard problem <em>to</em> <code class="inl">X</code> (<code class="inl">3\text{-}SAT &le;<sub>p</sub> X</code>). Students routinely do the reverse &mdash; reduce <code class="inl">X</code> to 3-SAT &mdash; and prove the exact opposite of what they wanted: that <code class="inl">X</code> is <em>no harder</em> than 3-SAT, which (since everything in NP reduces to SAT) says nothing at all. Memorize it as a slogan: <strong>reduce FROM the monster you know, TO the problem you're accusing.</strong> The accused goes on the right of <code class="inl">&le;<sub>p</sub></code>.</p>
+        <p>To prove <code class="inl">X</code> is NP-hard you must reduce a known-hard problem <em>to</em> <code class="inl">X</code> (<code class="inl">3-SAT &le;<sub>p</sub> X</code>). Students routinely do the reverse &mdash; reduce <code class="inl">X</code> to 3-SAT &mdash; and prove the exact opposite of what they wanted: that <code class="inl">X</code> is <em>no harder</em> than 3-SAT, which (since everything in NP reduces to SAT) says nothing at all. Memorize it as a slogan: <strong>reduce FROM the monster you know, TO the problem you're accusing.</strong> The accused goes on the right of <code class="inl">&le;<sub>p</sub></code>.</p>
 
         <h3>2. &ldquo;NP&rdquo; does not mean &ldquo;not polynomial&rdquo;</h3>
         <p>NP is <em>Nondeterministic Polynomial</em> &mdash; a verification class &mdash; and <code class="inl">P &sube; NP</code>, so most easy problems are <em>in</em> NP. Saying &ldquo;this is in NP&rdquo; is not an insult or a hardness claim; sorting is in NP. The hardness claim is &ldquo;NP-<em>hard</em>&rdquo; or &ldquo;NP-<em>complete</em>.&rdquo; Keep the words straight or every sentence you write will be ambiguous.</p>
@@ -1058,7 +1058,7 @@
         <div>
           <h3>Prove Subset Sum is NP-complete (the number gadget)</h3>
           <p class="meta">capstone reduction &middot; 3-SAT &#8594; numbers &middot; hard</p>
-          <p>Decision problem <span class="mono">SubsetSum</span>: given a multiset of positive integers <code class="inl">A=\{a<sub>1</sub>,&hellip;,a<sub>r</sub>\}</code> and a target <code class="inl">t</code>, is there a sub-multiset summing to exactly <code class="inl">t</code>? Prove it is NP-complete. (i) Membership in NP is immediate &mdash; state the certificate. (ii) For hardness, reduce from <span class="mono">3-SAT</span> with variables <code class="inl">x<sub>1</sub>&hellip;x<sub>n</sub></code> and clauses <code class="inl">C<sub>1</sub>&hellip;C<sub>m</sub></code> by building <em>decimal numbers</em> with one digit-column per variable and one per clause: two numbers per variable (for its true/false literal) and two slack numbers per clause, with a carefully chosen target. Prove the biconditional, and explain the one numerical hazard the construction must avoid (think about what could happen when columns add). This reduction is the reason Problem&nbsp;3's pseudo-polynomial DP and this problem's hardness coexist without contradiction &mdash; tie the two together in one sentence.</p>
+          <p>Decision problem <span class="mono">SubsetSum</span>: given a multiset of positive integers <code class="inl">A={a<sub>1</sub>,&hellip;,a<sub>r</sub>}</code> and a target <code class="inl">t</code>, is there a sub-multiset summing to exactly <code class="inl">t</code>? Prove it is NP-complete. (i) Membership in NP is immediate &mdash; state the certificate. (ii) For hardness, reduce from <span class="mono">3-SAT</span> with variables <code class="inl">x<sub>1</sub>&hellip;x<sub>n</sub></code> and clauses <code class="inl">C<sub>1</sub>&hellip;C<sub>m</sub></code> by building <em>decimal numbers</em> with one digit-column per variable and one per clause: two numbers per variable (for its true/false literal) and two slack numbers per clause, with a carefully chosen target. Prove the biconditional, and explain the one numerical hazard the construction must avoid (think about what could happen when columns add). This reduction is the reason Problem&nbsp;3's pseudo-polynomial DP and this problem's hardness coexist without contradiction &mdash; tie the two together in one sentence.</p>
         </div>
       </div>
     </section>

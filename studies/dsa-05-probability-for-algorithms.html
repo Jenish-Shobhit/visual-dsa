@@ -332,7 +332,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa1">
+<link rel="stylesheet" href="studies.css?v=vdsa2">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 05">
@@ -589,7 +589,7 @@
           <li><strong>Probabilize.</strong> Replace each <code class="inl">E[&#120793;&#7522;]</code> with <code class="inl">P(A&#7522;)</code> and sum the probabilities: <code class="inl">E[X] = &#8721;&#7522; P(A&#7522;)</code>.</li>
         </ol>
 
-        <p>A warm-up to feel the magic. Flip <code class="inl">n</code> fair coins; how many heads, in expectation? Let <code class="inl">&#120793;&#7522; = 1</code> if flip <code class="inl">i</code> is heads. Then <code class="inl">X = &#8721;&#120793;&#7522;</code> and <code class="inl">E[X] = &#8721; P(\text{flip } i \text{ is heads}) = n &#8226; &#189; = n/2</code>. Trivial here &mdash; the flips happen to be independent &mdash; but watch what we did <em>not</em> use: independence. The same three lines work when the events are gnarled together.</p>
+        <p>A warm-up to feel the magic. Flip <code class="inl">n</code> fair coins; how many heads, in expectation? Let <code class="inl">&#120793;&#7522; = 1</code> if flip <code class="inl">i</code> is heads. Then <code class="inl">X = &#8721;&#120793;&#7522;</code> and <code class="inl">E[X] = &#8721; P(flip i is heads) = n &#8226; &#189; = n/2</code>. Trivial here &mdash; the flips happen to be independent &mdash; but watch what we did <em>not</em> use: independence. The same three lines work when the events are gnarled together.</p>
 
         <figure class="reveal">
           <svg viewBox="0 0 900 250" role="img" aria-labelledby="f0t f0d">
@@ -825,7 +825,7 @@
             </mrow>
           </math></div>
         </div>
-        <p>We dropped the <code class="inl">-g</code> (it only helps) and recognised the <span class="term">harmonic number</span> <code class="inl">H&#8345; = &#8721;&#8342;&#8321;&#8319; 1/k</code>. And the one summation from the prerequisites closes it: <code class="inl">H&#8345; = ln n + &#947; + O(1/n)</code>, with <code class="inl">&#947; &#8776; 0.577</code>. Therefore</p>
+        <p>We dropped the <code class="inl">-g</code> (it only helps) and recognised the <span class="term">harmonic number</span> <code class="inl">H&#8345; = &#8721;<sub>k=1</sub><sup>n</sup> 1/k</code>. And the one summation from the prerequisites closes it: <code class="inl">H&#8345; = ln n + &#947; + O(1/n)</code>, with <code class="inl">&#947; &#8776; 0.577</code>. Therefore</p>
         <div class="eq red">
           <span class="lbl">result</span>
           <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -901,7 +901,7 @@
             </mrow>
           </math></div>
         </div>
-        <p>Here the independence hypothesis you escaped in &sect;05 returns and must be honoured. For an indicator, <code class="inl">Var[&#120793;&#7505;] = p(1-p)</code>. So for <code class="inl">X</code> = heads in <code class="inl">n</code> fair flips, <code class="inl">Var[X] = n &#8226; &#188; = n/4</code> &mdash; the variance grows like <code class="inl">n</code>, the standard deviation like <code class="inl">&#8730;n</code>. That sublinear spread &mdash; the deviation <code class="inl">&#8730;n</code> being vanishingly small next to the mean <code class="inl">n/2</code> &mdash; is the first whisper of <em>concentration</em>: big sums of independent pieces huddle tightly around their mean.</p>
+        <p>Here the independence hypothesis you escaped in &sect;05 returns and must be honoured. For an indicator, <code class="inl">Var[&#120793;<sub>i</sub>] = p(1-p)</code>. So for <code class="inl">X</code> = heads in <code class="inl">n</code> fair flips, <code class="inl">Var[X] = n &#8226; &#188; = n/4</code> &mdash; the variance grows like <code class="inl">n</code>, the standard deviation like <code class="inl">&#8730;n</code>. That sublinear spread &mdash; the deviation <code class="inl">&#8730;n</code> being vanishingly small next to the mean <code class="inl">n/2</code> &mdash; is the first whisper of <em>concentration</em>: big sums of independent pieces huddle tightly around their mean.</p>
 
         <figure class="reveal">
           <svg viewBox="0 0 900 320" role="img" aria-labelledby="f3t f3d">
@@ -1008,12 +1008,12 @@
             </mrow>
           </math></div>
         </div>
-        <p>Its cousin <span class="term">Hoeffding's inequality</span> handles independent variables bounded in any <code class="inl">[a&#7522;, b&#7522;]</code> (not just <code class="inl">0/1</code>): <code class="inl">P(|S - E[S]| &#8805; t) &#8804; 2&#8201;exp(&#8722;2t&sup2; / &#8721;(b&#7522;-a&#7522;)&sup2;)</code>. The mechanism behind both is the <em>moment generating function</em>: apply Markov not to <code class="inl">X</code> but to <code class="inl">e&#7511;&#7493;</code>, exploit independence to factor the expectation into a product, then optimise over <code class="inl">t</code>. Independence is what licenses the factoring &mdash; remove it and the exponential is gone.</p>
+        <p>Its cousin <span class="term">Hoeffding's inequality</span> handles independent variables bounded in any <code class="inl">[a&#7522;, b&#7522;]</code> (not just <code class="inl">0/1</code>): <code class="inl">P(|S - E[S]| &#8805; t) &#8804; 2&#8201;exp(&#8722;2t&sup2; / &#8721;(b&#7522;-a&#7522;)&sup2;)</code>. The mechanism behind both is the <em>moment generating function</em>: apply Markov not to <code class="inl">X</code> but to <code class="inl">e<sup>tX</sup></code>, exploit independence to factor the expectation into a product, then optimise over <code class="inl">t</code>. Independence is what licenses the factoring &mdash; remove it and the exponential is gone.</p>
 
         <details>
           <summary>The MGF trick in four lines &mdash; where the exponential comes from</summary>
           <div class="body">
-            <p>For any <code class="inl">t &gt; 0</code>, the event <code class="inl">{X &#8805; a}</code> equals <code class="inl">{e&#7511;&#7493; &#8805; e&#7511;&#7488;}</code>, so Markov on the non-negative <code class="inl">e&#7511;&#7493;</code> gives <code class="inl">P(X &#8805; a) &#8804; E[e&#7511;&#7493;] / e&#7511;&#7488;</code>. Independence factors the numerator: <code class="inl">E[e&#7511;&#7493;] = &#8719;&#7522; E[e&#7511;&#7493;&#7522;]</code>. Each factor is bounded for a <code class="inl">0/1</code> variable, and minimising the product over the free parameter <code class="inl">t</code> yields the exponential cap. The single inequality <code class="inl">P(X&#8805;a) &#8804; min&#7511; E[e&#7511;&#7493;]/e&#7511;&#7488;</code> is the whole of the Chernoff method; everything else is algebra to make it pretty.</p>
+            <p>For any <code class="inl">t &gt; 0</code>, the event <code class="inl">{X &#8805; a}</code> equals <code class="inl">{e<sup>tX</sup> &#8805; e<sup>ta</sup>}</code>, so Markov on the non-negative <code class="inl">e<sup>tX</sup></code> gives <code class="inl">P(X &#8805; a) &#8804; E[e<sup>tX</sup>] / e<sup>ta</sup></code>. Independence factors the numerator: <code class="inl">E[e<sup>tX</sup>] = &#8719;<sub>i</sub> E[e<sup>tX<sub>i</sub></sup>]</code>. Each factor is bounded for a <code class="inl">0/1</code> variable, and minimising the product over the free parameter <code class="inl">t</code> yields the exponential cap. The single inequality <code class="inl">P(X&#8805;a) &#8804; min<sub>t</sub> E[e<sup>tX</sup>]/e<sup>ta</sup></code> is the whole of the Chernoff method; everything else is algebra to make it pretty.</p>
           </div>
         </details>
 
@@ -1169,7 +1169,7 @@
         <div>
           <h3>The longest hash chain</h3>
           <p class="meta">balls into bins &middot; Chernoff + union bound &middot; max load</p>
-          <p>Hash <code class="inl">n</code> keys independently and uniformly into <code class="inl">n</code> buckets (the idealized model behind Lecture 08's chaining). Let <code class="inl">L</code> be the maximum bucket load. (a) Using indicators, show the expected load of a fixed bucket is exactly <code class="inl">1</code>. (b) Prove that with probability at least <code class="inl">1 &#8722; 1/n</code>, <em>every</em> bucket has load <code class="inl">O(log n / log log n)</code> &mdash; bound <code class="inl">P(\text{bucket } i &#8805; t)</code> with a Chernoff bound, then take a union bound over all <code class="inl">n</code> buckets, and solve for the threshold <code class="inl">t</code> that makes the total at most <code class="inl">1/n</code>. (c) Conclude the worst-case chain length for hashing-with-chaining is <code class="inl">&#x398;(log n / log log n)</code> w.h.p., not <code class="inl">O(1)</code> &mdash; and explain why part (a) alone could never have told you this.</p>
+          <p>Hash <code class="inl">n</code> keys independently and uniformly into <code class="inl">n</code> buckets (the idealized model behind Lecture 08's chaining). Let <code class="inl">L</code> be the maximum bucket load. (a) Using indicators, show the expected load of a fixed bucket is exactly <code class="inl">1</code>. (b) Prove that with probability at least <code class="inl">1 &#8722; 1/n</code>, <em>every</em> bucket has load <code class="inl">O(log n / log log n)</code> &mdash; bound <code class="inl">P(bucket i &#8805; t)</code> with a Chernoff bound, then take a union bound over all <code class="inl">n</code> buckets, and solve for the threshold <code class="inl">t</code> that makes the total at most <code class="inl">1/n</code>. (c) Conclude the worst-case chain length for hashing-with-chaining is <code class="inl">&#x398;(log n / log log n)</code> w.h.p., not <code class="inl">O(1)</code> &mdash; and explain why part (a) alone could never have told you this.</p>
         </div>
       </div>
 

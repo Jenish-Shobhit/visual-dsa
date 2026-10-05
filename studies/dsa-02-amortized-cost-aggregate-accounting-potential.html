@@ -339,7 +339,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa1">
+<link rel="stylesheet" href="studies.css?v=vdsa2">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 02">
@@ -562,7 +562,7 @@
             </mrow>
           </math></div>
         </div>
-        <p>Total work <code class="inl">&#x398;(n&#xB2;)</code> over <code class="inl">n</code> appends means <code class="inl">&#x398;(n)</code> <em>amortized</em> per append — no better than rebuilding from scratch each time. And note: enlarging <code class="inl">k</code> only shrinks the constant. Even <code class="inl">k = 1{,}000{,}000</code> leaves append <code class="inl">&#x398;(n)</code> amortized; for <code class="inl">n = 10^9</code> it is still quadratic. The defect is qualitative, not a matter of tuning.</p>
+        <p>Total work <code class="inl">&#x398;(n&#xB2;)</code> over <code class="inl">n</code> appends means <code class="inl">&#x398;(n)</code> <em>amortized</em> per append — no better than rebuilding from scratch each time. And note: enlarging <code class="inl">k</code> only shrinks the constant. Even <code class="inl">k = 1{,}000{,}000</code> leaves append <code class="inl">&#x398;(n)</code> amortized; for <code class="inl">n = 10<sup>9</sup></code> it is still quadratic. The defect is qualitative, not a matter of tuning.</p>
         <p><strong>Geometric growth (multiply by <code class="inl">a &gt; 1</code>).</strong> Multiply the capacity instead, and the resize <em>sizes</em> themselves form a geometric series running <em>backwards</em> from <code class="inl">n</code>: roughly <code class="inl">n, n/a, n/a&#xB2;, &hellip;</code> Summed, a geometric series is dominated by its largest term, so the total is a constant multiple of <code class="inl">n</code>:</p>
         <div class="eq">
           <span class="lbl">amortized copies per append, growth factor a</span>
@@ -778,7 +778,7 @@
             </mrow>
           </math></div>
         </div>
-        <p>Why is this legal? Sum the amortized costs over a whole run and the potential terms <strong>telescope</strong> — each <code class="inl">&#x3A6;(D_i)</code> appears once with a plus and once with a minus, cancelling all but the endpoints:</p>
+        <p>Why is this legal? Sum the amortized costs over a whole run and the potential terms <strong>telescope</strong> — each <code class="inl">&#x3A6;(D<sub>i</sub>)</code> appears once with a plus and once with a minus, cancelling all but the endpoints:</p>
         <div class="eq">
           <span class="lbl">the telescoping sum &mdash; the engine of the method</span>
           <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -795,7 +795,7 @@
             </mrow>
           </math></div>
         </div>
-        <p>So if we choose <code class="inl">&#x3A6;</code> with <strong>two obligations</strong> — <code class="inl">&#x3A6;(D_0) = 0</code> and <code class="inl">&#x3A6;(D_i) &ge; 0</code> for all <code class="inl">i</code> — then the trailing terms can only help us: <code class="inl">&#x3A3; c_i = &#x3A3; &#x109;_i &minus; &#x3A6;(D_m) &le; &#x3A3; &#x109;_i</code>. The actual total is bounded by the amortized total. <strong>These two obligations are the entire discipline of the method; forget either and the bound is invalid</strong> (see &sect;13).</p>
+        <p>So if we choose <code class="inl">&#x3A6;</code> with <strong>two obligations</strong> — <code class="inl">&#x3A6;(D<sub>0</sub>) = 0</code> and <code class="inl">&#x3A6;(D<sub>i</sub>) &ge; 0</code> for all <code class="inl">i</code> — then the trailing terms can only help us: <code class="inl">&#x3A3; c<sub>i</sub> = &#x3A3; &#x109;<sub>i</sub> &minus; &#x3A6;(D<sub>m</sub>) &le; &#x3A3; &#x109;<sub>i</sub></code>. The actual total is bounded by the amortized total. <strong>These two obligations are the entire discipline of the method; forget either and the bound is invalid</strong> (see &sect;13).</p>
 
         <h3>The right potential for the doubling array</h3>
         <p>Choose, exactly as &sect;07's stored-coin formula suggested:</p>
@@ -809,7 +809,7 @@
             </mrow>
           </math></div>
         </div>
-        <p>Sanity-check the two obligations and the geometry. Just after a doubling the array is half full (<code class="inl">n = C/2</code>), giving <code class="inl">&#x3A6; = 2(C/2) - C = 0</code> — the structure is &ldquo;discharged.&rdquo; As we append, <code class="inl">n</code> climbs while <code class="inl">C</code> holds, so <code class="inl">&#x3A6;</code> rises by 2 each step until the array is full (<code class="inl">n = C</code>), where <code class="inl">&#x3A6; = 2C - C = C = n</code> — fully charged, holding exactly enough potential to pay for copying all <code class="inl">n</code> elements. The doubling array keeps <code class="inl">n &ge; C/2</code> throughout (it is half full right after each growth and only climbs), so <code class="inl">&#x3A6; = 2n &minus; C &ge; 0</code> always, and starting empty gives <code class="inl">&#x3A6;(D_0) = 0</code>. Both obligations met.</p>
+        <p>Sanity-check the two obligations and the geometry. Just after a doubling the array is half full (<code class="inl">n = C/2</code>), giving <code class="inl">&#x3A6; = 2(C/2) - C = 0</code> — the structure is &ldquo;discharged.&rdquo; As we append, <code class="inl">n</code> climbs while <code class="inl">C</code> holds, so <code class="inl">&#x3A6;</code> rises by 2 each step until the array is full (<code class="inl">n = C</code>), where <code class="inl">&#x3A6; = 2C - C = C = n</code> — fully charged, holding exactly enough potential to pay for copying all <code class="inl">n</code> elements. The doubling array keeps <code class="inl">n &ge; C/2</code> throughout (it is half full right after each growth and only climbs), so <code class="inl">&#x3A6; = 2n &minus; C &ge; 0</code> always, and starting empty gives <code class="inl">&#x3A6;(D<sub>0</sub>) = 0</code>. Both obligations met.</p>
 
         <p>Now the two-line payoff. Compute the amortized cost in each of the two cases:</p>
         <div class="two">
@@ -955,7 +955,7 @@
           </table>
         </div>
 
-        <p>Three independent instruments, one verdict. The <strong>aggregate</strong> sees <code class="inl">48 &lt; 3n</code> and divides. The <strong>accountant</strong> watches the bank column never break zero (its minimum is 2). The <strong>potential</strong> watches every row's amortized cost land on a flat 3, and reconciles the books exactly: the gap between what we charged (50) and what we spent (48) is precisely the energy still stored at the end (<code class="inl">&#x3A6;_{final} = 2</code>). Notice too the resize rows — actual 2, 3, 5, 9, 17 — are exactly where <code class="inl">&#x3A6;</code> drops back to 2: the spikes and the discharges are the same events.</p>
+        <p>Three independent instruments, one verdict. The <strong>aggregate</strong> sees <code class="inl">48 &lt; 3n</code> and divides. The <strong>accountant</strong> watches the bank column never break zero (its minimum is 2). The <strong>potential</strong> watches every row's amortized cost land on a flat 3, and reconciles the books exactly: the gap between what we charged (50) and what we spent (48) is precisely the energy still stored at the end (<code class="inl">&#x3A6;<sub>final</sub> = 2</code>). Notice too the resize rows — actual 2, 3, 5, 9, 17 — are exactly where <code class="inl">&#x3A6;</code> drops back to 2: the spikes and the discharges are the same events.</p>
 
         <p>One small wrinkle worth seeing: append 1 has amortized cost 2, not 3, because expanding from <code class="inl">C=0</code> copies nothing. The bank therefore ends one coin richer than <code class="inl">&#x3A6;</code> (bank <code class="inl">= &#x3A6; + 1</code> after the first op). It is the same coin, counted in two notations — which is the subject of the next section.</p>
       </div>
@@ -1100,7 +1100,7 @@
         <p>&ldquo;Grow by 10 each time&rdquo; or &ldquo;<code class="inl">capacity += 1</code>&rdquo; looks thrifty and quietly makes append <code class="inl">&#x398;(n)</code> amortized (&sect;05). It is one of the most common performance bugs in hand-rolled containers, and it hides because small tests never reveal the quadratic. Growth must be <em>multiplicative</em>.</p>
 
         <h3>5 &middot; A potential that dips below its start</h3>
-        <p>The method is only valid if <code class="inl">&#x3A6;(D_i) &ge; &#x3A6;(D_0)</code> for all <code class="inl">i</code> (with <code class="inl">&#x3A6;(D_0)=0</code> the usual normalisation). If your <code class="inl">&#x3A6;</code> can go negative, the telescoped <code class="inl">-&#x3A6;(D_m)</code> term becomes <em>positive</em> and your &ldquo;bound&rdquo; can sit <em>below</em> the true cost — a proof that proves nothing. Always discharge both obligations explicitly: <code class="inl">&#x3A6;</code> starts at zero, and <code class="inl">&#x3A6;</code> never drops below it. A negative potential is the single most common error in student potential proofs.</p>
+        <p>The method is only valid if <code class="inl">&#x3A6;(D<sub>i</sub>) &ge; &#x3A6;(D<sub>0</sub>)</code> for all <code class="inl">i</code> (with <code class="inl">&#x3A6;(D<sub>0</sub>)=0</code> the usual normalisation). If your <code class="inl">&#x3A6;</code> can go negative, the telescoped <code class="inl">-&#x3A6;(D<sub>m</sub>)</code> term becomes <em>positive</em> and your &ldquo;bound&rdquo; can sit <em>below</em> the true cost — a proof that proves nothing. Always discharge both obligations explicitly: <code class="inl">&#x3A6;</code> starts at zero, and <code class="inl">&#x3A6;</code> never drops below it. A negative potential is the single most common error in student potential proofs.</p>
 
         <h3>6 &middot; Amortization can break under persistence / backtracking</h3>
         <p>The whole argument assumes a <em>single linear timeline</em> of operations, so that spent potential stays spent. If a structure is <em>persistent</em> — you can save an old version and resume from it — an adversary can return to a fully-charged state (an about-to-resize array) and trigger the expensive operation again and again, each time from the same saved state, paying the spike repeatedly without the cheap operations that funded it. The amortized bound is then <em>false</em>. This is why naive amortized structures need care (and techniques like lazy evaluation) to survive in a functional setting. Amortized bounds are about histories, not snapshots.</p>

@@ -296,7 +296,7 @@ details .inner{padding:0 16px 16px}
 hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:var(--maxw)}
 .note{font-size:14px;color:var(--on-surface-variant)}
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa1">
+<link rel="stylesheet" href="studies.css?v=vdsa2">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 15">
@@ -802,7 +802,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           </tbody>
         </table>
       </div>
-      <p>The tempting greedy move — best value-per-weight first — would grab A (ratio 1.0) then D (1.4)… in fact greedy-by-ratio takes D then B (7+4 = 11? no: D=5, then B=3 fits → weight 8 &gt; 7). Greedy stumbles here precisely because the choices <em>interact</em>: committing to D forecloses the B+C pair. DP compares instead of committing, and finds the optimum:</p>
+      <p>The tempting greedy move — best value-per-weight first — ranks the items D (ratio 1.4), B (1.33), C (1.25), A (1.0). It takes D (weight 5, value 7); B no longer fits (5+3 = 8 &gt; 7), nor does C (5+4 = 9 &gt; 7); finally A fits (weight 6, value 8). Greedy ends with <strong>{A, D}, value 8</strong>. It stumbles here precisely because the choices <em>interact</em>: committing to D forecloses the B+C pair. DP compares instead of committing, and finds the optimum:</p>
       <div class="band yellow">
         <p class="bl">Result</p>
         <p><strong>Maximum value = 9</strong>, achieved by <strong>{B, C}</strong> (weight 3+4 = 7, value 4+5 = 9). Note {A, D} gives weight 6, value 8 — and D alone gives 7. The pair beats the “valuable” single item.</p>
@@ -849,8 +849,8 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p class="lede">You met Floyd–Warshall as an algorithm — three nested loops, all-pairs shortest paths, <code>O(n³)</code>. But a graph can contain <em>cycles</em>; how can shortest paths be a DAG of subproblems? The resolution is the deepest idea in this lecture: you invent a new dimension whose growth is, by construction, acyclic.</p>
 
       <h4>The state that does the trick</h4>
-      <p>Number the vertices <code>1…n</code>. Define <code>d^(k)[i][j]</code> = the length of the shortest path from <code>i</code> to <code>j</code> that is permitted to use intermediate vertices only from the set <code>{1, …, k}</code>. The index <code>k</code> is not a vertex on the path — it is a <em>permission level</em>: “how much of the graph am I allowed to route through.”</p>
-      <p>Now grow <code>k</code> by one. The shortest <code>i→j</code> path allowed to use <code>{1…k}</code> either ignores the newly unlocked vertex <code>k</code> (and is the old <code>d^(k−1)[i][j]</code>), or it routes through <code>k</code> exactly once — splitting into a best <code>i→k</code> piece and a best <code>k→j</code> piece, each using only <code>{1…k−1}</code>:</p>
+      <p>Number the vertices <code>1…n</code>. Define <code>d<sup>(k)</sup>[i][j]</code> = the length of the shortest path from <code>i</code> to <code>j</code> that is permitted to use intermediate vertices only from the set <code>{1, …, k}</code>. The index <code>k</code> is not a vertex on the path — it is a <em>permission level</em>: “how much of the graph am I allowed to route through.”</p>
+      <p>Now grow <code>k</code> by one. The shortest <code>i→j</code> path allowed to use <code>{1…k}</code> either ignores the newly unlocked vertex <code>k</code> (and is the old <code>d<sup>(k−1)</sup>[i][j]</code>), or it routes through <code>k</code> exactly once — splitting into a best <code>i→k</code> piece and a best <code>k→j</code> piece, each using only <code>{1…k−1}</code>:</p>
       <div class="mathrow">
         <div class="cap">The Floyd–Warshall recurrence — (min, +) over the permission dimension k</div>
         <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
@@ -866,7 +866,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           </mrow>
         </math></div>
       </div>
-      <p>Base: <code>d^(0)[i][j]</code> = the direct edge weight (or <code>∞</code>, with 0 on the diagonal). Answer: <code>d^(n)</code>. Crucially, every cell of layer <code>k</code> depends <em>only</em> on layer <code>k−1</code>. The subproblem graph is layered by <code>k</code> — and a layered graph is acyclic <strong>no matter what the input graph looks like</strong>. The added dimension <em>is</em> the topological order.</p>
+      <p>Base: <code>d<sup>(0)</sup>[i][j]</code> = the direct edge weight (or <code>∞</code>, with 0 on the diagonal). Answer: <code>d<sup>(n)</sup></code>. Crucially, every cell of layer <code>k</code> depends <em>only</em> on layer <code>k−1</code>. The subproblem graph is layered by <code>k</code> — and a layered graph is acyclic <strong>no matter what the input graph looks like</strong>. The added dimension <em>is</em> the topological order.</p>
 
       <figure>
         <svg viewBox="0 0 900 380" role="img" aria-labelledby="fig4t fig4d">

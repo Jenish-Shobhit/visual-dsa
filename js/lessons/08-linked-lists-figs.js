@@ -398,15 +398,78 @@
       }
       return pts[pts.length - 1];
     }
-    function tokenXY(pt, who) {
-      var off = who === 'slow' ? -SPREAD : SPREAD;
-      return { x: pt.x + DIST * Math.cos(pt.a + off), y: pt.y + DIST * Math.sin(pt.a + off) };
-    }
-    function placeToken(who, pt) {
-      var q = tokenXY(pt, who);
+    function placeToken(who, pt, off) {
       if (pt.dx !== undefined && Math.abs(pt.dx) > 0.3) facing[who] = pt.dx < 0 ? -1 : 1;
-      tokens[who].setAttribute('transform', 'translate(' + q.x.toFixed(1) + ' ' + q.y.toFixed(1) + ')');
+      tokens[who].setAttribute('transform', 'translate(' + (pt.x + off.x).toFixed(1) + ' ' + (pt.y + off.y).toFixed(1) + ')');
       tokens[who].__glyph.setAttribute('transform', facing[who] < 0 ? 'scale(-1 1)' : '');
+    }
+
+    /* Resting spots for the two pointers. A token's box (glyph plus its caption) is tried at many places around its
+       node; a spot is rejected when the box would touch a node circle, an arrow, a label or tag, or the other
+       token, or leave the picture. The cheapest clean pair wins, preferring the spots straight above. */
+    var BOX = { l: -21, r: 21, t: -22, b: 27 };
+    function boxAt(x, y) { return { x0: x + BOX.l, x1: x + BOX.r, y0: y + BOX.t, y1: y + BOX.b }; }
+    function boxHitsCircle(bx, c, r) {
+      var dx = Math.max(bx.x0 - c[0], 0, c[0] - bx.x1), dy = Math.max(bx.y0 - c[1], 0, c[1] - bx.y1);
+      return dx * dx + dy * dy < r * r;
+    }
+    function boxesOverlap(a, b) { return a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1; }
+    function tagXY(k) {
+      if (k === null || k === undefined) return null;
+      var p = geo.pos[k], a = geo.ang[k], x, y;
+      if (k <= geo.mu) { if (geo.mu > 0) { x = p[0] - 14; y = p[1] + R_NODE + 50; } else { x = p[0] - 44; y = p[1] + 3; } }
+      else { x = p[0] + Math.cos(a) * (R_NODE + 26); y = p[1] + Math.sin(a) * (R_NODE + 16); }   // outside the ring, away from the loop label
+      return [x, y];
+    }
+    function obstacles(step) {
+      var o = { circles: [], rects: [], pts: [] };
+      for (var k = 0; k < geo.N; k++) o.circles.push([geo.pos[k][0], geo.pos[k][1]]);
+      var nx = step.next || [];
+      for (k = 0; k < geo.N; k++) hopPoints(k, nx[k] === undefined ? null : nx[k]).forEach(function (q) { o.pts.push(q); });
+      if (geo.nullPos) o.rects.push({ x0: geo.nullPos[0] + 4, x1: geo.nullPos[0] + 40, y0: geo.nullPos[1] - 9, y1: geo.nullPos[1] + 9 });
+      var by = geo.cy + R_NODE + 16;
+      if (geo.mu > 0 && geo.lambda > 0) {
+        o.rects.push({ x0: geo.x0 - 2, x1: geo.xE + 2, y0: by - 6, y1: by + 2 });
+        o.rects.push({ x0: (geo.x0 + geo.xE) / 2 - 64, x1: (geo.x0 + geo.xE) / 2 + 64, y0: by + 3, y1: by + 22 });
+      }
+      if (geo.lambda >= 3) o.rects.push({ x0: geo.cx + 14 - 34, x1: geo.cx + 14 + 34, y0: geo.cy - 16, y1: geo.cy + 34 });
+      [step.entry, step.meet !== null && (step.kind === 'meet' || (step.phase === 2 && step.entry === null)) ? step.meet : null].forEach(function (k) {
+        var t = tagXY(k); if (t) o.rects.push({ x0: t[0] - 24, x1: t[0] + 24, y0: t[1] - 11, y1: t[1] + 11 });
+      });
+      return o;
+    }
+    function restSlots(step) {
+      var o = obstacles(step), anchors = { slow: P(step.slow), fast: P(step.fast) };
+      var cands = {};
+      ['slow', 'fast'].forEach(function (who) {
+        var an = anchors[who], list = [];
+        for (var gx = -112; gx <= 112; gx += 8) for (var gy = -104; gy <= 64; gy += 8) {
+          var dist = Math.hypot(gx, gy);
+          if (dist < 36 || dist > 112) continue;
+          var off = { x: gx, y: gy };
+          var bx = boxAt(an[0] + gx, an[1] + gy), bad = 0;
+          o.circles.forEach(function (c) { if (boxHitsCircle(bx, c, R_NODE + 4)) bad += 1; });
+          o.rects.forEach(function (r) { if (boxesOverlap(bx, r)) bad += 1; });
+          for (var q = 0; q < o.pts.length; q++) { var pt = o.pts[q]; if (pt.x > bx.x0 - 3 && pt.x < bx.x1 + 3 && pt.y > bx.y0 - 3 && pt.y < bx.y1 + 3) { bad += 1; break; } }
+          if (bx.x0 < 2 || bx.y0 < 2 || bx.x1 > geo.W - 2 || bx.y1 > geo.H - 2) bad += 1;
+          list.push({ off: off, box: bx, bad: bad, pref: dist + (gy > -30 ? 30 : 0) + Math.abs(gx) * 0.15 });
+        }
+        cands[who] = list;
+      });
+      var best = null;
+      var trim = function (l) {
+        var ok = l.filter(function (c) { return c.bad === 0; });
+        return (ok.length ? ok : l.slice().sort(function (u, v) { return u.bad - v.bad || u.pref - v.pref; }).slice(0, 40))
+          .sort(function (u, v) { return u.pref - v.pref; }).slice(0, 80);
+      };
+      trim(cands.slow).forEach(function (a) {
+        trim(cands.fast).forEach(function (b) {
+          var cost = (a.bad + b.bad) * 1000 + (boxesOverlap(a.box, b.box) ? 1000 : 0) + a.pref + b.pref
+            + (step.slow === step.fast ? (a.box.x0 > b.box.x0 ? 40 : 0) : 0);   // tortoise on the left when they share a node
+          if (best === null || cost < best.cost) best = { cost: cost, slow: a.off, fast: b.off };
+        });
+      });
+      return best;
     }
     function nodePoint(k) { var p = P(k); return { x: p[0], y: p[1], a: A(k) }; }
 
@@ -495,16 +558,9 @@
       return out;
     }
     function tagPlace(tg, k) {
-      if (k === null || k === undefined) { tg.setAttribute('opacity', '0'); return; }
-      var p = geo.pos[k], a = geo.ang[k];
-      var inward = a + Math.PI, dx = Math.cos(inward), dy = Math.sin(inward);
-      var x = p[0] + dx * (R_NODE + 16), y = p[1] + dy * (R_NODE + 14);
-      if (k <= geo.mu) {
-        // below-left of the node: clear of the loop's closing arrow (which arrives from below-right) and, when
-        // there is a tail, hung beneath the brace and its label instead of on top of them
-        x = p[0] - 14; y = geo.mu > 0 ? p[1] + R_NODE + 50 : p[1] + R_NODE + 14;
-      }
-      tg.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')');
+      var t = tagXY(k);
+      if (!t) { tg.setAttribute('opacity', '0'); return; }
+      tg.setAttribute('transform', 'translate(' + t[0].toFixed(1) + ' ' + t[1].toFixed(1) + ')');
       tg.setAttribute('opacity', '1');
     }
     function render(step, ctx) {
@@ -528,7 +584,15 @@
       tagPlace(tags.meet, step.meet !== null && step.kind === 'meet' ? step.meet : (step.meet !== null && step.phase === 2 && step.entry === null ? step.meet : null));
       tagPlace(tags.entry, step.entry);
       if (tags.meet && step.meet !== null && step.entry !== null && step.meet === step.entry) tags.meet.setAttribute('opacity', '0');
-      if (centerSub) centerSub.textContent = step.meet !== null && step.phase === 1 && step.kind === 'meet' ? 'met ' + ((step.meet - step.mu + step.lambda) % step.lambda) + ' past the entry' : 'loop';
+      if (centerSub) {
+        var past = step.meet !== null && step.phase === 1 && step.kind === 'meet' ? (step.meet - step.mu + step.lambda) % step.lambda : null;
+        V.clear(centerSub);
+        if (past === null) centerSub.textContent = 'loop';
+        else {
+          centerSub.textContent = 'met +' + past;   // k nodes past the entry; kept short so it fits inside a small loop
+          centerSub.appendChild(s('title', {}, 'The tortoise and hare met ' + past + ' nodes past the loop entry'));
+        }
+      }
       // tokens
       if (tw) { tw.cancel(); tw = null; }
       var prev = ctx.prev;
@@ -546,10 +610,15 @@
         jump.setAttribute('d', 'M' + jp.map(function (p) { return p.x.toFixed(1) + ' ' + p.y.toFixed(1); }).join(' L'));
       }
       jump.setAttribute('opacity', step.sPath === 'jump' ? '0.9' : '0');
+      var rest = restSlots(step);
       if (!sPts || !fPts) {
-        placeToken('slow', nodePoint(step.slow)); placeToken('fast', nodePoint(step.fast));
+        placeToken('slow', nodePoint(step.slow), rest.slow); placeToken('fast', nodePoint(step.fast), rest.fast);
       } else {
-        tw = V.tween(d, function (t, e) { placeToken('slow', samplePath(sPts, e)); placeToken('fast', samplePath(fPts, e)); }, { ease: 'inOut' });
+        var from = prev && prev.n && prev.mu === step.mu && prev.lambda === step.lambda ? restSlots(prev) : rest;
+        var mix = function (u, v, e) { return { x: u.x + (v.x - u.x) * e, y: u.y + (v.y - u.y) * e }; };
+        tw = V.tween(d, function (t, e) {
+          placeToken('slow', samplePath(sPts, e), mix(from.slow, rest.slow, e)); placeToken('fast', samplePath(fPts, e), mix(from.fast, rest.fast, e));
+        }, { ease: 'inOut' });
       }
       shown.slow = step.slow; shown.fast = step.fast;
     }

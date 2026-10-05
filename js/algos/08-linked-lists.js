@@ -157,8 +157,9 @@
       push('head', 'head ← node. Two writes and the new node is the front of the list.', 'head');
     } else {
       push('check0', 'i = ' + i + ' is not 0, so the new node goes after the node at index ' + (i - 1) + '. Find that node, prev, first.', 'check0');
-      prev = L.head; v.st[prev] = 'active'; k = 1;
+      prev = L.head; v.st[prev] = 'active';
       push('start', 'prev ← head: prev is at index 0.', 'start');
+      k = 1;                                    // the for-loop line initialises k, so it is unset until then
       for (; k < i; k++) {
         push('walk', 'k = ' + k + ' < i = ' + i + ': prev (index ' + (k - 1) + ') is not yet the node before the gap.', 'walk');
         v.st[prev] = 'visited';

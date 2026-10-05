@@ -70,7 +70,7 @@
         <div class="fig__stage fig__stage--plain" data-stage></div>
         <p class="fig__caption" data-caption aria-live="polite"></p>
         <div class="fig__stats" data-stats></div>
-        <figcaption class="fig__foot">Text alternative: a 10 by 10 grid holds six stored keys (12, 27, 42, 65, 83, 98). In hashing mode each key slides to bucket key mod 10, so 12 and 42 both land in bucket 2 and share it.</figcaption>
+        <figcaption class="fig__alt">Text alternative: a 10 by 10 grid holds six stored keys (12, 27, 42, 65, 83, 98). In hashing mode each key slides to bucket key mod 10, so 12 and 42 both land in bucket 2 and share it.</figcaption>
       </figure>
       <aside class="callout callout--key">
         <p class="callout__title">Key idea</p>
@@ -91,7 +91,7 @@
         <div class="fig__stage fig__stage--plain" data-stage></div>
         <p class="fig__caption" data-caption aria-live="polite"></p>
         <div class="fig__controls" data-controls></div>
-        <figcaption class="fig__foot">Text alternative: each letter of the typed word becomes a numeric code, the codes are combined into one number, and that number modulo the number of buckets gives the bucket, shown as a highlighted slot in a row of buckets.</figcaption>
+        <figcaption class="fig__alt">Text alternative: each letter of the typed word becomes a numeric code, the codes are combined into one number, and that number modulo the number of buckets gives the bucket, shown as a highlighted slot in a row of buckets.</figcaption>
       </figure>
       <p>Try <strong>cat</strong>, <strong>act</strong> and <strong>tac</strong> with <em>sum of codes</em>: the same three letters give the same number, so all three land in one bucket. Switch to <em>polynomial</em> and each position gets its own weight (multiply by 31, then add), so the three words scatter. The figure opens with 11 buckets. With 10, the multiplier 31 leaves the same remainder as 1, so polynomial would act like a plain sum for these three words. Drag the bucket slider to see how the bucket count matters.</p>
       <aside class="callout callout--insight">
@@ -108,7 +108,7 @@
         <div class="fig__stage fig__stage--plain" data-stage></div>
         <p class="fig__caption" data-caption aria-live="polite"></p>
         <div class="fig__stats" data-stats></div>
-        <figcaption class="fig__foot">Text alternative: a histogram with 13 columns. Each key is a small tile stacked in its bucket. With the first-letter function, all usernames pile into one column; with the polynomial function they spread almost evenly.</figcaption>
+        <figcaption class="fig__alt">Text alternative: a histogram with 13 columns. Each key is a small tile stacked in its bucket. With the first-letter function, all usernames pile into one column; with the polynomial function they spread almost evenly.</figcaption>
       </figure>
         <p>Now compute one yourself. The table has 7 buckets and <code>h(k) = k mod 7</code>. Which bucket holds key 38?</p>
         <figure class="fig" id="fig-bucketclick">
@@ -131,7 +131,7 @@
         <div class="fig__stage fig__stage--plain" data-stage></div>
         <p class="fig__caption" data-caption aria-live="polite"></p>
         <div class="fig__stats" data-stats></div>
-        <figcaption class="fig__foot">Text alternative: a grid of empty slots. Each thrown key fills a slot; the first throw that lands on a filled slot flashes red and stops the run. With 365 slots that usually happens after about 24 keys.</figcaption>
+        <figcaption class="fig__alt">Text alternative: a grid of empty slots. Each thrown key fills a slot; the first throw that lands on a filled slot flashes red and stops the run. With 365 slots that usually happens after about 24 keys.</figcaption>
       </figure>
       <p>With 365 slots the first collision usually arrives after about 24 keys: a table only 6% full. The chart shows why. The chance that <em>no</em> pair collides shrinks fast, because n keys make n(n − 1)/2 pairs, and each pair is a chance to clash.</p>
       <figure class="fig wide" id="fig-birthday-chart">
@@ -142,7 +142,7 @@
         <div class="fig__toolbar"><div class="l11-toolgroup"><span class="field-label">Slots m</span><div data-seg></div></div><div class="btn-row" data-btns></div></div>
         <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 460px"></div>
         <div class="fig__stats" data-stats></div>
-        <figcaption class="fig__foot">Text alternative: a curve rising from 0 to 1 as the number of keys grows. For 365 slots it crosses 50% at 23 keys and 99% at 57 keys. Dots show the measured fraction of simulated runs that had collided by then.</figcaption>
+        <figcaption class="fig__alt">Text alternative: a curve rising from 0 to 1 as the number of keys grows. For 365 slots it crosses 50% at 23 keys and 99% at 57 keys. Dots show the measured fraction of simulated runs that had collided by then.</figcaption>
       </figure>
       <aside class="callout callout--warn">
         <p class="callout__title">So what</p>
@@ -180,7 +180,7 @@
             <div data-counters></div>
           </div>
         </div>
-        <figcaption class="fig__foot">Text alternative: a column of buckets, each followed by a chain of boxes for the keys stored there. The caption under the figure explains every step, the code panel highlights the line that runs, and the counters show keys, buckets, load factor, comparisons and collisions.</figcaption>
+        <figcaption class="fig__alt">Text alternative: a column of buckets, each followed by a chain of boxes for the keys stored there. The caption under the figure explains every step, the code panel highlights the line that runs, and the counters show keys, buckets, load factor, comparisons and collisions.</figcaption>
       </figure>
       <p>Try the <em>All in one bucket</em> preset. Every key is a multiple of 7, so <code>k mod 7</code> sends them all to bucket 0. The table has become one long linked list, and searching for an absent key walks all of it. That is the <strong>worst case: O(n)</strong>.</p>
       <aside class="callout callout--key">
@@ -229,7 +229,7 @@
             <div data-counters></div>
           </div>
         </div>
-        <figcaption class="fig__foot">Text alternative: a column of slots, one key per slot. Numbered badges show the probe sequence for the current key and arcs show each hop; a dagger marks a tombstone. The caption explains every probe.</figcaption>
+        <figcaption class="fig__alt">Text alternative: a column of slots, one key per slot. Numbered badges show the probe sequence for the current key and arcs show each hop; a dagger marks a tombstone. The caption explains every probe.</figcaption>
       </figure>
       <p>Watch <em>α</em> as you insert. Above about 0.7 the probe sequences get long, so the table grows: a bigger array, and every key is <strong>rehashed</strong> from scratch, because <code>h(k) = k mod m</code> depends on m.</p>
       <p>The three probe rules also behave differently side by side. Same keys, three tables:</p>
@@ -243,7 +243,7 @@
         <p class="fig__caption" data-caption aria-live="polite"></p>
         <div class="fig__controls" data-controls></div>
         <div class="fig__stats" data-counters></div>
-        <figcaption class="fig__foot">Text alternative: three rows of 23 slots, one per probe rule. Each step inserts the next key into all three rows. Linear probing builds one long solid run of filled slots; quadratic and double hashing scatter the keys.</figcaption>
+        <figcaption class="fig__alt">Text alternative: three rows of 23 slots, one per probe rule. Each step inserts the next key into all three rows. Linear probing builds one long solid run of filled slots; quadratic and double hashing scatter the keys.</figcaption>
       </figure>
       <aside class="callout callout--def">
         <p class="callout__title">Primary clustering</p>
@@ -266,7 +266,7 @@
         <p class="fig__caption" data-caption aria-live="polite"></p>
         <div class="fig__controls" data-controls></div>
         <div class="fig__stats" data-counters></div>
-        <figcaption class="fig__foot">Text alternative: a table with 7 slots. Keys 10, 17 and 24 are inserted at slots 3, 4 and 5. Key 10 is deleted. With naive deletion slot 3 becomes empty and the search for 24 stops there, wrongly reporting that 24 is absent. With a tombstone the search continues past slot 3 and finds 24 in slot 5.</figcaption>
+        <figcaption class="fig__alt">Text alternative: a table with 7 slots. Keys 10, 17 and 24 are inserted at slots 3, 4 and 5. Key 10 is deleted. With naive deletion slot 3 becomes empty and the search for 24 stops there, wrongly reporting that 24 is absent. With a tombstone the search continues past slot 3 and finds 24 in slot 5.</figcaption>
       </figure>
       <aside class="callout callout--key">
         <p class="callout__title">The rule</p>
@@ -280,7 +280,7 @@
           <div data-legend></div>
         </header>
         <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 460px"></div>
-        <figcaption class="fig__foot">Text alternative: hash the key and start at probe 0. Look at the slot: if it is empty, return false. If it holds the key, return true. Otherwise (another key or a tombstone) add 1 to i and, while i is less than m, probe again; after m probes return false.</figcaption>
+        <figcaption class="fig__alt">Text alternative: hash the key and start at probe 0. Look at the slot: if it is empty, return false. If it holds the key, return true. Otherwise (another key or a tombstone) add 1 to i and, while i is less than m, probe again; after m probes return false.</figcaption>
       </figure>
     </section>
 
@@ -296,7 +296,7 @@
         <div class="fig__toolbar"><div class="l11-toolgroup"><span class="field-label">Search for a key that is</span><div data-seg></div></div><div class="btn-row" data-btns></div></div>
         <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 480px"></div>
         <p class="fig__caption" data-caption aria-live="polite"></p>
-        <figcaption class="fig__foot">Text alternative: three curves. Chaining rises slowly and straight; double hashing bends upward near α = 1; linear probing shoots up steeply. Dots are averages measured on a real simulated table of 997 slots filled with random keys.</figcaption>
+        <figcaption class="fig__alt">Text alternative: three curves. Chaining rises slowly and straight; double hashing bends upward near α = 1; linear probing shoots up steeply. Dots are averages measured on a real simulated table of 997 slots filled with random keys.</figcaption>
       </figure>
       <p>So every real table grows before α gets high: Java’s <code>HashMap</code> at 0.75, Python’s dict at about 0.67. Growing means allocating a bigger array and rehashing every key, which costs O(n) once. Doing it by <strong>doubling</strong> makes it rare enough that the average insert is still O(1).</p>
       <figure class="fig wide" id="fig-amortized">
@@ -307,7 +307,7 @@
         <div class="fig__toolbar"><div class="l11-toolgroup"><span class="field-label">When full, grow by</span><div data-seg></div></div><div class="l11-slider" data-slider></div></div>
         <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 480px"></div>
         <div class="fig__stats" data-stats></div>
-        <figcaption class="fig__foot">Text alternative: a spiky chart. Each spike is an insert that triggered a resize and had to move every key. With doubling the spikes get taller but rarer, and the running average stays below 3. Adding a fixed amount makes the spikes frequent and the average climbs.</figcaption>
+        <figcaption class="fig__alt">Text alternative: a spiky chart. Each spike is an insert that triggered a resize and had to move every key. With doubling the spikes get taller but rarer, and the running average stays below 3. Adding a fixed amount makes the spikes frequent and the average climbs.</figcaption>
       </figure>
       <aside class="callout callout--insight">
         <p class="callout__title">Amortized O(1)</p>
@@ -379,7 +379,7 @@
         </header>
         <div class="fig__stage fig__stage--scroll" data-stage style="--stage-min: 520px"></div>
         <p class="fig__caption l11-answer" data-caption aria-live="polite"></p>
-        <figcaption class="fig__foot">Text alternative: a decision tree. Look up by a key? If not, use an array or list. If keys are small whole numbers, index an array directly. If you need sorted order, ranges or nearest keys, use a sorted structure. Otherwise use a hash map when each key has a value, and a hash set when it does not.</figcaption>
+        <figcaption class="fig__alt">Text alternative: a decision tree. Look up by a key? If not, use an array or list. If keys are small whole numbers, index an array directly. If you need sorted order, ranges or nearest keys, use a sorted structure. Otherwise use a hash map when each key has a value, and a hash set when it does not.</figcaption>
       </figure>
       <div class="quiz" id="quiz-choose"></div>
     </section>

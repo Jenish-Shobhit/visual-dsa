@@ -207,7 +207,7 @@
   L11.machineFigure = function () {
     var fig = V.$('#fig-machine'), A = H();
     V.legend(fig.querySelector('[data-legend]'), [{ state: 'active', label: 'Character being added' }, { state: 'visited', label: 'Already in the number' }, { state: 'muted', label: 'Ignored by this function' }, { state: 'found', label: 'Chosen bucket' }]);
-    var fn = 'poly', m = 10, text = 'cat';
+    var fn = 'poly', m = 11, text = 'cat';
     var render = machineView(fig.querySelector('[data-stage]'));
     var player = V.player({ root: fig, steps: A.machine(text, fn, m), render: render, caption: fig.querySelector('[data-caption]'), baseStepMs: 1100, label: 'Hash function machine controls' });
     function go(play) { player.setSteps(A.machine(text, fn, m)); if (play) player.play(); }

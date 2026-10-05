@@ -92,7 +92,7 @@
         <div class="fig__controls" data-controls></div>
         <figcaption class="fig__foot">Text alternative: each letter of the typed word becomes a numeric code, the codes are combined into one number, and that number modulo the number of buckets gives the bucket, shown as a highlighted slot in a row of buckets.</figcaption>
       </figure>
-      <p>Try <strong>cat</strong>, <strong>act</strong> and <strong>tac</strong> with <em>sum of codes</em>: the same three letters give the same number, so all three land in one bucket. Switch to <em>polynomial</em> and each position gets its own weight (multiply by 31, then add), so the three words scatter.</p>
+      <p>Try <strong>cat</strong>, <strong>act</strong> and <strong>tac</strong> with <em>sum of codes</em>: the same three letters give the same number, so all three land in one bucket. Switch to <em>polynomial</em> and each position gets its own weight (multiply by 31, then add), so the three words scatter. The figure opens with 11 buckets. With 10, the multiplier 31 leaves the same remainder as 1, so polynomial would act like a plain sum for these three words. Drag the bucket slider to see how the bucket count matters.</p>
       <aside class="callout callout--insight">
         <p class="callout__title">What a good hash function does</p>
         <p><strong>Deterministic:</strong> the same key always gives the same bucket, or you could never find it again. <strong>Uniform:</strong> keys spread evenly, whatever pattern they follow. <strong>Fast:</strong> it runs on every single operation.</p>
@@ -343,7 +343,7 @@
       </aside>
       <details class="accordion">
         <summary>Where do 1 + α/2 and 1 / (1 − α) come from?</summary>
-        <div class="accordion__body"><p>Chaining: a key that is stored sits after the keys inserted before it in its chain. Each of the other n − 1 keys shares its bucket with probability 1/m, and about half of those come earlier, so about 1 + α/2 keys are examined. For uniform probing, each probe finds an empty slot with probability 1 − α, so the expected number of probes until success is 1 / (1 − α). Linear probing is worse than that because clusters break the independence.</p></div>
+        <div class="accordion__body"><p>Chaining: a key that is stored sits after the keys inserted before it in its chain. Each of the other n − 1 keys shares its bucket with probability 1/m, and about half of those come earlier, so about 1 + α/2 keys are examined. For uniform probing, each probe finds an empty slot with probability 1 − α, so the expected number of probes until it finds an empty slot is 1 / (1 − α). That is the cost of an unsuccessful search, or of an insert. A successful search is cheaper, about (1/α) ln(1/(1 − α)). Linear probing is worse than that because clusters break the independence.</p></div>
       </details>
     </section>
 

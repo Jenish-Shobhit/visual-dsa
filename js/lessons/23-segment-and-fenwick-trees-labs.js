@@ -209,13 +209,18 @@
 
     function legendFor() { V.legend(legendEl, L.LEG[action]); }
     function reload() {
-      try { steps = generate(); } catch (e) { msg.textContent = e.message; return; }
+      /* the chrome always follows the selected operation, even when its parameters are invalid */
       queryRow.hidden = action !== 'query'; updateRow.hidden = action !== 'update';
       legendFor();
       code.setSource(A().segCode(action, op));
       flowView.setSpec(FLOWS[action]);
       flowFig.querySelector('[data-flow-title]').textContent = FLOW_TITLE[action];
       flowFig.querySelector('[data-flow-alt]').textContent = FLOW_ALT[action];
+      try { steps = generate(); } catch (e) {
+        msg.textContent = e.message;
+        steps = []; player.setSteps([]); /* no stale steps from another operation */
+        return;
+      }
       view.prepare(steps);
       player.setSteps(steps);
     }
@@ -419,10 +424,14 @@
       V.legend(fig.querySelector('[data-legend]'), items);
     }
     function reload() {
-      try { steps = generate(); } catch (e) { msg.textContent = e.message; return; }
       Object.keys(rows).forEach(function (k) { rows[k].hidden = k !== action; });
       code.setSource(A().FEN_CODE[action]);
       legendFor();
+      try { steps = generate(); } catch (e) {
+        msg.textContent = e.message;
+        steps = []; player.setSteps([]); /* no stale steps from another operation */
+        return;
+      }
       view.reset(); view.prepare(steps);
       player.setSteps(steps);
     }

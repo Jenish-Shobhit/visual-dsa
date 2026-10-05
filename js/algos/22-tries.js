@@ -322,7 +322,7 @@
   /* ------------------------------------------------------------------ lab traces: insert, search, prefix, delete */
   function opTrace(words, op, word, o) {
     o = o || {};
-    var t = build(words), steps = [], path = [t.root], cur = t.root, visited = 1, result = false;
+    var t = build(words), steps = [], path = [t.root], cur = t.root, visited = 0, result = false;
     var nodesBefore = t.nodes;
 
     function push(x) {

@@ -214,9 +214,9 @@
         }
         return {
           question: 'Every letter of <code>' + w + '</code> matched a child. Is <code>' + w + '</code> a stored word?',
-          options: ['Yes, the path exists', 'Only if its node carries the ✓ flag'],
+          options: ['Yes, because the path exists', 'Not necessarily: it depends on the ✓ flag'],
           answer: 1,
-          explain: ['A path only shows that some word <em>starts</em> with <code>' + w + '</code>. It may be just a prefix.', isWord ? 'Right, and here the flag is set: it is a word.' : 'Right, and here the flag is not set: <code>' + w + '</code> is only a prefix, so the answer is false.']
+          explain: ['A path only shows that some word <em>starts</em> with <code>' + w + '</code>; it may be just a prefix, so the path alone does not settle it. Only the flag does.', isWord ? 'Right: the path is not enough, the flag decides. Here the flag is set, so it is a word.' : 'Right: the path is not enough, the flag decides. Here the flag is not set: <code>' + w + '</code> is only a prefix, so the answer is false.']
         };
       },
       { id: 'tries-lab-walk' });
@@ -241,9 +241,18 @@
       { id: 'tries-lab-prune' });
 
     /* ---- controls */
+    var parseWordsText = L.parseAdapter(T.parseWords);
     var wordsRow = V.inputRow(fig.querySelector('[data-words]'), {
       label: 'Words in the trie (up to ' + T.MAX_WORDS + ', a to z)', value: DEFAULT_WORDS, placeholder: 'e.g. car, card, cat',
-      parse: L.parseAdapter(T.parseWords), applyLabel: 'Build',
+      parse: function (text) {
+        var r = parseWordsText(text);
+        /* a failed or blank Build keeps its error, but the field goes back to the words the lab really holds */
+        if (r.error) {
+          wordsRow.field.value = current.words.join(', ');
+          r = { error: r.error + ' The lab still holds: ' + (current.words.length ? current.words.join(', ') : 'no words') + '.' };
+        }
+        return r;
+      }, applyLabel: 'Build',
       presets: [
         { label: 'car · card · care · cat · dog', value: DEFAULT_WORDS },
         { label: 'tea · team · ten · tap', value: ['tea', 'team', 'ten', 'tap'] },
@@ -251,7 +260,7 @@
         { label: 'One word', value: ['banana'] },
         { label: 'Empty', value: '' }
       ],
-      onApply: function (words) { rest(words); }
+      onApply: function (words) { rest(words); wordsRow.set(words, false); /* show the cleaned list the lab holds */ }
     });
     var opSeg = V.segmented(fig.querySelector('[data-op]'), {
       label: 'Operation', value: 'insert',

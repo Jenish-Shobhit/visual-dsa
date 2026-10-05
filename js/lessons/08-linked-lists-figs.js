@@ -339,7 +339,7 @@
       if (lambda === 0) { nullPos = [x0 + Math.max(0, mu) * GAP - (mu ? GAP * 0.25 : 0), cy]; right = nullPos[0] + 30 + MARGIN; }
       else if (lambda === 1) right = xE + R_NODE + 70 + MARGIN;
       else right = cx + R + R_NODE + MARGIN;
-      var bottom = cy + Math.max(lambda >= 2 ? R + R_NODE + 44 : 0, R_NODE + 60);
+      var bottom = cy + Math.max(lambda >= 2 ? R + R_NODE + 44 : 0, R_NODE + 68);
       return { N: N, mu: mu, lambda: lambda, pos: pos, ang: ang, R: R, cx: cx, cy: cy, xE: xE, x0: x0, nullPos: nullPos, W: Math.max(right, 240), H: bottom };
     }
     function P(k) { return k === null ? geo.nullPos : geo.pos[k]; }
@@ -452,9 +452,10 @@
         gLabels.appendChild(tl);
       }
       if (geo.lambda >= 3) {
-        center = s('text', { class: 'llr-dist', x: geo.cx, y: geo.cy - 2 });
+        var dx = 14;   // nudged right so the loop label stays clear of the token captions beside the entry node
+        center = s('text', { class: 'llr-dist', x: geo.cx + dx, y: geo.cy - 2 });
         center.appendChild(s('tspan', { class: 'llr-sym' }, 'λ')); center.appendChild(document.createTextNode(' = ' + geo.lambda));
-        centerSub = s('text', { class: 'llr-center', x: geo.cx, y: geo.cy + 15 }, 'loop');
+        centerSub = s('text', { class: 'llr-center', x: geo.cx + dx, y: geo.cy + 15 }, 'loop');
         gLabels.appendChild(center); gLabels.appendChild(centerSub);
       } else if (geo.lambda > 0) {
         var ll = s('text', { class: 'llr-dist', x: geo.xE + (geo.lambda === 2 ? geo.R : 24), y: geo.lambda === 2 ? geo.cy + 5 : geo.cy + R_NODE + 34 });
@@ -463,7 +464,7 @@
         centerSub = null; center = null;
       } else { center = null; centerSub = null; }
       if (geo.mu === 0 && geo.lambda > 0) {
-        gLabels.appendChild(s('text', { class: 'llr-center', x: geo.xE, y: geo.cy + R_NODE + 50 + (geo.lambda === 1 ? 14 : 0), 'text-anchor': 'middle' }, 'μ = 0: the loop starts at the head'));
+        gLabels.appendChild(s('text', { class: 'llr-center', x: geo.xE, y: geo.cy + (geo.lambda >= 2 ? geo.R + R_NODE + 28 : R_NODE + 50 + (geo.lambda === 1 ? 14 : 0)), 'text-anchor': 'middle' }, 'μ = 0: the loop starts at the head'));
       }
       tags = {};
       ['meet', 'entry'].forEach(function (nm) {
@@ -498,7 +499,11 @@
       var p = geo.pos[k], a = geo.ang[k];
       var inward = a + Math.PI, dx = Math.cos(inward), dy = Math.sin(inward);
       var x = p[0] + dx * (R_NODE + 16), y = p[1] + dy * (R_NODE + 14);
-      if (k < geo.mu || k === geo.mu) { x = p[0]; y = p[1] + R_NODE + 16; }
+      if (k <= geo.mu) {
+        // below-left of the node: clear of the loop's closing arrow (which arrives from below-right) and, when
+        // there is a tail, hung beneath the brace and its label instead of on top of them
+        x = p[0] - 14; y = geo.mu > 0 ? p[1] + R_NODE + 50 : p[1] + R_NODE + 14;
+      }
       tg.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')');
       tg.setAttribute('opacity', '1');
     }

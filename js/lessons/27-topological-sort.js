@@ -338,31 +338,41 @@
     var ih = stage.clientHeight - parseFloat(cs0.paddingTop) - parseFloat(cs0.paddingBottom);
     var BH = (iw > 0 && ih > 0 && iw / ih > 1.8) ? Math.max(380, Math.round(860 * (ih - 90) / (iw - 90) + 140)) : 600;   /* node-centre box is x 70..930, y 70..BH-70 */
     var view = V.views.graph(stage, { directed: true, bounds: { x: 70, y: 70, w: 860, h: BH - 140 }, nodeRadius: 30, minRadius: 18, showWeights: false, maxHeight: BH === 600 ? 460 : Math.round(ih), label: 'A tangle of tasks' });
-    var lap = 0;
+    /* One curated, planar-when-layered DAG (9 tasks, 11 arrows), the same every lap. The tangle order was searched offline:
+       12 crossings, no arrow passes within ~48 units of a third node, no two arrows leave a node closer than 26 degrees. */
+    var ids = 'ABCDEFGHI'.split('');
+    var edges = [['A', 'C'], ['A', 'D'], ['B', 'D'], ['C', 'E'], ['C', 'F'], ['D', 'F'], ['D', 'G'], ['E', 'H'], ['F', 'H'], ['F', 'I'], ['G', 'I']]
+      .map(function (e) { return { from: e[0], to: e[1] }; });
+    var LAYERS = [['A', 'B'], ['C', 'D'], ['E', 'F', 'G'], ['H', 'I']];
+    var LAYER_Y = [[0.2, 0.8], [0.2, 0.8], [0, 0.5, 1], [0.25, 0.75]];   /* fraction of the node-centre height: every arrow joins neighbouring columns, so none can cross a node */
+    var TANGLE = 'ABHEGDCFI'.split('');
+    var CAPS = ['Arrows mean “this first”. Where to start?', 'Wave 1: nothing is waiting on these', 'Wave 2: their prerequisites are done', 'Wave 3', 'Wave 4: the last tasks', 'Every arrow now points right: a valid order'];
+    var cap = document.createElement('p');
+    cap.className = 't27-hero__cap';
+    cap.setAttribute('aria-hidden', 'true');
+    stage.appendChild(cap);
     function build() {
-      var rng = V.rng(2700 + lap++ * 7);
-      var dag = T.randomDag(11, 15, rng);
-      var names = 'ABCDEFGHIJK'.split(''), map = {};
-      dag.nodes.forEach(function (id, i) { map[id] = names[i]; });
-      var ids = names.slice(), edges = dag.edges.map(function (e) { return { from: map[e[0]], to: map[e[1]] }; });
-      var order = V.shuffle(ids.slice(), rng);
-      var tangle = {};
-      order.forEach(function (id, i) {
-        var a = -Math.PI / 2 + (2 * Math.PI * i) / order.length;
+      var tangle = {}, fin = {}, layerOf = {};
+      TANGLE.forEach(function (id, i) {
+        var a = -Math.PI / 2 + (2 * Math.PI * i) / TANGLE.length;
         tangle[id] = { x: 500 + 400 * Math.cos(a), y: BH / 2 + (BH / 2 - 75) * Math.sin(a) };
       });
-      var lay = V.views.graph.layouts.layered(ids, edges, { direction: 'LR', w: 1000, h: BH, pad: 70, sweeps: 8 });
-      var layerOf = {};
-      lay.layers.forEach(function (Ly, i) { Ly.forEach(function (id) { layerOf[id] = i; }); });
+      LAYERS.forEach(function (Ly, i) {
+        Ly.forEach(function (id, k) {
+          layerOf[id] = i;
+          fin[id] = { x: 70 + (860 * i) / (LAYERS.length - 1), y: 70 + (BH - 140) * LAYER_Y[i][k] };
+        });
+      });
       var steps = [{ j: 0 }];
-      lay.layers.forEach(function (Ly, i) { steps.push({ j: i + 1 }); });
-      steps.push({ j: lay.layers.length + 1, final: true });
-      steps.forEach(function (st) { st.ids = ids; st.edges = edges; st.tangle = tangle; st.lay = lay; st.layerOf = layerOf; });
+      LAYERS.forEach(function (Ly, i) { steps.push({ j: i + 1 }); });
+      steps.push({ j: LAYERS.length + 1, final: true });
+      steps.forEach(function (st) { st.ids = ids; st.edges = edges; st.tangle = tangle; st.lay = fin; st.layerOf = layerOf; });
       return steps;
     }
     V.teaser(stage, {
-      steps: build(), stepMs: 620, holdMs: 2200, regenerate: build, instantWrap: false,
+      steps: build(), stepMs: 620, holdMs: 2200, instantWrap: false,
       render: function (st, ctx) {
+        cap.textContent = CAPS[st.j];
         var nodes = st.ids.map(function (id) {
           var p = st.final ? st.lay[id] : st.tangle[id], L2 = st.layerOf[id];
           var state = st.final ? 'done' : st.j === 0 ? 'default' : L2 < st.j - 1 ? 'done' : L2 === st.j - 1 ? 'frontier' : 'default';

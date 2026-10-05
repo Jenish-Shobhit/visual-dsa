@@ -213,6 +213,11 @@
       starts = starts.map(function (q) { return [q[0], q[1] + off]; });
       C = C2;
     }
+    var cap = document.createElement('p');
+    cap.className = 'bd-hero__cap';
+    cap.setAttribute('aria-hidden', 'true');
+    cap.textContent = 'BFS: one equal-distance ring at a time';
+    stage.appendChild(cap);
     var grid = { rows: R, cols: C, walls: walls };
     var view = V.views.grid(stage, { mode: 'path', cellSize: cell, showValues: false, label: 'BFS wave on a grid' });
     function steps() { var st = GS.gridLayers(grid, starts[lap++ % starts.length]); return st; }

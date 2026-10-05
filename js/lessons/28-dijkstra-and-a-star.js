@@ -293,7 +293,8 @@
     var ih = (stage.clientHeight - parseFloat(cs0.paddingTop) - parseFloat(cs0.paddingBottom)) || 276;
     var SX = Math.max(0.6, Math.min(1.9, ((iw - 76) / (ih - 76)) / (820 / 440)));
     var view = V.views.graph(stage, { bounds: { x: 80, y: 80, w: Math.round(820 * SX), h: 440 }, maxHeight: Math.round(ih), nodeRadius: 22, minRadius: 12, label: 'Dijkstra on a map of towns' });
-    function stretch(gs) { gs.nodes = gs.nodes.map(function (n) { return Object.assign({}, n, { x: 80 + (n.x - 80) * SX }); }); return gs; }
+    var SHIFT = -2.5 * (820 * SX) / Math.max(1, iw - 76);   /* ~2.5px left: the node circles are centred, but the distance badges hang off the right of I and K, so this centres the ink */
+    function stretch(gs) { gs.nodes = gs.nodes.map(function (n) { return Object.assign({}, n, { x: 80 + (n.x - 80) * SX + SHIFT }); }); return gs; }
     var laps = [['A', 'K'], ['K', 'A'], ['E', 'F'], ['I', 'C']], lap = 0;
     function steps() {
       var p = laps[lap++ % laps.length];

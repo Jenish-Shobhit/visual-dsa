@@ -285,11 +285,11 @@
       { id: 'q2', type: 'decision', text: 'Negative\nweights?', col: 0, row: 1 },
       { id: 'q3', type: 'decision', text: 'Every pair\nof vertices?', col: 0, row: 2 },
       { id: 'dij', type: 'end', text: 'Dijkstra or A*\n(lesson 28)', col: 1, row: 2 },
-      { id: 'fwA', type: 'end', text: 'Floyd-Warshall if dense,\nV × Dijkstra if sparse', col: 0, row: 3, maxWidth: 170 },
+      { id: 'fwA', type: 'end', text: 'Floyd-Warshall if\ndense, V × Dijkstra\nif sparse', col: 0, row: 3, maxWidth: 160 },
       { id: 'q4', type: 'decision', text: 'Every pair\nof vertices?', col: 2, row: 1 },
-      { id: 'fwB', type: 'end', text: 'Floyd-Warshall if dense,\nJohnson if sparse', col: 3, row: 1, maxWidth: 170 },
+      { id: 'fwB', type: 'end', text: 'Floyd-Warshall if\ndense, Johnson\nif sparse', col: 3, row: 1, maxWidth: 130 },
       { id: 'q5', type: 'decision', text: 'A DAG?', col: 2, row: 2 },
-      { id: 'dag', type: 'end', text: 'DP in topological\norder (lesson 27)', col: 3, row: 2, maxWidth: 150 },
+      { id: 'dag', type: 'end', text: 'DP in topological\norder (lesson 27)', col: 3, row: 2, maxWidth: 130 },
       { id: 'bf', type: 'end', text: 'Bellman-Ford', col: 2, row: 3 }
     ],
     edges: [
@@ -315,7 +315,7 @@
   };
   function chooseFigure(fig) {
     var lesson = { fwA: 'pivot', fwB: 'pivot', bf: 'pivot' };
-    var view = V.views.flowchart(fig.querySelector('[data-stage]'), CHOOSE, { interactive: true, label: 'Which shortest-path algorithm to use' });
+    var view = V.views.flowchart(fig.querySelector('[data-stage]'), CHOOSE, { interactive: true, colGap: 36, label: 'Which shortest-path algorithm to use' });
     L.legend(fig.querySelector('[data-legend]'), [{ state: 'pivot', label: 'Covered in this lesson' }, { state: 'active', label: 'Your question' }, { state: 'found', label: 'Your answer' }]);
     var cap = fig.querySelector('[data-caption]');
     var path, taken;
@@ -496,7 +496,7 @@
     function C(x, y, st, text) {
       var fill = st === 'default' ? 'var(--el-fill)' : st === 'visited' ? 'color-mix(in srgb, var(--st-visited) 25%, var(--el-fill))' : 'var(--st-' + st + ')';
       var g = s('g', null, s('circle', { cx: x, cy: y, r: 11, style: 'fill:' + fill + ';stroke:' + (st === 'default' ? 'var(--el-stroke)' : 'var(--st-' + st + ')') + ';stroke-width:1.5' }));
-      if (text !== undefined) g.appendChild(s('text', { x: x, y: y + 3.5, 'text-anchor': 'middle', style: 'font:700 11.5px var(--font-mono);fill:' + (st === 'default' || st === 'visited' ? 'var(--el-ink)' : 'var(--on-state)') }, text));
+      if (text !== undefined) g.appendChild(s('text', { x: x, y: y + 3.5, 'text-anchor': 'middle', style: 'font:700 13px var(--font-mono);fill:' + (st === 'default' || st === 'visited' ? 'var(--el-ink)' : 'var(--on-state)') }, text));
       return g;
     }
     function E(x1, y1, x2, y2, st, label) {
@@ -505,17 +505,17 @@
       var ex = x2 - ux * 12, ey = y2 - uy * 12;
       var g = s('g', null, s('line', { x1: x1 + ux * 12, y1: y1 + uy * 12, x2: ex, y2: ey, style: 'stroke:' + st2 + ';stroke-width:' + (st ? 2.2 : 1.5) }),
         s('path', { d: 'M' + ex + ' ' + ey + ' l' + (-ux * 6 - uy * 3.5) + ' ' + (-uy * 6 + ux * 3.5) + ' l' + (uy * 7) + ' ' + (-ux * 7) + ' z', style: 'fill:' + st2 }));
-      if (label !== undefined) g.appendChild(s('text', { x: (x1 + x2) / 2, y: (y1 + y2) / 2 - 5, 'text-anchor': 'middle', style: 'font:700 11px var(--font-mono);fill:var(--ink-2)' }, label));
+      if (label !== undefined) g.appendChild(s('text', { x: (x1 + x2) / 2, y: (y1 + y2) / 2 - 5, 'text-anchor': 'middle', style: 'font:700 12.5px var(--font-mono);fill:var(--ink-2)' }, label));
       return g;
     }
     var tiles = [
       { viz: svg([E(30, 40, 130, 40, 'active', '−2'), C(30, 40, 'visited', 3), C(130, 40, 'compare', 1)], 'Relaxation'),
         label: 'Relax an edge', text: 'd[v] = min(d[v], d[u] + w). Distances only ever go down, and every value is a cost you really could achieve.' },
       { viz: svg([1, 2, 3, 4].map(function (r, i) { return s('rect', { x: 14 + i * 28, y: 22, width: 24, height: 22, rx: 5, style: 'fill:color-mix(in srgb, var(--st-done) 28%, var(--el-fill));stroke:var(--st-done);stroke-width:1.5' }); })
-        .concat([1, 2, 3, 4].map(function (r, i) { return s('text', { x: 26 + i * 28, y: 37, 'text-anchor': 'middle', style: 'font:700 11.5px var(--font-mono);fill:var(--el-ink)' }, 'R' + r); }))
-        .concat([s('rect', { x: 126, y: 22, width: 24, height: 22, rx: 5, style: 'fill:color-mix(in srgb, var(--st-error) 25%, var(--el-fill));stroke:var(--st-error);stroke-width:1.5' }), s('text', { x: 138, y: 37, 'text-anchor': 'middle', style: 'font:700 11.5px var(--font-mono);fill:var(--el-ink)' }, 'V?'), s('text', { x: 80, y: 66, 'text-anchor': 'middle', style: 'font:600 11px var(--font-sans);fill:var(--ink-3)' }, 'V − 1 rounds, then one check')]), 'Rounds'),
+        .concat([1, 2, 3, 4].map(function (r, i) { return s('text', { x: 26 + i * 28, y: 37, 'text-anchor': 'middle', style: 'font:700 13px var(--font-mono);fill:var(--el-ink)' }, 'R' + r); }))
+        .concat([s('rect', { x: 126, y: 22, width: 24, height: 22, rx: 5, style: 'fill:color-mix(in srgb, var(--st-error) 25%, var(--el-fill));stroke:var(--st-error);stroke-width:1.5' }), s('text', { x: 138, y: 37, 'text-anchor': 'middle', style: 'font:700 13px var(--font-mono);fill:var(--el-ink)' }, 'V?'), s('text', { x: 80, y: 66, 'text-anchor': 'middle', style: 'font:600 12.5px var(--font-sans);fill:var(--ink-3)' }, 'V − 1 rounds, then one check')]), 'Rounds'),
         label: 'V − 1 rounds, then a check', text: 'A cheapest path has at most V − 1 edges. Stop early when a round changes nothing. If round V still improves, there is a negative cycle.' },
-      { viz: svg([E(40, 55, 80, 20, 'error'), E(80, 20, 120, 55, 'error'), E(120, 55, 40, 55, 'error'), C(40, 55, 'error', 2), C(80, 20, 'error', 3), C(120, 55, 'error', '−6'), s('text', { x: 80, y: 47, 'text-anchor': 'middle', style: 'font:700 11.5px var(--font-mono);fill:var(--st-error)' }, '−1')], 'Negative cycle'),
+      { viz: svg([E(40, 55, 80, 20, 'error'), E(80, 20, 120, 55, 'error'), E(120, 55, 40, 55, 'error'), C(40, 55, 'error', 2), C(80, 20, 'error', 3), C(120, 55, 'error', '−6'), s('text', { x: 80, y: 47, 'text-anchor': 'middle', style: 'font:700 13px var(--font-mono);fill:var(--st-error)' }, '−1')], 'Negative cycle'),
         label: 'Negative cycle', text: 'A loop with negative total weight lowers distances forever. Bellman-Ford spots it in round V; Floyd-Warshall shows a negative diagonal.' },
       { viz: svg((function () {
         var out = [];
@@ -527,7 +527,7 @@
         return out;
       }()), 'Matrix pass'),
         label: 'Pass k = row k + column k', text: 'd[i][j] = min(d[i][j], d[i][k] + d[k][j]). Three loops, k outermost: after pass k, routes may stop over at the first k vertices.' },
-      { viz: svg([E(30, 40, 65, 40, 'path'), E(65, 40, 100, 40, 'path'), E(100, 40, 135, 40, 'path'), C(30, 40, 'active', 'Y'), C(65, 40, 'visited', 'X'), C(100, 40, 'visited', 'T'), C(135, 40, 'found', 'S'), s('text', { x: 80, y: 70, 'text-anchor': 'middle', style: 'font:600 11px var(--font-mono);fill:var(--ink-3)' }, 'follow next[·][S]')], 'Next hop'),
+      { viz: svg([E(30, 40, 65, 40, 'path'), E(65, 40, 100, 40, 'path'), E(100, 40, 135, 40, 'path'), C(30, 40, 'active', 'Y'), C(65, 40, 'visited', 'X'), C(100, 40, 'visited', 'T'), C(135, 40, 'found', 'S'), s('text', { x: 80, y: 70, 'text-anchor': 'middle', style: 'font:600 12.5px var(--font-mono);fill:var(--ink-3)' }, 'follow next[·][S]')], 'Next hop'),
         label: 'Next hops rebuild routes', text: 'On every update next[i][j] ← next[i][k]. Follow next[·][j] from i to read off a cheapest route in O(path length).' },
       { viz: svg([s('text', { x: 80, y: 30, 'text-anchor': 'middle', style: 'font:700 15px var(--font-mono);fill:var(--st-compare)' }, 'O(V·E)'), s('text', { x: 80, y: 58, 'text-anchor': 'middle', style: 'font:700 15px var(--font-mono);fill:var(--st-active)' }, 'O(V³)')], 'Costs'),
         label: 'Bellman-Ford O(V·E), Floyd-Warshall O(V³)', text: 'One source: V − 1 rounds of E edges. All pairs: V passes of V² cells. Johnson’s reweighting wins on sparse graphs.' }

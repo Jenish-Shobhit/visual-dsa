@@ -107,7 +107,7 @@
       var pe = edges[(f * 5) % edges.length], from = pe[f % 2], to = pe[1 - f % 2];
       var nodes = base.map(function (p, i) {
         var st = i === from ? 'active' : i === to ? 'frontier' : 'default';
-        return { id: ids[i], x: p[0] + Math.sin(t + phase[i]) * 26, y: p[1] + Math.cos(t * 1 + phase[i] * 1.3) * 22, state: st };
+        return { id: ids[i], x: p[0] + Math.sin(t + phase[i]) * 7, y: p[1] + Math.cos(t + phase[i] * 1.3) * 6, state: st };
       });
       var list = edges.map(function (e) {
         var on = e === pe;
@@ -121,6 +121,11 @@
     }
     var steps = [];
     for (var f = 0; f < F; f++) steps.push(frame(f));
+    var cap = document.createElement('p');
+    cap.className = 'g25-hero__cap';
+    cap.setAttribute('aria-hidden', 'true');
+    cap.textContent = 'A graph: dots joined by lines';
+    stage.appendChild(cap);
     V.teaser(stage, { steps: steps, render: function (step, ctx) { view.render(step, { duration: ctx.duration }); }, stepMs: 620, holdMs: 400, instantWrap: false });
   }
 

@@ -113,6 +113,10 @@
   background-size: auto, 18px 18px;
   background-position: 0 0, -1px -1px;
 }
+/* edit distance: the three dependency arrows stay quiet, the cheapest one is bold and in the accent colour */
+.reel .vz-grid .vz-edge.vz-garrow.is-default { --vz-ew: 1.5px; --vz-c: color-mix(in srgb, var(--ink-3) 70%, transparent); }
+.reel .vz-grid .vz-edge.vz-garrow.is-key { --vz-ew: 3.5px; --vz-c: var(--st-key); }
+.reel .vz-grid .vz-garrow-halo { stroke-width: calc(var(--vz-ew) + 2px); opacity: 1; }
 .reel__scene {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
@@ -345,13 +349,19 @@ a.jl__row:hover { background: var(--bg-sunken); }
 @media (max-width: 640px) {
   .labs { grid-template-columns: minmax(0, 1fr); }
   .jm__top { padding: 18px 18px 16px; }
-  .reel__bar { padding-left: 16px; }
-  .reel__step { display: none; }
+  .reel__bar { padding-left: 16px; gap: 8px; }
+  .reel__chip { gap: 8px; font-size: 14.5px; }
+  .reel__from { font-size: 12.5px; }
+  .reel__ctl { gap: 8px; }
+  .reel__step { font-size: 12px; white-space: nowrap; }
   .reel__caption { padding: 13px 16px 2px; font-size: 14.5px; }
   .reel__tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 8px 10px 12px; }
   .reel__tab { padding: 10px 10px 9px; }
   .hh__cta .btn { flex: 1 1 100%; justify-content: center; }
   .reel__stage { height: clamp(240px, 66vw, 320px); }
+}
+@media (max-width: 480px) {
+  .reel__from { display: none; } /* the lesson number would crowd the algorithm name and "Step N of M" off a phone-width bar */
 }
 @media (prefers-reduced-motion: reduce) {
   .hh { transition: none; }

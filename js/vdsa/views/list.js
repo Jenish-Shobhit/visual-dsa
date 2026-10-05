@@ -234,6 +234,7 @@
     reserve: null,         // {above, below, arcAbove, arcBelow, detachedAbove, detachedBelow}
     labelFormatter: null,
     onNodeClick: null,
+    zoom: 1,               // draw everything this many times larger (number, or a function of the measured width)
     duration: undefined
   };
 
@@ -251,6 +252,19 @@
     }, draw);
     var ctx = V.ctx, api = V.api, em = V.em, tr = V.tr;
     ctx.layer('nodes'); ctx.layer('nulls'); ctx.layer('edges'); ctx.layer('pointers');
+    /* zoom: lay the figure out in a (width / zoom) wide space and let the viewBox scale it up, so small
+       lists can fill a big stage with every part (pills, text, arrows) growing together. */
+    function zoomNow() { var z = typeof opts.zoom === 'function' ? opts.zoom(ctx.width) : opts.zoom; return z > 0 ? z : 1; }
+    if (opts.zoom !== 1) {
+      ctx.setHeight = function (h) {
+        var z = zoomNow(), vbw = Math.round(ctx.width / z * 100) / 100;
+        h = Math.max(1, Math.ceil(h));
+        if (h === ctx.height && ctx._vbw === vbw) return;
+        ctx.height = h; ctx._vbw = vbw;
+        ctx.svg.setAttribute('viewBox', '0 0 ' + vbw + ' ' + h);
+        ctx.svg.style.height = Math.ceil(h * z) + 'px';
+      };
+    }
     var S = { nodes: new vz.Store(true), nulls: new vz.Store(), edges: new vz.Store(), ptrs: new vz.Store() };
     var clickable = !!opts.onNodeClick;
     var reserve = Object.assign({ above: 0, below: 0, aboveF: 0, belowF: 0, arcA: 0, arcB: 0, detA: 0, detB: 0, caption: false, nullL: false, nullR: false }, opts.reserve || {});
@@ -261,7 +275,7 @@
 
     /* ---------------------------------------------------------- geometry */
     function geometry(M) {
-      var W = ctx.width, pad = 10;
+      var W = ctx.width / zoomNow(), pad = 10;
       var rowLen = M.row.length;
       var minX = 0, maxX = Math.max(0, rowLen - 1);
       M.free.forEach(function (f) { minX = Math.min(minX, f.x); maxX = Math.max(maxX, f.x); });
@@ -312,15 +326,34 @@
       // pointer levels (row-node chips sit just above/below the row; chips of free nodes sit next to them)
       var levels = {}, lvA = 0, lvB = 0, lvAF = 0, lvBF = 0, freeSide = {};
       M.free.forEach(function (f) { freeSide[f.id] = f.y > 0 ? 'below' : 'above'; });
+      var groups = {}, CHIP_GAP = 3;
       M.pointers.forEach(function (p) {
         var side = p.side || (p.target !== null && freeSide[p.target] === 'below' ? 'below' : 'above');
         var k = side + '|' + (p.target === null ? '#null' + p.nullSide : p.target);
-        var lv = levels[k] || 0;
-        levels[k] = lv + 1;
-        p._side = side; p._level = lv;
+        p._side = side;
         p._free = p.target !== null && freeSide[p.target] !== undefined;
-        if (p._free) { if (freeSide[p.target] === 'above' && side === 'above') lvAF = Math.max(lvAF, lv + 1); else if (freeSide[p.target] === 'below' && side === 'below') lvBF = Math.max(lvBF, lv + 1); }
-        else if (side === 'above') lvA = Math.max(lvA, lv + 1); else lvB = Math.max(lvB, lv + 1);
+        (groups[k] = groups[k] || []).push(p);
+      });
+      Object.keys(groups).forEach(function (k) {
+        var gp = groups[k], spread = false;
+        // pointers sharing a node sit side by side when their pills fit within the node's slot, so no pill
+        // (or stem) covers another; otherwise they stack on separate levels
+        if (gp.length > 1 && gp[0].target !== null) {
+          var ws = gp.map(function (p) { return measure(p.label !== undefined ? String(p.label) : p.name, 11.5, 700) + 14; });
+          var total = ws.reduce(function (a, b) { return a + b; }, 0) + CHIP_GAP * (gp.length - 1);
+          spread = total <= 2 * d.slotW - 24;
+          if (spread) {
+            var cx = -total / 2, tipMax = d.nodeW * 0.3;
+            gp.forEach(function (p, i) { p._dx = cx + ws[i] / 2; p._tx = clamp(p._dx, -tipMax, tipMax); cx += ws[i] + CHIP_GAP; });
+          }
+        }
+        gp.forEach(function (p, i) {
+          var lv = spread ? 0 : i;
+          if (!spread) { p._dx = 0; p._tx = 0; }
+          p._level = lv;
+          if (p._free) { if (p._side === 'above' && freeSide[p.target] === 'above') lvAF = Math.max(lvAF, lv + 1); else if (p._side === 'below' && freeSide[p.target] === 'below') lvBF = Math.max(lvBF, lv + 1); }
+          else if (p._side === 'above') lvA = Math.max(lvA, lv + 1); else lvB = Math.max(lvB, lv + 1);
+        });
       });
       reserve.above = Math.max(reserve.above, lvA); reserve.below = Math.max(reserve.below, lvB);
       reserve.aboveF = Math.max(reserve.aboveF || 0, lvAF); reserve.belowF = Math.max(reserve.belowF || 0, lvBF);
@@ -554,19 +587,22 @@
       vz.set(rec.chip, 'display', chip ? null : 'none');
       rec.label.setAttribute('class', chip ? 'vz-ptr-chip-text' : 'vz-ptr-label');
       var w = measure(text, 11.5, 700) + 14;
-      vz.set(rec.chip, 'width', n2(w)); vz.set(rec.chip, 'x', n2(-w / 2));
+      rec.chipW = w;
+      vz.set(rec.chip, 'width', n2(w));
       rec.chipH = chip ? 9 : 7;
     }
     function paintPtr(rec) {
       var c = rec.cur, up = c.dir < 0; // dir -1 = label above the tip
       vz.opacity(rec.el, c.o);
       vz.place(rec.el, c.x, 0);
+      var dx = c.dx || 0, tx = c.tx || 0, X = n2(tx);   // dx: where the pill sits, tx: where the arrow tip lands (pointers sharing a node)
+      vz.set(rec.chip, 'x', n2(dx - (rec.chipW || 0) / 2)); vz.set(rec.label, 'x', n2(dx));
       vz.set(rec.chip, 'y', n2(c.ly - 9)); vz.set(rec.label, 'y', n2(c.ly));
       var y1 = c.ly + (up ? rec.chipH + 1 : -rec.chipH - 1), y2 = c.ty + (up ? -7 : 7);
-      vz.set(rec.stem, 'x1', 0); vz.set(rec.stem, 'x2', 0);
+      vz.set(rec.stem, 'x1', n2(dx)); vz.set(rec.stem, 'x2', X);
       vz.set(rec.stem, 'y1', n2(y1)); vz.set(rec.stem, 'y2', n2(y2));
-      vz.set(rec.head, 'd', up ? 'M0 ' + n2(c.ty) + 'L-5 ' + n2(c.ty - 8) + 'Q0 ' + n2(c.ty - 6.4) + ' 5 ' + n2(c.ty - 8) + 'Z'
-        : 'M0 ' + n2(c.ty) + 'L-5 ' + n2(c.ty + 8) + 'Q0 ' + n2(c.ty + 6.4) + ' 5 ' + n2(c.ty + 8) + 'Z');
+      var hs = up ? -1 : 1;
+      vz.set(rec.head, 'd', 'M' + X + ' ' + n2(c.ty) + 'L' + n2(tx - 5) + ' ' + n2(c.ty + 8 * hs) + 'Q' + X + ' ' + n2(c.ty + 6.4 * hs) + ' ' + n2(tx + 5) + ' ' + n2(c.ty + 8 * hs) + 'Z');
       vz.set(rec.nul, 'y', n2(c.ty + (up ? 11 : -11)));
       vz.set(rec.nul, 'opacity', c.nl < 0.005 ? 0 : c.nl.toFixed(3));
     }
@@ -704,7 +740,7 @@
           if (up && ly > ty - 22) ly = ty - 22;
           if (!up && ly < ty + 22) ly = ty + 22;
         }
-        var t = { x: x, ty: ty, ly: ly, o: 1, nl: nl, dir: up ? -1 : 1 };
+        var t = { x: x, ty: ty, ly: ly, o: 1, nl: nl, dir: up ? -1 : 1, dx: p._dx || 0, tx: p._tx || 0 };
         if (rec.isNew) {
           rec.cur = Object.assign({}, t, { o: 0, ly: ly + (up ? -10 : 10) });
           vz.retarget(rec, t);

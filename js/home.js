@@ -203,22 +203,30 @@
     return steps;
   }
 
-  /* BST insert of 5, then the AVL right rotation at 30. */
+  /* BST insert of 55, then the AVL left rotation at 30. The heavy side is the right one so every badge (drawn
+     up and to the right of its node) sits clear of the edge that enters the node from above. */
   function avlSteps() {
     function N(id, v, l, r, extra) { return Object.assign({ id: id, value: v, left: l || null, right: r || null }, extra || {}); }
     var steps = [];
-    steps.push({ root: 'a30', nodes: [N('a30', 30, 'a20', 'a40'), N('a20', 20, 'a10', 'a25'), N('a40', 40), N('a10', 10), N('a25', 25)] });
-    steps.push({ root: 'a30', nodes: [N('a30', 30, 'a20', 'a40', { state: 'compare' }), N('a20', 20, 'a10', 'a25'), N('a40', 40), N('a10', 10), N('a25', 25)],
-      pointers: [{ name: '5', target: 'a30', state: 'key', id: 'k' }] });
-    steps.push({ root: 'a30', nodes: [N('a30', 30, 'a20', 'a40', { state: 'visited' }), N('a20', 20, 'a10', 'a25', { state: 'compare' }), N('a40', 40), N('a10', 10), N('a25', 25)],
-      edges: { 'a30-a20': 'path' }, pointers: [{ name: '5', target: 'a20', state: 'key', id: 'k' }] });
-    steps.push({ root: 'a30', nodes: [N('a30', 30, 'a20', 'a40', { state: 'visited' }), N('a20', 20, 'a10', 'a25', { state: 'visited' }), N('a40', 40), N('a10', 10, null, null, { state: 'compare' }), N('a25', 25)],
-      edges: { 'a30-a20': 'path', 'a20-a10': 'path' }, pointers: [{ name: '5', target: 'a10', state: 'key', id: 'k' }] });
-    steps.push({ root: 'a30', nodes: [N('a30', 30, 'a20', 'a40'), N('a20', 20, 'a10', 'a25'), N('a40', 40), N('a10', 10, 'a5'), N('a25', 25), N('a5', 5, null, null, { state: 'key' })],
-      edges: { 'a30-a20': 'path', 'a20-a10': 'path', 'a10-a5': 'path' } });
-    steps.push({ root: 'a30', nodes: [N('a30', 30, 'a20', 'a40', { state: 'error', badge: '+2', badgeState: 'error' }), N('a20', 20, 'a10', 'a25', { state: 'pivot', badge: '+1' }), N('a40', 40), N('a10', 10, 'a5'), N('a25', 25), N('a5', 5)] });
-    steps.push({ root: 'a20', nodes: [N('a20', 20, 'a10', 'a30', { state: 'pivot' }), N('a10', 10, 'a5'), N('a30', 30, 'a25', 'a40', { state: 'active' }), N('a25', 25), N('a40', 40), N('a5', 5)] });
-    steps.push({ root: 'a20', nodes: [N('a20', 20, 'a10', 'a30', { state: 'done', badge: '0', badgeState: 'done' }), N('a10', 10, 'a5', null, { state: 'done' }), N('a30', 30, 'a25', 'a40', { state: 'done' }), N('a25', 25, null, null, { state: 'done' }), N('a40', 40, null, null, { state: 'done' }), N('a5', 5, null, null, { state: 'done' })] });
+    function base(o) { // the tree before the insert, with per-node overrides
+      o = o || {};
+      return [N('a30', 30, 'a20', 'a40', o.a30), N('a20', 20, null, null, o.a20), N('a40', 40, 'a35', 'a50', o.a40), N('a35', 35, null, null, o.a35), N('a50', 50, null, null, o.a50)];
+    }
+    steps.push({ root: 'a30', nodes: base() });
+    steps.push({ root: 'a30', nodes: base({ a30: { state: 'compare' } }), pointers: [{ name: '55', target: 'a30', state: 'key', id: 'k' }] });
+    steps.push({ root: 'a30', nodes: base({ a30: { state: 'visited' }, a40: { state: 'compare' } }),
+      edges: { 'a30-a40': 'path' }, pointers: [{ name: '55', target: 'a40', state: 'key', id: 'k' }] });
+    steps.push({ root: 'a30', nodes: base({ a30: { state: 'visited' }, a40: { state: 'visited' }, a50: { state: 'compare' } }),
+      edges: { 'a30-a40': 'path', 'a40-a50': 'path' }, pointers: [{ name: '55', target: 'a50', state: 'key', id: 'k' }] });
+    var grown = function (o) {
+      o = o || {};
+      return [N('a30', 30, 'a20', 'a40', o.a30), N('a20', 20, null, null, o.a20), N('a40', 40, 'a35', 'a50', o.a40), N('a35', 35, null, null, o.a35),
+        N('a50', 50, null, 'a55', o.a50), N('a55', 55, null, null, o.a55)];
+    };
+    steps.push({ root: 'a30', nodes: grown({ a55: { state: 'key' } }), edges: { 'a30-a40': 'path', 'a40-a50': 'path', 'a50-a55': 'path' } });
+    steps.push({ root: 'a30', nodes: grown({ a30: { state: 'error', badge: '-2', badgeState: 'error' }, a40: { state: 'pivot', badge: '-1' } }) });
+    steps.push({ root: 'a40', nodes: [N('a40', 40, 'a30', 'a50', { state: 'pivot' }), N('a30', 30, 'a20', 'a35', { state: 'active' }), N('a50', 50, null, 'a55'), N('a20', 20), N('a35', 35), N('a55', 55)] });
+    steps.push({ root: 'a40', nodes: [N('a40', 40, 'a30', 'a50', { state: 'done', badge: '0', badgeState: 'done' }), N('a30', 30, 'a20', 'a35', { state: 'done' }), N('a50', 50, null, 'a55', { state: 'done' }), N('a20', 20, null, null, { state: 'done' }), N('a35', 35, null, null, { state: 'done' }), N('a55', 55, null, null, { state: 'done' })] });
     return steps;
   }
 
@@ -280,7 +288,7 @@
           return { id: n.id, value: n.value, next: n.next, state: final ? 'done' : n.id === curr ? 'active' : done[n.id] ? 'visited' : 'default', nextState: n.id === flipped ? 'swap' : undefined };
         }),
         head: head,
-        pointers: final ? [] : [{ name: 'prev', target: prev, state: 'visited', nullSide: 'left' }, { name: 'curr', target: curr, state: 'active' }]
+        pointers: final ? [] : [{ name: 'prev', target: prev, state: 'visited', nullSide: 'left' }, { name: 'curr', target: curr, state: 'active', side: 'below' }]
       });
     }
     snap();
@@ -338,7 +346,7 @@
       alt: 'Animation: bars of different heights are sorted by selection sort; each swap arcs one bar over the other.',
       stepMs: 400, holdMs: 1500, staticIndex: 7,
       build: function (host) {
-        var view = V.array(host, { mode: 'bars', showIndices: false, barHeight: 200, label: 'Selection sort on eight bars' });
+        var view = V.array(host, { mode: 'bars', showIndices: false, cellSize: 64, barHeight: 215, label: 'Selection sort on eight bars' });
         var steps = selectionSteps([46, 21, 70, 34, 88, 13, 58, 27], 'hs');
         view.prepare(steps);
         return { steps: steps, render: function (st, ms) { view.render(st, { duration: ms }); } };
@@ -348,7 +356,7 @@
       id: 'bfs', name: 'Breadth-first search', short: 'BFS', lesson: '26-bfs-and-dfs', unit: 'u5',
       caption: 'A queue spreads outward in waves, so the first time it reaches T is along a shortest route.',
       alt: 'Animation: a breadth-first search spreads in waves across a grid with walls, then traces the shortest path from S to T.',
-      stepMs: 185, holdMs: 1600, staticIndex: 14,
+      stepMs: 260, holdMs: 1700, staticIndex: 14,
       build: function (host) {
         var walls = [];
         for (var r = 0; r < 7; r++) walls.push([r, 6]);
@@ -362,11 +370,11 @@
     },
     {
       id: 'avl', name: 'AVL rotation', short: 'AVL tree', lesson: '20-balanced-trees', unit: 'u4',
-      caption: '5 drops into place, the tree tips too far left, and one rotation brings it back into balance.',
-      alt: 'Animation: the value 5 travels down a binary search tree and is inserted; the root becomes unbalanced and a right rotation makes 20 the new root.',
+      caption: '55 drops into place, the tree tips too far right, and one rotation brings it back into balance.',
+      alt: 'Animation: the value 55 travels down a binary search tree and is inserted; the root becomes unbalanced and a left rotation makes 40 the new root.',
       stepMs: 820, holdMs: 1500, staticIndex: 5,
       build: function (host) {
-        var view = V.tree(host, { label: 'AVL insert and rotation', nodeSize: 46 });
+        var view = V.tree(host, { label: 'AVL insert and rotation', nodeSize: 54 });
         var steps = avlSteps();
         view.prepare(steps);
         return { steps: steps, render: function (st, ms) { view.render(st, { duration: ms }); } };
@@ -387,21 +395,22 @@
       id: 'dp', name: 'Edit distance', short: 'DP table', lesson: '35-dynamic-programming-2d', unit: 'u6',
       caption: 'Each cell reuses three neighbours. The highlighted arrow shows which one was cheapest.',
       alt: 'Animation: a dynamic-programming table for the edit distance from “ros” to “horse” fills cell by cell, with arrows from the three cells each value depends on.',
-      stepMs: 300, holdMs: 1700, staticIndex: 10,
+      stepMs: 340, fadeMs: 140, holdMs: 1700, staticIndex: 10,
       build: function (host) {
-        var view = V.grid(host, { mode: 'table', cellSize: 54, label: 'Edit distance table' });
+        var view = V.grid(host, { mode: 'table', cellSize: 64, label: 'Edit distance table' });
         var steps = editSteps('ros', 'horse');
         if (view.prepare) view.prepare(steps);
         return { steps: steps, render: function (st, ms) { view.render(st, { duration: ms }); } };
       }
     },
     {
-      id: 'list', name: 'Reversing a linked list', short: 'Lists', lesson: '08-linked-lists', unit: 'u2',
+      id: 'list', name: 'Linked list reversal', short: 'Lists', lesson: '08-linked-lists', unit: 'u2',
       caption: 'One arrow flips per step while prev and curr walk down the list. Nothing is copied.',
       alt: 'Animation: a linked list of four nodes is reversed; each next arrow swings to point backwards while the prev and curr pointers move forward.',
       stepMs: 860, holdMs: 1600, staticIndex: 3,
       build: function (host) {
-        var view = V.list(host, { label: 'Reversing a linked list' });
+        // a four-node list is small: draw it up to 1.5x so it fills the stage (pills and text grow with it)
+        var view = V.list(host, { label: 'Reversing a linked list', zoom: function (w) { return Math.max(1, Math.min(1.5, w / 420)); } });
         var steps = reverseSteps([7, 2, 9, 4]);
         view.prepare(steps);
         return { steps: steps, render: function (st, ms) { view.render(st, { duration: ms }); } };
@@ -506,7 +515,7 @@
       var b = built[cur], sc = scenes[cur];
       if (step < b.steps.length - 1) {
         step++;
-        b.render(b.steps[step], Math.round(sc.stepMs * 0.8));
+        b.render(b.steps[step], sc.fadeMs || Math.round(sc.stepMs * 0.8));
         showStep();
         schedule(step === b.steps.length - 1 ? sc.holdMs : sc.stepMs);
       } else {
@@ -556,13 +565,32 @@
         show(i, Math.min(scenes[i].staticIndex || 0, ensure(i).steps.length - 1));
       } else sync();
     }
+    /* Reserve the height of the tallest caption so the card never changes height between scenes. */
+    function fitCaption() {
+      var keep = capEl.textContent, max = 0;
+      capEl.style.minHeight = '0px';
+      scenes.forEach(function (sc) { capEl.textContent = sc.caption; max = Math.max(max, capEl.getBoundingClientRect().height); });
+      capEl.textContent = keep;
+      capEl.style.minHeight = Math.ceil(max) + 'px';
+    }
     show(0, 0);
+    safe(fitCaption, 'reel caption');
+    var capW = 0;
+    VDSA.onResize(root, function (r) { if (Math.abs(r.width - capW) >= 1) { capW = r.width; safe(fitCaption, 'reel caption'); } });
+    if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(function () { safe(fitCaption, 'reel caption'); });
     if (reduced()) applyMotionPreference();
     VDSA.onVisible(root, function (v) { visible = v; sync(); }, { threshold: 0.2 });
     doc.addEventListener('visibilitychange', sync);
     var mq = win.matchMedia ? win.matchMedia('(prefers-reduced-motion: reduce)') : null;
     if (mq && mq.addEventListener) mq.addEventListener('change', applyMotionPreference);
     syncToggle();
+    /* Test hook: freeze the reel on one frame, VDSAHome.reelShow(scene, step) -> number of steps in that scene. */
+    if (win.VDSAHome) win.VDSAHome.reelShow = function (i, index) {
+      userPaused = true; syncToggle(); sync();
+      var b = ensure(i);
+      show(i, Math.max(0, Math.min(index || 0, b.steps.length - 1)));
+      return b.steps.length;
+    };
   }
 
   /* ================================================================== 3. journey map */

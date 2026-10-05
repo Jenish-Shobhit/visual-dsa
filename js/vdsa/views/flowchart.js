@@ -335,6 +335,7 @@
   /* Route every edge orthogonally. Returns [{index, from, to, label, points:[[x,y]...], fromSide, toSide, labelAt}]
      (null for edges whose nodes are missing). Points start and end on node boundaries; consecutive points
      share an x or a y; interior segments avoid every node box. */
+  var warnedVia = false;
   L.route = function (spec, geo) {
     var edges = (spec && spec.edges) || [], nodes = geo.nodes;
     var boxes = [];
@@ -344,12 +345,12 @@
     geo.channels.xs.forEach(function (x) { xs = xs.concat(off(x)); });
     geo.channels.ys.forEach(function (y) { ys = ys.concat(off(y)); });
 
-    function routeOne(e, i, placed, used, fixed) {
+    function routeOne(e, i, placed, used, fixed, noVia) {
       var A = nodes[String(e.from)], B = nodes[String(e.to)];
       if (!A || !B) return null;
       var via = e.via || {};
       var wps = Array.isArray(via) ? via : via.points;
-      wps = wps ? wps.map(function (p) { return [geo.gx(p[0]), geo.gy(p[1])]; }) : null;
+      wps = wps && !noVia ? wps.map(function (p) { return [geo.gx(p[0]), geo.gy(p[1])]; }) : null;
       var s1s = fixed ? [fixed.s1] : via.fromSide ? [via.fromSide] : SIDES;
       var s2s = fixed ? [fixed.s2] : via.toSide ? [via.toSide] : SIDES;
       var best = null, bestScore = Infinity, fallback = null, fallbackScore = Infinity;
@@ -377,6 +378,11 @@
         });
       });
       var pick = best || fallback;
+      if (!pick && wps && !noVia) {
+        // author waypoints that cannot be joined into an orthogonal path (e.g. outside the grid): route automatically instead of dropping the edge
+        if (!warnedVia && typeof console !== 'undefined') { warnedVia = true; console.warn('[VDSA.flowchart] edge ' + e.from + ' → ' + e.to + ': via points could not be routed; using an automatic route.'); }
+        return routeOne(e, i, placed, used, fixed, true);
+      }
       if (!pick) return null;
       return { index: i, from: String(e.from), to: String(e.to), label: e.label, points: pick.pts, fromSide: pick.s1, toSide: pick.s2, clear: !!best };
     }
@@ -600,9 +606,14 @@
         var has = e.label !== undefined && e.label !== null && e.label !== '';
         vz.set(rec.lab, 'display', has ? null : 'none');
         if (has) {
-          var t = String(e.label), w = Math.ceil(measure(t, L.LABEL_FONT, 650) + 14);
+          // edge labels share the node-text floor: never smaller than minFont px on screen once the chart is scaled down
+          var lf = L.LABEL_FONT, lk = geo.scale > 0 && geo.scale < 1 ? Math.max(1, (opts.minFont || MIN_FONT) / geo.scale / lf) : 1;
+          lf = Math.round(lf * lk * 100) / 100;
+          var t = String(e.label), w = Math.ceil(measure(t, lf, 650) + 14 * lk), ph = 17 * lk;
           vz.text(rec.labText, t);
+          rec.labText.style.fontSize = lk > 1 ? lf + 'px' : '';
           vz.set(rec.labRect, 'width', w); vz.set(rec.labRect, 'x', -w / 2);
+          vz.set(rec.labRect, 'height', r2(ph)); vz.set(rec.labRect, 'y', r2(-ph / 2)); vz.set(rec.labRect, 'rx', r2(ph / 2)); vz.set(rec.labRect, 'ry', r2(ph / 2));
           vz.place(rec.lab, r.labelAt[0], r.labelAt[1]);
           if (chooseClicks) makeChoice(rec);
         }

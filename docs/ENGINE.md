@@ -178,6 +178,8 @@ var player = VDSA.player({
   code: codePanel,              // optional: VDSA.codePanel instance; player calls code.highlight(step.line)
   vars: varsPanel,              // optional: VDSA.varsPanel instance (or an element); vars.update(step.vars, step.varStates)
   caption: '[data-caption]',    // optional: element or selector; innerHTML = step.caption, aria-live polite
+  captionText: function (step, i) { return html; }, // optional: computed caption markup (replaces step.caption; the tallest one over all steps is reserved)
+  views: [view, {view: v2, state: fn(step)}], // optional: views to prepare(steps) up front; a lone array view whose steps are array states is found automatically
   counters: '[data-counters]',  // optional: element or selector; stat chips from step.counters
   counterLabels: { cmp: 'Comparisons' },   // optional labels for counter keys (default: humanised key)
   counterStates: { swaps: 'swap' },        // optional state colour per counter
@@ -336,7 +338,7 @@ vars.update({ i: 3 }, { i: 'compare' });            // optional per-update state
 vars.clear();
 ```
 
-Rows keep the key order you pass. Values render compactly: arrays `[3, 5, 8]` (long ones end in `… 8 more`), objects `{a: 1, b: 2, …}`, strings in quotes, `null` and `undefined` in muted italics, `Infinity` as `∞`. A value that changed since the previous update flashes and turns bold. `VDSA.vars.raw('lo..hi')` displays a string without quotes. The player calls `update(step.vars, step.varStates)` for you.
+Rows keep the key order you pass. Values render compactly: arrays `[3, 5, 8]` (long ones end in `… 8 more`), objects `{a: 1, b: 2, …}`, strings in quotes, `null` and `undefined` in muted italics, `Infinity` as `∞`. A value that changed since the previous update flashes and turns bold. `VDSA.vars.raw('lo..hi')` displays a string without quotes. The player calls `update(step.vars, step.varStates)` for you. **Stable rows:** the player hands the panel its steps (`vars.prepare(steps)`), so every variable that appears in any step has a row from step 1, in first-appearance order; one that is not defined yet shows a muted "–" (`.is-unset`). The panel therefore never grows while playing. Without a player, pass `keys: ['i', 'best']` (or call `vars.setKeys([...])`) for the same effect. More than 24 distinct names fall back to rows appearing as they are set.
 
 ## 10. Checks: quiz, predict, click quiz (quiz.js)
 
@@ -718,7 +720,7 @@ The workhorse for sorting, searching, two pointers, sliding windows, prefix sums
 - Rows with no items still take their space: list every row from the first step to keep the height stable.
 - Pointers at the same slot and side stack (the first keeps the arrow). An index outside the array (−1, n) is fine; `index: null` hides the pointer.
 
-**Methods**: `render`, `prepare(states)` (scan a whole trace: reserves pointer/held/label lanes and fixes the bar scale, so nothing jumps), `reset()` (forget reservations when loading new input), `setOptions(partial)` (e.g. toggle `mode`/`showValues`, then redraws), `positionOf(id)` → `{x, y}` in SVG units, `describe`, `on('click')`, `refresh`, `destroy`.
+**Methods**: `render`, `prepare(states)` (scan a whole trace: reserves pointer/held/label lanes and fixes the bar scale, so nothing jumps), `reset()` (forget reservations when loading new input), `setOptions(partial)` (e.g. toggle `mode`/`showValues`, then redraws). `prepare` also fixes the figure height to the tallest snapshot (a later second row, a doubled array or a changed cell size never resizes the viewBox mid-play); `VDSA.player` calls it for a lone array view whose steps are array states, or via its `views` option, `positionOf(id)` → `{x, y}` in SVG units, `describe`, `on('click')`, `refresh`, `destroy`.
 
 **Example: insertion sort's key**
 
@@ -828,6 +830,7 @@ Node-link graphs for BFS/DFS, shortest paths, spanning trees, topological sort, 
 | `bounds` | `{w: 1000, h: 600}` | logical box `{x?, y?, w, h}` mapped to the viewBox; `'auto'` fits the nodes' bounding box (+8 % margin) on every render |
 | `directed` | `false` | default for edges without `directed` (arrowheads, edge ids) |
 | `nodeRadius`, `minRadius` | `22`, `13` | node radius in px at full scale; shrinks with the layout (square root of the scale), never below `minRadius` |
+| `arrowSize` | `null` | opt-in arrowhead length in px at full node radius (shrinks with the nodes, floor 8, never above `arrowSize`); `null` keeps the automatic 8–11.5 px. Weight / badge text is 11–12 px |
 | `maxHeight` / `height` | `440` / auto | cap on the automatic height, or a fixed height |
 | `layout` | none | `'circle' \| 'force' \| 'layered' \| 'grid'`: compute every node position (ignores x/y); `layoutOptions` go to the helper |
 | `showWeights` | `true` | draw weight / label pills |
@@ -1434,7 +1437,7 @@ Unlike other views the constructor takes the **static spec**; `render()` only ta
 | `compact` | `false` | start at the compact fit levels (smaller type, hexagon decisions) |
 | `decisionShape` | `'auto'` | `'auto'` / `'hexagon'` (the site-wide decision shape) or `'diamond'` (explicit opt-in) |
 | `narrowWidth` | `480` | below this container width, nodes use their `narrow: {col, row}` positions (if any) |
-| `minFont` | `11` | if even the most compact level is too wide, the drawing scales down only while node text stays at least this many px; beyond that it keeps its size and the stage scrolls sideways (never clipped) |
+| `minFont` | `11` | if even the most compact level is too wide, the drawing scales down only while node text and edge labels (yes / no) stay at least this many px; beyond that it keeps its size and the stage scrolls sideways (never clipped) |
 | `colGap`, `rowGap` | per level | override the gaps between columns/rows (px) |
 | `token` | `true` | animate the travelling token (`false`: just switch highlights) |
 | `interactive` | `false` | decision-tree mode: labelled edges become buttons, nodes clickable, root gets `role="group"` |
@@ -1458,7 +1461,8 @@ Unlike other views the constructor takes the **static spec**; `render()` only ta
     id?,                          // optional id for activeEdge / edgeStates lookups
     via?: { fromSide?, toSide?,   // force sides: 'top' | 'right' | 'bottom' | 'left'
             points?: [[col,row]] }// waypoints in grid units; x.5 = the channel between two columns/rows,
-                                  // -0.5 / n-0.5 = the outer channels
+                                  // -0.5 / n-0.5 = the outer channels. If the waypoints cannot form an
+                                  // orthogonal path the edge is auto-routed (and a console warning is logged once)
     dashed?: true, arrow?: false  // annotation edges (e.g. a note pointing at a node)
   }]
 }

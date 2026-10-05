@@ -231,3 +231,17 @@ test('flowchart narrow positions take over below narrowWidth', () => {
   assert.deepEqual([r.fromSide, r.toSide], ['bottom', 'top']);
   assert.equal(F.compute(spec, 400, { narrowWidth: 300 }).narrow, false);
 });
+
+test('flowchart falls back to an automatic route when author waypoints cannot be joined', () => {
+  const spec = {
+    nodes: [{ id: 'a', text: 'A', col: 0, row: 0 }, { id: 'b', text: 'B', col: 0, row: 2 }],
+    edges: [{ from: 'a', to: 'b', label: 'no', via: { fromSide: 'bottom', toSide: 'top', points: [[0, 1], [0, -1]] } }]
+  };
+  const warn = console.warn; let warned = 0; console.warn = () => { warned++; };
+  try {
+    const r = F.route(spec, F.compute(spec, 600, {}));
+    assert.ok(r[0], 'edge is still drawn');
+    assert.ok(r[0].points.length >= 2);
+    assert.ok(warned <= 1, 'warns at most once');
+  } finally { console.warn = warn; }
+});

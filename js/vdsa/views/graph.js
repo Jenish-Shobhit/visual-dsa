@@ -371,6 +371,7 @@
   var DEFAULTS = {
     bounds: { w: 1000, h: 600 },   // logical space {x?, y?, w, h}
     directed: false,               // default for edges without `directed`
+    arrowSize: null,               // arrowhead length in px at full node radius (shrinks with the nodes, floor 8); null = automatic 8–11.5
     nodeRadius: 22,                // px at full scale; shrinks with the layout (sqrt), never below minRadius
     minRadius: 13,
     maxHeight: 440,                // cap on the auto height
@@ -643,9 +644,9 @@
       var rEst = clamp(opts.nodeRadius * Math.sqrt(Math.min(1, kx)), opts.minRadius, opts.nodeRadius);
       F = L.fit(b, ctx.width, { pad: rEst + 18, maxHeight: opts.maxHeight, height: opts.height });
       R = clamp(opts.nodeRadius * Math.sqrt(Math.min(1, F.k)), opts.minRadius, opts.nodeRadius);
-      AS = clamp(R * 0.56, 8, 11.5);
+      AS = typeof opts.arrowSize === 'number' && opts.arrowSize > 0 ? clamp(opts.arrowSize * R / opts.nodeRadius, Math.min(8, opts.arrowSize), opts.arrowSize) : clamp(R * 0.56, 8, 11.5);
       PIPE = clamp(R * 0.55, 7, 12);
-      PF = Math.round(clamp(R * 0.6, 11, 11.5) * 2) / 2;      // pill / badge font size
+      PF = Math.round(clamp(R * 0.6, 11, 12) * 2) / 2;      // pill / badge font size
       var pfv = PF + 'px';
       if (svg.style.getPropertyValue('--vz-gf') !== pfv) svg.style.setProperty('--vz-gf', pfv);
       ctx.setHeight(F.height);

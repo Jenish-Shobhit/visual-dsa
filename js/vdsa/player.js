@@ -10,6 +10,8 @@
        code: codePanel,              // optional: code.highlight(step.line)
        vars: varsPanel,              // optional: vars.update(step.vars, step.varStates)
        caption: '[data-caption]',    // optional: innerHTML = step.caption (aria-live)
+       captionText: function (step, i) {…},  // optional: computed caption HTML (replaces step.caption; the tallest one is reserved)
+       views: [view | {view, state: fn(step)}],  // optional: views to prepare(); a lone array view is found automatically
        counters: '[data-counters]',  // optional: stat chips from step.counters
        flow: flowchart,              // optional: any object with highlight(id) — gets step.flow
        baseStepMs: 900, speeds: [0.25, 0.5, 1, 2, 4], speed: 1, autoplay: false, loop: false,
@@ -202,6 +204,13 @@
     function timing(instant) {
       return logic.timing({ baseStepMs: baseStepMs, speed: speeds[speedIdx], animMs: opts.animMs, instant: instant, reduced: VDSA.reducedMotion() });
     }
+    /* Caption markup for a step: opts.captionText(step, index) when given (for figures whose caption is computed rather than stored), else step.caption. */
+    function capHTML(step, i) {
+      if (typeof opts.captionText === 'function') {
+        try { var t = opts.captionText(step, i); return t === undefined || t === null ? '' : String(t); } catch (e) { console.error(e); return ''; }
+      }
+      return (step && step.caption) || '';
+    }
     function show(i, mode, reason) {
       if (!steps.length) { index = -1; updateUI(); return; }
       i = logic.clamp(i, steps.length);
@@ -216,7 +225,7 @@
       catch (e) { console.error('[VDSA.player] render failed at step ' + i, e); }
       if (code) code.highlight(step.line === undefined ? null : step.line);
       if (vars) vars.update(step.vars || {}, step.varStates);
-      if (captionEl) captionEl.innerHTML = step.caption || '';
+      if (captionEl) captionEl.innerHTML = capHTML(step, i);
       if (stats) stats.update(step.counters || {});
       if (flow) flow.highlight(step.flow === undefined ? null : step.flow, ctx);
       updateUI();
@@ -323,55 +332,15 @@
       var at = typeof cp.at === 'function' ? cp.at(steps) : cp.at;
       cp.index = (typeof at === 'number' && at > 0 && at < steps.length) ? Math.floor(at) : -1;
     }
-    /* The prediction panel is a sheet laid directly under the controls (the stage and caption stay visible). It may
-       cover the code / variables / counters below while the reader predicts. Only the part that would stick out of the
-       figure is reserved up front as empty space (usually none), so opening a checkpoint never shifts the page. */
-    var predSlot = null, predRO = null, predW = 0, predH = 0, predTimer = 0;
+    /* The prediction panel is a floating sheet hung from a zero-height anchor right under the controls (stage and caption
+       stay visible). It overlays whatever follows, and may overhang the figure's bottom edge; nothing is reserved, so the
+       figure never grows and there is no blank band. */
+    var predSlot = null;
     function ensureSlot() {
       if (predSlot) return predSlot;
       predSlot = h('div', { class: 'predict-slot', 'data-predict': '' });
       controlsHost.parentNode.insertBefore(predSlot, controlsHost.nextSibling);
-      if (win.ResizeObserver) {
-        predRO = new win.ResizeObserver(function () { var w = controlsHost.getBoundingClientRect().width; if (Math.abs(w - predW) > 1) scheduleReserve(); });
-        predRO.observe(controlsHost);
-      }
       return predSlot;
-    }
-    function scheduleReserve() { if (predTimer || destroyed) return; predTimer = win.setTimeout(function () { predTimer = 0; reservePredict(); }, 0); }
-    function applyReserve() {
-      if (!predSlot) return;
-      predSlot.style.height = '0px';
-      var avail = root.getBoundingClientRect().bottom - predSlot.getBoundingClientRect().top;
-      predSlot.style.height = Math.max(0, Math.ceil(predH - avail)) + 'px';
-    }
-    function reservePredict() {
-      if (!predSlot || pending || !VDSA.predict) return;
-      var w = controlsHost.getBoundingClientRect().width;
-      if (!w) return;
-      predW = w;
-      var probe = h('div', { 'aria-hidden': 'true' });
-      probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;width:' + w + 'px;';
-      predSlot.parentNode.appendChild(probe);
-      var max = 0;
-      checkpoints.forEach(function (cp) {
-        if (cp.index < 1) return;
-        try {
-          var spec = typeof cp.spec === 'function' ? cp.spec({ steps: steps, index: cp.index, step: steps[cp.index], prev: steps[cp.index - 1], player: api }) : cp.spec;
-          if (!spec) return;
-          var c = VDSA.predict(probe, Object.assign({ id: cp.id }, spec));
-          max = Math.max(max, c.el.offsetHeight);
-          var fbEl = c.el.querySelector('.quiz__feedback');   // the answered state is taller: measure it with each explanation
-          if (fbEl) [].concat(spec.explain === undefined ? '' : spec.explain).forEach(function (t) {
-            fbEl.className = 'quiz__feedback is-bad';
-            fbEl.innerHTML = '<b>Not this time.</b><span>' + (t || '') + '</span>';
-            max = Math.max(max, c.el.offsetHeight);
-          });
-          c.close();
-        } catch (e) {}
-      });
-      probe.parentNode.removeChild(probe);
-      predH = max ? Math.ceil(max + 4) : 0;
-      applyReserve();
     }
     function predictHost() { return ensureSlot(); }
     function openCheckpoint(cp, target, resume) {
@@ -386,7 +355,15 @@
       ctrl.el.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); ctrl.reveal(); } });
       updateUI();
       emit('checkpoint', spec, target);
-      try { var pr = ctrl.el.getBoundingClientRect(); if (pr.bottom > (window.innerHeight || 800) || pr.top < 0) ctrl.el.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+      try {
+        var pr = ctrl.el.getBoundingClientRect(), vh = window.innerHeight || 800;
+        if (pr.bottom > vh - 8) {   // scroll just enough to show the whole sheet, but keep at least the lower part of the stage on screen
+          var st = (root.querySelector('.fig__stage') || root).getBoundingClientRect();
+          var dy = Math.min(pr.bottom - vh + 16, Math.max(0, pr.top - 100));   // keep the controls above the sheet visible
+          if (st.bottom > 200) dy = Math.min(dy, Math.max(0, st.bottom - 40));
+          if (dy > 1) window.scrollBy({ top: dy, behavior: 'smooth' });
+        }
+      } catch (e) {}
       var first = ctrl.el.querySelector('.quiz__opt');
       if (first) first.focus({ preventScroll: true });
       ctrl.promise.then(function (res) {
@@ -417,11 +394,32 @@
       resolveAt(cp);
       checkpoints.push(cp);
       if (VDSA.quizScore) VDSA.quizScore.register(cp.id);
-      ensureSlot(); scheduleReserve();
+      ensureSlot();
       return api;
     }
 
     /* ---------- steps ---------- */
+    /* Give the side panels and views the whole run up front so nothing grows while playing:
+       - the variables panel gets the union of every step's variable names (rows exist from step 1);
+       - array views are prepare()d (tallest row stack / held lane / scale). Pass `views: [view | {view, state: fn(step)}]`
+         to choose them; otherwise a lone array view inside the figure whose steps are themselves array states is used. */
+    function prepareViews() {
+      try { if (vars && typeof vars.prepare === 'function') vars.prepare(steps); } catch (e) { console.error(e); }
+      if (!steps.length) return;
+      var list = [];
+      if (Array.isArray(opts.views)) list = opts.views;
+      else if (opts.views === undefined && root.querySelectorAll) {
+        var found = [];
+        Array.prototype.forEach.call(root.querySelectorAll('svg.vz-array'), function (n) { if (n.__vdsaView) found.push(n.__vdsaView); });
+        var s0 = steps[0] || {};
+        if (found.length === 1 && (Array.isArray(s0.rows) || Array.isArray(s0.items))) list = found;
+      }
+      list.forEach(function (v) {
+        var view = v && v.view ? v.view : v, map = v && typeof v.state === 'function' ? v.state : null;
+        if (!view || typeof view.prepare !== 'function') return;
+        try { view.prepare(map ? steps.map(map) : steps); } catch (e) { console.error(e); }
+      });
+    }
     /* Reserve the tallest caption of the run (at the current width) so the controls below never jump while playing. */
     var capRO = null, capW = 0;
     function reserveCaption() {
@@ -434,10 +432,10 @@
       probe.setAttribute('aria-hidden', 'true');
       probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;min-height:0;width:' + w + 'px;';
       captionEl.parentNode.appendChild(probe);
-      var seen = {}, n = 0, max = 0;
+      var seen = {}, n = 0, max = 0, stride = Math.max(1, Math.ceil(steps.length / 400));
       try {
-        for (var i = 0; i < steps.length && n < 400; i++) {
-          var c = steps[i] && steps[i].caption;
+        for (var i = 0; i < steps.length && n < 400; i += stride) {
+          var c = capHTML(steps[i], i);
           if (!c || seen[c]) continue;
           seen[c] = 1; n++;
           probe.innerHTML = c;
@@ -448,7 +446,19 @@
       captionEl.style.minHeight = max > 0 ? Math.ceil(max) + 'px' : '';
       captionEl.setAttribute('data-cap-reserved', '');
     }
+    /* Captions a figure writes itself (outside step.caption) cannot be measured up front; grow the reserve the first time
+       one is taller than anything seen, so each figure jumps at most once per new maximum instead of on every step. */
+    var capMO = null;
+    function growCaption() {
+      if (capMO || !captionEl || !win.MutationObserver) return;
+      capMO = new win.MutationObserver(function () {
+        var hgt = captionEl.offsetHeight, cur = parseFloat(captionEl.style.minHeight) || 0;
+        if (hgt > cur + 1) captionEl.style.minHeight = Math.ceil(hgt) + 'px';
+      });
+      capMO.observe(captionEl, { childList: true, characterData: true, subtree: true });
+    }
     function watchCaption() {
+      growCaption();
       if (capRO || !captionEl || !win.ResizeObserver) return;
       capRO = new win.ResizeObserver(function () { var w = captionEl.getBoundingClientRect().width; if (Math.abs(w - capW) > 1) reserveCaption(); });
       capRO.observe(captionEl);
@@ -457,10 +467,10 @@
       o = o || {};
       cancelPending(); pause();
       steps = Array.isArray(newSteps) ? newSteps : [];
+      prepareViews();
       reserveCaption(); watchCaption();
       checkpoints = checkpoints.filter(function (c) { return typeof c.at === 'function' || o.keepCheckpoints; });
       checkpoints.forEach(function (c) { c.done = false; resolveAt(c); });
-      if (predSlot) scheduleReserve();
       var start = o.keepIndex ? logic.clamp(index, steps.length) : logic.clamp(o.index || 0, steps.length);
       index = -1; // next render is a fresh start: prev = null, instant
       if (steps.length) show(start, 'instant', 'setSteps');
@@ -505,7 +515,7 @@
       get root() { return root; },
       get controls() { return bar; },
       destroy: function () {
-        destroyed = true; cancelPending(); pause(); if (capRO) capRO.disconnect(); if (predRO) predRO.disconnect();
+        destroyed = true; cancelPending(); pause(); if (capRO) capRO.disconnect(); if (capMO) capMO.disconnect();
         root.removeEventListener('pointerdown', markActive); root.removeEventListener('focusin', markActive);
         unVis(); doc.removeEventListener('visibilitychange', onDocVis);
         if (bar.parentNode) bar.parentNode.removeChild(bar);
@@ -519,6 +529,7 @@
     };
     players.push(api);
 
+    prepareViews();
     reserveCaption(); watchCaption();
     if (steps.length) show(logic.clamp(opts.startAt || 0, steps.length), 'instant', 'init'); else updateUI();
     return api;

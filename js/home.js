@@ -357,12 +357,13 @@
       caption: 'A queue spreads outward in waves, so the first time it reaches T is along a shortest route.',
       alt: 'Animation: a breadth-first search spreads in waves across a grid with walls, then traces the shortest path from S to T.',
       stepMs: 260, holdMs: 1700, staticIndex: 14,
+      legend: [['wall', 'Wall'], ['visited', 'Visited'], ['frontier', 'Frontier'], ['path', 'Path']],
       build: function (host) {
         var walls = [];
         for (var r = 0; r < 7; r++) walls.push([r, 6]);
         for (r = 3; r < 11; r++) walls.push([r, 12]);
         walls.push([7, 3], [7, 4], [7, 5], [3, 13], [3, 14], [3, 15]);
-        var view = V.grid(host, { mode: 'path', label: 'Breadth-first search on a grid' });
+        var view = V.grid(host, { mode: 'path', markerLabelMinCell: 12, label: 'Breadth-first search on a grid' });
         var steps = bfsGridSteps(11, 19, walls, [2, 2], [8, 16], 3);
         if (view.prepare) view.prepare(steps);
         return { steps: steps, render: function (st, ms) { view.render(st, { duration: ms }); } };
@@ -386,7 +387,7 @@
       alt: 'Animation: Dijkstra’s algorithm settles nodes of a weighted graph one by one; distance badges drop from infinity, and the shortest path from S to T lights up.',
       stepMs: 860, holdMs: 1700, staticIndex: 3,
       build: function (host) {
-        var view = V.graph(host, { label: 'Dijkstra’s algorithm from S', maxHeight: 340, nodeRadius: 27, bounds: { x: 30, y: 45, w: 940, h: 510 } });
+        var view = V.graph(host, { label: 'Dijkstra’s algorithm from S', maxHeight: 340, nodeRadius: 27, minRadius: 18, bounds: { x: 30, y: 45, w: 940, h: 510 } });
         var steps = dijkstraSteps();
         return { steps: steps, render: function (st, ms) { view.render(st, { duration: ms }); } };
       }
@@ -437,6 +438,9 @@
     scenes.forEach(function (sc, i) {
       var viewHost = h('div', { class: 'reel__view' });
       sc.el = h('div', { class: 'reel__scene', 'data-scene': sc.id }, viewHost);
+      if (sc.legend) sc.el.appendChild(h('ul', { class: 'reel__legend', 'aria-hidden': 'true' }, sc.legend.map(function (it) {
+        return h('li', null, h('i', { class: 'reel__key reel__key--' + it[0] }), it[1]);
+      })));
       sc.host = viewHost;
       stage.appendChild(sc.el);
       var fill = h('span', { class: 'reel__fill' });
@@ -1042,7 +1046,7 @@
           { from: 'q2', to: 'bst', label: 'yes' }, { from: 'q2', to: 'arr', label: 'no', via: { fromSide: 'bottom', toSide: 'bottom' } }
         ]
       };
-      var view = V.flowchart(host, spec, { label: 'Which structure should I use?' });
+      var view = V.flowchart(host, spec, { label: 'Which structure should I use?', compact: true, minFont: 8 })   /* a thumbnail: scale the whole chart to fit rather than scroll (the card clips overflow) */;
       var steps = [{ active: 'q' }, { active: 'q2', visited: ['q'] }, { active: 'bst', visited: ['q', 'q2'], edgeStates: { 'q->q2': 'path', 'q2->bst': 'path' } }, { active: 'q' }, { active: 'hash', visited: ['q'], edgeStates: { 'q->hash': 'path' } }];
       return { steps: steps, stepMs: 1100, holdMs: 1500, startAt: 2, render: function (st, ms) { view.render(st, { duration: ms }); } };
     },

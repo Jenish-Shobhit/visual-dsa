@@ -150,9 +150,11 @@
   };
   /* Dependency arrow between two cells, drawn so it never covers the values:
      - axis-aligned arrows run beside the text line (rightward arrows below it, downward arrows to its right,
-       leftward above, upward left), from 15% past the source centre to 24% before the target centre;
-     - diagonal and other arrows start/end 45%/55% of the way from each centre to the cell border (a diagonal
-       between neighbours passes through their shared corner) and long ones bend slightly.
+       leftward above, upward left), from 10% past the source centre to just inside the target's near border
+       (44% before its centre), so the arrowhead sits on the target cell's edge;
+     - diagonal and other arrows start 55% of the way from the source centre to its border and end 85% of the
+       way from the target centre to its border (a diagonal between neighbours passes through their shared
+       corner), and long ones bend slightly.
      opts: {offset (fraction of cs, default 0.28), bend}. Returns {x1, y1, cx, cy, x2, y2, angle, length, d}. */
   L.arrowGeom = function (g, from, to, opts) {
     opts = opts || {};
@@ -164,10 +166,10 @@
     if (axis) {
       var off = (opts.offset === undefined ? 0.28 : opts.offset) * g.cs;
       ox = uy * off; oy = ux * off;
-      sa = 0.15 * g.cs; ea = 0.24 * g.cs;
+      sa = 0.1 * g.cs; ea = 0.44 * g.cs;
     } else {
       var border = (g.cs / 2) / Math.max(Math.abs(ux), Math.abs(uy), 1e-6);
-      sa = 0.45 * border; ea = 0.55 * border;
+      sa = 0.55 * border; ea = 0.85 * border;
     }
     var x1 = a.x + ux * sa + ox, y1 = a.y + uy * sa + oy, x2 = b.x - ux * ea + ox, y2 = b.y - uy * ea + oy;
     var cells = len / g.cs;
@@ -225,6 +227,7 @@
     showValues: true,
     countUp: false,           // numeric value changes count up/down
     pop: true,                // changed values pop briefly
+    markerLabelMinCell: 22,        // markers show their letter (S / T) once cells are at least this many px; below that they are bare dots
     rowHeaders: null, colHeaders: null, corner: null,
     paintable: false,         // drag to paint walls: 'paint' / 'paintend' events
     paintValue: null,         // null: toggle from the first cell; true/false: always paint/erase
@@ -447,9 +450,15 @@
     function paintArrow(rec) {
       var c = rec.cur;
       var n = vz.n2;
-      var d = 'M' + n(c.x1) + ' ' + n(c.y1) + 'Q' + n(c.cx) + ' ' + n(c.cy) + ' ' + n(c.x2) + ' ' + n(c.y2);
+      /* The shaft stops at the base of the head so the head's tip lands on the target cell's edge and the halo never forms a capsule round the tip. */
+      var angle = Math.atan2(c.y2 - c.cy, c.x2 - c.cx);
+      var total = L.quadLength(c.x1, c.y1, c.cx, c.cy, c.x2, c.y2);
+      var size = vz.clamp(G ? G.cs * 0.17 : 7, 5.5, 9.5);
+      size = Math.min(size, Math.max(3.5, total / 2.4));
+      var bx = c.x2 - Math.cos(angle) * size * 0.8, by = c.y2 - Math.sin(angle) * size * 0.8;
+      var d = 'M' + n(c.x1) + ' ' + n(c.y1) + 'Q' + n(c.cx) + ' ' + n(c.cy) + ' ' + n(bx) + ' ' + n(by);
       vz.set(rec.line, 'd', d); vz.set(rec.halo, 'd', d);
-      var len = L.quadLength(c.x1, c.y1, c.cx, c.cy, c.x2, c.y2);
+      var len = L.quadLength(c.x1, c.y1, c.cx, c.cy, bx, by);
       var drawn = c.d === undefined ? 1 : c.d;
       if (drawn < 0.999) {
         vz.set(rec.line, 'stroke-dasharray', n(len) + ' ' + n(len + 20));
@@ -460,8 +469,6 @@
         vz.set(rec.line, 'stroke-dasharray', null); vz.set(rec.line, 'stroke-dashoffset', null);
         vz.set(rec.halo, 'stroke-dasharray', null); vz.set(rec.halo, 'stroke-dashoffset', null);
       }
-      var angle = Math.atan2(c.y2 - c.cy, c.x2 - c.cx);
-      var size = vz.clamp(G ? G.cs * 0.17 : 7, 4.5, 8);
       vz.set(rec.head, 'd', vz.arrowHead(c.x2, c.y2, angle, size));
       vz.set(rec.head, 'opacity', drawn > 0.85 ? null : '0');
       vz.opacity(rec.el, c.o);
@@ -483,22 +490,23 @@
       rec.paint = function (r) { vz.place(r.el, r.cur.x, r.cur.y, r.cur.s); vz.opacity(r.el, r.cur.o); };
     }
     function shapeMarker(rec, m) {
-      var r = Math.max(4, G.cs * 0.36);
+      var small = G.cs < 22 && m.label && G.cs >= opts.markerLabelMinCell;   // letter forced on tiny cells: grow the disc and font so it stays readable
+      var r = Math.max(small ? 8 : 4, G.cs * 0.36);
       vz.toggle(rec.el, 'is-end', m.kind === 'end');
       vz.toggle(rec.el, 'is-start', m.kind === 'start');
       if (m.kind === 'end') {
         vz.set(rec.outer, 'r', vz.n2(Math.max(2.5, r)));
         vz.set(rec.outer, 'stroke-width', vz.n2(Math.max(1.2, G.cs * 0.1)));
         vz.set(rec.inner, 'r', vz.n2(Math.max(1.2, G.cs * 0.12)));
-        vz.set(rec.inner, 'opacity', m.label && G.cs >= 22 ? '0' : null);
+        vz.set(rec.inner, 'opacity', m.label && G.cs >= opts.markerLabelMinCell ? '0' : null);
       } else {
         vz.set(rec.outer, 'r', vz.n2(Math.max(2.5, r)));
         vz.set(rec.outer, 'stroke-width', vz.n2(G.cs >= 14 ? 1.5 : 0.75));
         vz.set(rec.inner, 'opacity', '0');
       }
-      var showText = m.label && G.cs >= 22;
+      var showText = m.label && G.cs >= opts.markerLabelMinCell;
       vz.text(rec.txt, showText ? m.label : '');
-      vz.set(rec.txt, 'font-size', vz.clamp(Math.round(G.cs * 0.34), 8, 13));
+      vz.set(rec.txt, 'font-size', vz.clamp(Math.round(G.cs * 0.34), small ? 10 : 8, 13));
     }
     function buildPointer(rec) {
       rec.el = vz.svg('g', { class: 'vz-pointer' }, ctx.layers.pointers);

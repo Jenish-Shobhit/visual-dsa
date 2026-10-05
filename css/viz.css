@@ -39,20 +39,19 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 
 /* ============================================================ semantic states -> --vz-c */
 .vz .is-default  { --vz-c: var(--st-default); }
-.vz .is-active   { --vz-c: var(--st-active); }
-.vz .is-compare  { --vz-c: var(--st-compare); }
-.vz .is-swap     { --vz-c: var(--st-swap); }
-.vz .is-update   { --vz-c: var(--st-update); }
-.vz .is-done     { --vz-c: var(--st-done); }
-.vz .is-found    { --vz-c: var(--st-found); }
-.vz .is-visited  { --vz-c: var(--st-visited); }
-.vz .is-frontier { --vz-c: var(--st-frontier); }
-.vz .is-path     { --vz-c: var(--st-path); }
-.vz .is-pivot    { --vz-c: var(--st-pivot); }
-.vz .is-key      { --vz-c: var(--st-key); }
-.vz .is-error    { --vz-c: var(--st-error); }
+.vz .is-active   { --vz-c: var(--st-active);   --vz-text: var(--st-active-text); }
+.vz .is-compare  { --vz-c: var(--st-compare);  --vz-text: var(--st-compare-text); }
+.vz .is-swap     { --vz-c: var(--st-swap);     --vz-text: var(--st-swap-text); }
+.vz .is-update   { --vz-c: var(--st-update);   --vz-text: var(--st-update-text); }
+.vz .is-done     { --vz-c: var(--st-done);     --vz-text: var(--st-done-text); }
+.vz .is-found    { --vz-c: var(--st-found);    --vz-text: var(--st-found-text); }
+.vz .is-visited  { --vz-c: var(--st-visited);  --vz-text: var(--st-visited-text); }
+.vz .is-frontier { --vz-c: var(--st-frontier); --vz-text: var(--st-frontier-text); }
+.vz .is-path     { --vz-c: var(--st-path);     --vz-text: var(--st-path-text); }
+.vz .is-pivot    { --vz-c: var(--st-pivot);    --vz-text: var(--st-pivot-text); }
+.vz .is-key      { --vz-c: var(--st-key);      --vz-text: var(--st-key-text); }
+.vz .is-error    { --vz-c: var(--st-error);    --vz-text: var(--st-error-text); }
 .vz .is-muted    { --vz-c: var(--st-muted); }
-.vz [class*="is-"] { --vz-text: color-mix(in srgb, var(--vz-c) 68%, var(--ink)); }
 .vz .is-muted { --vz-text: color-mix(in srgb, var(--st-muted) 52%, var(--ink)); }   /* muted labels must still clear 4.5:1 */
 
 /* ============================================================ items (cells, boxes, bars, nodes)
@@ -284,7 +283,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz-grid .vz-garrow { pointer-events: none; }
 .vz-grid .vz-edge.vz-garrow { --vz-ew: 2px; }
 .vz-grid .vz-edge.vz-garrow.is-default { --vz-c: var(--el-edge-strong); }
-.vz-grid .vz-garrow-halo { fill: none; stroke: var(--bg-elev); stroke-width: calc(var(--vz-ew) + 1.75px); stroke-linecap: round; opacity: .9; }
+.vz-grid .vz-garrow-halo { fill: none; stroke: var(--bg-elev); stroke-width: calc(var(--vz-ew) + 1.5px); stroke-linecap: butt; opacity: .55; }
 .vz-grid .vz-garrow-label { fill: var(--vz-text); font: 700 10.5px var(--font-mono); paint-order: stroke; stroke: var(--bg-elev); stroke-width: 3px; }
 /* start / end / dot markers */
 .vz-grid .vz-marker { pointer-events: none; --vz-c: var(--st-active); }
@@ -313,7 +312,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 /* ============================================================ stack / queue / ring (stack.js) */
 .vz-linear .vz-tray-line { fill: none; stroke: var(--line-strong); stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round; transition: stroke var(--vz-dur) var(--vz-ease); }
 .vz-linear .vz-tray.is-error .vz-tray-line { stroke: var(--st-error); stroke-width: 2.5px; }
-.vz-linear .vz-tray.is-error .vz-tray-caption { fill: color-mix(in srgb, var(--st-error) 68%, var(--ink)); }
+.vz-linear .vz-tray.is-error .vz-tray-caption { fill: var(--st-error-text); }
 .vz-linear .vz-empty-text { font: 600 11px var(--font-sans); letter-spacing: .06em; fill: var(--ink-3); }
 .vz-linear .vz-slot { fill: none; }
 .vz-ring .vz-ring-slot .vz-shape { --vz-sw: 1.25px; stroke-linejoin: round; }
@@ -325,7 +324,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz-ring .vz-ring-cell .vz-shape { --vz-sw: 1.25px; }
 .vz-ring .vz-ring-size { fill: var(--ink); font: 700 26px var(--font-sans); transition: fill var(--vz-dur) var(--vz-ease); }
 .vz-ring .vz-ring-sizecap { font-size: 11px; }
-.vz-ring .vz-ring-center.is-full .vz-ring-size { fill: color-mix(in srgb, var(--st-error) 70%, var(--ink)); }
+.vz-ring .vz-ring-center.is-full .vz-ring-size { fill: var(--st-error-text); }
 .vz-ring .vz-ring-center.is-emptyring .vz-ring-size { fill: var(--ink-3); }
 /* end stack */
 
@@ -349,7 +348,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz-hash .vz-hash-meter-tick { stroke: var(--ink-2); stroke-width: 1.5px; }
 .vz-hash .vz-hash-meter-label { fill: var(--vz-text); font: 650 11px var(--font-mono); transition: fill var(--vz-dur) var(--vz-ease); }
 .vz-hash .vz-hash-meter-ticklabel { fill: var(--ink-3); font: 500 9.5px var(--font-mono); }
-.vz-hash .vz-hash-resize { fill: color-mix(in srgb, var(--st-swap) 68%, var(--ink)); font: 650 11px var(--font-sans); }
+.vz-hash .vz-hash-resize { fill: var(--st-swap-text); font: 650 11px var(--font-sans); }
 .vz-hash .vz-hash-tomb-text { fill: var(--ink-3); font: 600 11px var(--font-mono); }
 .vz-hash .vz-hash-probe-badge text { font-size: 9.5px; }
 /* end hash */
@@ -420,15 +419,14 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 /* Categorical series order (series without an explicit `state`): active, compare, done, pivot, frontier,
    visited, path, error. A series with `state` uses that semantic colour instead (e.g. state: 'muted' for a
    reference curve). */
-.vz-chart .vz-cat-0 { --vz-c: var(--st-active); }
-.vz-chart .vz-cat-1 { --vz-c: var(--st-compare); }
-.vz-chart .vz-cat-2 { --vz-c: var(--st-done); }
-.vz-chart .vz-cat-3 { --vz-c: var(--st-pivot); }
-.vz-chart .vz-cat-4 { --vz-c: var(--st-frontier); }
-.vz-chart .vz-cat-5 { --vz-c: var(--st-visited); }
-.vz-chart .vz-cat-6 { --vz-c: var(--st-path); }
-.vz-chart .vz-cat-7 { --vz-c: var(--st-error); }
-.vz-chart [class*="vz-cat-"] { --vz-text: color-mix(in srgb, var(--vz-c) 68%, var(--ink)); }
+.vz-chart .vz-cat-0 { --vz-c: var(--st-active);   --vz-text: var(--st-active-text); }
+.vz-chart .vz-cat-1 { --vz-c: var(--st-compare);  --vz-text: var(--st-compare-text); }
+.vz-chart .vz-cat-2 { --vz-c: var(--st-done);     --vz-text: var(--st-done-text); }
+.vz-chart .vz-cat-3 { --vz-c: var(--st-pivot);    --vz-text: var(--st-pivot-text); }
+.vz-chart .vz-cat-4 { --vz-c: var(--st-frontier); --vz-text: var(--st-frontier-text); }
+.vz-chart .vz-cat-5 { --vz-c: var(--st-visited);  --vz-text: var(--st-visited-text); }
+.vz-chart .vz-cat-6 { --vz-c: var(--st-path);     --vz-text: var(--st-path-text); }
+.vz-chart .vz-cat-7 { --vz-c: var(--st-error);    --vz-text: var(--st-error-text); }
 .vz-chart.is-hoverable { cursor: crosshair; touch-action: pan-y; }
 /* axes: quiet gridlines, ink-3 labels */
 .vz-chart .vz-gridline { stroke: var(--line); stroke-width: 1px; shape-rendering: crispEdges; }

@@ -12,7 +12,7 @@
 }(typeof window !== 'undefined' ? window : null, function (win) {
   'use strict';
 
-  var MAX_ITEMS = 12, MAX_KEYS = 4, MAX_STR = 40;
+  var MAX_ITEMS = 12, MAX_KEYS = 4, MAX_STR = 40, MAX_FIXED = 24;
 
   function fmtNumber(n) {
     if (n === Infinity) return '∞';
@@ -67,13 +67,23 @@
   }
   function raw(text, type) { return { __vdsaRaw: true, text: text, type: type }; }
 
-  var api = { format: format, raw: raw };
+  /* keys(steps) -> every variable name used by any step.vars, in first-appearance order. */
+  function collectKeys(steps) {
+    var seen = {}, out = [];
+    (steps || []).forEach(function (st) {
+      var v = st && st.vars;
+      if (v && typeof v === 'object') Object.keys(v).forEach(function (k) { if (!seen[k]) { seen[k] = 1; out.push(k); } });
+    });
+    return out;
+  }
+
+  var api = { format: format, raw: raw, keys: collectKeys };
   if (!win) return api;
 
   var VDSA = win.VDSA = win.VDSA || {};
   VDSA.vars = api;
 
-  /* VDSA.varsPanel(el, {title: 'Variables' | false, states: {name: state}, empty: 'text'}) -> {update, clear, el} */
+  /* VDSA.varsPanel(el, {title: 'Variables' | false, states: {name: state}, empty: 'text', keys: ['i','best']}) -> {update, clear, prepare, setKeys, el} */
   VDSA.varsPanel = function (el, opts) {
     el = VDSA.$(el);
     if (!el) throw new Error('VDSA.varsPanel: element not found');
@@ -94,26 +104,43 @@
       return { row: row, value: dd, text: undefined };
     }
 
+    /* Stable rows: with a key list (opts.keys, or keys(steps) / prepare(steps) from the player) every row exists from the
+       first update and a variable that is not defined yet shows a muted "–", so the panel never grows while playing. */
+    var fixed = Array.isArray(opts.keys) && opts.keys.length ? opts.keys.map(String) : null;
+    function prepare(steps) {
+      var ks = collectKeys(steps);
+      fixed = ks.length && ks.length <= MAX_FIXED ? ks : null;
+      return api;
+    }
+    function setKeys(ks) { fixed = Array.isArray(ks) && ks.length ? ks.map(String) : null; return api; }
+    var PLACEHOLDER = { text: '–', type: 'undef' };
+
     function update(obj, states) {
       obj = obj || {};
       var keys = Object.keys(obj);
+      if (fixed) {
+        var extra = keys.filter(function (k) { return fixed.indexOf(k) === -1; });
+        keys = fixed.concat(extra);
+      }
       Object.keys(rows).forEach(function (k) {
         if (keys.indexOf(k) === -1) { list.removeChild(rows[k].row); delete rows[k]; }
       });
       keys.forEach(function (k, i) {
         var r = rows[k], isNew = !r;
         if (!r) r = rows[k] = makeRow(k);
-        var f = format(obj[k]);
+        var defined = Object.prototype.hasOwnProperty.call(obj, k);
+        var f = defined ? format(obj[k]) : PLACEHOLDER;
         var changed = r.text !== f.text;
         r.row.classList.remove('is-changed');
+        r.row.classList.toggle('is-unset', !defined);
         if (changed) {
           r.value.textContent = f.text;
           r.value.className = 'vars__value v-' + f.type;
-          r.value.title = f.type === 'undef' ? 'undefined: not set yet' : '';
+          r.value.title = !defined ? 'not set yet' : f.type === 'undef' ? 'undefined: not set yet' : '';
           r.text = f.text;
           if (!isNew && order.length) { void r.row.offsetWidth; r.row.classList.add('is-changed'); }
         }
-        var st = (states && states[k]) || (opts.states && opts.states[k]) || null;
+        var st = (defined && ((states && states[k]) || (opts.states && opts.states[k]))) || null;
         if (st) r.row.setAttribute('data-state', st); else r.row.removeAttribute('data-state');
         if (list.children[i] !== r.row) list.insertBefore(r.row, list.children[i] || null);
       });
@@ -121,7 +148,8 @@
       empty.hidden = keys.length > 0;
     }
     function clear() { VDSA.clear(list); rows = {}; order = []; empty.hidden = false; }
-    return { el: el, update: update, clear: clear };
+    var api = { el: el, update: update, clear: clear, prepare: prepare, setKeys: setKeys };
+    return api;
   };
 
   return api;

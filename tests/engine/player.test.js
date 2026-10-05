@@ -230,3 +230,10 @@ test('presets are deterministic with a seed and honour their shape', () => {
   assert.ok(P.random(50, { seed: 6, min: -5, max: 5 }).every(v => v >= -5 && v <= 5));
   assert.deepEqual(P.allEqual(3, { value: 7 }), [7, 7, 7]);
 });
+
+test('vars.keys collects every variable name over all steps in first-appearance order', () => {
+  const steps = [{ vars: { i: 0 } }, {}, { vars: { i: 1, best: 3 } }, { vars: { j: 2, i: 2 } }, null];
+  assert.deepEqual(vars.keys(steps), ['i', 'best', 'j']);
+  assert.deepEqual(vars.keys([]), []);
+  assert.deepEqual(vars.keys(undefined), []);
+});

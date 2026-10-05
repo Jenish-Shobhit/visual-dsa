@@ -236,6 +236,13 @@
     if (href.charAt(0) !== '#' || href.length < 2) return null;
     try { return decodeURIComponent(href.slice(1)); } catch (_) { return href.slice(1); }
   }
+  /* True when href (site-relative) is the page being viewed; ignores hash and a trailing index.html. */
+  function isHere(href) {
+    try {
+      var norm = function (u) { return u.pathname.replace(/index\.html$/, ''); };
+      return norm(new URL(VDSA.url(href), win.location.href)) === norm(win.location);
+    } catch (e) { return false; }
+  }
   function renderDrawer() {
     VDSA.clear(drawer);
     var p = VDSA.progress.get();
@@ -299,20 +306,27 @@
 
       if (C.labs && C.labs.length) {
         var labs = h('ul', { class: 'drawer-labs' });
-        C.labs.forEach(function (lab) { labs.appendChild(h('li', null, h('a', { href: VDSA.url(lab.href) }, lab.title, h('small', null, lab.blurb)))); });
-        bodyEl.appendChild(h('section', { class: 'drawer__section' }, h('h3', { class: 'drawer__label' }, 'Labs'), labs));
+        C.labs.forEach(function (lab) { labs.appendChild(h('li', null, h('a', { href: VDSA.url(lab.href), 'aria-current': isHere(lab.href) ? 'page' : null }, lab.title, h('small', null, lab.blurb)))); });
+        bodyEl.appendChild(h('section', { class: 'drawer__section drawer__section--labs' }, h('h3', { class: 'drawer__label' }, 'Labs'), labs));
       }
     } else {
       bodyEl.appendChild(h('p', { class: 'muted', style: { padding: '16px 10px' } }, 'The course list could not be loaded on this page.'));
     }
 
-    /* Always present, even without curriculum data: the places that are not lessons. Paths come from VDSA.url, so they resolve from any depth. */
-    var more = h('ul', { class: 'drawer-labs drawer-more' });
-    [['labs', 'All labs', 'index.html#labs', 'Open playgrounds for your own input.'],
-     ['studies', 'Deep studies', 'studies/index.html', 'Long-form lecture notes with proofs and problem sets.'],
-     ['history', 'History', 'labs/history.html', 'An interactive timeline of algorithms and their people.']
-    ].forEach(function (m) { more.appendChild(h('li', null, h('a', { href: VDSA.url(m[2]) }, m[1], h('small', null, m[3])))); });
-    bodyEl.appendChild(h('section', { class: 'drawer__section drawer__section--more' }, h('h3', { class: 'drawer__label' }, 'Explore more'), more));
+    /* Always present, even without curriculum data: the deep studies. On a study page the current study is listed and marked; on a lesson its matching study is offered first. */
+    var studies = h('ul', { class: 'drawer-labs drawer-more' });
+    var studyTitle = '';
+    if (page === 'study') {
+      var h1 = doc.querySelector('main h1, h1');
+      studyTitle = (h1 && h1.textContent || body.getAttribute('data-crumb') || 'This study').replace(/\s+/g, ' ').trim();
+    }
+    if (page === 'study' && !isHere('studies/index.html')) {
+      studies.appendChild(h('li', { class: 'drawer-more__wide' }, h('a', { href: win.location.pathname.split('/').pop() || '#', 'aria-current': 'page' }, studyTitle, h('small', null, 'You are reading this study.'))));
+    }
+    if (lesson && lesson.study) studies.appendChild(h('li', { class: 'drawer-more__wide' }, h('a', { href: VDSA.url(lesson.study) }, 'Deep study for this lesson', h('small', null, 'Proofs, derivations and problem sets for ' + lesson.title + '.'))));
+    studies.appendChild(h('li', { class: 'drawer-more__wide' }, h('a', { href: VDSA.url('studies/index.html'), 'aria-current': isHere('studies/index.html') ? 'page' : null }, 'All deep studies', h('small', null, 'Long-form lecture notes with proofs and problem sets.'))));
+    if (!(C && C.labs && C.labs.length)) studies.appendChild(h('li', { class: 'drawer-more__wide' }, h('a', { href: VDSA.url('index.html#labs') }, 'All labs', h('small', null, 'Open playgrounds for your own input.'))));
+    bodyEl.appendChild(h('section', { class: 'drawer__section drawer__section--more' }, h('h3', { class: 'drawer__label' }, 'Deep studies'), studies));
 
     drawer.appendChild(h('div', { class: 'drawer__foot' },
       h('button', { type: 'button', onclick: function () { shortcutsFromDrawer = true; closeContents(); setTimeout(showShortcuts, 50); } }, svgIcon(ICONS.keyboard), 'Keyboard shortcuts ', h('kbd', null, '?')),

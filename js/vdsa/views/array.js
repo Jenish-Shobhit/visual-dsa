@@ -176,7 +176,7 @@
 
     var S = { items: new vz.Store(), slots: new vz.Store(), rows: new vz.Store(), ptrs: new vz.Store(), regions: new vz.Store() };
     var reserve = {};                  // per row id, grows only (see opts.reserve / view.prepare)
-    var prepared = { max: null, min: null };
+    var prepared = { max: null, min: null, norms: null, sigs: null, hKey: '', h: 0 };
     var clickable = !!opts.onItemClick;
     var textCache = new Map();
     var G = null;                      // last geometry
@@ -286,6 +286,18 @@
       g.height = y + 4;
       if (opts.height) g.height = Math.max(g.height, opts.height);
       return g;
+    }
+    /* Tallest drawing over every prepared snapshot at the current width, so a later step that adds a row (doubling,
+       a second lane) or changes the cell size never changes the viewBox mid-play. Cached per width/options. */
+    function preparedHeight() {
+      var ns = prepared.norms;
+      if (!ns || !ns.length || !ctx.width) return 0;
+      var key = [ctx.width, opts.mode, opts.cellSize, opts.barHeight, opts.height, ns.length].join('|');
+      if (key === prepared.hKey) return prepared.h;
+      var h = 0;
+      for (var i = 0; i < ns.length; i++) { try { h = Math.max(h, geometry(ns[i]).height); } catch (e) { /* ignore */ } }
+      prepared.hKey = key; prepared.h = h;
+      return h;
     }
     function slotLeft(rg, slot) {
       var r = rg.row;
@@ -487,6 +499,7 @@
     function draw(state, ms) {
       var norm = L.normalize(state);
       G = geometry(norm);
+      G.height = Math.max(G.height, preparedHeight());
       ctx.setHeight(G.height);
       var gk = [G.cellW, G.cellH, G.corner, G.radius, G.sw].map(vz.n2).join('|');
       var geomChanged = gk !== lastGeomKey;
@@ -722,8 +735,12 @@
     };
     /* Scan every snapshot of a trace once so the figure never changes height or scale mid-animation. */
     api.prepare = function (states) {
-      (states || []).forEach(function (st) {
+      var list = states || [], norms = [], seenSig = prepared.sigs || (prepared.sigs = {});
+      list.forEach(function (st) {
         var norm = L.normalize(st);
+        // geometry only depends on the row/slot/pointer/held structure, so skip snapshots that repeat one already kept
+        var sig = norm.rows.map(function (r) { return r.id + ':' + r.n + ':' + r.offset + ':' + r.breaks.length + ':' + (r.label ? 1 : 0) + ':' + r.pointers.length + ':' + r.regions.length + ':' + r.showIndices + ':' + r.showAddresses + ':' + r.gap; }).join(',') + '|' + norm.held.length + ':' + norm.held.map(function (h) { return h.over; }).join('.');
+        if (!seenSig[sig] && (prepared.norms ? prepared.norms.length : 0) + norms.length < 400) { seenSig[sig] = 1; norms.push(norm); }
         norm.rows.forEach(function (r) {
           var res = reserve[r.id] || (reserve[r.id] = Object.assign({ above: 0, below: 0, held: false, regionLabels: false, label: false }, opts.reserve || {}));
           L.pointerLevels(r.pointers.filter(function (p) { return typeof p.index === 'number'; })).forEach(function (e) {
@@ -739,11 +756,12 @@
         });
         norm.held.forEach(function (h) { var v = +h.value; if (isFinite(v)) { prepared.max = prepared.max === null ? v : Math.max(prepared.max, v); prepared.min = prepared.min === null ? v : Math.min(prepared.min, v); } });
       });
+      prepared.norms = (prepared.norms || []).concat(norms); prepared.hKey = '';
       api.refresh();
       return api;
     };
     /* Forget reserved lanes / prepared scale (e.g. when the lesson loads a new input). */
-    api.reset = function () { reserve = {}; prepared = { max: null, min: null }; return api; };
+    api.reset = function () { reserve = {}; prepared = { max: null, min: null, norms: null, sigs: null, hKey: '', h: 0 }; return api; };
     api.setOptions = function (o) {
       var rebuild = o && (o.mode !== undefined && o.mode !== opts.mode);
       Object.assign(opts, o || {});
@@ -769,6 +787,7 @@
     };
     /* Current screen position of an item (for lesson overlays). */
     api.positionOf = function (id) { var r = S.items.get(String(id)); return r ? { x: r.cur.x, y: r.cur.y } : null; };
+    try { ctx.svg.__vdsaView = api; } catch (e) { /* ignore */ }   // lets VDSA.player find the view and prepare() it
     return api;
   }
 

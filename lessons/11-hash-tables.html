@@ -40,7 +40,7 @@
       <h1 class="hero__title">Hash tables</h1>
       <p class="hero__lede">Turn a key into an array index and look it up in one step. Collisions are certain, so the whole craft is what to do when two keys want the same slot.</p>
       <ul class="hero__meta" aria-label="About this lesson">
-        <li class="chip" data-icon="clock">20 min</li>
+        <li class="chip" data-icon="clock" data-fill="minutes"></li>
         <li class="chip" data-icon="level">Beginner</li>
         <li><a class="chip" data-icon="prereq" href="06-arrays.html">Needs: arrays</a></li>
         <li><a class="chip" data-icon="prereq" href="08-linked-lists.html">Linked lists</a></li>
@@ -93,10 +93,15 @@
         <div class="fig__controls" data-controls></div>
         <figcaption class="fig__alt">Text alternative: each letter of the typed word becomes a numeric code, the codes are combined into one number, and that number modulo the number of buckets gives the bucket, shown as a highlighted slot in a row of buckets.</figcaption>
       </figure>
-      <p>Try <strong>cat</strong>, <strong>act</strong> and <strong>tac</strong> with <em>sum of codes</em>: the same three letters give the same number, so all three land in one bucket. Switch to <em>polynomial</em> and each position gets its own weight (multiply by 31, then add), so the three words scatter. The figure opens with 11 buckets. With 10, the multiplier 31 leaves the same remainder as 1, so polynomial would act like a plain sum for these three words. Drag the bucket slider to see how the bucket count matters.</p>
+      <p>Try <strong>cat</strong>, <strong>act</strong> and <strong>tac</strong> with <em>sum of codes</em>: the same three letters give the same number, so all three land in one bucket. Switch to <em>polynomial</em> and each position gets its own weight (multiply by 31, then add), so the three words scatter.</p>
+      <p>The figure opens with 11 buckets. With 10, the multiplier 31 leaves the same remainder as 1, so polynomial would act like a plain sum for these three words. Drag the bucket slider to see how the bucket count matters.</p>
       <aside class="callout callout--insight">
         <p class="callout__title">What a good hash function does</p>
         <p><strong>Deterministic:</strong> the same key always gives the same bucket, or you could never find it again. <strong>Uniform:</strong> keys spread evenly, whatever pattern they follow. <strong>Fast:</strong> it runs on every single operation.</p>
+      </aside>
+      <aside class="callout callout--warn">
+        <p class="callout__title">Equal keys must hash equal</p>
+        <p>A table finds a key by hashing it, then comparing with <code>==</code> inside the bucket. So two keys that are equal must produce the same hash, or an equal key would be searched for in the wrong bucket. A key that <em>changes</em> after it is stored breaks the same promise: its hash moves, and the entry is stranded in its old bucket. That is why Python refuses lists as dictionary keys but accepts tuples.</p>
       </aside>
       <p>Uniformity is what the next figure measures. Thirty-odd keys are dropped into 13 buckets by each function. Change the function and every key glides to its new bucket.</p>
       <figure class="fig wide" id="fig-spread">
@@ -110,12 +115,12 @@
         <div class="fig__stats" data-stats></div>
         <figcaption class="fig__alt">Text alternative: a histogram with 13 columns. Each key is a small tile stacked in its bucket. With the first-letter function, all usernames pile into one column; with the polynomial function they spread almost evenly.</figcaption>
       </figure>
-        <p>Now compute one yourself. The table has 7 buckets and <code>h(k) = k mod 7</code>. Which bucket holds key 38?</p>
-        <figure class="fig" id="fig-bucketclick">
-          <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Seven buckets</h3></div></header>
-          <div class="fig__stage fig__stage--plain" data-stage></div>
-        </figure>
-        <div class="quiz" id="quiz-click"></div>
+      <p>Now compute one yourself. The table has 7 buckets and <code>h(k) = k mod 7</code>. Which bucket holds key 38?</p>
+      <figure class="fig" id="fig-bucketclick">
+        <header class="fig__head"><div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Seven buckets</h3></div></header>
+        <div class="fig__stage fig__stage--plain" data-stage></div>
+      </figure>
+      <div class="quiz" id="quiz-click"></div>
     </section>
 
     <!-- ============================================================ COLLISIONS -->

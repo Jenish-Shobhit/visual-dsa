@@ -39,7 +39,7 @@
       <h1 class="hero__title">Decisions &amp; loops</h1>
       <p class="hero__lede">A program is a token walking through a map. Tests choose the road, and a road that curls back on itself is a loop. Watch the token, and you can predict any program.</p>
       <ul class="hero__meta" aria-label="About this lesson">
-        <li class="chip" data-icon="clock">20 min</li>
+        <li class="chip" data-icon="clock" data-fill="minutes"></li>
         <li class="chip" data-icon="level">Beginner</li>
         <li><a class="chip" data-icon="prereq" href="02-bits-and-memory.html">Needs: bits &amp; memory</a></li>
       </ul>
@@ -52,7 +52,7 @@
     <!-- ============================================================ THE PROBLEM -->
     <section id="problem">
       <h2>The problem: instructions that only go forward</h2>
-      <p>So far a program is a list, and the machine runs it from top to bottom. That is enough to add two numbers. It is not enough to add the numbers from 1 to 1,000,000, because you would have to write a million lines.</p>
+      <p>Lesson 1 gave a program three building blocks: sequence, choice and repetition. So far we have mostly used the first, a list the machine runs from top to bottom. That is enough to add two numbers. It is not enough to add the numbers from 1 to 1,000,000, because you would have to write a million lines.</p>
       <p>Drag the slider. Each line on the left is one instruction. The loop on the right stays three lines long, whatever <em>n</em> is.</p>
       <figure class="fig wide" id="fig-lines">
         <header class="fig__head">
@@ -64,12 +64,8 @@
         <figcaption class="fig__alt">Text alternative: a wall of forty short instructions, each adding one number, next to a three-line loop that does the same job for any n.</figcaption>
       </figure>
       <p>A second problem is that the right instruction depends on the data. Show a green battery above 50 percent, amber above 20, red otherwise. The program has to <em>choose</em>.</p>
-      <p>Choosing and repeating are all it takes. Any program, however large, is built from three shapes, and each is easy to draw as a flowchart.</p>
+      <p>Choosing and repeating are what a plain list lacks. These are lesson 1’s three building blocks, now in detail, and each is easy to draw as a flowchart. The rest of this lesson takes the last two apart.</p>
       <div class="mini-row wide" id="mini-blocks"></div>
-      <aside class="callout callout--fun">
-        <p class="callout__title">Three shapes are enough</p>
-        <p>In 1966 Corrado Böhm and Giuseppe Jacopini proved that sequence, choice and loop can express every computation a computer can do. The rest of this lesson takes the last two apart.</p>
-      </aside>
     </section>
 
     <!-- ============================================================ CONDITIONS -->
@@ -250,16 +246,16 @@
     <!-- ============================================================ OFF BY ONE -->
     <section id="offbyone">
       <h2>Off by one: the fence-post error</h2>
-      <p>The most common loop bug is being wrong by exactly one. It has an old name, the fence-post problem. How many posts hold up a fence with five rails? Six.</p>
+      <p>The most common loop bug is being wrong by exactly one. It has an old name, the fence-post problem. How many posts hold up a fence with five gaps (panels)? Six.</p>
       <figure class="fig wide" id="fig-fenceposts">
         <header class="fig__head">
-          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Posts and rails</h3></div>
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Posts and panels</h3></div>
           <div data-legend></div>
         </header>
         <div class="fig__toolbar"><div data-slider style="flex: 1 1 320px"></div></div>
         <div class="fig__stage" data-stage></div>
         <p class="fig__caption" data-msg aria-live="polite"></p>
-        <figcaption class="fig__alt">Text alternative: a fence with a chosen number of posts and always one fewer rail.</figcaption>
+        <figcaption class="fig__alt">Text alternative: a fence with a chosen number of posts and always one fewer panel (gap), each with two rails.</figcaption>
       </figure>
       <p>A loop over boxes has the same trap. Boxes are numbered from 0, so <em>n</em> boxes end at <code>a[n − 1]</code>. Choose where the loop starts and whether it uses <code>&lt;</code> or <code>&lt;=</code>, then step through. The extra or missing trip is flagged in red.</p>
       <figure class="fig fig--lab wide" id="fig-fence">
@@ -476,7 +472,7 @@
         <p class="history__people">Harvard Mark I operators<span>then Böhm, Jacopini (1966) and Dijkstra (1968)</span></p>
         <div class="history__body">
           <p>The Harvard Mark I had no jump instruction. When it stopped, an operator read a register and decided whether to wind the paper tape back and run the loop again. People were the control flow. John Backus recalled a tape loop on another Harvard machine that picked up a half-twist and became a Möbius strip.</p>
-          <p>In 1966 Böhm and Jacopini proved that sequence, choice and loops are enough for any program. Two years later Dijkstra’s letter, retitled by its editor “Go To Statement Considered Harmful”, argued that programs should use those three shapes and not arbitrary jumps. Most languages have followed that advice ever since.</p>
+          <p>The Böhm and Jacopini result from lesson 1 (1966) says those three shapes are enough for any program. Two years later Dijkstra’s letter, retitled by its editor “Go To Statement Considered Harmful”, argued that programs should use those three shapes and not arbitrary jumps. Most languages have followed that advice ever since.</p>
         </div>
         <p class="history__source">Sources: R. C. Martin, <em>We, Programmers</em> (2025), ch. 4–6; C. Böhm and G. Jacopini, “Flow Diagrams, Turing Machines and Languages with Only Two Formation Rules”, <em>CACM</em> 9(5), 1966; E. W. Dijkstra, “Go To Statement Considered Harmful”, <em>CACM</em> 11(3), 1968.</p>
       </div>

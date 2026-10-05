@@ -43,7 +43,7 @@
       <h1 class="hero__title">Queues &amp; deques</h1>
       <p class="hero__lede">The fairest way to wait, and the trick that makes it fast: a circular buffer that reuses its own slots. Then a queue with two open ends that answers sliding-window questions in one pass.</p>
       <ul class="hero__meta" aria-label="About this lesson">
-        <li class="chip" data-icon="clock">28 min</li>
+        <li class="chip" data-icon="clock" data-fill="minutes"></li>
         <li class="chip" data-icon="level">Beginner to intermediate</li>
         <li><a class="chip" data-icon="prereq" href="06-arrays.html">Needs: arrays</a></li>
       </ul>
@@ -401,7 +401,7 @@
       <p>One dequeue can move many values. But each value crosses over at most once, so any run of <em>n</em> operations does O(n) work in total: <dfn>amortized</dfn> O(1) per operation.</p>
 
       <h3>A queue feeding a flood fill</h3>
-      <p>Breadth-first search explores a maze or a graph outward, one ring of distance at a time. Its engine is a queue: cells leave in the order they were found, so all the cells at distance <em>d</em> are expanded before any at <em>d + 1</em>. You will meet it in full in Unit 6; here is the queue at work. Click a cell to toggle a wall.</p>
+      <p>Breadth-first search explores a maze or a graph outward, one ring of distance at a time. Its engine is a queue: cells leave in the order they were found, so all the cells at distance <em>d</em> are expanded before any at <em>d + 1</em>. You will meet it in full in <a href="26-bfs-and-dfs.html">lesson 26</a>; here is the queue at work. Click a cell to toggle a wall.</p>
       <figure class="fig wide" id="fig-bfs">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">BFS flood fill: the queue decides the order</h3></div>
@@ -528,7 +528,8 @@
         <p class="history__people">Agner Erlang<span>“The Theory of Probabilities and Telephone Conversations”</span></p>
         <div class="history__body">
           <p>Queueing theory began in a telephone exchange. In 1909 the Danish engineer Agner Erlang worked out how calls that arrive at random pile up waiting for a free line, the first paper on the mathematics of waiting.</p>
-          <p>In the 1960s Kristen Nygaard and Ole-Johan Dahl met the difference between a queue and a stack head-on. Their SIMULA simulations needed customers to leave a queue in the order they joined, which ALGOL’s stack could not do. Dahl moved the data to a heap, and the idea of objects was born. The word “deque” is credited by Knuth to E. J. Schweppe. And on 20 July 1969 the Apollo 11 computer, overloaded during the landing, raised its 1201 and 1202 alarms and shed low-priority jobs: a priority queue at work, on the flight software led by Margaret Hamilton.</p>
+          <p>In the 1960s Kristen Nygaard and Ole-Johan Dahl met the difference between a queue and a stack head-on. Their SIMULA simulations needed customers to leave a queue in the order they joined, which ALGOL’s stack could not do. Dahl moved the data to a heap, and the idea of objects was born.</p>
+          <p>The word “deque”, for a queue you can add to and remove from at both ends, is credited by Knuth to E. J. Schweppe.</p>
         </div>
         <p class="history__source">Sources: A. K. Erlang, <em>Nyt Tidsskrift for Matematik</em> B 20 (1909); R. C. Martin, <em>We, Programmers</em> (2025), ch. 7 and cast of characters; D. E. Knuth, <em>The Art of Computer Programming</em>, Vol. 1, §2.2.1.</p>
       </div>
@@ -538,9 +539,9 @@
     <section id="practice">
       <h2>Practice</h2>
       <ol class="practice">
-        <li><div class="practice__title">Design a circular queue</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Implement <code>MyCircularQueue(k)</code> on a fixed array with <code>enQueue</code>, <code>deQueue</code>, <code>Front</code>, <code>Rear</code>, <code>isEmpty</code> and <code>isFull</code>, all in O(1). State which fields you keep, and argue that full and empty can never be confused.</p></li>
-        <li><div class="practice__title">Queue using two stacks</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Implement <code>push</code>, <code>pop</code>, <code>peek</code> and <code>empty</code> of a FIFO queue using only two stacks. Prove that <code>pop</code> is O(1) amortized even though a single call can take O(n).</p></li>
         <li><div class="practice__title">Number of recent calls</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">Write <code>ping(t)</code>, called with strictly increasing times in milliseconds, that returns how many pings happened in the last 3000 ms (including this one). Which end of your queue do old pings leave from?</p></li>
+        <li><div class="practice__title">Time needed to buy tickets</div><div class="practice__meta"><span class="practice__diff" data-level="easy">Easy</span></div><p class="practice__text">People stand in a line; person <em>i</em> wants <code>tickets[i]</code> tickets. Each second the person at the front buys one ticket and, if they still want more, goes to the back of the line. Simulate it with a queue to find how many seconds person <em>k</em> needs, then explain how you could get the answer without simulating.</p></li>
+        <li><div class="practice__title">Design a circular queue</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Implement <code>MyCircularQueue(k)</code> on a fixed array with <code>enQueue</code>, <code>deQueue</code>, <code>Front</code>, <code>Rear</code>, <code>isEmpty</code> and <code>isFull</code>, all in O(1). State which fields you keep, and argue that full and empty can never be confused.</p></li>
         <li><div class="practice__title">Design a circular deque</div><div class="practice__meta"><span class="practice__diff" data-level="medium">Medium</span></div><p class="practice__text">Add <code>insertFront</code>, <code>insertLast</code>, <code>deleteFront</code> and <code>deleteLast</code> to your circular queue. Handle the wrap when <code>insertFront</code> moves head below 0, and explain why <code>(head − 1) % k</code> is not enough in many languages.</p></li>
         <li><div class="practice__title">Sliding window maximum</div><div class="practice__meta"><span class="practice__diff" data-level="hard">Hard</span></div><p class="practice__text">Given an array and a window size <em>k</em>, return the maximum of every window in O(n). Prove that the deque’s values are strictly decreasing at every step, and change the pop rule to <code>&lt;</code> instead of <code>≤</code>: what changes, and is the answer still correct?</p></li>
       </ol>

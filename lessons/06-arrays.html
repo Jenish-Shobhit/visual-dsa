@@ -262,7 +262,7 @@
         <p>Right after a doubling the array is half full. Before the next doubling, the newer half fills up with as many elements as the older half has. Each new element carries two coins: one to copy itself, one to copy an older element that spent its own coins last time. Charge 3, save 2, and every copy is prepaid.</p>
       </aside>
       <aside class="callout callout--warn">
-        <p class="callout__title">Amortized is not "on average, if you are lucky"</p>
+        <p class="callout__title">Amortized is not “on average, if you are lucky”</p>
         <p>There is no probability here. The bound holds for the worst sequence an adversary could pick. What it does not promise is that <em>each</em> append is fast: one append still copies everything. If every single operation has a deadline, such as a game frame or an audio buffer, reserve capacity up front.</p>
       </aside>
     </section>
@@ -296,13 +296,13 @@
             <tr><th scope="row">Read or write <code>a[i]</code></th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="1"></span></td><td>base + i × size</td></tr>
             <tr><th scope="row">Search for a value</th><td><span class="big-o" data-o="1"></span> (first slot)</td><td><span class="big-o" data-o="n"></span> (absent)</td><td>—</td><td>No shortcut from a value to its index</td></tr>
             <tr><th scope="row">Append</th><td><span class="big-o" data-o="1"></span> (room left)</td><td><span class="big-o" data-o="n"></span> (full: copy all)</td><td><span class="big-o" data-o="1"></span></td><td>Doubling makes copies rare</td></tr>
-            <tr><th scope="row">Insert at index <em>i</em></th><td><span class="big-o" data-o="1"></span> (i = n)</td><td><span class="big-o" data-o="n"></span> (i = 0)</td><td><span class="big-o" data-o="n">O(n − i)</span></td><td>n − i elements shift right</td></tr>
-            <tr><th scope="row">Delete at index <em>i</em></th><td><span class="big-o" data-o="1"></span> (last)</td><td><span class="big-o" data-o="n"></span> (i = 0)</td><td><span class="big-o" data-o="n">O(n − i)</span></td><td>n − 1 − i elements shift left</td></tr>
+            <tr><th scope="row">Insert at index <em>i</em></th><td><span class="big-o" data-o="1"></span> (i = n)</td><td><span class="big-o" data-o="n"></span> (i = 0)</td><td>—</td><td>n − i elements shift right</td></tr>
+            <tr><th scope="row">Delete at index <em>i</em></th><td><span class="big-o" data-o="1"></span> (last)</td><td><span class="big-o" data-o="n"></span> (i = 0)</td><td>—</td><td>n − 1 − i elements shift left</td></tr>
             <tr><th scope="row">Pop from the end</th><td><span class="big-o" data-o="1"></span></td><td><span class="big-o" data-o="n"></span> (if it shrinks)</td><td><span class="big-o" data-o="1"></span></td><td>Shrink at ¼ full, not ½</td></tr>
           </tbody>
         </table>
       </div>
-      <p>Extra space: an array of <em>n</em> elements needs <span class="big-o" data-o="n"></span> memory, and a doubling array wastes at most about half of it as spare capacity. Not sure what an operation costs? Walk the decision tree: click the answers on the arrows.</p>
+      <p>Extra space: an array of <em>n</em> elements needs <span class="big-o" data-o="n"></span> memory, and a doubling array wastes up to half of it as spare capacity (up to ¾ with the quarter-full shrink rule). Not sure what an operation costs? Walk the decision tree: click the answers on the arrows.</p>
       <figure class="fig wide" id="fig-costtree">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">What will this array operation cost?</h3></div>
@@ -325,7 +325,7 @@
     <!-- ============================================================ SHRINKING -->
     <section id="shrinking">
       <h2 data-toc="Shrinking">Shrinking without thrashing</h2>
-      <p>If you pop most elements, you may want the memory back. The obvious rule, "halve the capacity when the array is half full", has a nasty flaw. Sit exactly at the boundary and alternate push and pop: every single operation copies the whole array.</p>
+      <p>If you pop most elements, you may want the memory back. The obvious rule, “halve the capacity when the array is half full”, has a nasty flaw. Sit exactly at the boundary and alternate push and pop: every single operation copies the whole array.</p>
       <figure class="fig wide" id="fig-shrink">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The same push, pop, push, pop… under two shrink rules</h3></div>

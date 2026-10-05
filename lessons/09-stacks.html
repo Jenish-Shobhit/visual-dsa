@@ -40,9 +40,9 @@
     <div class="hero__text">
       <p class="hero__eyebrow"><span class="hero__num" data-fill="lesson-number"></span><span class="hero__unit" data-fill="unit"></span></p>
       <h1 class="hero__title">Stacks</h1>
-      <p class="hero__lede">Touch only one end, and the last thing in is the first thing out. That single rule powers undo, nested brackets, expression evaluation and the call stack, and every operation costs O(1).</p>
+      <p class="hero__lede">Touch only one end, and the last thing in is the first thing out. That single rule powers undo, nested brackets, expression evaluation and the call stack, and every operation costs O(1) (amortized for push on a growing array).</p>
       <ul class="hero__meta" aria-label="About this lesson">
-        <li class="chip" data-icon="clock">16 min</li>
+        <li class="chip" data-icon="clock" data-fill="minutes"></li>
         <li class="chip" data-icon="level">Beginner</li>
         <li><a class="chip" data-icon="prereq" href="06-arrays.html">Needs: arrays</a></li>
         <li><a class="chip" data-icon="prereq" href="08-linked-lists.html">linked lists</a></li>
@@ -261,7 +261,7 @@
     <!-- ============================================================ SHUNTING YARD -->
     <section id="shunting">
       <h2>From infix to postfix</h2>
-      <p>People write <code>3 + 4 × 2</code>. To get postfix, use a second stack for operators. Numbers go straight to the output. An operator waits on the stack until nothing on the stack binds more tightly than it, and only then does the waiting operator move to the output. Parentheses are walls on the stack.</p>
+      <p>People write <code>3 + 4 × 2</code>. To get postfix, use a second stack for operators. Numbers go straight to the output. A new operator first releases to the output every operator on the stack that binds at least as tightly (equal counts, so 8 − 3 − 2 groups left to right), then waits on the stack itself. Parentheses are walls on the stack.</p>
       <p>Dijkstra called this the <dfn>shunting-yard algorithm</dfn>, after a railway yard that sorts train cars. This version handles + − × ÷ and parentheses, left to right.</p>
       <figure class="fig wide" id="fig-shunting">
         <header class="fig__head">

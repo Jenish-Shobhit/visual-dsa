@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#fbfaf7">
 <title>Linked lists · Visual DSA</title>
-<meta name="description" content="A linked list stores order in pointers instead of positions. Watch arrows re-route as you insert, delete and reverse, see why the wrong order loses the tail, and race a tortoise and a hare around a cycle.">
+<meta name="description" content="A linked list stores order in pointers instead of positions. Watch arrows re-route as you insert, delete and reverse, see why the wrong order loses the rest of the list, and race a tortoise and a hare around a cycle.">
 <link rel="stylesheet" href="../css/tokens.css">
 <link rel="stylesheet" href="../css/vdsa.css">
 <link rel="stylesheet" href="../css/viz.css">
@@ -39,7 +39,7 @@
       <h1 class="hero__title">Linked lists</h1>
       <p class="hero__lede">Store order in pointers instead of positions. Splicing a node in costs two pointer writes; reaching the node at index 500 costs 500 hops.</p>
       <ul class="hero__meta" aria-label="About this lesson">
-        <li class="chip" data-icon="clock">18 min</li>
+        <li class="chip" data-icon="clock" data-fill="minutes"></li>
         <li class="chip" data-icon="level">Beginner → intermediate</li>
         <li class="chip" data-icon="prereq">Needs lesson 06: arrays</li>
       </ul>
@@ -162,7 +162,7 @@
       <p>The two writes are not interchangeable. <code>prev.next</code> is the only pointer to the rest of the list, so if you overwrite it first, the rest of the list is gone. Watch it happen, then switch to the right order.</p>
       <figure class="fig wide" id="fig-order">
         <header class="fig__head">
-          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The wrong order loses the tail</h3></div>
+          <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">The wrong order loses the rest of the list</h3></div>
           <div data-legend></div>
         </header>
         <div class="fig__toolbar"><div data-seg></div></div>
@@ -384,7 +384,7 @@
             <tr><th scope="row">Insert after a node you hold</th><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="1">O(1)</span></td><td><span class="big-o" data-o="1">O(1)</span></td><td>two (or four) pointer writes</td></tr>
             <tr data-race="append"><th scope="row">Append</th><td><span class="big-o" data-o="1">O(1)*</span></td><td><span class="big-o" data-o="1">O(1)†</span></td><td><span class="big-o" data-o="1">O(1)†</span></td><td>* amortized; † with a tail pointer, else O(n)</td></tr>
             <tr data-race="deleteLast"><th scope="row">Delete the last item</th><td><span class="big-o" data-o="1">O(1)</span></td><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="1">O(1)†</span></td><td>singly: the tail cannot see its predecessor</td></tr>
-            <tr><th scope="row">Delete a node you hold</th><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="1">O(1)</span></td><td>the doubly linked superpower</td></tr>
+            <tr><th scope="row">Delete a node you hold</th><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="n">O(n)</span> (<span class="big-o" data-o="1">O(1)</span> with the copy trick, except at the tail)</td><td><span class="big-o" data-o="1">O(1)</span></td><td>the doubly linked superpower</td></tr>
             <tr><th scope="row">Search (unsorted)</th><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="n">O(n)</span></td><td><span class="big-o" data-o="n">O(n)</span></td><td>must look at every item</td></tr>
             <tr><th scope="row">Extra memory per item</th><td>none (+ spare slots)</td><td>1 pointer</td><td>2 pointers</td><td>8 bytes each on a 64-bit machine</td></tr>
           </tbody>

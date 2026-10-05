@@ -40,7 +40,7 @@
       <h1 class="hero__title">Functions &amp; the call stack</h1>
       <p class="hero__lede">A call pauses the caller, piles a new frame on the stack, and sends one value back. Watch frames come and go, and arrows from variables find their objects on the heap.</p>
       <ul class="hero__meta" aria-label="About this lesson">
-        <li class="chip" data-icon="clock">18 min</li>
+        <li class="chip" data-icon="clock" data-fill="minutes"></li>
         <li class="chip" data-icon="level">Beginner</li>
         <li class="chip" data-icon="prereq">Needs lesson 02: bits and memory</li>
       </ul>
@@ -96,7 +96,7 @@
     <!-- ============================================================ ANATOMY OF A CALL -->
     <section id="anatomy">
       <h2>A call, piece by piece</h2>
-      <p>Four words do most of the work. Pin each to the picture below.</p>
+      <p>Five words do most of the work. Pin each to the picture below.</p>
       <aside class="callout callout--def">
         <p class="callout__title">Definitions</p>
         <p>A <dfn>function definition</dfn> writes the recipe. Nothing runs yet. Its <dfn>parameters</dfn> (<code>w</code>, <code>h</code>) are empty slots. A <dfn>call</dfn> runs it, supplying <dfn>arguments</dfn> (<code>3</code>, <code>4</code>): the actual values. The <dfn>return value</dfn> is what comes back and replaces the call.</p>
@@ -237,7 +237,7 @@
         </div>
         <figcaption class="fig__alt">Text alternative: three cases. A number is copied, so the function changes only its own copy. An array reference is copied, so pushing through it changes the caller’s array. Rebinding the parameter to a new array moves only the local arrow and leaves the caller’s array alone.</figcaption>
       </figure>
-      <p>Three rules cover almost every case. A function <strong>cannot</strong> rebind its caller’s variables. It <strong>can</strong> change an object it was handed a reference to. And the only value that always comes back is the one it <strong>returns</strong>.</p>
+      <p>Three rules cover almost every case. A function <strong>cannot</strong> rebind its caller’s variables through its parameters. It <strong>can</strong> change an object it was handed a reference to. And the only value that always comes back is the one it <strong>returns</strong>.</p>
       <aside class="callout callout--warn">
         <p class="callout__title">“Pass by value” or “pass by reference”?</p>
         <p>JavaScript and Python always pass a <em>copy of the box’s contents</em>. When that content is a reference, the copy still leads to the same object. That is why mutation is visible, yet reassignment is not.</p>
@@ -249,6 +249,7 @@
       <h2>The lab: trace a whole program</h2>
       <p>Pick a program and an input, then step through it. Frames push and pop on the left, arrows run from variables to heap objects, and every return value flies back to the variable waiting for it. The code, the variables and the flowchart below follow along.</p>
       <p>Press <kbd>←</kbd> and <kbd>→</kbd> to step, <kbd>Space</kbd> to play, and <kbd>?</kbd> for all shortcuts. The lab stops to ask you what will happen before it shows you.</p>
+      <p>One orientation note: here the stack grows <em>downward</em>, with the newest frame at the bottom, like memory drawn down the page. Stack figures in other lessons grow upward. Only the order matters, not the direction.</p>
       <figure class="fig fig--lab full" id="lab-fig">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Call stack lab: frames, arrows and return values</h3></div>
@@ -368,7 +369,7 @@
       </figure>
       <aside class="callout callout--fun">
         <p class="callout__title">Fun fact</p>
-        <p>The stack size is a setting, not a law. The main thread of a typical desktop program gets a few megabytes, and a few dozen bytes per frame is enough to fit tens of thousands of frames. Deep recursion on huge inputs is where programs hit the wall.</p>
+        <p>The stack size is a setting, not a law. The main thread of a typical desktop program gets a few megabytes, and a few dozen bytes per frame is enough to fit tens of thousands of frames in C. JS and Python frames are far bigger than C ones, which is why their typical limits sit near ten thousand frames or lower. Deep recursion on huge inputs is where programs hit the wall.</p>
       </aside>
     </section>
 

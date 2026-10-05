@@ -560,7 +560,7 @@
       snap({ kind: 'ret', line: frames.length === 4 ? 'base' : 'rec', top: 'done', caption: '<code>countdown(' + num(f.n) + ')</code> is finished and returns.' });
       frames.pop();
     }
-    snap({ kind: 'end', line: 'start', caption: 'The frames popped in reverse order. The deepest the stack got was 4 frames, far below the limit.' });
+    snap({ kind: 'end', line: 'start', caption: 'The frames popped in reverse order. The deepest the stack got was 4 frames, within the limit of 8.' });
     return steps;
   }
   var OVERFLOW_CODE = {

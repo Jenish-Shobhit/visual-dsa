@@ -264,7 +264,7 @@
     function build() {
       a = V.presets.sorted(n, { min: 1, max: 40, seed: seed });
       if (kind === 'early') target = a[0] + a[1];
-      else if (kind === 'late') target = a[Math.floor(n * 0.6)] + a[n - 2];   // a pair that really exists, deep in the grid
+      else if (kind === 'late') target = a[Math.min(Math.floor(n * 0.6), n - 3)] + a[n - 2];   // two distinct indices, so a pair really exists, deep in the grid
       else target = a[n - 1] * 2 + 1;                                           // larger than every possible sum
       var b = A().bruteTrace(a, target), t = A().twoSumTrace(a, target);
       t.target = target; b.target = target;

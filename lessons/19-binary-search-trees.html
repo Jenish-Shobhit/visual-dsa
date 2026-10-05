@@ -76,7 +76,7 @@
         <div class="fig__controls" data-controls></div>
         <figcaption class="fig__foot">Moves count array cells that had to shift. Comparisons count keys checked against the new key. The tree never moves an existing key.</figcaption>
       </figure>
-      <p>The tree finds the spot with the same handful of comparisons, then hangs one new node. Nothing shifts. That is the promise of a binary search tree: ordered like a sorted array, as cheap to change as a linked list.</p>
+      <p>The tree finds the spot with the same handful of comparisons, then hangs one new node. Nothing shifts. That is the promise of a binary search tree: ordered like a sorted array, as cheap to change as a linked list, as long as the tree stays short.</p>
     </section>
 
     <!-- ============================================================ INTUITION -->
@@ -177,7 +177,7 @@
     <section id="neighbours">
       <h2 data-toc="Min, max, successor">Minimum, maximum and successor</h2>
       <p>The smallest key is as far left as you can go: follow left links until there are none. The largest is as far right as you can go.</p>
-      <p>The <dfn>successor</dfn> of a key is the next larger key in sorted order. If the node has a right subtree, the successor is the smallest key in it: step right once, then left as far as possible. If it has no right subtree, the successor is the nearest ancestor you reached by going left. The <dfn>predecessor</dfn> is the mirror image.</p>
+      <p>The <dfn>successor</dfn> of a key is the next larger key in sorted order. If the node has a right subtree, the successor is the smallest key in it: step right once, then left as far as possible. If it has no right subtree, the successor is the lowest ancestor whose left subtree contains the node, the last node on the root-to-node path where you turned left. The <dfn>predecessor</dfn> is the mirror image.</p>
       <figure class="fig wide" id="fig-nav">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Walking to the neighbours</h3></div>
@@ -245,7 +245,7 @@
             <div data-counters></div>
           </div>
         </div>
-        <figcaption class="fig__foot">Keys are whole numbers from −99 to 99; the lab holds up to 24 of them. It stores a set: inserting a key that is already there changes nothing. Comparisons count one three-way comparison per node visited.</figcaption>
+        <figcaption class="fig__foot">Keys are whole numbers from −99 to 99; the lab holds up to 24 of them (the build field takes up to 15; insert the rest one at a time). It stores a set: inserting a key that is already there changes nothing. Comparisons count one three-way comparison per node visited.</figcaption>
       </figure>
     </section>
 
@@ -334,7 +334,7 @@
     <!-- ============================================================ COST -->
     <section id="cost">
       <h2>What it costs</h2>
-      <p>Every operation walks one root-to-leaf path, so it costs O(<em>h</em>). And <em>h</em> sits between ⌊log₂&nbsp;n⌋, for a full tree, and n&nbsp;−&nbsp;1, for a stick. Random insertion orders land near the bottom of that range: the average depth of a key grows like 1.39&nbsp;log₂&nbsp;n, and the height stays a small multiple of log₂&nbsp;n.</p>
+      <p>Every operation walks one root-to-leaf path, so it costs O(<em>h</em>). And <em>h</em> sits between ⌊log₂&nbsp;n⌋, for a complete tree, and n&nbsp;−&nbsp;1, for a stick. Random insertion orders land near the low end of that range: the average depth of a key grows like 1.39&nbsp;log₂&nbsp;n, and the height stays a small multiple of log₂&nbsp;n.</p>
       <figure class="fig wide" id="fig-depth">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">How deep is the average key? Simulated insertion orders</h3></div>
@@ -387,7 +387,7 @@
         <div data-tab-panel="dup"><div class="split"><figure class="mini"><div class="mini__stage bst-var-stage" data-mini="dup"></div><figcaption>A count per node: inserting 30 again makes it ×2.</figcaption></figure><div><p>What should insert do with a key that is already there? Pick a policy and state it. <b>Reject</b> it (a set, like this lesson). <b>Count</b> it in the node, so the shape never changes. Or always send equal keys to one side; that works, but repeated keys pile up into a stick and delete must choose which copy goes.</p><pre data-code-block="dup"></pre></div></div></div>
         <div data-tab-panel="floor"><div class="split"><figure class="mini"><div class="mini__stage bst-var-stage" data-mini="floor"></div><figcaption>Floor of 47: the walk remembers 45, the best key ≤ 47 seen so far.</figcaption></figure><div><p>The <b>floor</b> of x is the largest key ≤ x. Walk down as in a search. Every time you step right, the node you leave is ≤ x: remember it as the best so far. When the walk falls off, the last remembered key is the floor. The <b>ceiling</b> is the mirror image.</p><pre data-code-block="floor"></pre></div></div></div>
         <div data-tab-panel="kth"><div class="split"><figure class="mini"><div class="mini__stage bst-var-stage" data-mini="kth"></div><figcaption>Badges are subtree sizes. The 6th smallest: 3 keys on the left plus the root make 4, so find the 2nd smallest on the right: 70.</figcaption></figure><div><p>An in-order walk finds the k-th smallest key in O(h + k). To do it in O(h), store in each node the size of its subtree. At a node whose left subtree holds L keys: if k ≤ L go left; if k = L + 1 this is it; otherwise go right looking for the (k − L − 1)-th.</p><pre data-code-block="kth"></pre></div></div></div>
-        <div data-tab-panel="valid"><div class="split"><figure class="mini"><div class="mini__stage bst-var-stage" data-mini="valid"></div><figcaption>Pass the allowed range down: 55 must lie in (30, 50), and it does not.</figcaption></figure><div><p>Checking each node against its two children is the classic bug. Pass an open range (lo, hi) down instead: going left sets hi to the node’s key, going right sets lo. Every key must fall inside its range. An in-order walk that is strictly increasing is an equivalent test.</p><pre data-code-block="valid"></pre></div></div></div>
+        <div data-tab-panel="valid"><div class="split"><figure class="mini"><div class="mini__stage bst-var-stage" data-mini="valid"></div><figcaption>Pass the allowed range down: 55 must lie in (40, 50), and it does not.</figcaption></figure><div><p>Checking each node against its two children is the classic bug. Pass an open range (lo, hi) down instead: going left sets hi to the node’s key, going right sets lo. Every key must fall inside its range. An in-order walk that is strictly increasing is an equivalent test.</p><pre data-code-block="valid"></pre></div></div></div>
         <div data-tab-panel="lca"><div class="split"><figure class="mini"><div class="mini__stage bst-var-stage" data-mini="lca"></div><figcaption>LCA of 35 and 60: at 50 the two keys split, one left and one right.</figcaption></figure><div><p>The lowest common ancestor of two keys is where their search paths split. From the root, if both keys are smaller go left, if both are larger go right; otherwise the current node is the answer. O(h) time and no extra space, which a general binary tree cannot match.</p><pre data-code-block="lca"></pre></div></div></div>
       </div>
     </section>

@@ -443,7 +443,7 @@
           exp: pass ? exp : NA,
           x: x === null ? NA : x,
           digit: dg === null ? NA : dg,
-          list: listVals.map(function (vv) { return vv; }),
+          list: { __vdsaRaw: true, text: '[' + listVals.map(function (vv) { return vv === null ? '·' : vv; }).join(', ') + ']', type: 'arr' },
           buckets: bucketText()
         },
         counters: Object.assign({}, C), order: slots.map(function (it) { return it ? it.id : null; })

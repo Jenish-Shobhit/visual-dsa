@@ -188,6 +188,7 @@
         <p class="callout__title">Key idea</p>
         <p><b>Preorder</b> counts a node at its left dot: node, then left, then right. <b>Inorder</b> counts it at the bottom dot: left, then node, then right. <b>Postorder</b> counts it at the right dot: left, then right, then node. Same walk, three different moments.</p>
       </aside>
+      <p>Level order (breadth-first) visits row by row using a queue; it is the walk behind the lab’s “Level order” option.</p>
     </section>
 
     <!-- ============================================================ LAB -->
@@ -329,7 +330,7 @@
     <section id="cost">
       <h2>What it costs</h2>
       <p>Every traversal visits each node once and walks each edge twice, once down and once back up. That is 2(n − 1) edge walks and 3n dots on the Euler tour, so the time is <b>O(n)</b> for all four orders, whatever the shape.</p>
-      <p>The shape decides the <em>memory</em>. Depth-first holds one path at a time, so its stack is as deep as the tree is tall. Level order holds a whole frontier, so its queue is as long as the tree is wide. First the height, for the three shapes from earlier:</p>
+      <p>The shape decides the <em>memory</em>. Depth-first holds one path at a time, so its stack is as deep as the tree is tall. Level order holds a whole frontier, so its queue is as long as the tree is wide. First the height, for three shapes: a complete tree, a chain (every node has one child), and a random tree built by inserting shuffled keys into a binary search tree:</p>
       <figure class="fig wide" id="fig-height-chart">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Height against number of nodes</h3></div>
@@ -339,7 +340,7 @@
         <p class="fig__caption" data-caption></p>
         <figcaption class="fig__foot">Random shape: the mean height over many trees built by inserting shuffled keys into a binary search tree (60 trees per point up to n = 64, fewer for larger n). Height counts edges.</figcaption>
       </figure>
-      <p>Now the memory a traversal needs at its peak, on the same three shapes:</p>
+      <p>Now the memory a traversal needs at its peak, on the same three shapes (complete, random, chain):</p>
       <figure class="fig wide" id="fig-space-chart">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Peak memory: call stack against queue</h3></div>

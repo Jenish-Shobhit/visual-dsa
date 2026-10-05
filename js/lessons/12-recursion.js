@@ -85,7 +85,7 @@
     V.clickQuiz(stage, {
       el: '#quiz-folders',
       kicker: 'Predict first',
-      question: 'Which folder can report its total <em>first</em>? Click it in the figure.',
+      question: 'The folders are opened top to bottom. Which folder reports its total <em>first</em>? Click it.',
       check: function (id, el) {
         var name = (el.getAttribute('data-label') || '').replace('Folder ', '');
         if (name === '2023') return true;

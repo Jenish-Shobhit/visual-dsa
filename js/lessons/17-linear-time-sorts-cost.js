@@ -174,7 +174,7 @@
       { id: 'q4', type: 'decision', text: 'Must equal keys\nkeep their order?', col: 0, row: 4, narrow: { col: 0, row: 5 } },
       { id: 'merge', type: 'end', text: 'Merge sort (Timsort)', col: 1, row: 4, narrow: { col: 1, row: 5 } },
       { id: 'q5', type: 'decision', text: 'Need a worst-case\nguarantee, no extra memory?', col: 0, row: 5, narrow: { col: 0, row: 6 } },
-      { id: 'heap', type: 'end', text: 'Heapsort (introsort)', col: 1, row: 5, narrow: { col: 1, row: 6 } },
+      { id: 'heap', type: 'end', text: 'Heapsort (lesson 21)', col: 1, row: 5, narrow: { col: 1, row: 6 } },
       { id: 'quick', type: 'end', text: 'Quicksort', col: 0, row: 6, narrow: { col: 0, row: 7 } }
     ],
     edges: [

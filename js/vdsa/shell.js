@@ -540,13 +540,15 @@
     var btn = h('button', { type: 'button', class: 'complete-btn', 'aria-pressed': 'false' },
       h('span', { class: 'complete-btn__box', 'aria-hidden': 'true' }, ico('check')),
       h('span', { class: 'complete-btn__label' }, 'Mark lesson complete'));
+    var cta = next && isLive(next) ? h('a', { class: 'btn btn--primary complete-cta', href: VDSA.url(next.href), rel: 'next', hidden: true }, 'Next lesson', ico('arrow')) : null;
     function syncBtn() {
       var done = !previewing && VDSA.progress.isComplete(lesson.id);
+      if (cta) cta.hidden = !done;
       btn.setAttribute('aria-pressed', done ? 'true' : 'false');
       btn.querySelector('.complete-btn__label').textContent = done ? 'Lesson complete' : 'Mark lesson complete';
     }
     btn.addEventListener('click', function () {
-      if (previewing) { btn.setAttribute('aria-pressed', btn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); btn.querySelector('.complete-btn__label').textContent = btn.getAttribute('aria-pressed') === 'true' ? 'Lesson complete' : 'Mark lesson complete'; return; }
+      if (previewing) { btn.setAttribute('aria-pressed', btn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); btn.querySelector('.complete-btn__label').textContent = btn.getAttribute('aria-pressed') === 'true' ? 'Lesson complete' : 'Mark lesson complete'; if (cta) cta.hidden = btn.getAttribute('aria-pressed') !== 'true'; return; }
       VDSA.progress.markComplete(lesson.id, !VDSA.progress.isComplete(lesson.id));
     });
     VDSA.progress.onChange(syncBtn);
@@ -567,7 +569,7 @@
     var end = h('footer', { class: 'lesson-end', 'aria-label': 'Lesson navigation' },
       h('div', { class: 'complete-card' },
         h('div', { class: 'complete-card__text' }, h('h2', { 'data-toc': 'false' }, 'Finished ' + lesson.title.replace(/[?.!]$/, '') + '?'), h('p', null, 'Mark it complete to track your progress. ' + nextText)),
-        btn),
+        h('div', { class: 'complete-card__actions' }, btn, cta)),
       h('nav', { class: 'pager', 'aria-label': 'Previous and next lesson' }, card(prev, 'prev'), card(next, 'next')));
     main.appendChild(end);
   }
@@ -714,6 +716,30 @@
     win.addEventListener('resize', onScroll, { passive: true });
     onScroll();
     if (location.hash === '#contents') openContents();
+    initHashLanding();
+  }
+
+  /* Deep links: figures below the fold are built lazily and grow from ~300px to 1000px+ when built, so a
+     #hash target used to end up thousands of px off screen. Build every figure above the target first, then
+     (re)scroll to it once layout has settled, unless the reader has scrolled in the meantime. */
+  function initHashLanding() {
+    var userMoved = false;
+    ['wheel', 'touchstart', 'keydown', 'pointerdown'].forEach(function (ev) { win.addEventListener(ev, function () { userMoved = true; }, { passive: true, once: true }); });
+    function land(force) {
+      var id = location.hash.slice(1);
+      if (!id || id === 'contents') return;
+      try { id = decodeURIComponent(id); } catch (e) {}
+      var t = doc.getElementById(id);
+      if (!t || !VDSA.hydrateBefore) return;
+      var built = VDSA.hydrateBefore(t);
+      if (!built && !force) return;
+      userMoved = false;
+      function fix() { if (!userMoved) { try { t.scrollIntoView({ block: 'start', behavior: 'instant' }); } catch (e) { t.scrollIntoView(); } } }
+      win.requestAnimationFrame(function () { win.requestAnimationFrame(fix); });
+      win.setTimeout(fix, 300); win.setTimeout(fix, 900); win.setTimeout(fix, 2000);
+    }
+    win.addEventListener('hashchange', function () { land(false); });
+    if (doc.readyState === 'complete') land(false); else win.addEventListener('load', function () { land(false); }, { once: true });
   }
 
   /* Edge fades on horizontally scrolling wrappers (classes styled in vdsa.css next to .fig__stage--scroll). */
@@ -726,9 +752,15 @@
       var on = max > 2;
       el.classList.toggle('has-more-start', on && x > 2);
       el.classList.toggle('has-more-end', on && x < max - 2);
+      if (el.classList.contains('code-panel__body')) {
+        var vmax = el.scrollHeight - el.clientHeight;
+        el.classList.toggle('has-more-up', vmax > 2 && el.scrollTop > 2);
+        el.classList.toggle('has-more-down', vmax > 2 && el.scrollTop < vmax - 2);
+      }
     }
     function refresh() {
       raf = 0;
+      ratchetCaptions();
       var list = doc.querySelectorAll(CUE_SEL);
       for (var i = 0; i < list.length; i++) {
         var el = list[i];
@@ -742,6 +774,29 @@
       }
     }
     function schedule() { if (!raf) raf = win.requestAnimationFrame(refresh); }
+    /* Captions that change text outside a player (sliders, inputs) only ever grow within one width, so the
+       controls below them jump at most once per new maximum instead of on every edit. */
+    var capSeen = typeof WeakSet === 'function' ? new WeakSet() : null;
+    function ratchetCaptions() {
+      if (!capSeen || !win.MutationObserver) return;
+      var list = doc.querySelectorAll('.fig__caption');
+      for (var i = 0; i < list.length; i++) {
+        var el = list[i];
+        if (capSeen.has(el) || el.hasAttribute('data-cap-reserved')) continue;
+        capSeen.add(el);
+        (function (el) {
+          var w = 0;
+          new win.MutationObserver(function () {
+            if (el.hasAttribute('data-cap-reserved')) return;
+            var cw = el.clientWidth;
+            if (!cw) return;
+            if (Math.abs(cw - w) > 1) { w = cw; el.style.minHeight = ''; }
+            var hgt = el.offsetHeight;
+            if (hgt > (parseFloat(el.style.minHeight) || 0)) el.style.minHeight = hgt + 'px';
+          }).observe(el, { childList: true, characterData: true, subtree: true });
+        })(el);
+      }
+    }
     win.addEventListener('resize', schedule, { passive: true });
     win.addEventListener('load', schedule);
     if (win.MutationObserver && doc.body) new win.MutationObserver(schedule).observe(doc.body, { childList: true, subtree: true });

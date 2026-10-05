@@ -53,6 +53,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz .is-error    { --vz-c: var(--st-error); }
 .vz .is-muted    { --vz-c: var(--st-muted); }
 .vz [class*="is-"] { --vz-text: color-mix(in srgb, var(--vz-c) 68%, var(--ink)); }
+.vz .is-muted { --vz-text: color-mix(in srgb, var(--st-muted) 52%, var(--ink)); }   /* muted labels must still clear 4.5:1 */
 
 /* ============================================================ items (cells, boxes, bars, nodes)
    Structure: <g class="vz-item is-<state>"> <rect|circle class="vz-shape"/> <text class="vz-ink"/> </g> */
@@ -101,6 +102,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz .vz-badge text { fill: var(--ink-2); font: 650 11px var(--font-mono); }
 .vz .vz-badge[class*="is-"]:not(.is-default) rect { fill: var(--vz-c); stroke: var(--vz-c); }
 .vz .vz-badge[class*="is-"]:not(.is-default) text { fill: var(--on-state); }
+.vz .vz-badge.is-muted:not(.is-default) text { fill: var(--ink); }   /* muted fill is mid-grey in both themes: on-state fails on it */
 .vz .vz-badge:is(.is-compare, .is-swap, .is-update, .is-done, .is-frontier, .is-path) text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
 
 /* Quiet labels: indices, addresses, axis text */
@@ -234,7 +236,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz-graph .vz-line.vz-flow { stroke-linecap: round; }
 .vz-graph .vz-pulse { fill: var(--vz-c); stroke: var(--bg-elev); stroke-width: 1.5px; pointer-events: none; }
 .vz-graph .vz-hit { fill: none; stroke: transparent; stroke-width: 16px; pointer-events: stroke; cursor: pointer; outline: none; }
-.vz-graph .vz-hit:focus-visible { stroke: color-mix(in srgb, var(--accent) 30%, transparent); }
+.vz-graph .vz-hit:focus-visible { stroke: var(--accent); stroke-width: 3px; }
 .vz-graph .vz-edge.is-selected .vz-line { stroke: var(--accent); }
 .vz-graph .vz-edge.is-selected .vz-head { fill: var(--accent); }
 .vz-graph .vz-weight.is-selected rect { stroke: var(--accent); stroke-width: 2px; }
@@ -358,7 +360,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz-memory .vz-mem-cell.is-default { --vz-stroke: var(--line-strong); }
 .vz-memory .vz-mem-bits { font-weight: 500; fill-opacity: .72; }
 .vz-memory .vz-mem-celladdr { font-size: 9.5px; }
-.vz-memory .vz-mem-addr { font-size: 11px; }
+.vz-memory .vz-mem-addr { font-size: 12px; }
 .vz-memory .vz-mem-bracket { fill: none; stroke: var(--vz-text); stroke-width: 1.5px; stroke-linejoin: round; stroke-linecap: round; transition: stroke var(--vz-dur) var(--vz-ease); }
 .vz-memory .vz-mem-varname { fill: var(--vz-text); font: 650 11.5px var(--font-mono); transition: fill var(--vz-dur) var(--vz-ease); }
 .vz-memory .vz-mem-var.is-default { --vz-text: var(--ink-2); }
@@ -470,6 +472,7 @@ svg.vz.vz { max-height: none; min-width: 0; flex: none; }
 .vz-chart .vz-hl-pill { fill: var(--vz-c); }
 .vz-chart .vz-hl-text { fill: var(--on-state); font: 700 11.5px var(--font-sans); font-variant-numeric: tabular-nums; }
 .vz-chart .vz-hl:is(.vz-cat-1, .vz-cat-2, .vz-cat-4, .vz-cat-6, .is-compare, .is-done, .is-frontier, .is-path, .is-swap) .vz-hl-text { fill: color-mix(in srgb, var(--vz-c) 20%, black); }
+.vz-chart .vz-hl.is-muted .vz-hl-text { fill: var(--ink); }
 /* hover crosshair + tooltip */
 .vz-chart .vz-hover { pointer-events: none; }
 .vz-chart .vz-crosshair { stroke: var(--ink-3); stroke-width: 1px; stroke-dasharray: 3 3; }

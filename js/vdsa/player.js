@@ -323,13 +323,57 @@
       var at = typeof cp.at === 'function' ? cp.at(steps) : cp.at;
       cp.index = (typeof at === 'number' && at > 0 && at < steps.length) ? Math.floor(at) : -1;
     }
-    function predictHost() {
-      var host = root.querySelector('[data-predict]');
-      if (host) return host;
-      host = h('div', { class: 'predict-slot', 'data-predict': '' });
-      controlsHost.parentNode.insertBefore(host, controlsHost.nextSibling); // below the controls so Next/Play never move
-      return host;
+    /* The prediction panel is a sheet laid directly under the controls (the stage and caption stay visible). It may
+       cover the code / variables / counters below while the reader predicts. Only the part that would stick out of the
+       figure is reserved up front as empty space (usually none), so opening a checkpoint never shifts the page. */
+    var predSlot = null, predRO = null, predW = 0, predH = 0, predTimer = 0;
+    function ensureSlot() {
+      if (predSlot) return predSlot;
+      predSlot = h('div', { class: 'predict-slot', 'data-predict': '' });
+      controlsHost.parentNode.insertBefore(predSlot, controlsHost.nextSibling);
+      if (win.ResizeObserver) {
+        predRO = new win.ResizeObserver(function () { var w = controlsHost.getBoundingClientRect().width; if (Math.abs(w - predW) > 1) scheduleReserve(); });
+        predRO.observe(controlsHost);
+      }
+      return predSlot;
     }
+    function scheduleReserve() { if (predTimer || destroyed) return; predTimer = win.setTimeout(function () { predTimer = 0; reservePredict(); }, 0); }
+    function applyReserve() {
+      if (!predSlot) return;
+      predSlot.style.height = '0px';
+      var avail = root.getBoundingClientRect().bottom - predSlot.getBoundingClientRect().top;
+      predSlot.style.height = Math.max(0, Math.ceil(predH - avail)) + 'px';
+    }
+    function reservePredict() {
+      if (!predSlot || pending || !VDSA.predict) return;
+      var w = controlsHost.getBoundingClientRect().width;
+      if (!w) return;
+      predW = w;
+      var probe = h('div', { 'aria-hidden': 'true' });
+      probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;width:' + w + 'px;';
+      predSlot.parentNode.appendChild(probe);
+      var max = 0;
+      checkpoints.forEach(function (cp) {
+        if (cp.index < 1) return;
+        try {
+          var spec = typeof cp.spec === 'function' ? cp.spec({ steps: steps, index: cp.index, step: steps[cp.index], prev: steps[cp.index - 1], player: api }) : cp.spec;
+          if (!spec) return;
+          var c = VDSA.predict(probe, Object.assign({ id: cp.id }, spec));
+          max = Math.max(max, c.el.offsetHeight);
+          var fbEl = c.el.querySelector('.quiz__feedback');   // the answered state is taller: measure it with each explanation
+          if (fbEl) [].concat(spec.explain === undefined ? '' : spec.explain).forEach(function (t) {
+            fbEl.className = 'quiz__feedback is-bad';
+            fbEl.innerHTML = '<b>Not this time.</b><span>' + (t || '') + '</span>';
+            max = Math.max(max, c.el.offsetHeight);
+          });
+          c.close();
+        } catch (e) {}
+      });
+      probe.parentNode.removeChild(probe);
+      predH = max ? Math.ceil(max + 4) : 0;
+      applyReserve();
+    }
+    function predictHost() { return ensureSlot(); }
     function openCheckpoint(cp, target, resume) {
       var wasPlaying = playing || resume;
       pause();
@@ -339,6 +383,7 @@
       var ctrl = VDSA.predict(predictHost(), spec);
       var mine = pending = { cp: cp, target: target, ctrl: ctrl, resume: wasPlaying };
       root.classList.add('is-predicting');
+      ctrl.el.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); ctrl.reveal(); } });
       updateUI();
       emit('checkpoint', spec, target);
       try { var pr = ctrl.el.getBoundingClientRect(); if (pr.bottom > (window.innerHeight || 800) || pr.top < 0) ctrl.el.scrollIntoView({ block: 'nearest' }); } catch (e) {}
@@ -372,16 +417,50 @@
       resolveAt(cp);
       checkpoints.push(cp);
       if (VDSA.quizScore) VDSA.quizScore.register(cp.id);
+      ensureSlot(); scheduleReserve();
       return api;
     }
 
     /* ---------- steps ---------- */
+    /* Reserve the tallest caption of the run (at the current width) so the controls below never jump while playing. */
+    var capRO = null, capW = 0;
+    function reserveCaption() {
+      if (!captionEl || !captionEl.parentNode) return;
+      var w = captionEl.getBoundingClientRect().width;
+      if (!w) return;
+      capW = w;
+      var probe = captionEl.cloneNode(false);
+      probe.removeAttribute('id'); probe.removeAttribute('data-caption'); probe.removeAttribute('aria-live');
+      probe.setAttribute('aria-hidden', 'true');
+      probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;min-height:0;width:' + w + 'px;';
+      captionEl.parentNode.appendChild(probe);
+      var seen = {}, n = 0, max = 0;
+      try {
+        for (var i = 0; i < steps.length && n < 400; i++) {
+          var c = steps[i] && steps[i].caption;
+          if (!c || seen[c]) continue;
+          seen[c] = 1; n++;
+          probe.innerHTML = c;
+          if (probe.offsetHeight > max) max = probe.offsetHeight;
+        }
+      } catch (e) {}
+      captionEl.parentNode.removeChild(probe);
+      captionEl.style.minHeight = max > 0 ? Math.ceil(max) + 'px' : '';
+      captionEl.setAttribute('data-cap-reserved', '');
+    }
+    function watchCaption() {
+      if (capRO || !captionEl || !win.ResizeObserver) return;
+      capRO = new win.ResizeObserver(function () { var w = captionEl.getBoundingClientRect().width; if (Math.abs(w - capW) > 1) reserveCaption(); });
+      capRO.observe(captionEl);
+    }
     function setSteps(newSteps, o) {
       o = o || {};
       cancelPending(); pause();
       steps = Array.isArray(newSteps) ? newSteps : [];
+      reserveCaption(); watchCaption();
       checkpoints = checkpoints.filter(function (c) { return typeof c.at === 'function' || o.keepCheckpoints; });
       checkpoints.forEach(function (c) { c.done = false; resolveAt(c); });
+      if (predSlot) scheduleReserve();
       var start = o.keepIndex ? logic.clamp(index, steps.length) : logic.clamp(o.index || 0, steps.length);
       index = -1; // next render is a fresh start: prev = null, instant
       if (steps.length) show(start, 'instant', 'setSteps');
@@ -426,7 +505,7 @@
       get root() { return root; },
       get controls() { return bar; },
       destroy: function () {
-        destroyed = true; cancelPending(); pause();
+        destroyed = true; cancelPending(); pause(); if (capRO) capRO.disconnect(); if (predRO) predRO.disconnect();
         root.removeEventListener('pointerdown', markActive); root.removeEventListener('focusin', markActive);
         unVis(); doc.removeEventListener('visibilitychange', onDocVis);
         if (bar.parentNode) bar.parentNode.removeChild(bar);
@@ -440,6 +519,7 @@
     };
     players.push(api);
 
+    reserveCaption(); watchCaption();
     if (steps.length) show(logic.clamp(opts.startAt || 0, steps.length), 'instant', 'init'); else updateUI();
     return api;
   };

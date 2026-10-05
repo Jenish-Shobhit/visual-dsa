@@ -284,5 +284,42 @@
   /* Wait helper for scripted sequences: await VDSA.wait(300) — respects timeScale and reduced motion. */
   VDSA.wait = function (ms) { return new Promise(function (res) { setTimeout(res, VDSA.dur(ms)); }); };
 
+  /* ---------- Lazy-hydration registry ----------
+     Lessons build their figures lazily with an IntersectionObserver that has a large rootMargin (>= 300px);
+     a lazy figure is ~300px tall until built and 1000-1800px after, so jumping to a #hash used to land far
+     from the target. Those observers are tracked here so VDSA.hydrateBefore(target) can start every figure
+     above the target at once; the shell then re-scrolls to the target once layout has settled. */
+  var lazyRecs = [];
+  if (win.IntersectionObserver && !win.IntersectionObserver.__vdsa) {
+    var RealIO = win.IntersectionObserver;
+    var WrapIO = function (cb, o) {
+      var io = new RealIO(cb, o);
+      if (!(o && o.rootMargin && parseFloat(o.rootMargin) >= 300 && !o.threshold)) return io;
+      var rec = { io: io, cb: cb, els: [] };
+      lazyRecs.push(rec);
+      var obs = io.observe, unobs = io.unobserve, disc = io.disconnect;
+      io.observe = function (el) { if (rec.els.indexOf(el) < 0) rec.els.push(el); return obs.call(io, el); };
+      io.unobserve = function (el) { rec.els = rec.els.filter(function (e) { return e !== el; }); return unobs.call(io, el); };
+      io.disconnect = function () { rec.els = []; lazyRecs = lazyRecs.filter(function (r) { return r !== rec; }); return disc.call(io); };
+      return io;
+    };
+    WrapIO.prototype = RealIO.prototype;
+    WrapIO.__vdsa = true;
+    win.IntersectionObserver = WrapIO;
+  }
+  /* Run every pending lazy start whose element comes before (or contains) `target` in the document. Returns the count. */
+  VDSA.hydrateBefore = function (target) {
+    var n = 0;
+    lazyRecs.slice().forEach(function (rec) {
+      rec.els.slice().forEach(function (el) {
+        if (target && el !== target && !(target.compareDocumentPosition(el) & (2 | 8))) return;
+        n++;
+        try { rec.cb.call(rec.io, [{ isIntersecting: true, intersectionRatio: 1, target: el, time: 0, boundingClientRect: el.getBoundingClientRect() }], rec.io); }
+        catch (e) { console.error(e); }
+      });
+    });
+    return n;
+  };
+
   return VDSA;
 }));

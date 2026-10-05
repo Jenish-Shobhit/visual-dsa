@@ -645,7 +645,7 @@
       R = clamp(opts.nodeRadius * Math.sqrt(Math.min(1, F.k)), opts.minRadius, opts.nodeRadius);
       AS = clamp(R * 0.56, 8, 11.5);
       PIPE = clamp(R * 0.55, 7, 12);
-      PF = Math.round(clamp(R * 0.6, 10, 11) * 2) / 2;      // pill / badge font size
+      PF = Math.round(clamp(R * 0.6, 11, 11.5) * 2) / 2;      // pill / badge font size
       var pfv = PF + 'px';
       if (svg.style.getPropertyValue('--vz-gf') !== pfv) svg.style.setProperty('--vz-gf', pfv);
       ctx.setHeight(F.height);

@@ -252,7 +252,7 @@ player.addCheckpoint(
   { id: 'bubble-first-swap' });          // stable id for the score
 ```
 
-A checkpoint at step *k* fires when the reader moves forward from step *k − 1* with **next** or **play**. The player pauses on step *k − 1* and shows a prediction panel inside the figure (between the stage and the controls, or inside `[data-predict]` if you provide one). The reader answers (one try) or skips; "Show me" reveals step *k*, and playback resumes if it was playing. Jumps, scrubbing and going back never trigger checkpoints. Each fires once until `reset()`. If the spec function returns `null`, the checkpoint is skipped. Checkpoints count toward the page score.
+A checkpoint at step *k* fires when the reader moves forward from step *k − 1* with **next** or **play**. The player pauses on step *k − 1* and shows a prediction panel inside the figure in a slot right below the controls whose height is reserved as soon as a checkpoint is registered (so nothing shifts and the stage stays visible; an authored `[data-predict]` element is ignored). The reader answers (one try) or skips; "Show me" reveals step *k*, and playback resumes if it was playing. Jumps, scrubbing and going back never trigger checkpoints. Each fires once until `reset()`. If the spec function returns `null`, the checkpoint is skipped. Checkpoints count toward the page score.
 
 ## 7. Step conventions
 
@@ -1432,9 +1432,9 @@ Unlike other views the constructor takes the **static spec**; `render()` only ta
 | option | default | meaning |
 | --- | --- | --- |
 | `compact` | `false` | start at the compact fit levels (smaller type, hexagon decisions) |
-| `decisionShape` | `'auto'` | `'diamond'`, `'hexagon'`, or `'auto'` (diamond; hexagon once the layout has to go compact) |
+| `decisionShape` | `'auto'` | `'auto'` / `'hexagon'` (the site-wide decision shape) or `'diamond'` (explicit opt-in) |
 | `narrowWidth` | `480` | below this container width, nodes use their `narrow: {col, row}` positions (if any) |
-| `minScale` | `0.55` | if even the most compact level is too wide, the drawing scales down, but not below this |
+| `minFont` | `11` | if even the most compact level is too wide, the drawing scales down only while node text stays at least this many px; beyond that it keeps its size and the stage scrolls sideways (never clipped) |
 | `colGap`, `rowGap` | per level | override the gaps between columns/rows (px) |
 | `token` | `true` | animate the travelling token (`false`: just switch highlights) |
 | `interactive` | `false` | decision-tree mode: labelled edges become buttons, nodes clickable, root gets `role="group"` |
@@ -1527,7 +1527,7 @@ tree.on('choose', e => {
 
 **Gotchas**
 
-- Keep charts small (≈ 4 columns × 8 rows). Long questions make big diamonds: phrase decisions tersely ("i < n ?"), or use `decisionShape: 'hexagon'`.
+- Keep charts small (≈ 4 columns × 8 rows). Long questions make big diamonds: phrase decisions tersely ("i < n ?"), decisions are hexagons by default.
 - On phones a 3–4 column chart falls back to compact type and may scale down. Give nodes `narrow: {col, row}` positions (fold side branches under each other) so it stays readable at 390 px.
 - Edges between the same two nodes in both directions work, but crossing edges are only minimised, not eliminated: if a route looks awkward, nudge it with `via.fromSide/toSide` or `via.points`.
 - The token is only drawn while travelling; with `duration: 0` (instant steps, reduced motion) nothing animates and only the states change.

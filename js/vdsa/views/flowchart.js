@@ -46,6 +46,7 @@
   ];
   L.LEVELS = LEVELS;
   L.LABEL_FONT = 10.5;
+  var MIN_FONT = 11;   // smallest on-screen node text (px) before the view scrolls instead of shrinking
 
   function defaultMeasure(text, px, weight) {
     return vzp.approxWidth(text, px) * (weight && weight >= 600 ? 1.06 : 1);
@@ -72,7 +73,19 @@
     });
     // never break a code token mid-identifier: widen the node to its longest unbreakable word instead
     parts.forEach(function (part) { part.split(/\s+/).forEach(function (w) { if (w) mt = Math.max(mt, m(w)); }); });
-    parts.forEach(function (part) { lines = lines.concat(vzp.wrap(part, mt, font, m).map(function (l) { return l.split(GLUE).join(' '); })); });
+    parts.forEach(function (part) {
+      var wr = vzp.wrap(part, mt, font, m);
+      if (type === 'decision' && wr.length >= 2) {   // balance the lines: no orphan word on the last line
+        var count = wr.length, lo = 0;
+        parts.forEach(function (q) { q.split(/\s+/).forEach(function (w) { if (w) lo = Math.max(lo, m(w)); }); });
+        for (var t = mt - 4; t >= Math.max(lo, mt * 0.55); t -= 4) {
+          var tryW = vzp.wrap(part, t, font, m);
+          if (tryW.length !== count) break;
+          wr = tryW;
+        }
+      }
+      lines = lines.concat(wr.map(function (l) { return l.split(GLUE).join(' '); }));
+    });
     var widths = lines.map(m);
     var tw = Math.max.apply(null, widths.concat([0])), th = lines.length * lineH;
     var out = { id: String(n.id), type: type, lines: lines, lineH: lineH, font: font, shape: type, skew: 0 };
@@ -105,7 +118,7 @@
   function layoutAt(spec, lv, li, opts) {
     var measure = opts.measure || defaultMeasure;
     var shapeOpt = opts.decisionShape || 'auto';
-    var decShape = shapeOpt === 'auto' ? (li >= 3 ? 'hexagon' : 'diamond') : shapeOpt;
+    var decShape = shapeOpt === 'diamond' ? 'diamond' : 'hexagon';   // one decision shape site-wide: the hexagon ('auto' and 'hexagon')
     var nodes = spec.nodes || [], edges = spec.edges || [];
     var sized = {}, ncols = 1, nrows = 1;
     nodes.forEach(function (n) {
@@ -167,7 +180,7 @@
   }
 
   /* Geometry for a spec at a container width. Tries the fit levels; if even the most compact one is too wide
-     it sets `scale` (never below opts.minScale, default .55) and the view scales the drawing. */
+     it sets `scale` (never below opts.minFont px on screen, otherwise the view scrolls) and the view scales the drawing. */
   L.compute = function (spec, width, opts) {
     opts = opts || {};
     spec = spec || {};
@@ -175,13 +188,26 @@
     if (narrow) {
       spec = { edges: spec.edges, nodes: spec.nodes.map(function (n) { return n.narrow ? Object.assign({}, n, n.narrow) : n; }) };
     }
-    var start = opts.compact ? 3 : 0, g = null;
+    var start = opts.compact ? 3 : 0, g = null, all = [];
     for (var li = start; li < LEVELS.length; li++) {
       g = layoutAt(spec, LEVELS[li], li, opts);
+      all.push(g);
       if (!width || g.width <= width) break;
     }
+    g.overflowW = 0;
+    if (width && g.width > width) {
+      /* Nothing fits unscaled. Shrink the level that keeps the type largest, but never below minFont px on screen:
+         beyond that the drawing keeps its size and the view scrolls horizontally, so nothing is ever cut off. */
+      var minFont = opts.minFont || MIN_FONT, best = null, bestEff = -1;
+      all.forEach(function (c) { var eff = c.font * Math.min(1, width / c.width); if (eff > bestEff + 1e-6) { best = c; bestEff = eff; } });
+      if (bestEff >= minFont - 1e-6) { g = best; g.scale = width / g.width; }
+      else {
+        var cand = all.filter(function (c) { return c.font >= minFont - 1e-6; });
+        g = cand.length ? cand[cand.length - 1] : best;
+        g.scale = 1; g.overflowW = g.width;
+      }
+    } else g.scale = 1;
     g.narrow = narrow;
-    g.scale = width && g.width > width ? Math.max(opts.minScale || 0.55, width / g.width) : 1;
     g.offsetX = width ? Math.max(0, (width - g.width * g.scale) / 2) : 0;
     return g;
   };
@@ -475,8 +501,9 @@
 
   var DEFAULTS = {
     compact: false,           // start at the compact fit levels (smaller type, hexagon decisions)
-    decisionShape: 'auto',    // 'auto' (diamond, hexagon when compact) | 'diamond' | 'hexagon'
-    minScale: 0.55,           // if even compact does not fit, scale the drawing down to at least this
+    decisionShape: 'auto',    // 'auto' / 'hexagon' (the site-wide decision shape) | 'diamond'
+    minFont: 11,              // if even compact does not fit, scale down only while text stays >= this many px; then scroll
+    narrowWidth: 480,         // container width (px) below which nodes switch to their `narrow` overrides
     interactive: false,       // decision-tree mode: labelled edges become buttons, nodes clickable
     token: true,              // animate a token along the taken edge
     colGap: null, rowGap: null,
@@ -501,6 +528,14 @@
     }
 
     var S = { nodes: new vz.Store(true), edges: new vz.Store() };
+    /* While the drawing scrolls sideways the svg no longer follows its container, so watch the container itself. */
+    var hostW = 0;
+    if (VDSA.onResize && ctx.host) VDSA.onResize(ctx.host, function () {
+      var w = Math.round(ctx.host.clientWidth);
+      if (Math.abs(w - hostW) < 1) return;
+      hostW = w;
+      if (ctx.svg.style.minWidth) { dirty = true; api.refresh(); }
+    });
     var geo = null, routes = [], builtW = -1, dirty = true;
     var shownActive = null, pending = [], nodeClicks = !!opts.interactive, chooseClicks = !!opts.interactive;
     var measureCache = new Map();
@@ -516,8 +551,20 @@
 
     /* ---------------------------------------------------------- build (spec or width changed) */
     function build() {
-      geo = L.compute(spec, ctx.width, { compact: opts.compact, decisionShape: opts.decisionShape, minScale: opts.minScale, colGap: opts.colGap, rowGap: opts.rowGap, measure: measure });
+      var baseW = ctx.width;
+      if (ctx.svg.style.minWidth) { ctx.svg.style.minWidth = ''; try { baseW = Math.round(ctx.svg.getBoundingClientRect().width) || baseW; } catch (e) {} }
+      geo = L.compute(spec, baseW, { compact: opts.compact, decisionShape: opts.decisionShape, minFont: opts.minFont, narrowWidth: opts.narrowWidth, colGap: opts.colGap, rowGap: opts.rowGap, measure: measure });
       routes = L.route(spec, geo);
+      /* Too wide to read when shrunk: keep the type legible and let the stage scroll sideways (never clip). */
+      var host = ctx.host;
+      if (geo.overflowW > baseW + 1) {
+        var need = Math.ceil(geo.overflowW);
+        ctx.svg.style.minWidth = need + 'px'; ctx.width = need;
+        if (host) { host.style.overflowX = 'auto'; host.setAttribute('data-scroll-fade', ''); host.style.justifyItems = 'start'; }
+      } else {
+        ctx.width = baseW;
+        if (host && host.hasAttribute('data-scroll-fade')) { host.style.overflowX = ''; host.style.justifyItems = ''; host.removeAttribute('data-scroll-fade'); host.classList.remove('has-more-start', 'has-more-end'); }
+      }
       builtW = ctx.width; dirty = false;
       ctx.setHeight(geo.height * geo.scale);
       vz.set(content, 'transform', 'translate(' + vz.n2(geo.offsetX) + ' 0)' + (geo.scale < 1 ? ' scale(' + geo.scale.toFixed(4) + ')' : ''));

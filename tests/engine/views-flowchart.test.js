@@ -139,7 +139,7 @@ test('flowchart.compute steps down fit levels on narrow widths and scales only a
   assert.equal(wide.level, 0);
   assert.equal(wide.scale, 1);
   assert.ok(narrow.level > wide.level, 'narrow container uses a more compact level');
-  assert.ok(narrow.width * narrow.scale <= 360 + 1e-6 || narrow.scale === 0.55);
+  assert.ok(narrow.width * narrow.scale <= 360 + 1e-6 || narrow.overflowW > 0);
   assert.ok(narrow.offsetX >= 0);
   const compact = F.compute(LINEAR, 1200, { compact: true });
   assert.ok(compact.level >= 3);

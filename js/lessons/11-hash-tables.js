@@ -14,14 +14,18 @@
     var view = V.views.hashtable(stage, { mode: 'chaining', label: 'Keys passing through a hash function into buckets', threshold: 1.5 });
     var rng = V.rng(1953);
     function data() {
-      var keys = V.presets.random(5, { min: 10, max: 60, unique: true, rng: rng });
+      /* the first two keys land in different buckets and the third shares a bucket with one of them, so the collision shows early */
+      var keys = [], M = 4;
+      function fresh(bucket) { var k; do { k = rng.int(10, 60); } while (keys.indexOf(k) >= 0 || (bucket !== undefined && k % M !== bucket)); keys.push(k); return k; }
+      var k1 = fresh(), k2; do { k2 = fresh(); if (k2 % M === k1 % M) keys.pop(); } while (keys.length < 2);
+      fresh(rng.pick([k1, k2]) % M); fresh(); fresh();
       var run = A11.chaining(keys.map(function (k) { return { op: 'insert', key: k }; }), { m: 4 });
       var steps = run.steps.filter(function (st) { return st.kind === 'input' || st.kind === 'hash' || st.kind === 'push'; }).map(function (st) { return Object.assign({}, st, { threshold: 2 }); });
       view.reset(); view.prepare(steps);
       return steps;
     }
     var first = data();
-    V.teaser(stage, { steps: first, render: function (st, ctx) { view.render(st, { duration: ctx.duration }); }, stepMs: 640, holdMs: 1800, regenerate: data, staticIndex: first.length - 1 });
+    V.teaser(stage, { steps: first, render: function (st, ctx) { view.render(st, { duration: ctx.duration }); }, stepMs: 480, holdMs: 1800, regenerate: data, staticIndex: first.length - 1 });
   }
 
   /* ================================================================== checks */

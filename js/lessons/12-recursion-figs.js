@@ -96,7 +96,7 @@
       svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
       var d = ctx.duration;
       svg.style.setProperty('--vz-dur', d + 'ms');
-      var fs = clamp(Math.round(H * 0.048), 10, 16);
+      var fs = clamp(Math.round(H * 0.048), 12, 16);
       store.begin();
       step.dolls.forEach(function (doll) {
         var level = N - 1 - doll.k;
@@ -123,6 +123,8 @@
       store.sweep().forEach(function (g) {
         var x = +g.rect.getAttribute('x'), y = +g.rect.getAttribute('y'), w = +g.rect.getAttribute('width'), hh = +g.rect.getAttribute('height');
         if (!d) { g.remove(); return; }
+        /* the text goes first, so no label or number outlives the box it belongs to or shows through the panel that replaces it */
+        [g.label, g.val, g.big].forEach(function (t) { mv(t, { opacity: 0 }, d * 0.3); });
         mv(g.rect, { attr: { x: x + w / 2 - 4, y: y + hh / 2 - 4, width: 8, height: 8 } }, d * 0.8, 'in');
         fadeOut(g, d);
       });
@@ -563,7 +565,7 @@
         rec.order = i;
         rec.g.setAttribute('class', 'rc-fn rc-fn-' + node.n + (node.hit ? ' is-hit' : '') + (highlight !== null ? (node.n === highlight ? ' is-hl' : ' is-dim') : ''));
         rec.t.textContent = showText ? String(node.n) : '';
-        rec.t.setAttribute('font-size', clamp(Math.round(L.r * 0.95), 9, 14));
+        rec.t.setAttribute('font-size', clamp(Math.round(L.r * 0.95), 11, 14));
         rec.to = { x: L.pos[node.id].x, y: L.pos[node.id].y, r: node.hit ? L.r * 0.82 : L.r, o: 1 };
       });
       list.forEach(function (node) { var rec = recs[node.id]; rec.parentRec = node.parent ? recs[node.parent] : null; });
@@ -668,7 +670,7 @@
           g.a.textContent = f.label; g.a.setAttribute('y', -3);
           g.b.textContent = f.note; g.b.setAttribute('y', 13);
           var small = fw < 120;
-          g.a.setAttribute('font-size', small ? 11 : 12.5); g.b.setAttribute('font-size', small ? 9.5 : 11);
+          g.a.setAttribute('font-size', small ? 12 : 12.5); g.b.setAttribute('font-size', small ? 11 : 11.5);
           var y = floor - 4 - FH / 2 - k * (FH + GAP);
           if (g.__new) V.place(g, { x: cx, y: y - 26, opacity: 0 });
           mv(g, { x: cx, y: y, opacity: 1 }, dur, 'out');
@@ -740,11 +742,11 @@
   /* tiny pictures for the summary card */
   RC.summaryTiles = function () {
     function sv(label, kids) { var e = s('svg', { class: 'vz rc', viewBox: '0 0 120 64', role: 'img', 'aria-label': label }); kids.forEach(function (k) { e.appendChild(k); }); return e; }
-    function node(x, y, w, t, st) { return s('g', { class: 'vz-item is-' + st }, s('rect', { class: 'vz-shape', x: x, y: y, width: w, height: 14, rx: 7 }), s('text', { class: 'vz-ink', x: x + w / 2, y: y + 7, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 8.5 }, t)); }
+    function node(x, y, w, t, st) { return s('g', { class: 'vz-item is-' + st }, s('rect', { class: 'vz-shape', x: x, y: y, width: w, height: 14, rx: 7 }), s('text', { class: 'vz-ink', x: x + w / 2, y: y + 7, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 10 }, t)); }
     function edge(x1, y1, x2, y2, st) { return s('line', { class: 'rc-sum-edge' + (st ? ' is-' + st : ''), x1: x1, y1: y1, x2: x2, y2: y2 }); }
     return [
       { svg: sv('base case returns directly', [node(8, 23, 50, 'fact(0)', 'active'), edge(62, 32, 78, 32), node(80, 23, 32, '1', 'done')]), label: 'Base case', text: 'An input answered directly. Every path must reach one.' },
-      { svg: sv('a call uses a smaller copy', [node(10, 6, 56, 'fact(4)', 'frontier'), edge(38, 24, 60, 40), node(52, 40, 60, '4 × fact(3)', 'active')]), label: 'Smaller self', text: 'Build the answer from the same problem, smaller. Trust it.' },
+      { svg: sv('a call uses a smaller copy', [node(10, 6, 56, 'fact(4)', 'frontier'), edge(38, 24, 54, 40), node(40, 40, 72, '4 × fact(3)', 'active')]), label: 'Smaller self', text: 'Build the answer from the same problem, smaller. Trust it.' },
       { svg: sv('frames stacked', [node(30, 46, 60, 'main', 'default'), node(30, 31, 60, 'fact(3)', 'frontier'), node(30, 16, 60, 'fact(2)', 'frontier'), node(30, 1, 60, 'fact(1)', 'active')]), label: 'Call stack', text: 'One frame per waiting call. Last in, first out.' },
       { svg: sv('recursion tree, one path is the stack', [edge(60, 10, 30, 32, 'path'), edge(60, 10, 90, 32), edge(30, 32, 16, 54, 'path'), edge(30, 32, 44, 54), s('circle', { class: 'rc-sum-dot is-path', cx: 60, cy: 10, r: 6 }), s('circle', { class: 'rc-sum-dot is-path', cx: 30, cy: 32, r: 6 }), s('circle', { class: 'rc-sum-dot', cx: 90, cy: 32, r: 6 }), s('circle', { class: 'rc-sum-dot is-path', cx: 16, cy: 54, r: 6 }), s('circle', { class: 'rc-sum-dot', cx: 44, cy: 54, r: 6 })]), label: 'Time vs space', text: 'Time = nodes of the tree. Space = its height.' },
       { svg: sv('repeated subproblems', [s('circle', { class: 'rc-sum-dot rc-fn-3', cx: 22, cy: 32, r: 9 }), s('circle', { class: 'rc-sum-dot rc-fn-3', cx: 52, cy: 32, r: 9 }), s('circle', { class: 'rc-sum-dot rc-fn-3', cx: 82, cy: 32, r: 9 }), s('text', { class: 'vz-label', x: 60, y: 58, 'text-anchor': 'middle' }, 'fib(3) × 3 → store it')]), label: 'Repeats → remember', text: 'Naive fib makes 2·fib(n + 1) − 1 calls; memoized, 2n − 1.' },

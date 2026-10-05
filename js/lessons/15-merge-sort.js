@@ -20,7 +20,7 @@
     var first = data();
     var lastSplit = 0;
     first.forEach(function (x, k) { if (x.kind === 'split') lastSplit = k; });
-    V.teaser(stage, { steps: first, render: function (st, ctx) { view.render(st, { duration: ctx.duration }); }, stepMs: 1150, holdMs: 1900, regenerate: data, staticIndex: lastSplit + 2 });
+    V.teaser(stage, { steps: first, render: function (st, ctx) { view.render(st, { duration: ctx.duration }); }, stepMs: 800, holdMs: 1900, regenerate: data, staticIndex: lastSplit + 2 });
   }
 
   /* ================================================================== intuition: divide, conquer, combine */

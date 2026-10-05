@@ -16,8 +16,10 @@
   /* ================================================================== hero teaser: bars, half of them dimming */
   L13.heroTeaser = function () {
     var stage = V.$('#teaser');
-    var view = V.views.array(stage, { mode: 'bars', showIndices: false, showValues: false, maxValue: 100, minValue: 0, label: 'Binary search animation', cellSize: 22, outerPointers: false, barHeight: stage.clientHeight < 300 ? 200 : 250 });
+    var view = V.views.array(stage, { mode: 'bars', showIndices: false, showValues: false, maxValue: 100, minValue: 0, label: 'Binary search animation', cellSize: 22, outerPointers: false, barHeight: stage.clientHeight < 300 ? 150 : 190 });
     var rng = V.rng(13);
+    var target = h('div', { class: 'l13-hero-target', 'aria-hidden': 'true' });
+    stage.appendChild(target);
     function data() {
       var vals = V.presets.sorted(31, { min: 6, max: 98, rng: rng });
       var x = vals[rng.int(0, 30)];
@@ -26,9 +28,10 @@
           return Object.assign({}, s, {
             items: s.items.map(function (it) { return it.state === 'default' ? Object.assign({}, it, { state: 'active' }) : it; }),
             regions: [],
-            pointers: s.pointers.filter(function (p) { return p.name !== 'lo' && p.name !== 'hi'; }).map(function (p) { return Object.assign({}, p, { label: '' }); })
+            pointers: s.pointers.slice()
           });
         });
+      target.textContent = 'find ' + x;
       view.reset(); view.prepare(st);
       return st;
     }

@@ -44,7 +44,7 @@
   /* ================================================================== the fold: direct addressing vs hashing */
   L11.foldFigure = function () {
     var fig = V.$('#fig-fold'), stage = fig.querySelector('[data-stage]');
-    var W = 420, HH = 470, CELL = 24, P = 26, GX = (W - (P * 10 - 2)) / 2, GY = 40, BX = 20, BP = 38, BY = 350;
+    var W = 420, HH = 436, CELL = 31, P = 34, GX = (W - (P * 10 - 3)) / 2, GY = 32, BX = 20, BP = 38, BY = 312, GRID_H = P * 10 - 3;
     var KEYS = [12, 27, 42, 65, 83, 98], M = 10;
     var svg = L11.svg(W, HH, 'Ninety-nine possible keys shown as a 10 by 10 grid with six stored keys; in hashing mode the keys slide into ten buckets', 560);
     var grid = s('g', { class: 'l11-grid' }), cells = [];
@@ -54,19 +54,19 @@
         s('rect', { width: CELL, height: CELL, rx: 4 }), s('text', { x: CELL / 2, y: CELL / 2 + 3 }, k));
       grid.appendChild(g); cells.push(g);
     }
-    svg.appendChild(s('text', { class: 'l11-note', x: W / 2, y: 20, 'text-anchor': 'middle' }, 'every possible key, 0 … 99: one slot each'));
+    svg.appendChild(s('text', { class: 'l11-note', x: W / 2, y: 18, 'text-anchor': 'middle' }, 'every possible key, 0 … 99: one slot each'));
     svg.appendChild(grid);
-    var fnPill = s('g', { class: 'l11-fnpill', transform: 'translate(' + W / 2 + ' 318)' },
+    var fnPill = s('g', { class: 'l11-fnpill', transform: 'translate(' + W / 2 + ' 276)' },
       s('rect', { x: -78, y: -16, width: 156, height: 32, rx: 16 }), s('text', { x: 0, y: 5, 'text-anchor': 'middle' }, 'h(k) = k mod 10'));
     var buckets = s('g', { class: 'l11-buckets' });
     for (var b = 0; b < M; b++) {
       buckets.appendChild(s('g', { class: 'l11-bucket', transform: 'translate(' + (BX + b * BP) + ' ' + BY + ')' },
         s('rect', { width: Math.max(0, BP - 4), height: 26, rx: 6 }), s('text', { x: (BP - 4) / 2, y: 18, 'text-anchor': 'middle' }, b)));
     }
-    var direct = s('g', { class: 'l11-directnote', transform: 'translate(' + W / 2 + ' 372)' },
+    var direct = s('g', { class: 'l11-directnote', transform: 'translate(' + W / 2 + ' ' + (GY + GRID_H + 34) + ')' },
       s('text', { class: 'l11-big', x: 0, y: 0, 'text-anchor': 'middle' }, '6 of 100 slots used'),
       s('text', { class: 'l11-note', x: 0, y: 22, 'text-anchor': 'middle' }, '94 slots hold nothing'));
-    var collide = s('text', { class: 'l11-note l11-collide', x: BX + 2 * BP + (BP - 4) / 2, y: BY + 26 + 24 + 2 * 26 + 16, 'text-anchor': 'middle' }, 'collision');
+    var collide = s('text', { class: 'l11-note l11-collide', x: BX + 2 * BP + (BP - 4) / 2, y: BY + 104, 'text-anchor': 'middle' }, 'collision');
     svg.appendChild(fnPill); svg.appendChild(buckets); svg.appendChild(direct); svg.appendChild(collide);
     var chips = KEYS.map(function (key, i) {
       var g = s('g', { class: 'l11-chip', 'data-key': key }, s('rect', { x: 0, y: 0, width: CELL, height: CELL, rx: 5 }), s('text', { x: CELL / 2, y: CELL / 2 + 4, 'text-anchor': 'middle' }, key));
@@ -78,7 +78,7 @@
     V.place(fnPill, { opacity: 0 }); V.place(buckets, { opacity: 0 }); V.place(collide, { opacity: 0 });
 
     V.legend(fig.querySelector('[data-legend]'), [{ state: 'key', label: 'Stored key' }, { state: 'error', label: 'Two keys, one bucket' }, { state: 'default', shape: 'outline', label: 'Empty slot' }]);
-    var stats = V.stats(fig.querySelector('[data-stats]'), { labels: { slots: 'Slots allocated', keys: 'Keys stored', empty: 'Slots holding nothing' }, states: { empty: 'muted' } });
+    var stats = V.stats(fig.querySelector('[data-stats]'), { labels: { slots: 'Slots allocated', keys: 'Keys stored', empty: 'Slots holding nothing' }, states: { slots: 'active', keys: 'key', empty: 'muted' } });
     var caption = fig.querySelector('[data-caption]');
     var mode = 'direct';
     function place(target, dur) {
@@ -91,6 +91,10 @@
         g.classList.toggle('is-collide', target === 'hash' && KEYS.filter(function (o) { return o % M === key % M; }).length > 1);
         V.animate(g, { x: x, y: y }, { duration: dur, delay: dur ? i * 70 : 0, ease: 'inOut' });
       });
+      /* hashing folds the hundred-slot grid up into a small faded map behind the ten buckets */
+      grid.style.transition = 'transform ' + dur + 'ms cubic-bezier(.4,0,.2,1)';
+      grid.style.transformOrigin = (W / 2) + 'px ' + GY + 'px';
+      grid.style.transform = target === 'direct' ? 'scale(1)' : 'scale(.6)';
       V.animate(grid, { opacity: target === 'direct' ? 1 : 0.28 }, { duration: dur });
       V.animate(fnPill, { opacity: target === 'direct' ? 0 : 1 }, { duration: dur });
       V.animate(buckets, { opacity: target === 'direct' ? 0 : 1 }, { duration: dur });

@@ -99,7 +99,7 @@
       var cur = top ? byId[top] : null;
       var vars = {};
       if (cur) cur.locals.forEach(function (p) { vars[p[0]] = p[1]; });
-      else vars.result = main.locals[0][1];
+      else vars.result = main.locals[0][1] === '?' ? { __vdsaRaw: true, text: '?', type: 'undef' } : main.locals[0][1];   /* not yet known: show ? bare, not as the string "?" */
       vars.depth = stack.length;
       steps.push({
         kind: o.kind, callId: top, line: o.line, flow: o.flow, caption: o.caption,

@@ -241,7 +241,8 @@
       svg.style.setProperty('--t', ms + 'ms');
       var evaluated = {}; (st.evaluated || []).forEach(function (i) { evaluated[i] = true; });
       cells.forEach(function (c, i) {
-        var known = i < st.lo ? 'f' : i >= st.hi ? 't' : 'q';
+        var v = i + st.base; /* lo/hi/mid are candidate values; cell i is candidate base + i */
+        var known = v < st.lo ? 'f' : v >= st.hi ? 't' : 'q';
         var cls = 'l13-cell is-' + known;
         if (evaluated[i]) cls += ' is-eval';
         if (st.mid !== null && st.mid !== undefined && i === st.mid - st.base) {

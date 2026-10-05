@@ -13,7 +13,7 @@
 .l13-target { flex: 0 1 230px; min-width: 0; }
 .l13-target__row { display: flex; gap: 8px; align-items: center; }
 .l13-target__field { width: 112px; }
-.l13-target__err { margin: 4px 0 0; font-size: 13px; color: var(--st-error); }
+.l13-target__err { margin: 4px 0 0; font-size: 13px; color: var(--st-error-text); }
 .l13-target__err:empty { display: none; }
 .l13-presets { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 2px 18px 12px; }
 .l13-presets__label { font-size: 13px; font-weight: 650; color: var(--ink-3); margin-right: 2px; }
@@ -106,16 +106,16 @@
 .l13-cell-text { fill: var(--ink-2); font: 700 13px var(--font-mono); pointer-events: none; }
 .l13-cell-label { fill: var(--ink-3); font: 500 11px var(--font-sans); }
 .l13-cell-label.is-hidden { display: none; }
-.l13-cell.is-f rect { fill: color-mix(in srgb, var(--st-muted) 20%, var(--bg-sunken)); stroke: color-mix(in srgb, var(--st-muted) 55%, var(--bg-elev)); }
+.l13-cell.is-f rect { fill: color-mix(in srgb, var(--ink-3) 16%, var(--bg-sunken)); stroke: color-mix(in srgb, var(--ink-3) 70%, var(--bg-elev)); }
 .l13-cell.is-t rect { fill: color-mix(in srgb, var(--st-done) 20%, var(--bg-elev)); stroke: color-mix(in srgb, var(--st-done) 55%, var(--bg-elev)); }
 .l13-cell.is-q rect { fill: color-mix(in srgb, var(--st-active) 8%, var(--bg-elev)); stroke: var(--st-active); stroke-width: 1; }
-.l13-cell.is-eval.is-f rect { fill: color-mix(in srgb, var(--st-muted) 60%, var(--bg-elev)); stroke: var(--st-muted); stroke-dasharray: none; }
+.l13-cell.is-eval.is-f rect { fill: color-mix(in srgb, var(--ink-3) 38%, var(--bg-elev)); stroke: var(--ink-3); stroke-dasharray: none; }
 .l13-cell.is-eval.is-t rect { fill: color-mix(in srgb, var(--st-done) 65%, var(--bg-elev)); stroke: var(--st-done); }
 .l13-cell.is-eval .l13-cell-text { fill: var(--ink); }
 .l13-cell.is-probe rect { stroke: var(--st-compare); stroke-width: 3.25; stroke-dasharray: none; }
 .l13-cell.is-probe.is-q rect { fill: color-mix(in srgb, var(--st-compare) 20%, var(--bg-elev)); }
 .l13-cell.is-probe.is-ptrue rect { fill: color-mix(in srgb, var(--st-done) 55%, var(--bg-elev)); }
-.l13-cell.is-probe.is-pfalse rect { fill: color-mix(in srgb, var(--st-muted) 55%, var(--bg-elev)); }
+.l13-cell.is-probe.is-pfalse rect { fill: color-mix(in srgb, var(--ink-3) 38%, var(--bg-elev)); }
 .l13-cell.is-first rect { stroke-width: 3; stroke: var(--st-found); }
 .l13-strip-boundary { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 4 3; transition: opacity var(--t); }
 .l13-strip-btext { fill: var(--ink); font: 700 12px var(--font-sans); transition: opacity var(--t); }
@@ -131,7 +131,7 @@
 .l13-ov-track { fill: var(--bg-sunken); stroke: var(--line-strong); stroke-width: 1.25; }
 .l13-ov-zero { stroke: var(--ink-3); stroke-width: 1.25; stroke-dasharray: 3 3; }
 .l13-ov-small { fill: var(--ink-3); font: 500 11.5px var(--font-sans); }
-.l13-ov-small.is-err { fill: var(--st-error); font-weight: 700; font-size: 12.5px; }
+.l13-ov-small.is-err { fill: var(--st-error-text); font-weight: 700; font-size: 12.5px; }
 .l13-ov-cap { fill: var(--ink-2); font: 700 12.5px var(--font-sans); }
 .l13-ov-sum { fill: color-mix(in srgb, var(--st-active) 40%, var(--bg-elev)); stroke: var(--st-active); stroke-width: 1.25; }
 .l13-ov-sum.is-over { fill: color-mix(in srgb, var(--st-error) 30%, var(--bg-elev)); stroke: var(--st-error); }
@@ -197,3 +197,13 @@
   .l13-presets, .l13-warn { padding-left: 10px; padding-right: 10px; }
   .l13-warn { margin-left: 10px; margin-right: 10px; }
 }
+
+/* hero: the number being searched for, top left of the stage */
+#teaser { position: relative; }
+.l13-hero-target { position: absolute; left: 14px; top: 12px; padding: 4px 11px; border-radius: 999px; background: var(--bg-elev); border: 1.5px solid var(--st-compare); color: var(--ink); font: 700 14px var(--font-mono); pointer-events: none; }
+
+/* the one-row strips size to their content instead of the default stage height */
+#fig-walk .fig__stage, #fig-linear .fig__stage, #fig-probe .fig__stage { min-height: 0; }
+
+/* tree toolbar: the button is as tall as the segmented control and the select, so all three share one top and bottom edge */
+#fig-tree .fig__toolbar > .btn { min-height: 38px; }

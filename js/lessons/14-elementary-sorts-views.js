@@ -129,12 +129,12 @@
         vz.text(rec.rank, val); vz.set(rec.rank, 'y', vz.n2(-h * 0.14)); vz.set(rec.rank, 'font-size', Math.round(G.font * 1.05));
         vz.text(rec.suit, it.label || ''); vz.set(rec.suit, 'y', vz.n2(h * 0.2)); vz.set(rec.suit, 'font-size', Math.round(G.font * 1.05));
         vz.text(rec.corner, val + (it.label || '')); vz.set(rec.corner, 'x', vz.n2(-w / 2 + 5)); vz.set(rec.corner, 'y', vz.n2(-h / 2 + 9));
-        vz.set(rec.corner, 'font-size', vz.clamp(Math.round(G.font * 0.46), 10, 11));
+        vz.set(rec.corner, 'font-size', vz.clamp(Math.round(G.font * 0.46), 11, 12));
         vz.toggle(rec.el, 'is-red', !!red);
       } else {
         var hasSub = it.label !== undefined && it.label !== null && it.label !== '' && h >= 30;
         vz.text(rec.txt, val); vz.set(rec.txt, 'font-size', G.font); vz.set(rec.txt, 'y', hasSub ? vz.n2(-h * 0.12) : 0);
-        vz.text(rec.sub, hasSub ? it.label : ''); vz.set(rec.sub, 'y', vz.n2(h * 0.25)); vz.set(rec.sub, 'font-size', vz.clamp(Math.round(G.font * 0.6), 8, 12));
+        vz.text(rec.sub, hasSub ? it.label : ''); vz.set(rec.sub, 'y', vz.n2(h * 0.25)); vz.set(rec.sub, 'font-size', vz.clamp(Math.round(G.font * 0.6), 11, 13));
       }
       vz.set(rec.el, 'data-id', it.id);
       vz.set(rec.el, 'data-label', (it.aria || ('Value ' + val + (it.label ? ' ' + it.label : ''))));
@@ -280,7 +280,7 @@
       var rx = PAD + o.region.from * P - 4, rw = (o.region.to - o.region.from) * P + C + 8;
       var g = s('g', { class: 'vz-region is-' + (o.region.state || 'done') },
         s('rect', { class: 'vz-band', x: rx, y: top - 4, width: rw, height: C + 8 + (o.index ? 16 : 0), rx: 7 }));
-      if (o.region.label) g.appendChild(s('text', { class: 'vz-region-label', x: rx + 2, y: top - 8, style: 'font-size:9px' }, o.region.label));
+      if (o.region.label) g.appendChild(s('text', { class: 'vz-region-label', x: rx + 2, y: top - 8, style: 'font-size:11px' }, o.region.label));
       svg.appendChild(g);
     }
     (o.arcs || []).forEach(function (a) {
@@ -297,7 +297,7 @@
         s('rect', { class: 'vz-shape', width: C, height: C, rx: Math.round(C / 5) }),
         s('text', { class: 'vz-ink vz-value', x: C / 2, y: C / 2 + (o.labels && o.labels[k] ? -C * 0.1 : 0), dy: '.35em', 'text-anchor': 'middle', style: 'font-size:' + Math.round(C * 0.42) + 'px' }, L14.fmt(v)));
       if (o.labels && o.labels[k]) g.appendChild(s('text', { class: 'vz-ink vz-sub', x: C / 2, y: C * 0.76, dy: '.35em', 'text-anchor': 'middle', style: 'font-size:' + Math.round(C * 0.3) + 'px' }, o.labels[k]));
-      if (o.index) svg.appendChild(s('text', { class: 'vz-label', x: cx(k), y: top + C + 13, 'text-anchor': 'middle', style: 'font-size:9px' }, k));
+      if (o.index) svg.appendChild(s('text', { class: 'vz-label', x: cx(k), y: top + C + 13, 'text-anchor': 'middle', style: 'font-size:11px' }, k));
       svg.appendChild(g);
     });
     (o.tags || []).forEach(function (t) {

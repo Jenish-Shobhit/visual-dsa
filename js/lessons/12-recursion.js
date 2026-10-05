@@ -69,7 +69,7 @@
   /* ================================================================== hero teaser */
   function teaser() {
     var stage = V.$('#teaser');
-    V.teaser(stage, { steps: A.dolls(4), render: RC.dollsView(stage), stepMs: 950, holdMs: 2200 });
+    V.teaser(stage, { steps: A.dolls(4).slice(1), render: RC.dollsView(stage), stepMs: 950, holdMs: 2200 });
   }
 
   /* ================================================================== the problem */
@@ -515,7 +515,7 @@
       var nodes = list.map(function (x) {
         var kids = list.filter(function (y) { return y.parent === x.id; }).map(function (y) { return y.id; });
         if (mode === 'space' && x.parent && deep[x.id]) edges[x.parent + '-' + x.id] = 'path';
-        return { id: x.id, label: 'fib(' + x.n + ')', children: kids, state: mode === 'time' ? 'visited' : (deep[x.id] ? 'path' : 'muted') };
+        return { id: x.id, label: String(x.n), children: kids, state: mode === 'time' ? 'visited' : (deep[x.id] ? 'path' : 'muted') };
       });
       return { root: 'r', nodes: nodes, edges: edges };
     }

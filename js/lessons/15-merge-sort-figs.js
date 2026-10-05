@@ -269,8 +269,8 @@
       svg.appendChild(tg);
       svg._total = tg;
       stage.appendChild(svg);
-      var merging = levels.filter(function (l) { return l.work > 0; }).length;
-      readout.innerHTML = 'n = <b>' + n + '</b>: <b>' + merging + '</b> merging ' + (merging === 1 ? 'level' : 'levels') + ' (⌈log₂ ' + n + '⌉), each writing about n, gives <b>' + total + '</b> writes' + ((n & (n - 1)) === 0 ? ' = ' + n + ' × log₂ ' + n + ' = ' + n + ' × ' + Math.log2(n) + '.' : '. (n log₂ n = ' + Math.round(n * Math.log2(n)) + '; the pieces are uneven, so the last levels cost a little less than n.)');
+      /* the caption already adds the levels up; the note under the controls only says how that compares with n log₂ n */
+      readout.innerHTML = (n & (n - 1)) === 0 ? 'Check: n log₂ n = ' + n + ' × log₂ ' + n + ' = ' + n + ' × ' + Math.log2(n) + ' = <b>' + total + '</b>.' : 'n log₂ n = ' + Math.round(n * Math.log2(n)) + '; the pieces are uneven, so the last levels cost a little less than n and the real count is <b>' + total + '</b>.';
     }
     function render(step, ctx) {
       stage.style.setProperty('--t', ctx.duration + 'ms');

@@ -133,8 +133,8 @@
     function geometry(st) {
       var W = measure();
       var N = Math.max(res.N, st.text.length, 1);
-      var labelW = o.labels ? (W >= 560 ? 62 : 38) : 0;
-      var pad = 10;
+      var labelW = o.labels ? (W >= 560 ? 62 : (Math.max(shortLabel(o.textLabel).length, shortLabel(o.patLabel).length) >= 6 ? 40 : 34)) : 0;
+      var pad = W >= 560 ? 10 : 6;
       var pitch = clamp((W - 2 * pad - labelW) / N, o.minCell, o.cell);
       var gap = pitch > 30 ? 4 : 2;
       var ch = Math.min(Math.round(pitch - gap), o.cell);
@@ -166,7 +166,7 @@
       sig = key;
       svg.setAttribute('width', G.svgW); svg.setAttribute('height', G.height);
       svg.setAttribute('viewBox', '0 0 ' + G.svgW + ' ' + G.height);
-      var showLetters = o.letters && G.cw >= 16;
+      var showLetters = o.letters && G.cw >= 14;
       function size(rec, hgt) {
         rec.rect.setAttribute('width', n2(G.cw)); rec.rect.setAttribute('height', hgt); rec.rect.setAttribute('rx', n2(Math.min(8, hgt * 0.2)));
         rec.txt.setAttribute('x', n2(G.cw / 2)); rec.txt.setAttribute('y', n2(hgt / 2));

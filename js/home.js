@@ -3,8 +3,7 @@
    1. Hero call to action (Start / Resume / Continue), from VDSA.progress and the curriculum's live status.
    2. Hero reel: six short live traces drawn with the real renderers, cycling with a progress row.
    3. Journey map: an SVG route through every unit and lesson (a vertical list on narrow screens).
-   4. Compact units list with a done/total count per unit once there is progress.
-   5. Lab cards with lazily built thumbnail animations (one plays at a time; hover or focus picks it).
+   4. Lab cards with lazily built thumbnail animations (one plays at a time; hover or focus picks it).
 
    Everything reads the curriculum and progress at runtime. Test hook: window.VDSAHome.refresh(). */
 (function (win) {
@@ -298,6 +297,7 @@
   }
 
   /* ================================================================== 1. calls to action */
+  function firstLiveIn(u) { var ls = C.lessonsIn(u.id); for (var i = 0; i < ls.length; i++) if (isLive(ls[i])) return ls[i]; return null; }
   function firstLive() { for (var i = 0; i < C.lessons.length; i++) if (isLive(C.lessons[i])) return C.lessons[i]; return null; }
   function nextAfter(lesson, p) {
     var idx = C.lessons.indexOf(lesson);
@@ -317,7 +317,7 @@
     if (isLive(one)) return { kind: 'start', label: 'Start with lesson 1', href: url(one.href), lesson: one };
     var fl = firstLive();
     if (fl) return { kind: 'start', label: 'Start with lesson ' + fl.number, href: url(fl.href), lesson: fl };
-    return { kind: 'map', label: 'See the units', href: '#units', lesson: null };
+    return { kind: 'map', label: 'See the course map', href: '#journey', lesson: null };
   }
   function renderActions() {
     var p = progress(), act = primaryAction(p);
@@ -644,7 +644,7 @@
         inner.appendChild(h('li', { class: 'jl__st jl__st--' + st + (here ? ' is-here' : ''), 'data-id': l.id }, row));
       });
       ol.appendChild(h('li', { class: 'jl__unit', 'data-unit': u.id },
-        h('a', { class: 'jl__hub', href: '#' + u.id },
+        h('div', { class: 'jl__hub' },
           h('span', { class: 'jl__hubnum', 'aria-hidden': 'true' }, String(u.number)),
           h('span', { class: 'jl__hubtitle' }, h('span', { class: 'sr-only' }, 'Unit ' + u.number + ': '), u.title),
           h('span', { class: 'jl__hubcount', 'aria-label': done + ' of ' + ls.length + ' complete' }, done + '/' + ls.length)),
@@ -758,8 +758,10 @@
       lines.forEach(function (ln, li) { label.appendChild(s('tspan', { x: n.x.toFixed(1), dy: li ? LH : 0 }, ln)); });
       var g;
       if (n.kind === 'unit') {
-        g = s('a', { class: 'jm-hub', 'data-unit': n.unit.id, 'data-id': n.id, href: '#' + n.unit.id, tabindex: -1,
-          'aria-label': 'Unit ' + n.unit.number + ': ' + n.unit.title + '. ' + C.lessonsIn(n.unit.id).length + ' lessons.' },
+        var hubLesson = firstLiveIn(n.unit), hubAttrs = { class: 'jm-hub', 'data-unit': n.unit.id, 'data-id': n.id, tabindex: -1,
+          'aria-label': 'Unit ' + n.unit.number + ': ' + n.unit.title + '. ' + C.lessonsIn(n.unit.id).length + ' lessons.' };
+        if (hubLesson) hubAttrs.href = url(hubLesson.href); else { hubAttrs.role = 'link'; hubAttrs['aria-disabled'] = 'true'; }
+        g = s('a', hubAttrs,
           s('rect', { class: 'jm-hub__ring', x: n.x - 21, y: n.y - 21, width: 42, height: 42, rx: 13 }),
           s('rect', { class: 'jm-hub__box', x: n.x - 16, y: n.y - 16, width: 32, height: 32, rx: 10 }),
           s('text', { class: 'jm-hub__num', x: n.x, y: n.y + 0.5, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, String(n.unit.number)),
@@ -852,7 +854,8 @@
       card.appendChild(h('p', { class: 'jm-card__title' }, n.unit.title));
       card.appendChild(h('p', { class: 'jm-card__text' }, n.unit.blurb));
       card.appendChild(h('p', { class: 'jm-card__meta' }, ls.length + ' lessons, about ' + Math.round(mins / 5) * 5 + ' minutes. ' + done + ' complete.'));
-      card.appendChild(h('p', { class: 'jm-card__action' }, 'Jump to the unit'));
+      var uFirst = firstLiveIn(n.unit);
+      card.appendChild(h('p', { class: 'jm-card__action' + (uFirst ? '' : ' is-muted') }, uFirst ? 'Open the first lesson of this unit' : 'These lessons are being written.'));
     } else {
       var l = n.lesson, st = lessonState(l, p);
       card.appendChild(h('p', { class: 'jm-card__kicker' }, h('span', { class: 'jm-card__swatch' }), 'Lesson ' + pad2(l.number) + ' in ' + n.unit.title));
@@ -885,34 +888,7 @@
   function hideCard() { if (mapState.card) mapState.card.classList.remove('is-on'); }
 
 
-  /* ================================================================== 4. units list */
-  function renderUnits() {
-    var host = $('[data-units]');
-    if (!host) return;
-    var p = progress();
-    VDSA.clear(host);
-    C.units.forEach(function (u) {
-      var ls = C.lessonsIn(u.id);
-      var done = ls.filter(function (l) { return p.completed.indexOf(l.id) !== -1; }).length;
-      var seen = p.visited.length || p.completed.length;
-      var list = h('ol', { class: 'unit__lessons' });
-      ls.forEach(function (l) {
-        var st = lessonState(l, p);
-        var inner = [h('span', { class: 'unit__num' }, pad2(l.number)), h('span', { class: 'unit__ltitle' }, l.title),
-          h('span', { class: 'sr-only' }, ' (' + STATE_TEXT[st].toLowerCase() + ')')];
-        list.appendChild(h('li', { class: 'unit__lesson unit__lesson--' + st },
-          st === 'planned' ? h('span', { class: 'unit__row', title: 'Coming soon: ' + l.subtitle }, inner) : h('a', { class: 'unit__row', href: url(l.href), title: l.subtitle }, inner)));
-      });
-      host.appendChild(h('article', { class: 'unit', id: u.id, 'data-unit': u.id, 'aria-labelledby': u.id + '-title' },
-        h('header', { class: 'unit__head' },
-          h('h3', { class: 'unit__title', id: u.id + '-title' }, h('span', { class: 'unit__n', 'aria-hidden': 'true' }, String(u.number)), h('span', { class: 'sr-only' }, 'Unit ' + u.number + ': '), u.title),
-          seen ? h('span', { class: 'unit__done', title: done + ' of ' + ls.length + ' lessons complete' }, done + '/' + ls.length, h('span', { class: 'sr-only' }, ' complete')) : null),
-        h('p', { class: 'unit__blurb' }, u.blurb),
-        list));
-    });
-  }
-
-  /* ================================================================== 5. labs */
+  /* ================================================================== 4. labs */
   var LAB_THUMBS = {
     'sorting-arena': function (host) {
       var wrap = h('div', { class: 'lt-race' }), top = h('div', { class: 'lt-race__lane' }), bot = h('div', { class: 'lt-race__lane' });
@@ -1156,13 +1132,11 @@
   function refresh() {
     safe(renderActions, 'actions');
     safe(function () { if (mapState.canvas) renderMap(false); }, 'map');
-    safe(renderUnits, 'units');
   }
   function boot() {
     safe(renderActions, 'actions');
     safe(initReel, 'reel');
     safe(initMap, 'map');
-    safe(renderUnits, 'units');
     safe(renderLabs, 'labs');
     if (VDSA.progress && VDSA.progress.onChange) VDSA.progress.onChange(function () { refresh(); });
   }

@@ -367,7 +367,7 @@
     <circle cx="95" cy="120" r="16" fill="var(--surface)" stroke="var(--bau-ink)" stroke-width="3"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 11</span> the most general structure in the course</div>
+    <div class="eyebrow"><span class="n">Deep study 11</span> the most general structure in the course</div>
     <h1>Graphs &amp; Their Traversals</h1>
 <p class="study-related"><span class="study-related__label">Related lessons</span><a href="../lessons/25-graphs.html">Lesson 25 · Graphs &amp; representations</a><a href="../lessons/26-bfs-and-dfs.html">Lesson 26 · BFS &amp; DFS</a><a href="../lessons/27-topological-sort.html">Lesson 27 · Topological sort &amp; cycles</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -375,7 +375,7 @@
   <div class="study-brief-grid"><p><span>Build on</span>Queues, stacks, and adjacency lists</p><p><span>Core invariant</span>Traversal order determines what you can prove: BFS layers certify unweighted distance; DFS exposes dependencies.</p></div>
   <details class="study-check"><summary>Try this first · Why does the first BFS visit to a vertex give its shortest edge count from the source?</summary><p>BFS removes vertices in nondecreasing distance layers. Every shorter path would have reached that vertex earlier.</p></details>
 </div>
-    <p class="lede col">A <em>graph</em> is just dots and the connections between them &mdash; and almost nothing in computing is <em>not</em> one. Roads, web pages, prerequisites, friendships, the call graph of your program, the dependency tree of your build: all graphs. This lecture builds the two ways to <strong>walk</strong> a graph &mdash; breadth-first and depth-first &mdash; and then shows the quiet miracle: each walk leaves behind a <em>tree</em> whose shape <strong>exposes structure you never explicitly searched for</strong> &mdash; shortest distances, a legal ordering, hidden cycles, tightly-bound clusters, and the single points whose failure would split the whole apart.</p>
+    <p class="lede col">A <em>graph</em> is just dots and the connections between them &mdash; and almost nothing in computing is <em>not</em> one. Roads, web pages, prerequisites, friendships, the call graph of your program, the dependency tree of your build: all graphs. This study builds the two ways to <strong>walk</strong> a graph &mdash; breadth-first and depth-first &mdash; and then shows the quiet miracle: each walk leaves behind a <em>tree</em> whose shape <strong>exposes structure you never explicitly searched for</strong> &mdash; shortest distances, a legal ordering, hidden cycles, tightly-bound clusters, and the single points whose failure would split the whole apart.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
@@ -391,7 +391,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>Why graphs are everywhere</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -420,8 +420,8 @@
       <div class="col">
         <p>Every structure so far in this course has been about a single kind of relationship. An array imposes <em>position</em>; a tree imposes <em>hierarchy</em>; a heap imposes <em>partial order</em>. A <span class="term">graph</span> drops the special case and keeps only the essence: a set of things, and an arbitrary set of <em>pairings</em> among them. That is the most general relational structure there is &mdash; which is exactly why so many problems turn out to <em>be</em> graph problems once you strip the domain away.</p>
         <p>I find it clarifying to do that stripping deliberately. A road map: intersections are vertices, roads are edges. A compiler's symbol resolution: definitions are vertices, &ldquo;uses&rdquo; are edges. A spreadsheet: cells are vertices, formula references are edges &mdash; and the dreaded <em>circular reference</em> error is a directed cycle the engine detected with the very algorithm in &sect;08. A build system with fifty thousand targets wired by &ldquo;A must compile before B&rdquo; is a directed graph, and two questions decide whether it can build at all: <em>is there a legal order</em>, and <em>if not, where is the cycle?</em></p>
-        <p>The same walk, pointed at a network of machines, answers a different question entirely: <em>which single node, if it failed, would split the network into disconnected pieces?</em> That node is an <span class="term">articulation point</span>, and finding every one of them costs no more than a single depth-first walk. This is the through-line of the lecture: <strong>you will learn only two traversals, and each, almost as a side effect, exposes a different hidden property of the structure.</strong></p>
-        <div class="note info"><span class="tag">the formal lens</span>A graph is a relation made into an object you can compute over. The art is the reduction: phrase your messy problem as &ldquo;vertices, edges, and a question about reachability or order,&rdquo; and a linear-time answer is usually already waiting in this lecture.</div>
+        <p>The same walk, pointed at a network of machines, answers a different question entirely: <em>which single node, if it failed, would split the network into disconnected pieces?</em> That node is an <span class="term">articulation point</span>, and finding every one of them costs no more than a single depth-first walk. This is the through-line of the study: <strong>you will learn only two traversals, and each, almost as a side effect, exposes a different hidden property of the structure.</strong></p>
+        <div class="note info"><span class="tag">the formal lens</span>A graph is a relation made into an object you can compute over. The art is the reduction: phrase your messy problem as &ldquo;vertices, edges, and a question about reachability or order,&rdquo; and a linear-time answer is usually already waiting in this study.</div>
       </div>
     </section>
 
@@ -456,12 +456,12 @@
       <div class="eyebrow"><span class="n">03</span> fix the vocabulary before the algorithm</div>
       <h2>The formal object: vertices, edges, and the questions they raise</h2>
       <div class="col">
-        <p>A <span class="term">graph</span> is a pair <code class="inl">G = (V, E)</code>: a finite set <code class="inl">V</code> of <span class="term">vertices</span> (nodes) and a set <code class="inl">E</code> of <span class="term">edges</span>, each edge a pair of vertices. We write <code class="inl">n = |V|</code> and <code class="inl">m = |E|</code>; nearly every cost in this lecture is stated in those two numbers. The first fork is direction:</p>
+        <p>A <span class="term">graph</span> is a pair <code class="inl">G = (V, E)</code>: a finite set <code class="inl">V</code> of <span class="term">vertices</span> (nodes) and a set <code class="inl">E</code> of <span class="term">edges</span>, each edge a pair of vertices. We write <code class="inl">n = |V|</code> and <code class="inl">m = |E|</code>; nearly every cost in this study is stated in those two numbers. The first fork is direction:</p>
         <ul>
           <li>In an <span class="term">undirected</span> graph an edge <code class="inl">{u,v}</code> is symmetric &mdash; a two-way street, a mutual friendship.</li>
           <li>In a <span class="term">directed</span> graph (a <em>digraph</em>) an edge <code class="inl">(u&rarr;v)</code> is one-way &mdash; a hyperlink, a prerequisite, a function call.</li>
         </ul>
-        <p>This lecture treats <em>unweighted</em> graphs: an edge either exists or it does not, all equally &ldquo;one step.&rdquo; Weights &mdash; distances, costs &mdash; arrive in Lecture&nbsp;13, and they change the right algorithm completely; mistaking one setting for the other is the headline failure mode of &sect;12.</p>
+        <p>This study treats <em>unweighted</em> graphs: an edge either exists or it does not, all equally &ldquo;one step.&rdquo; Weights &mdash; distances, costs &mdash; arrive in Deep&nbsp;study&nbsp;13, and they change the right algorithm completely; mistaking one setting for the other is the headline failure mode of &sect;12.</p>
         <p>A few more terms, defined once and used throughout. The <span class="term">degree</span> of a vertex is its number of incident edges; in a digraph it splits into <span class="term">in-degree</span> and <span class="term">out-degree</span>. A <span class="term">path</span> is a sequence of vertices joined by edges; a <span class="term">cycle</span> is a path that returns to its start. An undirected graph is <span class="term">connected</span> if a path joins every pair; its maximal connected pieces are its <span class="term">components</span>. A directed graph is <span class="term">strongly connected</span> if you can travel from any vertex to any other <em>following the arrows</em> &mdash; the subtlety that makes &sect;09 its own topic.</p>
         <p>One identity will pay for the linear-time bound later, so meet it now. Summing every vertex's degree counts each undirected edge from <em>both</em> of its ends, so:</p>
         <div class="eq">
@@ -491,7 +491,7 @@
         <p>The <span class="term">adjacency list</span> keeps, for each vertex <code class="inl">u</code>, a list of just its actual neighbours. Total space is <code class="inl">&#920;(n+m)</code> &mdash; you pay only for edges that exist &mdash; and enumerating <code class="inl">u</code>'s neighbours costs <code class="inl">&#920;(deg u)</code>, optimal. The price is that testing one specific edge <code class="inl">u&rarr;v</code> means scanning <code class="inl">u</code>'s list, <code class="inl">O(deg u)</code>. For the overwhelming majority of real graphs &mdash; which are sparse &mdash; the list wins decisively, and it is the representation every traversal below assumes.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 360" style="--mw:760px" role="img" aria-labelledby="f1t f1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 960 360" style="--mw:896px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">One directed graph stored two ways: as an adjacency matrix and as an adjacency list</title>
             <desc id="f1d">A four-vertex directed graph with edges 0 to 1, 0 to 2, 1 to 3, 2 to 3, and 3 to 0 is shown three ways. On the left is the node-and-arrow drawing. In the middle is a four-by-four adjacency matrix whose ones sit exactly at those five edges and whose other eleven cells are zero. On the right is the adjacency list: vertex 0 points to a chain of 1 and 2, vertex 1 to 3, vertex 2 to 3, and vertex 3 to 0.</desc>
             <defs>
@@ -571,7 +571,7 @@
               <text x="0" y="198" class="dg-label sm">each row = one vertex&#8217;s</text>
               <text x="0" y="214" class="dg-label sm">out-neighbours</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 &mdash; the same five edges, two layouts.</b> The matrix spends sixteen cells to store five edges (eleven zeros); the list spends five links. On a million-vertex sparse graph that ratio is the terabyte-vs-megabyte gap of the hook. Read the matrix as &ldquo;row <code class="inl">u</code>, column <code class="inl">v</code>&rdquo; &mdash; a directed edge is one filled cell, not two.</figcaption>
         </figure>
 
@@ -655,7 +655,7 @@
         </details>
 
         <figure class="reveal">
-          <svg viewBox="0 0 780 330" style="--mw:618px" role="img" aria-labelledby="f2t f2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 780 330" style="--mw:728px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">Breadth-first search of an undirected graph drawn as distance layers from the source</title>
             <desc id="f2d">The undirected graph on vertices 0 through 6 is laid out in five vertical bands by distance from source 0. Band distance 0 holds vertex 0; band 1 holds 1 and 2; band 2 holds 3; band 3 holds 4 and 5; band 4 holds 6. Solid edges are the BFS tree: 0 to 1, 0 to 2, 2 to 3, 3 to 4, 3 to 5, 5 to 6. Two dashed non-tree edges, 1 to 2 and 4 to 5, join vertices within the same band. Each vertex is labelled with its distance.</desc>
             <!-- layer bands -->
@@ -694,7 +694,7 @@
             <!-- legend -->
             <line x1="50" y1="22" x2="86" y2="22" class="dg-edge"/><text x="92" y="22" class="dg-label sm" dominant-baseline="central">tree edge (discovery)</text>
             <line x1="300" y1="22" x2="336" y2="22" class="dg-cross"/><text x="342" y="22" class="dg-label sm" dominant-baseline="central">non-tree edge (same / adjacent layer)</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 &mdash; BFS as a wavefront.</b> Distances from <code class="inl">0</code> are <code class="inl">[0,1,1,2,3,3,4]</code>. The solid <em>tree</em> edges are where discovery happened; the dashed edges <code class="inl">{1,2}</code> and <code class="inl">{4,5}</code> connect vertices in the <em>same</em> layer. A signature fact: in an undirected BFS <strong>no edge ever jumps more than one layer</strong> &mdash; if it did, the deeper endpoint would have been discovered a layer sooner. (An edge that joins two vertices in the <em>same</em> layer, like {1,2} here, closes an odd cycle; that is exactly how BFS tests bipartiteness.)</figcaption>
         </figure>
 
@@ -753,7 +753,7 @@
         <p>In an <em>undirected</em> graph the menu shrinks to two &mdash; only tree and back edges occur &mdash; which is exactly what makes the bridge test of &sect;10 so clean.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 600 530" style="--mw:475px" role="img" aria-labelledby="f3t f3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 600 530" style="--mw:560px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">Depth-first search of a directed graph, drawn as its DFS tree with discovery and finish times and classified non-tree edges</title>
             <desc id="f3d">A directed graph on vertices 0 through 7 explored from 0. Solid tree edges form the spine 0 to 1, 1 to 2, 1 to 3, 3 to 4, 4 to 5, 5 to 7, 7 to 6. Three red back edges 2 to 0, 5 to 3, and 6 to 7 each close a cycle. One blue dashed forward edge runs 4 to 6. Each vertex carries its discovery slash finish times: 0 is 1/16, 1 is 2/15, 2 is 3/4, 3 is 5/14, 4 is 6/13, 5 is 7/12, 7 is 8/11, 6 is 9/10.</desc>
             <defs>
@@ -796,7 +796,7 @@
               <text x="0" y="92" class="dg-label sm">label = d / f</text>
               <text x="0" y="112" class="dg-label sm">(discovery / finish)</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 &mdash; the DFS forest, timestamped.</b> Three back edges <code class="inl">2&#8594;0</code>, <code class="inl">5&#8594;3</code>, <code class="inl">6&#8594;7</code> each point to a grey ancestor &mdash; each is a cycle, so this digraph is <em>not</em> a DAG. The forward edge <code class="inl">4&#8594;6</code> points to an already-finished descendant. The parenthesis string is <code class="inl wrap">(0 (1 (2 )<sub>2</sub> (3 (4 (5 (7 (6 )<sub>6</sub> )<sub>7</sub> )<sub>5</sub> )<sub>4</sub> )<sub>3</sub> )<sub>1</sub> )<sub>0</sub></code> &mdash; perfectly nested, mirroring the tree.</figcaption>
         </figure>
 
@@ -827,7 +827,7 @@
   <span class="tok-kw">else</span>: <span class="tok-kw">return</span> order</code></pre>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 360" style="--mw:602px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 360" style="--mw:710px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">A course-prerequisite DAG and one valid topological order produced by Kahn's algorithm</title>
             <desc id="f4d">A directed acyclic graph of six courses. Intro (0) points to Data Structures (1) and Discrete Math (2). Data Structures points to Algorithms (3) and Operating Systems (4). Discrete Math points to Algorithms. Algorithms and Operating Systems both point to Databases (5). Below, a strip shows the emitted order 0, 1, 2, 4, 3, 5 with forward arrows, captioned as a valid topological order.</desc>
             <defs>
@@ -871,7 +871,7 @@
                 <text x="552" y="12" class="dg-label sm" dominant-baseline="central">points forward here</text>
               </g>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 &mdash; a DAG and its order.</b> Take Intro before everything; after it, both DataStruct and Discrete are free. Kahn's queue empties to <code class="inl">0,1,2,4,3,5</code> &mdash; one valid order of several. Check any edge against the strip: each tail sits left of its head. Add a single back-pointing edge, say <code class="inl">5&#8594;0</code>, and the queue would stall with everyone stuck at in-degree&nbsp;&#8805;1: the cycle made the order impossible.</figcaption>
         </figure>
 
@@ -942,7 +942,7 @@
     start new component; <span class="tok-kw">repeat</span> w <span class="tok-op">&#8592;</span> <span class="tok-fn">pop</span>(S); onStack[w] <span class="tok-op">&#8592;</span> false; add w <span class="tok-kw">until</span> w = u</code></pre>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 330" style="--mw:481px" role="img" aria-labelledby="f5t f5d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 330" style="--mw:710px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">A directed graph with three strongly connected components and its condensation DAG</title>
             <desc id="f5d">A directed graph splits into three strongly connected components: SCC one is the 3-cycle on vertices 0, 1, 2; SCC two is the 3-cycle on 3, 4, 5; SCC three is the 2-cycle on 6, 7. Cross edges 1 to 3, 4 to 6, and 5 to 7 run only forward between components. Below, the condensation contracts each component to one node, giving a simple chain SCC1 to SCC2 to SCC3, which is acyclic.</desc>
             <defs>
@@ -999,7 +999,7 @@
                 <line x1="450" y1="0" x2="549" y2="0"/>
               </g>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 5 &mdash; clusters, then the DAG above them.</b> Inside each blob you can go round and round; between blobs the arrows only ever go forward. Tarjan stamps <code class="inl">disc/low</code> and pops a component each time <code class="inl">low[u]=disc[u]</code>: the roots here are <code class="inl">7</code> (pops <code class="inl">{6,7}</code>), then <code class="inl">3</code> (pops <code class="inl">{3,4,5}</code>), then <code class="inl">0</code> (pops <code class="inl">{0,1,2}</code>) &mdash; three roots, three SCCs.</figcaption>
         </figure>
 
@@ -1052,7 +1052,7 @@
         <p>The single dangerous detail (&sect;12.4): when scanning <code class="inl">u</code>'s neighbours, skip the edge back to <code class="inl">u</code>'s parent <em>once</em> &mdash; but any <em>other</em> edge to an already-seen vertex is a genuine back edge that must update <code class="inl">low</code> via <code class="inl">disc</code>.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 470 590" style="--mw:404px" role="img" aria-labelledby="f6t f6d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 470 590" style="--mw:479px" role="img" aria-labelledby="f6t f6d">
             <title id="f6t">The undirected graph's DFS tree with discovery and low values, marking two bridges and three articulation points</title>
             <desc id="f6d">Depth-first search of the undirected graph from vertex 0 yields the path 0-1-2-3-4-5-6 as tree edges, with two red back edges: 2 up to 0, and 5 up to 3. Discovery slash low values are 0 is 0/0, 1 is 1/0, 2 is 2/0, 3 is 3/3, 4 is 4/3, 5 is 5/3, 6 is 6/6. The tree edge from 2 to 3 and the tree edge from 5 to 6 are drawn thick red as bridges, because low of the child exceeds disc of the parent. Vertices 2, 3, and 5 are ringed yellow as articulation points.</desc>
             <defs>
@@ -1094,10 +1094,10 @@
             <!-- legend -->
             <g transform="translate(40,556)">
               <circle cx="8" cy="0" r="9" class="dg-ap"/><text x="24" y="0" class="dg-label sm" dominant-baseline="central">articulation point</text>
-              <line x1="180" y1="0" x2="214" y2="0" class="dg-bridge"/><text x="222" y="0" class="dg-label sm" dominant-baseline="central">bridge</text>
-              <path d="M330,-6 L360,0 L330,6" fill="none" class="dg-back"/><text x="368" y="0" class="dg-label sm" dominant-baseline="central">back edge</text>
+              <line x1="172" y1="0" x2="204" y2="0" class="dg-bridge"/><text x="212" y="0" class="dg-label sm" dominant-baseline="central">bridge</text>
+              <path d="M276,-6 L306,0 L276,6" fill="none" class="dg-back"/><text x="314" y="0" class="dg-label sm" dominant-baseline="central">back edge</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 6 &mdash; one DFS, every weak point.</b> The two back edges <code class="inl">2&#8594;0</code> and <code class="inl">5&#8594;3</code> pull <code class="inl">low</code> down inside the two triangles, so those edges are <em>not</em> bridges. But edge <code class="inl">(2,3)</code> has <code class="inl">low[3]=3 &gt; disc[2]=2</code> and edge <code class="inl">(5,6)</code> has <code class="inl">low[6]=6 &gt; disc[5]=5</code> &mdash; both bridges. Vertices <code class="inl">2,3,5</code> each have a child whose <code class="inl">low &#8805; disc</code>, so all three are articulation points. Root <code class="inl">0</code> has only one child &mdash; not a cut vertex.</figcaption>
         </figure>
 
@@ -1127,7 +1127,7 @@
       <div class="eyebrow"><span class="n">11</span> the ledger</div>
       <h2>Every question, one linear walk</h2>
       <div class="col">
-        <p>The whole lecture as a table. The striking column is the cost: with an adjacency list, <em>every</em> structural property below falls out of one or two traversals in time linear in the graph. Distance, order, cycles, clusters, cut-points &mdash; none costs more than reading the graph itself.</p>
+        <p>The whole study as a table. The striking column is the cost: with an adjacency list, <em>every</em> structural property below falls out of one or two traversals in time linear in the graph. Distance, order, cycles, clusters, cut-points &mdash; none costs more than reading the graph itself.</p>
         <div class="stats">
           <div class="stat lead"><span class="big">O(V+E)</span><span class="lab">cost of BFS, DFS, topo-sort, SCC, and bridges alike &mdash; each linear in the graph</span></div>
           <div class="stat"><span class="big">2</span><span class="lab">traversals you actually learn; everything else is what their trees expose</span></div>
@@ -1164,7 +1164,7 @@
         <p>If you only mark a vertex visited when you <em>pop</em> it, the same vertex can be enqueued many times before it is ever processed &mdash; the queue bloats, distances get overwritten, and on a dense graph it degrades toward quadratic. Mark <code class="inl">state[v]=GREY</code> the instant you enqueue it, exactly where the &sect;06 code flags it. One misplaced line is the difference between correct linear BFS and a slow, wrong one.</p>
 
         <h3>2 &middot; Using BFS distances on a weighted graph</h3>
-        <p>The most seductive error. BFS counts <em>edges</em>; it returns true shortest paths only when every edge has equal weight. The moment edges carry distinct costs, a path with more edges can be cheaper, and BFS confidently returns a wrong answer. Weighted shortest paths need Dijkstra or Bellman-Ford (Lecture&nbsp;13). (The honourable exception: 0/1 weights yield to a deque-BFS, and small integer weights to edge-splitting &mdash; but plain BFS is not it.)</p>
+        <p>The most seductive error. BFS counts <em>edges</em>; it returns true shortest paths only when every edge has equal weight. The moment edges carry distinct costs, a path with more edges can be cheaper, and BFS confidently returns a wrong answer. Weighted shortest paths need Dijkstra or Bellman-Ford (Deep&nbsp;study&nbsp;13). (The honourable exception: 0/1 weights yield to a deque-BFS, and small integer weights to edge-splitting &mdash; but plain BFS is not it.)</p>
 
         <h3>3 &middot; Recursive DFS blowing the call stack</h3>
         <p>A graph with a path of length <code class="inl">V</code> makes recursive DFS recurse <code class="inl">V</code> frames deep; at a few hundred thousand vertices that overflows the native stack and crashes &mdash; on exactly the large inputs you care about. Either convert to an explicit-stack iterative DFS, or raise the recursion limit deliberately. Tarjan in particular is usually written iteratively in production for this reason.</p>
@@ -1239,12 +1239,12 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 12</span>
+            <span class="lab">next &middot; deep study 12</span>
             <div class="ttl">Greedy on Graphs: Minimum Spanning Trees &amp; the Union-Find Structure</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">We have walked graphs and read their structure; next we start <em>building</em> on them. Lecture&nbsp;12 adds weights and asks for the cheapest set of edges that keeps everything connected &mdash; the minimum spanning tree &mdash; proved optimal by the cut property, and powered by union-find, whose near-constant amortised cost ties straight back to the potential method of Lecture&nbsp;02. Then Lecture&nbsp;13 generalises BFS's distances to weighted shortest paths. The traversal forest you learned to read here is the soil everything graph-shaped grows in.</p>
+        <p style="margin-top:1em">We have walked graphs and read their structure; next we start <em>building</em> on them. Deep&nbsp;study&nbsp;12 adds weights and asks for the cheapest set of edges that keeps everything connected &mdash; the minimum spanning tree &mdash; proved optimal by the cut property, and powered by union-find, whose near-constant amortised cost ties straight back to the potential method of Deep&nbsp;study&nbsp;02. Then Deep&nbsp;study&nbsp;13 generalises BFS's distances to weighted shortest paths. The traversal forest you learned to read here is the soil everything graph-shaped grows in.</p>
       </div>
     </section>
 
@@ -1288,6 +1288,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-10-range-queries-fenwick-and-segment-trees.html" rel="prev"><span>&larr; Lecture 10</span><strong>Fenwick and segment trees</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-12-minimum-spanning-trees-and-union-find.html" rel="next"><span>Lecture 12 &rarr;</span><strong>Minimum spanning trees and union-find</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/25-graphs.html">Lesson 25 &middot; Graphs &amp; representations</a><a href="../lessons/26-bfs-and-dfs.html">Lesson 26 &middot; BFS &amp; DFS</a><a href="../lessons/27-topological-sort.html">Lesson 27 &middot; Topological sort &amp; cycles</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-10-range-queries-fenwick-and-segment-trees.html" rel="prev"><span>&larr; Deep study 10</span><strong>Fenwick and segment trees</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-12-minimum-spanning-trees-and-union-find.html" rel="next"><span>Deep study 12 &rarr;</span><strong>Minimum spanning trees and union-find</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/25-graphs.html">Lesson 25 &middot; Graphs &amp; representations</a><a href="../lessons/26-bfs-and-dfs.html">Lesson 26 &middot; BFS &amp; DFS</a><a href="../lessons/27-topological-sort.html">Lesson 27 &middot; Topological sort &amp; cycles</a></p></nav>
 </body>
 </html>

@@ -356,7 +356,7 @@
     <text x="150" y="122" text-anchor="middle" font-family="var(--font-mono)" font-size="15" font-weight="700" fill="var(--on-state)">h(k)</text>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 08</span> trading order &amp; worst-case for an expected miracle</div>
+    <div class="eyebrow"><span class="n">Deep study 08</span> trading order &amp; worst-case for an expected miracle</div>
     <h1>Hashing &amp; Expected-Constant Access</h1>
 <p class="study-related"><span class="study-related__label">Related lesson</span><a href="../lessons/11-hash-tables.html">Lesson 11 · Hash tables</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -364,13 +364,13 @@
   <div class="study-brief-grid"><p><span>Build on</span>Arrays and expected cost</p><p><span>Core invariant</span>Hashing trades a strict order for an expected short probe or chain; its guarantee depends on the hash model and load factor.</p></div>
   <details class="study-check"><summary>Try this first · Why is one bucket holding all keys still possible?</summary><p>Collisions are possible. Expected constant time is not a worst case bound for every hash function and input.</p></details>
 </div>
-    <p class="lede col">Lecture&nbsp;7 gave us a structure that stays ordered while it changes, at a worst-case <code class="inl">O(log n)</code> per operation — and proved that is the best a comparison-based search tree can promise. This lecture asks the audacious next question: can we do <em>better than logarithmic</em>? Can lookup cost <strong>nothing that grows with <code class="inl">n</code> at all</strong>? The answer is yes, but you must pay for it in a new currency — you surrender sorted order, you surrender worst-case determinism, and you take on a coin flip. What you buy is <span class="term">expected <code class="inl">O(1)</code></span> search, insert, and delete. We will build the hash table from the direct-address dream, watch collisions become inevitable, tame them with <strong>chaining</strong> and <strong>open addressing</strong>, then close the one hole an adversary can exploit with <strong>universal</strong> and <strong>perfect hashing</strong>.</p>
+    <p class="lede col">Deep&nbsp;study&nbsp;7 gave us a structure that stays ordered while it changes, at a worst-case <code class="inl">O(log n)</code> per operation — and proved that is the best a comparison-based search tree can promise. This study asks the audacious next question: can we do <em>better than logarithmic</em>? Can lookup cost <strong>nothing that grows with <code class="inl">n</code> at all</strong>? The answer is yes, but you must pay for it in a new currency — you surrender sorted order, you surrender worst-case determinism, and you take on a coin flip. What you buy is <span class="term">expected <code class="inl">O(1)</code></span> search, insert, and delete. We will build the hash table from the direct-address dream, watch collisions become inevitable, tame them with <strong>chaining</strong> and <strong>open addressing</strong>, then close the one hole an adversary can exploit with <strong>universal</strong> and <strong>perfect hashing</strong>.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
         <p style="margin-bottom:.5em"><strong>A number to fix the stakes.</strong> Fill a hash table until it holds exactly as many items as it has slots — load factor one. Search for a key that <em>is</em> present and you will examine, on average, about <code class="inl">1.5</code> entries. Search for one that is <em>absent</em> and you will examine about <code class="inl">2</code>. Those two numbers do not change when the table holds a thousand keys, a million, or a billion. <strong>The cost of access is constant in the size of the data</strong> — the single most useful fact in all of practical computing.</p>
-        <p style="margin-bottom:0">And yet there is a shadow. The <em>worst</em> case is <code class="inl">&#x398;(n)</code> — every key in one slot, a linked list wearing a table's clothes — and for any <em>fixed</em> hash function, an adversary who can read your code can hand you exactly the input that triggers it. Reconciling the constant average with the linear worst case, and proving the average holds <em>even against that adversary</em>, is the whole intellectual content of this lecture.</p>
+        <p style="margin-bottom:0">And yet there is a shadow. The <em>worst</em> case is <code class="inl">&#x398;(n)</code> — every key in one slot, a linked list wearing a table's clothes — and for any <em>fixed</em> hash function, an adversary who can read your code can hand you exactly the input that triggers it. Reconciling the constant average with the linear worst case, and proving the average holds <em>even against that adversary</em>, is the whole intellectual content of this study.</p>
       </div>
     </div>
   </div>
@@ -380,7 +380,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>The dream of O(1)</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -407,9 +407,9 @@
       <div class="eyebrow"><span class="n">01</span> the dream of constant access</div>
       <h2>What if the key told you where it lived?</h2>
       <div class="col">
-        <p>I think first about what a machine is <em>permitted to do</em>, because the permissions fix the price. A search tree learns about its keys by comparing them, and we proved last lecture that comparing is a thin channel — one bit per question — so it cannot pin a key in fewer than <code class="inl">log n</code> questions. But suppose the key is not an opaque token to be compared; suppose it is a <em>number we may read and use as an address</em>. Then there is nothing to search. The key <em>is</em> the location. We walk to it in one step.</p>
+        <p>I think first about what a machine is <em>permitted to do</em>, because the permissions fix the price. A search tree learns about its keys by comparing them, and we proved last study that comparing is a thin channel — one bit per question — so it cannot pin a key in fewer than <code class="inl">log n</code> questions. But suppose the key is not an opaque token to be compared; suppose it is a <em>number we may read and use as an address</em>. Then there is nothing to search. The key <em>is</em> the location. We walk to it in one step.</p>
         <p>That is the whole dream, and it is worth stating as a principle before we complicate it: <strong>a lookup is free when the key can be turned into an index.</strong> An array does exactly this — <code class="inl">A[i]</code> in one step — because the index <em>is</em> the address. The dictionary problem is the project of making arbitrary keys behave like array indices. Everything that follows — the hash function, the collisions, the chains, the probe sequences, the randomized families — is engineering around the one obstacle that stands between us and that free lookup.</p>
-        <p>Let me name the problem formally so we can attack its skeleton rather than its surface. A <span class="term">dynamic dictionary</span> (or symbol table, or map) maintains a set of <code class="inl">(key, value)</code> pairs under three operations: <code class="inl">insert(k, v)</code>, <code class="inl">delete(k)</code>, and <code class="inl">search(k)</code>. Keys are drawn from a <span class="term">universe</span> <code class="inl">U</code>. We will hold at most <code class="inl">n</code> keys at once. The question of this lecture is exactly: <em>how cheaply can the three operations run, as a function of <code class="inl">n</code>, if we are allowed to read the bits of a key?</em></p>
+        <p>Let me name the problem formally so we can attack its skeleton rather than its surface. A <span class="term">dynamic dictionary</span> (or symbol table, or map) maintains a set of <code class="inl">(key, value)</code> pairs under three operations: <code class="inl">insert(k, v)</code>, <code class="inl">delete(k)</code>, and <code class="inl">search(k)</code>. Keys are drawn from a <span class="term">universe</span> <code class="inl">U</code>. We will hold at most <code class="inl">n</code> keys at once. The question of this study is exactly: <em>how cheaply can the three operations run, as a function of <code class="inl">n</code>, if we are allowed to read the bits of a key?</em></p>
         <div class="note info"><span class="tag">the formal lens</span>Notice what we are about to give up. A search tree keeps keys in sorted order, so it answers range queries, successor, predecessor, and min/max almost for free. A hash table scatters keys deliberately — it <em>destroys</em> order to gain speed. The right structure is never &ldquo;the fast one&rdquo; in the abstract; it is the one whose retained invariant matches the queries you will ask. Hashing keeps membership and nothing else.</div>
       </div>
     </section>
@@ -430,7 +430,7 @@
         </ul>
 
         <h3>Prerequisites</h3>
-        <p>This lecture stands on three earlier ideas in this syllabus. Each links to its page; the probabilistic toolkit of Lecture&nbsp;5 is the load-bearing one.</p>
+        <p>This study stands on three earlier ideas in this syllabus. Each links to its page; the probabilistic toolkit of Deep&nbsp;study&nbsp;5 is the load-bearing one.</p>
         <div class="chips">
           <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotic notation — O / &Theta; / &Omega;</a>
           <a class="chip" href="dsa-01-linear-layouts-and-access-disciplines.html">arrays &amp; linked structures</a>
@@ -456,7 +456,7 @@
         <p>Now extract the skeleton of the difficulty. We have a <em>huge</em> address space we cannot afford and a <em>tiny</em> occupancy we actually need. The fix writes itself: choose a table size <code class="inl">m</code> proportional to <code class="inl">n</code>, not to <code class="inl">|U|</code>, and install a function that <em>folds</em> the universe down onto those <code class="inl">m</code> slots. That folding function is the <span class="term">hash function</span> <code class="inl">h : U &rarr; {0, 1, &hellip;, m&minus;1}</code>, and the array of <code class="inl">m</code> slots it feeds is the <span class="term">hash table</span>. Key <code class="inl">k</code> now lives near slot <code class="inl">h(k)</code> instead of at slot <code class="inl">k</code>.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 380" style="--mw:808px" role="img" aria-labelledby="f1t f1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 380" style="--mw:878px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">Direct addressing versus hashing: folding a huge universe onto m slots</title>
             <desc id="f1d">On the left, a large rounded rectangle labelled universe U of size two to the sixty-four contains a few scattered key dots and maps directly to an enormous mostly-empty array — wasteful. On the right, the same universe is folded by a hash function h onto a small array of eight slots; three keys are shown being hashed, and two of them, k two and k three, land in the same slot four, illustrating a collision that the pigeonhole principle makes unavoidable whenever the universe is larger than the table.</desc>
 
@@ -491,9 +491,9 @@
             <text x="470" y="66" class="dg-label sm dg-blue-f">hashing — &#x398;(m) space, m &#8776; n</text>
             <rect x="470" y="78" width="120" height="250" rx="14" fill="var(--surface-2)" stroke="var(--bau-ink)" stroke-width="2"/>
             <text x="530" y="100" text-anchor="middle" class="dg-label sm">universe U</text>
-            <circle cx="510" cy="140" r="7" class="dg-blue-f"/><text x="510" y="145" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--on-state)">k&#8321;</text>
-            <circle cx="552" cy="200" r="7" class="dg-red-f"/><text x="552" y="205" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--on-state)">k&#8322;</text>
-            <circle cx="505" cy="262" r="7" class="dg-red-f"/><text x="505" y="267" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--on-state)">k&#8323;</text>
+            <circle cx="510" cy="140" r="10" class="dg-blue-f"/><text x="510" y="146" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--on-state)">k&#8321;</text>
+            <circle cx="552" cy="200" r="10" class="dg-red-f"/><text x="552" y="206" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--on-state)">k&#8322;</text>
+            <circle cx="505" cy="262" r="10" class="dg-red-f"/><text x="505" y="268" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--on-state)">k&#8323;</text>
 
             <!-- the function disc -->
             <circle cx="680" cy="200" r="34" class="dg-blue-f"/>
@@ -523,8 +523,8 @@
               <marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
               <marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
             </defs>
-          </svg>
-          <figcaption><b>Figure 1 — folding the universe.</b> Direct addressing pays for a slot per <em>possible</em> key; hashing pays for a slot per <em>stored</em> key and folds the rest on top. The fold is lossy: two distinct keys can share a slot. That shared slot — a <span class="term">collision</span> — is unavoidable, and managing it is the rest of the lecture.</figcaption>
+          </svg></div>
+          <figcaption><b>Figure 1 — folding the universe.</b> Direct addressing pays for a slot per <em>possible</em> key; hashing pays for a slot per <em>stored</em> key and folds the rest on top. The fold is lossy: two distinct keys can share a slot. That shared slot — a <span class="term">collision</span> — is unavoidable, and managing it is the rest of the study.</figcaption>
         </figure>
 
         <p>Why is a collision unavoidable? The <span class="term">pigeonhole principle</span>: any function from a set of size <code class="inl">&gt; m</code> into <code class="inl">m</code> slots must send two elements to the same slot. Since <code class="inl">|U| &gt; m</code> always (that was the entire point), <em>every</em> hash function has colliding pairs. We cannot escape collisions; we can only arrange that, on the keys we actually store, they are rare and cheap. That reframing — collisions are certain in the universe but should be improbable on the sample — is the bridge from a deterministic worry to a probabilistic guarantee.</p>
@@ -558,7 +558,7 @@
           </math></div>
         </div>
 
-        <p>Read <code class="inl">&alpha;</code> as &ldquo;how full.&rdquo; At <code class="inl">&alpha; = 0.5</code> the table is half full; at <code class="inl">&alpha; = 1</code> it holds one key per slot on average; chaining can run at <code class="inl">&alpha; &gt; 1</code> but open addressing cannot reach <code class="inl">1</code> at all. The entire performance story of a hash table is a function of <code class="inl">&alpha;</code> — and crucially <strong>not of <code class="inl">n</code> directly</strong>. Hold <code class="inl">&alpha;</code> fixed by growing <code class="inl">m</code> with <code class="inl">n</code> (a doubling resize, exactly the amortised trick of Lecture&nbsp;2) and the per-operation cost stays flat as the table grows without bound. That is where &ldquo;constant&rdquo; comes from.</p>
+        <p>Read <code class="inl">&alpha;</code> as &ldquo;how full.&rdquo; At <code class="inl">&alpha; = 0.5</code> the table is half full; at <code class="inl">&alpha; = 1</code> it holds one key per slot on average; chaining can run at <code class="inl">&alpha; &gt; 1</code> but open addressing cannot reach <code class="inl">1</code> at all. The entire performance story of a hash table is a function of <code class="inl">&alpha;</code> — and crucially <strong>not of <code class="inl">n</code> directly</strong>. Hold <code class="inl">&alpha;</code> fixed by growing <code class="inl">m</code> with <code class="inl">n</code> (a doubling resize, exactly the amortised trick of Deep&nbsp;study&nbsp;2) and the per-operation cost stays flat as the table grows without bound. That is where &ldquo;constant&rdquo; comes from.</p>
 
         <div class="pull">A hash function is an attempt to <span>mechanize randomness</span> — to make a deterministic map behave as if it had scattered the keys by chance.</div>
       </div>
@@ -675,7 +675,7 @@
         <p>Compute each hash: <code class="inl">21 mod 8 = 5</code>, <code class="inl">9 mod 8 = 1</code>, <code class="inl">14 mod 8 = 6</code>, <code class="inl">17 mod 8 = 1</code> (collides with 9), <code class="inl">28 mod 8 = 4</code>, <code class="inl">33 mod 8 = 1</code> (collides again), <code class="inl">5 mod 8 = 5</code> (collides with 21). With <code class="inl">n = 7</code> keys in <code class="inl">m = 8</code> slots the load factor is <code class="inl">&alpha; = 7/8 = 0.875</code>. Here is the resulting table — slot&nbsp;1 carries a chain of three (head-inserted, so newest first), slot&nbsp;5 a chain of two:</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 400" style="--mw:744px" role="img" aria-labelledby="f2t f2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 400" style="--mw:878px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">A chained hash table of eight slots after inserting seven keys</title>
             <desc id="f2d">An array of eight slots indexed zero to seven. Slot one holds a chain of three nodes in head-insertion order: thirty-three, then seventeen, then nine. Slot four holds twenty-eight. Slot five holds a chain of two: five then twenty-one. Slot six holds fourteen. Slots zero, two, three, and seven are empty. An unsuccessful search for twenty-five hashes to slot one and walks all three nodes; a successful search for seventeen hashes to slot one and stops at the second node after two comparisons.</desc>
 
@@ -726,14 +726,14 @@
 
             <!-- query callouts -->
             <g transform="translate(500,84)">
-              <rect x="0" y="0" width="404" height="120" rx="10" fill="var(--surface-2)" stroke="var(--bau-red)" stroke-width="2"/>
+              <rect x="0" y="0" width="430" height="120" rx="10" fill="var(--surface-2)" stroke="var(--bau-red)" stroke-width="2"/>
               <text x="16" y="28" class="dg-label" style="fill:var(--bau-red)">search 25  &rarr;  unsuccessful</text>
               <text x="16" y="52" class="dg-label sm">25 mod 8 = 1.  Walk slot 1: 33? no, 17? no, 9? no.</text>
               <text x="16" y="74" class="dg-label sm">Reach end of chain &rArr; ABSENT.  3 comparisons.</text>
               <text x="16" y="100" class="dg-label sm">expected for &#x3B1;=0.875 was 1+&#x3B1; &#8776; 1.9; this slot ran long.</text>
             </g>
             <g transform="translate(500,224)">
-              <rect x="0" y="0" width="404" height="120" rx="10" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
+              <rect x="0" y="0" width="430" height="120" rx="10" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
               <text x="16" y="28" class="dg-label" style="fill:var(--bau-blue)">search 17  &rarr;  successful</text>
               <text x="16" y="52" class="dg-label sm">17 mod 8 = 1.  Walk slot 1: 33? no, 17? YES.</text>
               <text x="16" y="74" class="dg-label sm">Stop on match.  2 comparisons (half the chain).</text>
@@ -743,7 +743,7 @@
             <defs>
               <marker id="ac" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 — the chained table, with two queries traced.</b> The structure is literally an array of linked lists. A query costs one hash plus a walk of one chain. Notice the variance the average hides: slot&nbsp;1 holds three keys while four slots hold none. The <em>expectation</em> is <code class="inl">1+&alpha; &#8776; 1.9</code>, but individual slots run long — the seed of the &ldquo;tail&rdquo; we bound in &sect;10.</figcaption>
         </figure>
 
@@ -788,7 +788,7 @@
         <p>Let me run it on the <em>same seven keys</em> as &sect;06, so you can compare the two strategies on identical input. With <code class="inl">h(k) = k mod 8</code> and linear probing: 21&rarr;5, 9&rarr;1, 14&rarr;6, 17 wants 1 (taken) &rarr; probes to 2, 28&rarr;4, 33 wants 1 (taken), 2 (taken) &rarr; probes to 3, 5 wants 5 (taken), 6 (taken) &rarr; probes to 7.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 300" style="--mw:744px" role="img" aria-labelledby="f3t f3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 300" style="--mw:878px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">The same seven keys placed by linear probing, forming one long cluster</title>
             <desc id="f3d">A single array of eight slots. Slot zero is empty. Slots one through seven are all occupied in this order: nine, seventeen, thirty-three, twenty-eight, twenty-one, fourteen, five. Keys seventeen, thirty-three, and five were displaced from their home slots by linear probing, and the occupied run from slot one to slot seven is a single primary cluster. Inserting thirty-three took three probes and inserting five took three probes because each had to step across the growing cluster.</desc>
 
@@ -826,7 +826,7 @@
               <marker id="ap"  markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
               <marker id="ap2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 — linear probing and primary clustering.</b> The very same keys, now packed into the array with no external storage. Displaced keys pile into a contiguous run; once a run forms, it grows faster, because more home slots feed into it. That self-reinforcing run is <span class="term">primary clustering</span> — linear probing's characteristic disease.</figcaption>
         </figure>
 
@@ -883,7 +883,7 @@
       <div class="col">
         <p>Now the uncomfortable truth SUHA was hiding. A real hash function is <em>fixed and deterministic</em> — you write it down, you ship it. The pigeonhole principle (&sect;03) guarantees that for any fixed <code class="inl">h</code>, some block of <code class="inl">&#8968;|U|/m&#8969; &#8805; n</code> keys all map to the same slot. An adversary who can read your code — a user submitting form fields, JSON keys, HTTP headers — can <em>choose</em> exactly those keys, collapse every one into a single chain, and turn your expected-<code class="inl">O(1)</code> table into a <code class="inl">&#x398;(n)</code> linked list. This is not hypothetical; it is the <span class="term">hash-flooding</span> denial-of-service attack, and it has taken down real web frameworks (&sect;12).</p>
 
-        <p>Here is the resolution, and it is the same move that saved quicksort in Lecture&nbsp;6. <strong>The flaw is not in any one function; it is in fixing the function in advance.</strong> So do not fix it. Keep a whole <em>family</em> of hash functions and, at table-creation time, pick one <em>at random</em>. The adversary chooses keys without knowing which <code class="inl">h</code> you will draw; your guarantee becomes an expectation over <em>your</em> coin flips, holding for <em>every</em> input. We have moved the randomness out of an unjustified assumption about the data and into an honest algorithmic choice we control.</p>
+        <p>Here is the resolution, and it is the same move that saved quicksort in Deep&nbsp;study&nbsp;6. <strong>The flaw is not in any one function; it is in fixing the function in advance.</strong> So do not fix it. Keep a whole <em>family</em> of hash functions and, at table-creation time, pick one <em>at random</em>. The adversary chooses keys without knowing which <code class="inl">h</code> you will draw; your guarantee becomes an expectation over <em>your</em> coin flips, holding for <em>every</em> input. We have moved the randomness out of an unjustified assumption about the data and into an honest algorithmic choice we control.</p>
 
         <p>For this to work the family must be good in a precise sense:</p>
 
@@ -923,7 +923,7 @@
 
         <p>Choose a prime <code class="inl">p &gt; |U|</code> once. Draw <code class="inl">a</code> uniformly from <code class="inl">{1, &hellip;, p&minus;1}</code> and <code class="inl">b</code> from <code class="inl">{0, &hellip;, p&minus;1}</code> at table creation; those two random numbers <em>are</em> your chosen <code class="inl">h</code>. One can prove this family is universal by a short argument in modular arithmetic: for fixed <code class="inl">x &#8800; y</code>, the pair <code class="inl">(ax+b, ay+b) mod p</code> ranges over all distinct ordered pairs as <code class="inl">(a,b)</code> varies, and at most <code class="inl">(p&minus;1)/m</code> of the <code class="inl">p&minus;1</code> nonzero differences survive the final <code class="inl">mod m</code> as a collision — at most <code class="inl">1/m</code>. Cheap to compute, provably safe on every input. This is what production hash tables actually do (often with a random seed chosen at process start) to shut the flooding attack.</p>
 
-        <div class="note info"><span class="tag">the through-line</span>Lecture&nbsp;6 converted &ldquo;quicksort is slow on <em>some inputs</em>&rdquo; into &ldquo;quicksort is slow on <em>some coin flips</em>, with vanishing probability,&rdquo; by randomizing the pivot. Universal hashing performs the identical conversion for the dictionary: &ldquo;this hash is bad on <em>some key sets</em>&rdquo; becomes &ldquo;our random hash is bad with <em>vanishing probability</em>, for whatever key set you bring.&rdquo; Randomization is not a hack here — it is the formal instrument that makes a worst-case-fragile structure robust.</div>
+        <div class="note info"><span class="tag">the through-line</span>Deep&nbsp;study&nbsp;6 converted &ldquo;quicksort is slow on <em>some inputs</em>&rdquo; into &ldquo;quicksort is slow on <em>some coin flips</em>, with vanishing probability,&rdquo; by randomizing the pivot. Universal hashing performs the identical conversion for the dictionary: &ldquo;this hash is bad on <em>some key sets</em>&rdquo; becomes &ldquo;our random hash is bad with <em>vanishing probability</em>, for whatever key set you bring.&rdquo; Randomization is not a hack here — it is the formal instrument that makes a worst-case-fragile structure robust.</div>
       </div>
     </section>
 
@@ -944,7 +944,7 @@
         <p>A lookup is now exactly two hash evaluations — slot <code class="inl">j = h(k)</code>, then position <code class="inl">h<sub>j</sub>(k)</code> inside the collision-free secondary table — and at most one key comparison. <strong>Two probes, worst case, always.</strong></p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 380" style="--mw:744px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 380" style="--mw:878px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">The FKS two-level perfect hash structure</title>
             <desc id="f4d">A first-level table of size n with universal hash h. Slot two contains three keys and points to a second-level table of size three squared equals nine, in which the three keys occupy distinct cells with no collisions. Slot five contains two keys and points to a second-level table of size two squared equals four. Empty first-level slots store nothing. A lookup evaluates h to pick the slot, then the slot's own hash to pick a collision-free cell — two probes in the worst case.</desc>
 
@@ -993,7 +993,7 @@
               <marker id="af"  markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
               <marker id="af2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 — the FKS scheme.</b> A linear-size top level routes each key to a slot; each slot owns a private squared table that is collision-free by construction. The lookup never branches on chain length — it is a fixed two-step walk, so the guarantee is worst-case, not expected.</figcaption>
         </figure>
 
@@ -1032,7 +1032,7 @@
       <div class="eyebrow"><span class="n">10</span> the tail the average hides</div>
       <h2>Concentration: how bad can the worst slot be?</h2>
       <div class="col">
-        <p>An expectation is a promise about the <em>average</em> operation. But a single slow operation — the unlucky slot with a long chain — can dominate a latency budget. So the honest question is not only &ldquo;what is the expected chain length?&rdquo; (we know: <code class="inl">&alpha;</code>) but &ldquo;how long is the <em>longest</em> chain likely to get?&rdquo; That is a <span class="term">concentration</span> question, and it is exactly the balls-in-bins model from Lecture&nbsp;5: throw <code class="inl">n</code> balls (keys) into <code class="inl">n</code> bins (slots) uniformly, and ask for the fullest bin.</p>
+        <p>An expectation is a promise about the <em>average</em> operation. But a single slow operation — the unlucky slot with a long chain — can dominate a latency budget. So the honest question is not only &ldquo;what is the expected chain length?&rdquo; (we know: <code class="inl">&alpha;</code>) but &ldquo;how long is the <em>longest</em> chain likely to get?&rdquo; That is a <span class="term">concentration</span> question, and it is exactly the balls-in-bins model from Deep&nbsp;study&nbsp;5: throw <code class="inl">n</code> balls (keys) into <code class="inl">n</code> bins (slots) uniformly, and ask for the fullest bin.</p>
 
         <div class="band flush" style="margin:1.4em 0">
           <div class="accentbar" aria-hidden="true"></div>
@@ -1042,10 +1042,10 @@
         <p>Two consequences worth carrying:</p>
         <ul>
           <li><strong>Tighten the tail with two choices.</strong> If each key is hashed by <em>two</em> independent functions and inserted into the <em>shorter</em> of the two candidate chains (&ldquo;the power of two choices&rdquo;), the maximum load collapses from <code class="inl">&#x398;(log n / log log n)</code> to <code class="inl">&#x398;(log log n)</code> — an exponential improvement in the tail for one extra hash. This is the engine behind modern load balancers and cuckoo hashing.</li>
-          <li><strong>Keep <code class="inl">&alpha;</code> bounded by resizing.</strong> Because every cost is a function of <code class="inl">&alpha;</code>, the table must grow as keys arrive. Double <code class="inl">m</code> whenever <code class="inl">&alpha;</code> crosses a threshold (say <code class="inl">0.75</code>) and re-hash everything into the larger table. A single resize costs <code class="inl">&#x398;(n)</code>, but it happens rarely enough that the <em>amortised</em> cost per insertion stays <code class="inl">O(1)</code> — precisely the doubling-array argument of Lecture&nbsp;2, reused here for hash tables.</li>
+          <li><strong>Keep <code class="inl">&alpha;</code> bounded by resizing.</strong> Because every cost is a function of <code class="inl">&alpha;</code>, the table must grow as keys arrive. Double <code class="inl">m</code> whenever <code class="inl">&alpha;</code> crosses a threshold (say <code class="inl">0.75</code>) and re-hash everything into the larger table. A single resize costs <code class="inl">&#x398;(n)</code>, but it happens rarely enough that the <em>amortised</em> cost per insertion stays <code class="inl">O(1)</code> — precisely the doubling-array argument of Deep&nbsp;study&nbsp;2, reused here for hash tables.</li>
         </ul>
 
-        <div class="note info"><span class="tag">three promises, kept straight</span>This syllabus has now built three different cost guarantees for the same dictionary problem. A balanced tree (Lecture&nbsp;7) promises <code class="inl">O(log n)</code> <em>worst case, every time</em>. A chained hash table promises <code class="inl">O(1)</code> <em>expected</em>, with a rare <code class="inl">&#x398;(n)</code> tail. FKS perfect hashing promises <code class="inl">O(1)</code> <em>worst case</em>, but only for a <em>static</em> set. There is no universally best answer — only a match between the promise you need and the price you will pay in space, order, and dynamism.</p></div>
+        <div class="note info"><span class="tag">three promises, kept straight</span>This syllabus has now built three different cost guarantees for the same dictionary problem. A balanced tree (Deep&nbsp;study&nbsp;7) promises <code class="inl">O(log n)</code> <em>worst case, every time</em>. A chained hash table promises <code class="inl">O(1)</code> <em>expected</em>, with a rare <code class="inl">&#x398;(n)</code> tail. FKS perfect hashing promises <code class="inl">O(1)</code> <em>worst case</em>, but only for a <em>static</em> set. There is no universally best answer — only a match between the promise you need and the price you will pay in space, order, and dynamism.</p></div>
       </div>
     </section>
 
@@ -1081,7 +1081,7 @@
             <tfoot><tr><td colspan="8">* universal hashing keeps the <code>&#x398;(n)</code> worst case but makes it occur only with vanishing probability over the chosen <code>h</code>, for <em>every</em> input — it removes the adversary, not the tail. The shaded rows are guarantees layered on top of a base scheme, not standalone tables.</td></tr></tfoot>
           </table>
         </div>
-        <p>A practitioner's reading: <strong>open addressing wins on small, cache-friendly tables</strong> with a known load ceiling and few deletions — linear probing's sequential memory access often beats chaining's pointer-chasing despite its worse clustering math (recall the locality lessons of Lecture&nbsp;1). <strong>Chaining wins when deletions are frequent</strong> or the load factor is hard to bound, because removing a node is trivial and <code class="inl">&alpha; &gt; 1</code> degrades gracefully. <strong>Universal hashing is not optional</strong> anywhere untrusted input reaches the keys. And <strong>perfect hashing is the specialist</strong> for fixed dictionaries that are built once and queried forever.</p>
+        <p>A practitioner's reading: <strong>open addressing wins on small, cache-friendly tables</strong> with a known load ceiling and few deletions — linear probing's sequential memory access often beats chaining's pointer-chasing despite its worse clustering math (recall the locality lessons of Deep&nbsp;study&nbsp;1). <strong>Chaining wins when deletions are frequent</strong> or the load factor is hard to bound, because removing a node is trivial and <code class="inl">&alpha; &gt; 1</code> degrades gracefully. <strong>Universal hashing is not optional</strong> anywhere untrusted input reaches the keys. And <strong>perfect hashing is the specialist</strong> for fixed dictionaries that are built once and queried forever.</p>
       </div>
     </section>
 
@@ -1102,7 +1102,7 @@
         <p>The single most common hash-table bug: in an open-addressed table, deleting a key by marking its slot EMPTY severs the probe chains that ran through it, so later searches for displaced keys stop early and report <em>false absences</em> — silent data loss. You must use a <span class="term">tombstone</span> (&sect;07). And because tombstones accumulate and lengthen probe sequences over time, a long-lived table needs periodic full rebuilds to flush them.</p>
 
         <h3>4 &middot; Letting the load factor drift toward 1</h3>
-        <p>Open-addressing cost is <code class="inl">1/(1&minus;&alpha;)</code> — it does not degrade gracefully, it detonates. At <code class="inl">&alpha; = 0.99</code> an average search probes a hundred slots; at <code class="inl">&alpha; = 1</code> insertion never terminates. Forgetting to resize, or resizing too late, converts a fast table into a hang. Pick a ceiling (commonly <code class="inl">0.7</code> for open addressing, higher for chaining) and resize <em>before</em> crossing it. Resizing is the amortised-doubling discipline of Lecture&nbsp;2; skipping it is not an optimisation, it is a latent outage.</p>
+        <p>Open-addressing cost is <code class="inl">1/(1&minus;&alpha;)</code> — it does not degrade gracefully, it detonates. At <code class="inl">&alpha; = 0.99</code> an average search probes a hundred slots; at <code class="inl">&alpha; = 1</code> insertion never terminates. Forgetting to resize, or resizing too late, converts a fast table into a hang. Pick a ceiling (commonly <code class="inl">0.7</code> for open addressing, higher for chaining) and resize <em>before</em> crossing it. Resizing is the amortised-doubling discipline of Deep&nbsp;study&nbsp;2; skipping it is not an optimisation, it is a latent outage.</p>
 
         <h3>5 &middot; Mutable keys — hashing something that then changes</h3>
         <p>A hash table places a key by <code class="inl">h(k)</code> at insertion time. If the key object is later mutated so that <code class="inl">h(k)</code> changes, the key is now filed under its <em>old</em> hash but searched for under its <em>new</em> one — it becomes unreachable while still occupying space, and the invariant &ldquo;a key sits at <code class="inl">h(k)</code>&rdquo; is broken. Keys must be <strong>immutable</strong>, or at least hash-stable for their time in the table. This is why mutable lists cannot be dictionary keys in most languages, and why <code class="inl">equals</code> and <code class="inl">hashCode</code> must be defined consistently — two keys equal under <code class="inl">==</code> must share a hash, or lookups miss.</p>
@@ -1114,7 +1114,7 @@
         <p>A polynomial string hash <code class="inl">&#x3A3; s<sub>i</sub>&middot;B&#x2071;</code> overflows machine integers fast. That is fine — overflow is just arithmetic mod <code class="inl">2&#x2076;&#x2074;</code> — <em>provided</em> you account for it (and never index with a negative result in languages where <code class="inl">%</code> can return a negative). Forgetting the sign of the modulo, or mixing signed and unsigned, produces out-of-bounds indices or skewed distributions. Reduce to <code class="inl">[0, m)</code> deliberately, not by accident.</p>
 
         <h3>8 &middot; Reaching for a hash table when you needed order</h3>
-        <p>The meta-mistake. A hash table answers membership and point lookup and nothing else. The moment you need sorted iteration, range queries, nearest-key, successor/predecessor, or min/max, the scattering that made hashing fast is now your enemy, and you are sorting the keys on every query. That is the signal you wanted the <em>ordered</em> dictionary of Lecture&nbsp;7, not this one. Choose the structure by the queries, never by the headline speed.</p>
+        <p>The meta-mistake. A hash table answers membership and point lookup and nothing else. The moment you need sorted iteration, range queries, nearest-key, successor/predecessor, or min/max, the scattering that made hashing fast is now your enemy, and you are sorting the keys on every query. That is the signal you wanted the <em>ordered</em> dictionary of Deep&nbsp;study&nbsp;7, not this one. Choose the structure by the queries, never by the headline speed.</p>
       </div>
     </section>
 
@@ -1178,7 +1178,7 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 09</span>
+            <span class="lab">next &middot; deep study 09</span>
             <div class="ttl">Partial Order Is Enough: Heaps and Priority Queues</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
@@ -1227,6 +1227,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-07-balanced-search-trees.html" rel="prev"><span>&larr; Lecture 07</span><strong>Balanced search trees</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-09-partial-order-is-enough-heaps-and-priority-queues.html" rel="next"><span>Lecture 09 &rarr;</span><strong>Heaps and priority queues</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/11-hash-tables.html">Lesson 11 &middot; Hash tables</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-07-balanced-search-trees.html" rel="prev"><span>&larr; Deep study 07</span><strong>Balanced search trees</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-09-partial-order-is-enough-heaps-and-priority-queues.html" rel="next"><span>Deep study 09 &rarr;</span><strong>Heaps and priority queues</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/11-hash-tables.html">Lesson 11 &middot; Hash tables</a></p></nav>
 </body>
 </html>

@@ -320,12 +320,12 @@ details .bd{padding:2px 16px 14px}
   <div class="study-brief-grid"><p><span>Build on</span>Trees and strings</p><p><span>Core invariant</span>Trie paths represent prefixes; suffix structures index substrings for repeated queries.</p></div>
   <details class="study-check"><summary>Try this first · What is the time to look up a word of length m in a trie, ignoring alphabet map cost?</summary><p>O(m), because the lookup follows at most one edge per character.</p></details>
 </div>
-      <p class="lead measure">Last lecture we searched a text <em>once</em>. KMP scans an <code>n</code>-character string for a pattern in <code>O(n+m)</code> and throws the work away. But real systems ask the <em>same text</em> a thousand questions: every read aligned against a genome, every query typed into a search box, every grep over a fixed corpus. Re-scanning is a confession that we never <em>understood</em> the text — we only walked it.</p>
+      <p class="lead measure">Last study we searched a text <em>once</em>. KMP scans an <code>n</code>-character string for a pattern in <code>O(n+m)</code> and throws the work away. But real systems ask the <em>same text</em> a thousand questions: every read aligned against a genome, every query typed into a search box, every grep over a fixed corpus. Re-scanning is a confession that we never <em>understood</em> the text — we only walked it.</p>
       <div class="band accent measure reveal">
         <h4 style="margin-top:0">The number that forces the idea</h4>
         <p style="margin-bottom:0">The human reference genome is ≈ <strong>3.1 × 10<sup>9</sup></strong> characters. Align one 30-base read by re-scanning and you pay 3 billion comparisons. A sequencing run produces <strong>hundreds of millions</strong> of reads. Re-scanning is ≈ 10<sup>18</sup> operations — <em>years</em> of compute. Build an index over the genome <em>once</em>, and each read costs ≈ 30 steps. Same data, same question: about eight orders of magnitude apart per read (3&times;10<sup>9</sup> steps against 30), and nine across the whole run. The difference is entirely the data structure.</p>
       </div>
-      <p class="measure">This lecture is about <strong>preprocessing the text instead of the pattern</strong> — turning a string into a structure that answers <em>any</em> substring query fast. We build three indices, each a refinement of the last: the <strong>trie</strong> (an index over a set of strings), the <strong>suffix tree</strong> (a trie over <em>all suffixes</em>, compressed), and the <strong>suffix array</strong> (the same information, sorted into a flat array) together with its <strong>LCP</strong> companion.</p>
+      <p class="measure">This study is about <strong>preprocessing the text instead of the pattern</strong> — turning a string into a structure that answers <em>any</em> substring query fast. We build three indices, each a refinement of the last: the <strong>trie</strong> (an index over a set of strings), the <strong>suffix tree</strong> (a trie over <em>all suffixes</em>, compressed), and the <strong>suffix array</strong> (the same information, sorted into a flat array) together with its <strong>LCP</strong> companion.</p>
     </section>
 
     <!-- ============ OBJECTIVES ============ -->
@@ -348,10 +348,10 @@ details .bd{padding:2px 16px 14px}
       <h2>What I assume you carry in</h2>
       <p class="measure">Each of these is a structure we will <em>reuse</em>, not merely reference. If one feels shaky, follow the link first.</p>
       <ul class="obj prq reveal">
-        <li><span class="b">1</span><p><strong>Trees</strong> — rooted trees, children, paths, depth. <a href="dsa-07-balanced-search-trees.html">Lecture 07 ↗</a></p></li>
-        <li><span class="b">2</span><p><strong>Sorting</strong> — comparison sorts and radix/counting sort; the <code>n log n</code> barrier. <a href="dsa-06-sorting-and-the-comparison-barrier.html">Lecture 06 ↗</a></p></li>
-        <li><span class="b">3</span><p><strong>Hashing</strong> — maps for child pointers and for set membership. <a href="dsa-08-hashing-and-expected-constant-access.html">Lecture 08 ↗</a></p></li>
-        <li><span class="b">4</span><p><strong>Linear-time string matching</strong> — KMP / Z; what "scan once" buys and what it doesn't. <a href="dsa-18-linear-time-exact-matching.html">Lecture 18 ↗</a></p></li>
+        <li><span class="b">1</span><p><strong>Trees</strong> — rooted trees, children, paths, depth. <a href="dsa-07-balanced-search-trees.html">Deep study 07 ↗</a></p></li>
+        <li><span class="b">2</span><p><strong>Sorting</strong> — comparison sorts and radix/counting sort; the <code>n log n</code> barrier. <a href="dsa-06-sorting-and-the-comparison-barrier.html">Deep study 06 ↗</a></p></li>
+        <li><span class="b">3</span><p><strong>Hashing</strong> — maps for child pointers and for set membership. <a href="dsa-08-hashing-and-expected-constant-access.html">Deep study 08 ↗</a></p></li>
+        <li><span class="b">4</span><p><strong>Linear-time string matching</strong> — KMP / Z; what "scan once" buys and what it doesn't. <a href="dsa-18-linear-time-exact-matching.html">Deep study 18 ↗</a></p></li>
       </ul>
     </section>
 
@@ -361,7 +361,7 @@ details .bd{padding:2px 16px 14px}
       <h2>Extract the computational skeleton</h2>
       <p class="measure">Strip the domain away — genomes, search boxes, log files — and the formal object is the same. We are given a fixed text <code>T</code> of length <code>n</code> over an alphabet <code>Σ</code>. We will face a stream of queries, each a pattern <code>P</code> of length <code>m</code>, and for each we must answer <em>"does <code>P</code> occur in <code>T</code>, where, and how often?"</em> The decision we control is <strong>where to spend the work</strong>: at query time (KMP — cheap to set up, <code>O(n)</code> per query) or at build time (an index — expensive once, then <code>O(m)</code> per query). When queries are many and <code>T</code> is fixed, the index wins decisively.</p>
 
-      <p class="measure">To build an index we need one structural observation, and the entire lecture turns on it. A <em>substring</em> is any contiguous slice <code>T[i..j]</code>. A <em>suffix</em> is a slice that runs to the end, <code>T[i..n−1]</code>. Now look at the substring <code>T[i..j]</code>: it begins at position <code>i</code> — and so does the suffix <code>T[i..n−1]</code>. The substring is exactly the first <code>(j−i+1)</code> characters of that suffix. That is to say:</p>
+      <p class="measure">To build an index we need one structural observation, and the entire study turns on it. A <em>substring</em> is any contiguous slice <code>T[i..j]</code>. A <em>suffix</em> is a slice that runs to the end, <code>T[i..n−1]</code>. Now look at the substring <code>T[i..j]</code>: it begins at position <code>i</code> — and so does the suffix <code>T[i..n−1]</code>. The substring is exactly the first <code>(j−i+1)</code> characters of that suffix. That is to say:</p>
 
       <div class="pull reveal">
         <q>Every substring of a text is the prefix of one of its suffixes.</q>
@@ -385,7 +385,7 @@ details .bd{padding:2px 16px 14px}
       <p class="measure">Insert in order. Each insertion walks from the root, creating an edge only when the needed child is missing, and flags the final node terminal. Trace it: <code>cat</code> lays the path c→a→t; <code>car</code> reuses c→a, adds r; <code>card</code> reuses c→a→r, adds d; <code>care</code> reuses c→a→r, adds e; <code>dog</code> starts a fresh branch d→o→g. The node for <code>car</code> is terminal <em>and</em> has children — both facts coexist.</p>
 
       <figure class="reveal">
-        <svg viewBox="0 0 760 392" style="--mw:516px" role="img" aria-labelledby="t1title t1desc">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 392" style="--mw:710px" role="img" aria-labelledby="t1title t1desc">
           <title id="t1title">Trie of the words cat, car, card, care, dog</title>
           <desc id="t1desc">A rooted tree. The root marked empty branches on c and d. The c branch goes c, a, then splits into t (cat) and r (car); r further splits into d (card) and e (care). The d branch goes d, o, g (dog). Terminal nodes carry a red square marking set membership.</desc>
           <!-- edges -->
@@ -439,7 +439,7 @@ details .bd{padding:2px 16px 14px}
             <circle cx="8" cy="8" r="9" class="fill-paper dg-accent"/><rect x="3" y="3" width="10" height="10" class="fill-red"/>
             <text x="24" y="12" class="t-mut t-mono" font-size="12">= terminal (in set)</text>
           </g>
-        </svg>
+        </svg></div>
         <figcaption><b>Figure 1 — A trie.</b> Five keys, but <code>c‑a‑r</code> is stored once and shared by three of them. A query for <code>care</code> follows four edges; a query for <code>cab</code> dies at the missing <code>b</code>-edge after three. Cost tracks the query length, not the five-word dataset.</figcaption>
       </figure>
 
@@ -506,7 +506,7 @@ details .bd{padding:2px 16px 14px}
       <p class="measure">The seven suffixes are <code>banana$</code>(0), <code>anana$</code>(1), <code>nana$</code>(2), <code>ana$</code>(3), <code>na$</code>(4), <code>a$</code>(5), <code>$</code>(6). Group by first character, then recurse on where they split. Suffixes starting <code>a</code> share just <code>a</code>, then split into those continuing <code>na…</code> and the bare <code>$</code>; the <code>na…</code> pair splits again at the next <code>na$</code> vs <code>$</code>. The result has 7 leaves (one per suffix) and 3 internal branch nodes — drawn below.</p>
 
       <figure class="reveal">
-        <svg viewBox="0 0 860 452" style="--mw:681px" role="img" aria-labelledby="t2title t2desc">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 860 452" style="--mw:803px" role="img" aria-labelledby="t2title t2desc">
           <title id="t2title">Suffix tree of the string banana with sentinel dollar sign</title>
           <desc id="t2desc">A rooted tree with four edges from the root labelled dollar, a, banana-dollar, and na. The a edge and the na edge lead to internal nodes that branch further. Leaves are squares carrying the suffix start index 0 through 6. The internal node reached by a then na, spelling ana, is highlighted as the deepest branch and equals the longest repeated substring ana.</desc>
           <!-- edges -->
@@ -541,14 +541,14 @@ details .bd{padding:2px 16px 14px}
             <g><rect x="800" y="216" width="20" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="810" y="231" class="t-ink" text-anchor="middle">$</text></g>
           </g>
           <!-- nodes: root + internals -->
-          <circle cx="430" cy="46" r="15" class="fill-paper dg-stroke"/><text x="430" y="51" text-anchor="middle" class="t-mut t-mono" font-size="13">root</text>
+          <circle cx="430" cy="46" r="21" class="fill-paper dg-stroke"/><text x="430" y="51" text-anchor="middle" class="t-mut t-mono" font-size="13">root</text>
           <circle cx="320" cy="150" r="12" class="fill-paper dg-stroke"/>
           <circle cx="770" cy="150" r="12" class="fill-paper dg-stroke"/>
           <circle cx="250" cy="282" r="13" class="fill-paper dg-accent"/>
           <!-- internal labels -->
-          <text x="298" y="146" class="t-red t-mono" font-size="12">"a"</text>
-          <text x="748" y="146" class="t-blue t-mono" font-size="12">"na"</text>
-          <text x="206" y="280" class="t-red t-mono" font-size="12" font-weight="700">"ana" ← deepest</text>
+          <text x="304" y="146" text-anchor="end" class="t-red t-mono" font-size="12">"a"</text>
+          <text x="788" y="146" class="t-blue t-mono" font-size="12">"na"</text>
+          <text x="230" y="286" text-anchor="end" class="t-red t-mono" font-size="12" font-weight="700">"ana" ← deepest</text>
           <!-- leaves: squares with suffix index -->
           <g class="t-mono" font-size="13" font-weight="700" fill="var(--on-state)" text-anchor="middle">
             <g><rect x="106" y="138" width="28" height="28" class="fill-blue"/><text x="120" y="157">6</text></g>
@@ -560,7 +560,7 @@ details .bd{padding:2px 16px 14px}
             <g><rect x="812" y="284" width="28" height="28" class="fill-blue"/><text x="826" y="303">4</text></g>
           </g>
           <text x="430" y="440" text-anchor="middle" class="t-mut t-mono" font-size="12">leaf squares hold the suffix start index · 7 leaves, 3 internal branch nodes = O(n)</text>
-        </svg>
+        </svg></div>
         <figcaption><b>Figure 2 — Suffix tree of <code>banana$</code>.</b> Each leaf is a suffix; each edge is an interval of the text. To test a pattern, spell it from the root: <code>na</code> survives to the right-hand branch, so <code>na</code> occurs — twice, because two leaves (2 and 4) hang below. The <strong>deepest internal node</strong> spells <code>ana</code> — the <em>longest repeated substring</em>, and indeed <code>ana</code> sits at positions 1 and 3 of <code>banana</code>.</figcaption>
       </figure>
 
@@ -608,7 +608,7 @@ details .bd{padding:2px 16px 14px}
       <p class="measure"><strong>Trace <code>P = "ana"</code></strong> against <code>SA = [5,3,1,0,4,2]</code>. Binary search compares <code>P</code> to the suffix at the midpoint. <code>a</code>(rank 0) <code>&lt; ana</code>; <code>ana</code>(rank 1) <em>matches</em> as a prefix; <code>anana</code>(rank 2) also has <code>ana</code> as a prefix; <code>banana</code>(rank 3) <code>&gt; ana</code>. So the block is ranks <code>[1, 3)</code> → <code>lo=1, hi=3</code>, count <code>= 2</code>, at text positions <code>SA[1]=3</code> and <code>SA[2]=1</code>. Figure 3 shows the block.</p>
 
       <figure class="reveal">
-        <svg viewBox="0 0 760 372" style="--mw:578px" role="img" aria-labelledby="t3title t3desc">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 372" style="--mw:710px" role="img" aria-labelledby="t3title t3desc">
           <title id="t3title">Suffix array and LCP array of banana with the search block for ana highlighted</title>
           <desc id="t3desc">Six rows, one per suffix in sorted order. Each row shows rank i, the value SA of i, the suffix text, and the LCP value. Rows for ranks 1 and 2, the suffixes ana and anana, are highlighted in yellow as the contiguous block matching the query ana. The maximum LCP value 3 marks the longest repeated substring ana.</desc>
           <!-- header -->
@@ -649,7 +649,7 @@ details .bd{padding:2px 16px 14px}
           <text x="36" y="300" class="t-mono t-red" font-size="12.5" font-weight="700">block for P = "ana"  →  lo=1, hi=3,  count = 2  at positions 3 and 1</text>
           <text x="36" y="324" class="t-mono t-mut" font-size="12">SA = [5,3,1,0,4,2]   ·   LCP = [–,1,3,0,0,2]   ·   max LCP = 3 = "ana" (longest repeat)</text>
           <text x="36" y="348" class="t-mono t-mut" font-size="12">distinct substrings = 6·7/2 − (1+3+0+0+2) = 21 − 6 = 15</text>
-        </svg>
+        </svg></div>
         <figcaption><b>Figure 3 — Suffix array + LCP for <code>banana</code>.</b> The flat array <em>is</em> the sorted leaves of Figure 2. The yellow band is the answer to "where is <code>ana</code>?" — a contiguous block found by binary search. The <code>LCP</code> column on the right is the bridge back to the tree, explained next.</figcaption>
       </figure>
 
@@ -916,12 +916,12 @@ details .bd{padding:2px 16px 14px}
 
       <div class="next reveal">
         <div>
-          <div class="lbl">Next in the DSA syllabus → Lecture 20</div>
+          <div class="lbl">Next in the DSA syllabus → Deep study 20</div>
           <a href="dsa-20-p-np-reductions-and-np-completeness.html">The Boundary of Efficiency: P, NP, Reductions, and NP-Completeness</a>
         </div>
         <span class="arrow" aria-hidden="true">→</span>
       </div>
-      <p class="note measure">We have spent nineteen lectures finding faster algorithms. Next we ask the opposite question — which problems admit <em>no</em> efficient algorithm at all, and how a single reduction can tie thousands of them together. The indexing instinct you just built (preprocess once, reuse forever) is exactly the kind of leverage that reductions formalise.</p>
+      <p class="note measure">We have spent nineteen studies finding faster algorithms. Next we ask the opposite question — which problems admit <em>no</em> efficient algorithm at all, and how a single reduction can tie thousands of them together. The indexing instinct you just built (preprocess once, reuse forever) is exactly the kind of leverage that reductions formalise.</p>
     </section>
 
     
@@ -947,6 +947,6 @@ details .bd{padding:2px 16px 14px}
   els.forEach(function(el){ io.observe(el); });
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-18-linear-time-exact-matching.html" rel="prev"><span>&larr; Lecture 18</span><strong>Linear-time exact matching</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-20-p-np-reductions-and-np-completeness.html" rel="next"><span>Lecture 20 &rarr;</span><strong>P, NP, and reductions</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/22-tries.html">Lesson 22 &middot; Tries</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-18-linear-time-exact-matching.html" rel="prev"><span>&larr; Deep study 18</span><strong>Linear-time exact matching</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-20-p-np-reductions-and-np-completeness.html" rel="next"><span>Deep study 20 &rarr;</span><strong>P, NP, and reductions</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/22-tries.html">Lesson 22 &middot; Tries</a></p></nav>
 </body>
 </html>

@@ -368,7 +368,7 @@
     <path d="M120 4 L186 4 L153 64 Z" class="dg-red-f"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 13</span> shortest paths &amp; the relaxation paradigm</div>
+    <div class="eyebrow"><span class="n">Deep study 13</span> shortest paths &amp; the relaxation paradigm</div>
     <h1>Single-Source Shortest Paths</h1>
 <p class="study-related"><span class="study-related__label">Related lesson</span><a href="../lessons/28-dijkstra-and-a-star.html">Lesson 28 · Dijkstra &amp; A*</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -376,13 +376,13 @@
   <div class="study-brief-grid"><p><span>Build on</span>Breadth first search</p><p><span>Core invariant</span>Relaxation improves tentative distances; the weight assumptions decide when a distance becomes final.</p></div>
   <details class="study-check"><summary>Try this first · Why is Dijkstra unsafe with a negative edge?</summary><p>A later negative edge can improve a vertex already finalized by Dijkstra.</p></details>
 </div>
-    <p class="lede col">Ask a maps app for the fastest route across a country and it searches a graph of perhaps <strong>twenty million</strong> road segments. The number of distinct routes is astronomical &mdash; more than atoms in your body &mdash; yet the answer returns in a blink. It does so without ever <em>enumerating</em> a path. It keeps one number per intersection, an over-estimate of the distance, and lowers it by a single rule applied over and over. That rule is <span class="term">relaxation</span>, and it is the whole of this lecture. Dijkstra, Bellman&ndash;Ford, and the linear-time DAG method are not three algorithms. They are one primitive performed in three different <em>orders</em>.</p>
+    <p class="lede col">Ask a maps app for the fastest route across a country and it searches a graph of perhaps <strong>twenty million</strong> road segments. The number of distinct routes is astronomical &mdash; more than atoms in your body &mdash; yet the answer returns in a blink. It does so without ever <em>enumerating</em> a path. It keeps one number per intersection, an over-estimate of the distance, and lowers it by a single rule applied over and over. That rule is <span class="term">relaxation</span>, and it is the whole of this study. Dijkstra, Bellman&ndash;Ford, and the linear-time DAG method are not three algorithms. They are one primitive performed in three different <em>orders</em>.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
         <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Take the greedy method &mdash; Dijkstra &mdash; that powers most of that routing. It is provably optimal, and it is fast. Now change a single edge weight to a <em>negative</em> number: a refund along one leg, a tailwind, a currency gaining value. On the four-vertex graph in &sect;08 Dijkstra confidently returns a distance of <strong>2</strong> to a vertex whose true shortest distance is <strong>1</strong> &mdash; and reports it as final. No crash, no warning. Just a wrong answer, delivered with total confidence.</p>
-        <p style="margin-bottom:0">One negative number silently breaks a correct algorithm. The discipline of this lecture is to know <em>exactly which assumption</em> each method rests on &mdash; non-negativity, acyclicity, the absence of a negative cycle &mdash; so that you reach for the right tool and never ship the confident lie.</p>
+        <p style="margin-bottom:0">One negative number silently breaks a correct algorithm. The discipline of this study is to know <em>exactly which assumption</em> each method rests on &mdash; non-negativity, acyclicity, the absence of a negative cycle &mdash; so that you reach for the right tool and never ship the confident lie.</p>
       </div>
     </div>
   </div>
@@ -392,7 +392,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>The problem beneath routing</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -420,9 +420,9 @@
       <h2>What &ldquo;shortest path&rdquo; really asks</h2>
       <div class="col">
         <p>I begin, as always, by stripping the problem to its formal skeleton &mdash; the inputs, the output, the transformation &mdash; and setting aside the dressing of roads or routers. The input is a <span class="term">weighted directed graph</span> <code class="inl">G = (V, E)</code> with a weight function <code class="inl">w : E &#8594; &#8477;</code> assigning a real number to each edge, together with a distinguished <span class="term">source</span> vertex <code class="inl">s</code>. The output is, for every vertex <code class="inl">v</code>, the <span class="term">shortest-path distance</span> <code class="inl">&#948;(s, v)</code> &mdash; the minimum total weight over all directed paths from <code class="inl">s</code> to <code class="inl">v</code> &mdash; and, implicitly, a path achieving it.</p>
-        <p>This is the <span class="term">single-source shortest-paths</span> problem (SSSP). &ldquo;Single source&rdquo; because we fix one starting vertex and ask about <em>all</em> destinations at once; it is no harder, asymptotically, to find every distance from <code class="inl">s</code> than to find one. The next lecture lifts this to <em>all</em> sources.</p>
+        <p>This is the <span class="term">single-source shortest-paths</span> problem (SSSP). &ldquo;Single source&rdquo; because we fix one starting vertex and ask about <em>all</em> destinations at once; it is no harder, asymptotically, to find every distance from <code class="inl">s</code> than to find one. The next study lifts this to <em>all</em> sources.</p>
         <p>Why not simply enumerate paths and take the minimum? Because the count is exponential &mdash; a graph on <code class="inl">n</code> vertices can have on the order of <code class="inl">n!</code> simple paths between two of them. Enumeration is a non-starter. The entire art is to find the optimum <em>without</em> ever building a path, by exploiting a structural property the problem happens to possess. We will mechanise the search into the repeated lowering of one number per vertex.</p>
-        <div class="note info"><span class="tag">the formal lens</span>Hold the <em>contract</em> fixed &mdash; minimum-weight paths from <code class="inl">s</code> &mdash; and vary only the <em>order</em> in which we examine edges. Every algorithm in this lecture computes the same function. They differ solely in the schedule of a single primitive, and each schedule is licensed by a different assumption about the weights.</div>
+        <div class="note info"><span class="tag">the formal lens</span>Hold the <em>contract</em> fixed &mdash; minimum-weight paths from <code class="inl">s</code> &mdash; and vary only the <em>order</em> in which we examine edges. Every algorithm in this study computes the same function. They differ solely in the schedule of a single primitive, and each schedule is licensed by a different assumption about the weights.</div>
       </div>
     </section>
 
@@ -496,7 +496,7 @@
         <p><strong>Upper-bound property.</strong> At all times <code class="inl">d[v] &#8805; &#948;(s,v)</code>, and once <code class="inl">d[v]</code> reaches <code class="inl">&#948;(s,v)</code> it never changes again. <em>Why:</em> every finite <code class="inl">d[v]</code> is the length of <em>some</em> real path <code class="inl">s &#8594; &middot;&middot;&middot; &#8594; v</code> (the one traced by <code class="inl">&#960;</code>), so it cannot dip below the minimum over all such paths; and relaxation only assigns smaller values, so it cannot rise. The estimate is a true distance squeezed downward toward the optimum &mdash; never past it.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 320" style="--mw:602px" role="img" aria-labelledby="f1t f1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 320" style="--mw:710px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The relaxation atom and the triangle inequality it enforces</title>
             <desc id="f1d">Left panel: an edge from u to v of weight 2. Vertex u holds tentative distance 3; vertex v holds 7. Because 3 plus 2 equals 5, which is less than 7, relaxation lowers v's estimate from 7 to 5 and sets v's predecessor to u. Right panel: a triangle with apex s and base vertices u and v. The edge s to u has length delta s u, the edge u to v has weight w u v, and the dashed direct edge s to v has length delta s v. The inequality delta s v is at most delta s u plus w u v is annotated beneath: the best route to v is never worse than the best route to u extended by one edge.</desc>
             <defs>
@@ -533,7 +533,7 @@
             <circle cx="468" cy="232" r="26" class="dg-node"/><text x="468" y="232" class="dg-nt">u</text>
             <circle cx="660" cy="232" r="26" class="dg-node"/><text x="660" y="232" class="dg-nt">v</text>
             <text x="540" y="298" class="dg-label sm">&#948;(s,v) &#8804; &#948;(s,u) + w(u,v)</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 &mdash; the atom and its law.</b> Relaxation (left) is one comparison and a conditional write. It is simply the act of <em>enforcing</em> the triangle inequality (right) wherever the current estimate violates it. Master this single operation and the three algorithms are only bookkeeping about <em>which edge to relax next</em>.</figcaption>
         </figure>
       </div>
@@ -617,7 +617,7 @@
         </ul>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 380" style="--mw:602px" role="img" aria-labelledby="f2t f2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 380" style="--mw:710px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">The Dijkstra example graph with its shortest-path tree highlighted</title>
             <desc id="f2d">Six vertices S, A, B, C, D, E with nine directed weighted edges. Source S is at the left. The final shortest distances are S equals 0, B equals 2, A equals 3, D equals 6, C equals 8, E equals 9. The shortest-path tree, drawn with thick edges, is S to B weight 2, B to A weight 1, A to C weight 5, B to D weight 4, and D to E weight 3. The remaining edges S to A weight 4, B to C weight 8, C to D weight 2, and C to E weight 6 are thin because no shortest path uses them. Vertices are shaded to mark them finalised in the extraction order S, B, A, D, C, E, whose distances 0, 2, 3, 6, 8, 9 increase monotonically.</desc>
             <defs>
@@ -679,7 +679,7 @@
               <circle cx="560" cy="-4" r="8" class="dg-node-done"/>
               <text x="574" y="0" class="dg-label sm">finalised</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 &mdash; the graph and the tree it induces.</b> The blue starting numbers are the final distances <code class="inl">&#948;(S,&middot;)</code>. Note the lesson hiding in <code class="inl">A</code>: the direct edge <code class="inl">S&#8594;A=4</code> is <em>not</em> on the shortest path &mdash; routing <code class="inl">S&#8594;B&#8594;A</code> costs <code class="inl">2+1=3</code>, less than <code class="inl">4</code>. Greedy does not mean &ldquo;take the first edge&rdquo;; it means &ldquo;finalise the globally closest frontier vertex.&rdquo;</figcaption>
         </figure>
 
@@ -774,7 +774,7 @@
         <p>To distil the failure to its essence, here is the minimal counterexample &mdash; four vertices, one negative edge &mdash; and a destination whose error is undeniable.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 300" style="--mw:602px" role="img" aria-labelledby="f3t f3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 300" style="--mw:710px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">Minimal graph where Dijkstra returns a wrong distance because of a negative edge</title>
             <desc id="f3d">Four vertices s, a, b, c. Edges s to a weight 1, s to b weight 2, b to a weight minus 2 drawn in red, and a to c weight 1. The true shortest distance to a is 0 by the route s to b to a, costing 2 minus 2; so the true distance to c is 1. Dijkstra extracts s at 0, then extracts and finalises a at 1, and relaxes a to c giving c equals 2 using the wrong value 1 for a. Only afterward does it discover via b that a equals 0, too late to repair c. Dijkstra therefore reports c equals 2 when the truth is 1.</desc>
             <defs>
@@ -803,14 +803,14 @@
             <circle cx="620" cy="90"  r="24" class="dg-node"/><text x="620" y="90"  class="dg-nt">c</text>
 
             <!-- truth vs Dijkstra annotations -->
-            <g transform="translate(440,150)">
-              <rect x="0" y="0" width="300" height="118" rx="10" fill="var(--surface-2)" stroke="var(--bau-ink)" stroke-width="1.5"/>
-              <text x="16" y="26" class="dg-cap">a:&nbsp; truth &#948;=0&nbsp;&nbsp;|&nbsp;&nbsp;Dijkstra finalises 1</text>
+            <g transform="translate(432,150)">
+              <rect x="0" y="0" width="324" height="118" rx="10" fill="var(--surface-2)" stroke="var(--bau-ink)" stroke-width="1.5"/>
+              <text x="16" y="26" class="dg-cap">a:&nbsp; truth &#948;=0&nbsp;|&nbsp;Dijkstra finalises 1</text>
               <text x="16" y="52" class="dg-label sm">via s&#8594;b&#8594;a = 2 + (&minus;2) = 0</text>
-              <text x="16" y="80" class="dg-cap" fill="var(--bau-red)">c:&nbsp; truth &#948;=1&nbsp;&nbsp;|&nbsp;&nbsp;Dijkstra reports 2</text>
+              <text x="16" y="80" class="dg-cap" fill="var(--bau-red)">c:&nbsp; truth &#948;=1&nbsp;|&nbsp;Dijkstra reports 2</text>
               <text x="16" y="106" class="dg-label sm">c was fixed from a's stale value 1</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 &mdash; one negative edge, one wrong answer.</b> Dijkstra finalises <code class="inl">a</code> at <code class="inl">1</code> and immediately commits <code class="inl">c = a + 1 = 2</code>. The shortcut <code class="inl">b&#8594;a = &minus;2</code> that would make <code class="inl">a = 0</code> (and thus <code class="inl">c = 1</code>) is found only after <code class="inl">a</code> is sealed. The damage has already propagated downstream to <code class="inl">c</code>. Standard Dijkstra requires nonnegative weights; Bellman&ndash;Ford handles general edge weights and detects reachable negative cycles.</figcaption>
         </figure>
       </div>
@@ -824,7 +824,7 @@
         <p>A negative <em>edge</em> is survivable; a negative <em>cycle</em> is not. If some cycle reachable from <code class="inl">s</code> has total weight below zero, then for any vertex <code class="inl">v</code> on or after it, there is no shortest path at all: each extra lap around the cycle lowers the cost without bound, so <code class="inl">&#948;(s,v) = &minus;&#8734;</code>. The question &ldquo;what is the cheapest <em>simple</em> path?&rdquo; remains meaningful, but it is NP-hard &mdash; it contains the longest-path and Hamiltonian-path problems. So we do not ask it. We instead <em>detect</em> the negative cycle and report that distances are undefined.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 300" style="--mw:535px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 300" style="--mw:710px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">A reachable negative cycle drives distances to negative infinity</title>
             <desc id="f4d">Source s with edge s to a of weight 4. Vertices a and b form a cycle: a to b of weight 1, and a red back-edge b to a of weight minus 3. The cycle a to b to a has total weight 1 plus minus 3 equals minus 2, which is negative. Each full Bellman-Ford pass lowers d of a by 2: the sequence of estimates for a is infinity, then 2, then 0, then minus 2, then minus 4, tending to minus infinity. Because an edge can still be relaxed after V minus 1 passes, the V-th pass detects the negative cycle.</desc>
             <defs>
@@ -859,7 +859,7 @@
             <text x="312" y="270" class="dg-wt neg">&#8594; &minus;2</text>
             <text x="376" y="270" class="dg-wt neg">&#8594; &minus;4</text>
             <text x="440" y="270" class="dg-wt neg">&#8594; &middot;&middot;&middot; &#8594; &minus;&#8734;</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 &mdash; the bottom falls out.</b> With a reachable negative cycle the estimates never reach a fixed point. That is exactly the signal we exploit: a method that <em>should</em> have converged in <code class="inl">V&minus;1</code> passes but still improves on the next pass has proven a negative cycle exists.</figcaption>
         </figure>
 
@@ -888,7 +888,7 @@
         <p>No priority queue, no repeated passes &mdash; one sweep. The cost is <code class="inl">&#x398;(V+E)</code>, dominated by the topological sort and the single relaxation of every edge. Each edge is relaxed exactly once, in an order that is provably correct by the path-relaxation lemma: a shortest path's edges appear left-to-right in the topological order, so they are relaxed in order automatically.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 300" style="--mw:555px" role="img" aria-labelledby="f5t f5d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 336" style="--mw:710px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">Shortest paths in a DAG by relaxing vertices in topological order</title>
             <desc id="f5d">Five vertices arranged left to right in topological order: s, a, b, c, t. Edges all point forward: s to a weight 2, s to b weight 6, a to b weight minus 4 shown in red, a to c weight 1, b to c weight 3, and c to t weight 2. Processing in the order s, a, b, c, t, each vertex is finalised on first visit. The resulting distances are s equals 0, a equals 2, b equals minus 2 (because s to a to b costs 2 minus 4, beating the direct 6), c equals 1, and t equals 3. The negative edge causes no trouble because the graph is acyclic.</desc>
             <defs>
@@ -898,7 +898,7 @@
 
             <!-- topo baseline -->
             <line x1="40" y1="250" x2="720" y2="250" class="dg-dash"/>
-            <text x="40" y="278" class="dg-label sm">process order &#8594;&nbsp;&nbsp;s,&nbsp; a,&nbsp; b,&nbsp; c,&nbsp; t&nbsp;&nbsp;(each final on first visit)</text>
+            <text x="40" y="326" class="dg-label sm">process order &#8594;&nbsp;&nbsp;s,&nbsp; a,&nbsp; b,&nbsp; c,&nbsp; t&nbsp;&nbsp;(each final on first visit)</text>
 
             <!-- edges -->
             <!-- s->a 2 -->
@@ -933,7 +933,7 @@
             <text x="250" y="298" class="dg-badge neg" text-anchor="middle" fill="var(--bau-red)">&minus;2</text>
             <text x="470" y="208" class="dg-badge" text-anchor="middle">1</text>
             <text x="660" y="208" class="dg-badge" text-anchor="middle">3</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 5 &mdash; one sweep, negatives and all.</b> The edge <code class="inl">a&#8594;b=&minus;4</code> drags <code class="inl">b</code> down to <code class="inl">&minus;2</code> &mdash; cheaper than the direct <code class="inl">s&#8594;b=6</code> &mdash; with no priority queue and no danger, because acyclicity forbids the negative cycle that would make this ill-posed. Reverse the comparison to <code class="inl">&gt;</code> and you compute <em>longest</em> paths just as cheaply: the critical-path method behind every project schedule.</figcaption>
         </figure>
         <p>This DAG case is not a curiosity. Negate the weights (or relax for the maximum) and the same sweep yields the <em>longest</em> path &mdash; the <span class="term">critical path</span> of a task network, the bound on how fast a project with dependencies can finish. Practice problem&nbsp;4 is exactly this.</p>
@@ -963,7 +963,7 @@
             </tfoot>
           </table>
         </div>
-        <p>One sharp way to remember the gap: Dijkstra spends <code class="inl">log V</code> per edge to <em>buy the right order</em>; Bellman&ndash;Ford spends a factor of <code class="inl">V</code> because it <em>refuses to choose one</em>; the DAG pays nothing because acyclicity <em>donates</em> the order. The next lecture's Johnson's algorithm exploits exactly this ranking &mdash; it runs Bellman&ndash;Ford <em>once</em> to reweight every edge non-negative, then runs the cheap Dijkstra from every source.</p>
+        <p>One sharp way to remember the gap: Dijkstra spends <code class="inl">log V</code> per edge to <em>buy the right order</em>; Bellman&ndash;Ford spends a factor of <code class="inl">V</code> because it <em>refuses to choose one</em>; the DAG pays nothing because acyclicity <em>donates</em> the order. The next study's Johnson's algorithm exploits exactly this ranking &mdash; it runs Bellman&ndash;Ford <em>once</em> to reweight every edge non-negative, then runs the cheap Dijkstra from every source.</p>
       </div>
     </section>
 
@@ -975,7 +975,7 @@
         <p>The atom is simple; the ways to misapply it are many. Here is what I see go wrong, in rough order of how often it bites.</p>
 
         <h3>1 &middot; Dijkstra on a graph with a negative edge</h3>
-        <p>The cardinal sin (&sect;08). It may even return correct answers on <em>some</em> negative-weight inputs, which is worse than always failing &mdash; it lulls you. The assumption is <code class="inl">w &#8805; 0</code>, full stop. If a single edge can be negative, use Bellman&ndash;Ford, or reweight to non-negative first (Johnson, next lecture).</p>
+        <p>The cardinal sin (&sect;08). It may even return correct answers on <em>some</em> negative-weight inputs, which is worse than always failing &mdash; it lulls you. The assumption is <code class="inl">w &#8805; 0</code>, full stop. If a single edge can be negative, use Bellman&ndash;Ford, or reweight to non-negative first (Johnson, next study).</p>
 
         <h3>2 &middot; Confusing a negative edge with a negative cycle</h3>
         <p>Negative <em>edges</em> are fine for Bellman&ndash;Ford and DAGs; a reachable negative <em>cycle</em> makes the problem ill-posed (<code class="inl">&#948;=&minus;&#8734;</code>). Do not try to &ldquo;compute&rdquo; through one &mdash; <em>detect</em> it with the extra pass and report it. And remember: an <strong>undirected</strong> edge of negative weight <em>is</em> a negative 2-cycle (walk back and forth), so undirected graphs with any negative edge are immediately ill-posed for this machinery.</p>
@@ -1053,12 +1053,12 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 14</span>
+            <span class="lab">next &middot; deep study 14</span>
             <div class="ttl">All-Pairs Shortest Paths: Floyd&ndash;Warshall, Johnson's Reweighting, and the O(n&#179;) Baseline</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">We found every distance from <em>one</em> source. Lecture 14 asks for the distance between <em>every</em> pair. Floyd&ndash;Warshall answers with a three-line dynamic program over &ldquo;which intermediate vertices are permitted,&rdquo; a clean <code class="inl">O(n&#179;)</code>. Johnson's algorithm does better on sparse graphs by the trick foreshadowed in the ledger: one Bellman&ndash;Ford pass computes <em>potentials</em> that reweight every edge non-negative without changing which paths are shortest, after which a cheap Dijkstra runs from each vertex. The relaxation atom you learned here is the brick; next we build the whole wall.</p>
+        <p style="margin-top:1em">We found every distance from <em>one</em> source. Deep study 14 asks for the distance between <em>every</em> pair. Floyd&ndash;Warshall answers with a three-line dynamic program over &ldquo;which intermediate vertices are permitted,&rdquo; a clean <code class="inl">O(n&#179;)</code>. Johnson's algorithm does better on sparse graphs by the trick foreshadowed in the ledger: one Bellman&ndash;Ford pass computes <em>potentials</em> that reweight every edge non-negative without changing which paths are shortest, after which a cheap Dijkstra runs from each vertex. The relaxation atom you learned here is the brick; next we build the whole wall.</p>
       </div>
     </section>
 
@@ -1102,6 +1102,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-12-minimum-spanning-trees-and-union-find.html" rel="prev"><span>&larr; Lecture 12</span><strong>Minimum spanning trees and union-find</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-14-all-pairs-shortest-paths-floyd-warshall-johnson.html" rel="next"><span>Lecture 14 &rarr;</span><strong>All-pairs shortest paths</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/28-dijkstra-and-a-star.html">Lesson 28 &middot; Dijkstra &amp; A*</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-12-minimum-spanning-trees-and-union-find.html" rel="prev"><span>&larr; Deep study 12</span><strong>Minimum spanning trees and union-find</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-14-all-pairs-shortest-paths-floyd-warshall-johnson.html" rel="next"><span>Deep study 14 &rarr;</span><strong>All-pairs shortest paths</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/28-dijkstra-and-a-star.html">Lesson 28 &middot; Dijkstra &amp; A*</a></p></nav>
 </body>
 </html>

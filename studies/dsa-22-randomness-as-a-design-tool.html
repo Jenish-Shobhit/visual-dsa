@@ -362,7 +362,7 @@
     <path d="M150 100 q18 22 36 0" fill="none" stroke="var(--bau-red)" stroke-width="2.5" stroke-dasharray="3 4"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 22</span> randomness as a first-class design tool</div>
+    <div class="eyebrow"><span class="n">Deep study 22</span> randomness as a first-class design tool</div>
     <h1>Flip Your Own Coins</h1>
 <p class="study-related"><span class="study-related__label">Related lesson</span><a href="../lessons/38-randomized-algorithms.html">Lesson 38 · Randomized algorithms</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -370,7 +370,7 @@
   <div class="study-brief-grid"><p><span>Build on</span>Probability and expected value</p><p><span>Core invariant</span>Random choices can simplify structure, but the guarantee must say whether correctness or runtime is random.</p></div>
   <details class="study-check"><summary>Try this first · Which type may return a wrong answer with bounded probability: Las Vegas or Monte Carlo?</summary><p>Monte Carlo. Las Vegas algorithms always return a correct answer but have random runtime.</p></details>
 </div>
-    <p class="lede col">A balanced search tree is a marvel of bookkeeping &mdash; colours, rotations, invariants restored after every insert, hundreds of lines that exist only to defeat an adversary who hands you keys in the worst possible order. This lecture asks a quieter, stranger question: what if you simply <em>refused</em> to let the adversary choose the order? Not by sorting, not by checking &mdash; by injecting your own randomness, so deep into the structure that the worst case has nowhere left to hide.</p>
+    <p class="lede col">A balanced search tree is a marvel of bookkeeping &mdash; colours, rotations, invariants restored after every insert, hundreds of lines that exist only to defeat an adversary who hands you keys in the worst possible order. This study asks a quieter, stranger question: what if you simply <em>refused</em> to let the adversary choose the order? Not by sorting, not by checking &mdash; by injecting your own randomness, so deep into the structure that the worst case has nowhere left to hide.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
@@ -386,7 +386,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>The adversary &amp; the coin</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -435,13 +435,13 @@
           </math></div>
         </div>
 
-        <p>The adversary still chooses <code class="inl">I</code> &mdash; the worst input it likes &mdash; but the expectation is taken over <code class="inl">r</code>, <em>our</em> randomness, which is sealed off from its choice. There is no input that is &ldquo;bad for the coins,&rdquo; because the coins are flipped after the input is fixed and independently of it. The worst case has not been beaten by cleverness; it has been <strong>made unreachable</strong> by quantifier order. This is the formal heart of the whole lecture, and it is worth a slogan.</p>
+        <p>The adversary still chooses <code class="inl">I</code> &mdash; the worst input it likes &mdash; but the expectation is taken over <code class="inl">r</code>, <em>our</em> randomness, which is sealed off from its choice. There is no input that is &ldquo;bad for the coins,&rdquo; because the coins are flipped after the input is fixed and independently of it. The worst case has not been beaten by cleverness; it has been <strong>made unreachable</strong> by quantifier order. This is the formal heart of the whole study, and it is worth a slogan.</p>
 
         <div class="pull col">&ldquo;A deterministic structure fears the worst input. A randomized one has <span>no</span> worst input &mdash; only, occasionally, an unlucky run.&rdquo;</div>
 
         <p>Notice what this costs and what it buys. It buys radical simplicity: a treap has no balance cases because it delegates balance to chance; a skip list has no rotations because the same coin that builds it keeps it shallow. It costs certainty: the guarantee is now <em>in expectation</em>, or <em>with high probability</em>, and we owe a proof &mdash; a <span class="term">concentration bound</span> &mdash; that the unlucky runs are rare enough to ignore. The four structures ahead are four answers to one design question: <em>where do I inject the randomness, and which inequality pays the debt?</em></p>
 
-        <div class="stats" aria-label="Four headline numbers from this lecture">
+        <div class="stats" aria-label="Four headline numbers from this study">
           <div class="stat lead"><span class="big">O(log&nbsp;n)</span><span class="lab">expected skip-list / treap search &mdash; with no balancing logic at all</span></div>
           <div class="stat"><span class="big">&asymp;10</span><span class="lab">bits per item for a 1% Bloom false-positive &mdash; whatever the keys are</span></div>
           <div class="stat"><span class="big">0</span><span class="lab">false negatives: the Bloom filter&rsquo;s error is strictly one-sided</span></div>
@@ -465,14 +465,14 @@
         </ul>
 
         <h3>Prerequisites</h3>
-        <p>Two engines from earlier in the course are re-purposed here, and one toolkit is the currency the whole lecture spends. If you can take an expectation by linearity, bound a tail with a union bound, and recall how randomized quicksort&rsquo;s recursion is analysed, you are ready.</p>
+        <p>Two engines from earlier in the course are re-purposed here, and one toolkit is the currency the whole study spends. If you can take an expectation by linearity, bound a tail with a union bound, and recall how randomized quicksort&rsquo;s recursion is analysed, you are ready.</p>
         <div class="chips">
           <a class="chip" href="dsa-05-probability-for-algorithms.html">probability: expectation &amp; concentration</a>
           <a class="chip" href="dsa-08-hashing-and-expected-constant-access.html">hashing</a>
           <a class="chip" href="dsa-07-balanced-search-trees.html">balanced search trees</a>
           <a class="chip" href="dsa-09-partial-order-is-enough-heaps-and-priority-queues.html">heaps</a>
         </div>
-        <p style="margin-top:1em">In particular, hold <a class="inline" href="dsa-05-probability-for-algorithms.html">Lecture&nbsp;5</a> close: the harmonic-sum analysis of randomized quicksort reappears, almost verbatim, as the depth analysis of a treap. We are about to collect on an old proof.</p>
+        <p style="margin-top:1em">In particular, hold <a class="inline" href="dsa-05-probability-for-algorithms.html">Deep&nbsp;study&nbsp;5</a> close: the harmonic-sum analysis of randomized quicksort reappears, almost verbatim, as the depth analysis of a treap. We are about to collect on an old proof.</p>
       </div>
     </section>
 
@@ -488,7 +488,7 @@
         </ul>
 
         <figure>
-          <svg viewBox="0 0 760 286" style="--mw:654px" role="img" aria-labelledby="lvmc-t lvmc-d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 286" style="--mw:774px" role="img" aria-labelledby="lvmc-t lvmc-d">
             <title id="lvmc-t">Las Vegas versus Monte Carlo</title>
             <desc id="lvmc-d">Two cards. The Las Vegas card fixes correctness as always true and shows three runs of different, variable lengths for the running time. The Monte Carlo card fixes the running time as three equal-length runs and shows correctness as a probability of at least p, with one run shaded as an error.</desc>
             <!-- LAS VEGAS card -->
@@ -530,7 +530,7 @@
             <circle cx="535" cy="214" r="13" fill="none" stroke="var(--bau-red)" stroke-width="2.6"/><path d="M529 208 l12 12 M541 208 l-12 12" stroke="var(--bau-red)" stroke-width="2.6" stroke-linecap="round"/>
             <text x="560" y="218" class="dg-label sm">correct w.p. &#x2265; p</text>
             <text x="420" y="250" class="dg-label sm">amplify: t runs &#x2192; error &#x2264; (1&#x2212;p)<tspan font-size="9" dy="-4">t</tspan></text>
-          </svg>
+          </svg></div>
           <figcaption><b>The two contracts.</b> Las Vegas fixes the answer and lets time vary; Monte Carlo fixes time and lets the answer be a probability. Both are honest &mdash; provided you never confuse which one you are holding.</figcaption>
         </figure>
 
@@ -562,7 +562,7 @@
             <mspace width="0.6em"/><mtext>&#x21D2;&#xA0;failure&#xA0;</mtext><mo>&#x2264;</mo><mi>&#x3B4;</mi>
           </math></div>
         </div>
-        <p>Using <code class="inl">1-p&le;e<sup>&minus;p</sup></code>: the failure probability decays <em>exponentially</em> in the number of trials, so a wildly unreliable single run &mdash; even one that succeeds only <code class="inl">2/n&sup2;</code> of the time, as Karger&rsquo;s will &mdash; becomes a near-certainty for a polynomial number of repetitions. Keep this formula in view; we cash it twice before the lecture is out.</p>
+        <p>Using <code class="inl">1-p&le;e<sup>&minus;p</sup></code>: the failure probability decays <em>exponentially</em> in the number of trials, so a wildly unreliable single run &mdash; even one that succeeds only <code class="inl">2/n&sup2;</code> of the time, as Karger&rsquo;s will &mdash; becomes a near-certainty for a polynomial number of repetitions. Keep this formula in view; we cash it twice before the study is out.</p>
       </div>
     </section>
 
@@ -581,7 +581,7 @@
         </div>
 
         <figure>
-          <svg viewBox="0 0 760 312" style="--mw:654px" role="img" aria-labelledby="sl-t sl-d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 312" style="--mw:774px" role="img" aria-labelledby="sl-t sl-d">
             <title id="sl-t">A skip list and a highlighted search for key 71</title>
             <desc id="sl-d">Four levels of linked lists over the sorted keys 12, 17, 25, 31, 38, 44, 50, 71, 89. Taller towers act as express lanes. A red path shows the search for 71: starting at the head on level three, dropping and stepping right through 31 and 50 before landing on 71 at the bottom level.</desc>
             <!-- level labels -->
@@ -693,7 +693,7 @@
             <text x="590" y="244" text-anchor="middle" class="dg-label sm" fill="var(--bau-red)">found 71</text>
             <!-- step legend -->
             <text x="60" y="288" class="dg-label sm">path: drop, step right to 31, drop, step right to 50, drop, step right &#8594; <tspan fill="var(--bau-red)" font-weight="700">71</tspan> &mdash; 6 moves, not 8 hops</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Searching a skip list for 71.</b> Tall towers are express lanes assigned by coin flips, not by design. The search rides high, dropping a level each time the next key would overshoot. Taller nodes are visited high; the target is confirmed only on level&nbsp;0.</figcaption>
         </figure>
 
@@ -773,7 +773,7 @@
         </div>
 
         <figure>
-          <svg viewBox="0 0 720 320" style="--mw:619px" role="img" aria-labelledby="tr-t tr-d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 320" style="--mw:734px" role="img" aria-labelledby="tr-t tr-d">
             <title id="tr-t">A treap on seven keys with random priorities</title>
             <desc id="tr-d">A binary tree whose nodes show a key and, beneath it, a random priority. Reading the nodes left to right gives the keys in sorted order, satisfying the search-tree property; every parent's priority exceeds its children's, satisfying the max-heap property. Key 44 with priority 0.92 is the root.</desc>
             <!-- edges -->
@@ -820,12 +820,12 @@
             <text x="668" y="56"  class="dg-prio">.92</text>
             <text x="668" y="250" class="dg-prio">low</text>
             <text x="690" y="150" class="dg-label sm" transform="rotate(90 690 150)">priority &#8593; heap</text>
-          </svg>
+          </svg></div>
           <figcaption><b>One set, one treap.</b> Keys obey the search-tree order left-to-right; priorities obey the heap order top-to-bottom. Because <code class="inl">.92</code> is the largest priority, <code class="inl">44</code> is forced to be the root &mdash; and from there every position is determined. No rotation was ever <em>chosen</em>; the coins chose the whole shape.</figcaption>
         </figure>
 
         <h3>The gem: a treap is randomized quicksort, frozen</h3>
-        <p>Now the observation that makes the analysis free. Build the treap by the recursive rule above: highest-priority item becomes the root, splitting the rest into smaller/larger, recurse. But the highest-priority item among a set of iid-random priorities is a <em>uniformly random element</em> of that set. So the root is a uniformly random key; it partitions the rest; each side recurses with a fresh uniformly random pivot. <strong>That is exactly randomized quicksort &mdash; and the treap&rsquo;s shape is precisely quicksort&rsquo;s recursion tree.</strong> Equivalently: inserting the keys in <em>decreasing priority order</em> into an ordinary BST is the same as inserting a uniformly random permutation, whose expected depth we already computed in Lecture&nbsp;5.</p>
+        <p>Now the observation that makes the analysis free. Build the treap by the recursive rule above: highest-priority item becomes the root, splitting the rest into smaller/larger, recurse. But the highest-priority item among a set of iid-random priorities is a <em>uniformly random element</em> of that set. So the root is a uniformly random key; it partitions the rest; each side recurses with a fresh uniformly random pivot. <strong>That is exactly randomized quicksort &mdash; and the treap&rsquo;s shape is precisely quicksort&rsquo;s recursion tree.</strong> Equivalently: inserting the keys in <em>decreasing priority order</em> into an ordinary BST is the same as inserting a uniformly random permutation, whose expected depth we already computed in Deep&nbsp;study&nbsp;5.</p>
         <p>So I do not need a new proof; I collect an old one. Let the keys have ranks <code class="inl">1,&hellip;,n</code>. Define the indicator that key&nbsp;<code class="inl">i</code> is an ancestor of key&nbsp;<code class="inl">j</code>. Among the keys whose ranks lie between <code class="inl">i</code> and <code class="inl">j</code> (inclusive &mdash; that is <code class="inl">|i-j|+1</code> of them), <code class="inl">i</code> is an ancestor of <code class="inl">j</code> exactly when <code class="inl">i</code> has the highest priority of the bunch &mdash; each equally likely:</p>
 
         <div class="eq">
@@ -882,7 +882,7 @@
         <div class="note"><span class="tag">the one-sided guarantee</span><strong>No false negatives, ever.</strong> If <code class="inl">x</code> was inserted, its <code class="inl">k</code> bits were set to 1 and bits never reset &mdash; so the query finds them all 1 and answers &ldquo;present.&rdquo; <strong>False positives are possible:</strong> a never-inserted <code class="inl">y</code> can have all <code class="inl">k</code> of its bits switched on by <em>other</em> elements&rsquo; insertions, and the filter is fooled. &ldquo;Absent&rdquo; is the truth; &ldquo;present&rdquo; means &ldquo;probably.&rdquo;</div>
 
         <figure>
-          <svg viewBox="0 0 760 300" style="--mw:654px" role="img" aria-labelledby="bl-t bl-d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 300" style="--mw:774px" role="img" aria-labelledby="bl-t bl-d">
             <title id="bl-t">A Bloom filter showing a false positive and a certain absence</title>
             <desc id="bl-d">A twelve-bit array. Inserting cat sets bits 1, 4 and 9; inserting dog sets bits 4, 7 and 11. Querying fox hashes to bits 1, 7 and 11, all of which are set, so the filter wrongly reports present, a false positive. Querying owl hashes to bit 8 among others, which is zero, so the filter correctly reports absent.</desc>
             <!-- bit cells: m=12, x start 60 step 52 -->
@@ -948,7 +948,7 @@
             <text x="470" y="246" class="dg-cap" fill="var(--bau-ink)" text-anchor="start">query &#8220;owl&#8221; hits bit 8 = 0</text>
             <text x="470" y="266" class="dg-label sm" text-anchor="start">&#8594; reports ABSENT &mdash; and this is</text>
             <text x="470" y="283" class="dg-label sm" text-anchor="start">always the truth</text>
-          </svg>
+          </svg></div>
           <figcaption><b>One array, two verdicts.</b> &ldquo;fox&rdquo; was never inserted, yet its three bits were all switched on by cat and dog &mdash; a false positive. &ldquo;owl&rdquo; lands on bit&nbsp;8, still zero, so its absence is certain. A single 0 is a proof of absence; all-ones is only evidence of presence.</figcaption>
         </figure>
 
@@ -986,7 +986,7 @@
       <div class="eyebrow"><span class="n">07</span> a global minimum cut from pure contraction</div>
       <h2>Karger&rsquo;s algorithm: the right answer, two-in-n-squared of the time</h2>
       <div class="col">
-        <p>The last structure was a clever bit array; this last <em>algorithm</em> is the boldest use of randomness in the lecture, because its single run is almost always <em>wrong</em> &mdash; and that is fine. The problem: given a connected undirected multigraph, find a <span class="term">global minimum cut</span>, a partition of the vertices into two non-empty sides crossed by as few edges as possible. (This is the global cousin of the <code class="inl">s</code>&ndash;<code class="inl">t</code> min cut from <a class="inline" href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html">Lecture&nbsp;17</a> &mdash; here no terminals are fixed.) Karger&rsquo;s method is almost insultingly simple:</p>
+        <p>The last structure was a clever bit array; this last <em>algorithm</em> is the boldest use of randomness in the study, because its single run is almost always <em>wrong</em> &mdash; and that is fine. The problem: given a connected undirected multigraph, find a <span class="term">global minimum cut</span>, a partition of the vertices into two non-empty sides crossed by as few edges as possible. (This is the global cousin of the <code class="inl">s</code>&ndash;<code class="inl">t</code> min cut from <a class="inline" href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html">Deep&nbsp;study&nbsp;17</a> &mdash; here no terminals are fixed.) Karger&rsquo;s method is almost insultingly simple:</p>
         <div class="band flush" style="margin:1.4em 0">
           <div class="accentbar" aria-hidden="true"></div>
           <p style="margin:0"><strong>Contraction.</strong> While more than two vertices remain: pick a <em>uniformly random edge</em> and <span class="term">contract</span> it &mdash; merge its two endpoints into one supernode, keep every parallel edge, discard the self-loops that result. When two supernodes remain, the original vertices inside each form the two sides; output the edges still running between them.</p>
@@ -994,7 +994,7 @@
         <p>Contracting an edge says &ldquo;these two vertices will land on the same side&rdquo; &mdash; an irreversible bet. The cut you output is always a <em>real</em> cut, so the algorithm never under-reports; it can only fail by returning a cut that is too large. The wonder is how often the bet comes good.</p>
 
         <figure>
-          <svg viewBox="0 0 760 326" style="--mw:654px" role="img" aria-labelledby="kg-t kg-d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 326" style="--mw:774px" role="img" aria-labelledby="kg-t kg-d">
             <title id="kg-t">One contraction step of Karger's algorithm</title>
             <desc id="kg-d">On the left, a five-vertex graph with a minimum cut of size two separating the set a, b, c from the set d, e. On the right, the random edge a-b has been contracted into a supernode ab; the two a-c and b-c edges become parallel edges to c, and the minimum cut of size two survives because no crossing edge was contracted.</desc>
             <!-- divider -->
@@ -1049,7 +1049,7 @@
             <circle cx="672" cy="96"  r="20" class="dg-node"/><text x="672" y="96"  class="dg-nt">d</text>
             <circle cx="672" cy="200" r="20" class="dg-node"/><text x="672" y="200" class="dg-nt">e</text>
             <text x="500" y="116" class="dg-label sm">parallel edges kept</text>
-          </svg>
+          </svg></div>
           <figcaption><b>One bet, survived.</b> The minimum cut (red, size&nbsp;2) separates <code class="inl">{a,b,c}</code> from <code class="inl">{d,e}</code>. We contracted <code class="inl">a&ndash;b</code> &mdash; not a cut edge &mdash; so the cut lives on. Had we instead drawn one of the two red edges, the cut would have been destroyed. The whole analysis is just: <em>how likely is that?</em></figcaption>
         </figure>
 
@@ -1084,7 +1084,7 @@
       <div class="eyebrow"><span class="n">08</span> the inequalities that pay the debt</div>
       <h2>The concentration toolkit</h2>
       <div class="col">
-        <p>Every &ldquo;probably&rdquo; in this lecture is an IOU, and these four inequalities are the currency. The discipline is to reach for the <em>cheapest</em> one that closes the gap &mdash; more assumptions buy a tighter tail, so spend only what the claim needs.</p>
+        <p>Every &ldquo;probably&rdquo; in this study is an IOU, and these four inequalities are the currency. The discipline is to reach for the <em>cheapest</em> one that closes the gap &mdash; more assumptions buy a tighter tail, so spend only what the claim needs.</p>
         <div class="tbl-wrap">
           <table>
             <caption>The four bounds, and where each one paid out today</caption>
@@ -1190,12 +1190,12 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 23</span>
+            <span class="lab">next &middot; deep study 23</span>
             <div class="ttl">The Frontier: Fine-Grained Complexity, Sublinear Algorithms, Predictions &amp; P vs NP</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">The last lecture walks to the edge of the map. Randomness returns there twice: sketches such as the KMV distinct-count estimator are Monte&nbsp;Carlo algorithms analysed with exactly the concentration bounds you just spent, and the open questions (P vs NP, the fine-grained conjectures) are about what coins can and cannot buy. The coin, it turns out, is never far from the algorithm.</p>
+        <p style="margin-top:1em">The last study walks to the edge of the map. Randomness returns there twice: sketches such as the KMV distinct-count estimator are Monte&nbsp;Carlo algorithms analysed with exactly the concentration bounds you just spent, and the open questions (P vs NP, the fine-grained conjectures) are about what coins can and cannot buy. The coin, it turns out, is never far from the algorithm.</p>
       </div>
     </section>
 
@@ -1239,6 +1239,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-21-living-with-hardness-approximation-and-parameterized-algorithms.html" rel="prev"><span>&larr; Lecture 21</span><strong>Living with hardness</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-23-the-frontier-fine-grained-sublinear-predictions-p-vs-np.html" rel="next"><span>Lecture 23 &rarr;</span><strong>The frontier</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/38-randomized-algorithms.html">Lesson 38 &middot; Randomized algorithms</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-21-living-with-hardness-approximation-and-parameterized-algorithms.html" rel="prev"><span>&larr; Deep study 21</span><strong>Living with hardness</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-23-the-frontier-fine-grained-sublinear-predictions-p-vs-np.html" rel="next"><span>Deep study 23 &rarr;</span><strong>The frontier</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/38-randomized-algorithms.html">Lesson 38 &middot; Randomized algorithms</a></p></nav>
 </body>
 </html>

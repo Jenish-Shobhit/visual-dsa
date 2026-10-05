@@ -349,7 +349,7 @@
     <path d="M150 96 L196 96 L173 150 Z" class="dg-blue-f"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 06</span> where cleverness meets a wall — and a door</div>
+    <div class="eyebrow"><span class="n">Deep study 06</span> where cleverness meets a wall — and a door</div>
     <h1>Sorting &amp; the &#x3A9;(n&nbsp;log&nbsp;n) Comparison Barrier</h1>
 <p class="study-related"><span class="study-related__label">Related lessons</span><a href="../lessons/14-elementary-sorts.html">Lesson 14 · Bubble, selection &amp; insertion sort</a><a href="../lessons/16-quick-sort.html">Lesson 16 · Quick sort &amp; quickselect</a><a href="../lessons/17-linear-time-sorts.html">Lesson 17 · Counting, radix &amp; the n log n barrier</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -373,7 +373,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>A wall and a door</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -400,13 +400,13 @@
       <h2>Two true statements that seem to fight</h2>
       <div class="col">
         <p>I think first in terms of what a machine is <em>permitted to do</em>, because the permissions fix the price. Sorting hands us the cleanest example in the whole course of this principle. Restrict an algorithm to one kind of question about its data and a hard floor appears beneath every method, present and future. Grant it one extra power — the ability to read a key's value as an address — and the floor vanishes.</p>
-        <p>Hold both of these in your head at once; the lecture exists to make them coexist:</p>
+        <p>Hold both of these in your head at once; the study exists to make them coexist:</p>
         <ul>
           <li><strong>The wall.</strong> Every <span class="term">comparison sort</span> — merge sort, heapsort, quicksort, insertion sort, any algorithm whose only way of learning about the elements is to ask &ldquo;is <code class="inl">a &lt; b</code>?&rdquo; — must perform <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> comparisons in the worst case. This is a theorem about an <em>entire class of algorithms at once</em>, the rarest and most powerful kind of result in our field.</li>
           <li><strong>The door.</strong> If the keys are integers drawn from a modest range, <span class="term">counting sort</span> and <span class="term">radix sort</span> sort them in <code class="inl">&#x398;(n)</code> time. They do not contradict the wall — they stand <em>outside the room the wall encloses</em>, because they never compare two keys; they use each key as an index.</li>
         </ul>
-        <p>Randomized quicksort is our vehicle into the wall: a method so fast in practice that it is the default in most standard libraries, yet whose elegance is an <em>average</em>, paid for with a coin flip. We will prove its expected cost with a technique — the indicator variable — that you will reuse for hashing, for skip lists, for half the randomized structures in this syllabus. So this one lecture carries three of the deepest tools in the course: <strong>expectation as a design instrument, the adversary lower bound, and the change of model that escapes it.</strong></p>
-        <div class="note info"><span class="tag">the formal lens</span>A lower bound is a statement about a <em>model of computation</em>, never about a problem in the abstract. Before you accept &ldquo;this is as fast as it gets,&rdquo; always ask: <em>as fast as it gets in which model?</em> Change the permitted operations and the bound can dissolve. That single habit is most of what this lecture teaches.</div>
+        <p>Randomized quicksort is our vehicle into the wall: a method so fast in practice that it is the default in most standard libraries, yet whose elegance is an <em>average</em>, paid for with a coin flip. We will prove its expected cost with a technique — the indicator variable — that you will reuse for hashing, for skip lists, for half the randomized structures in this syllabus. So this one study carries three of the deepest tools in the course: <strong>expectation as a design instrument, the adversary lower bound, and the change of model that escapes it.</strong></p>
+        <div class="note info"><span class="tag">the formal lens</span>A lower bound is a statement about a <em>model of computation</em>, never about a problem in the abstract. Before you accept &ldquo;this is as fast as it gets,&rdquo; always ask: <em>as fast as it gets in which model?</em> Change the permitted operations and the bound can dissolve. That single habit is most of what this study teaches.</div>
       </div>
     </section>
 
@@ -425,7 +425,7 @@
         </ul>
 
         <h3>Prerequisites</h3>
-        <p>This lecture sits downstream of four ideas. Asymptotic notation is taught on the linked page; the others arrive in Lectures&nbsp;03 and&nbsp;05 of this same syllabus and are summarised where first used here.</p>
+        <p>This study sits downstream of four ideas. Asymptotic notation is taught on the linked page; the others arrive in Deep studies&nbsp;03 and&nbsp;05 of this same syllabus and are summarised where first used here.</p>
         <div class="chips">
           <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotic notation — O / &Theta; / &Omega;</a>
           <span class="chip">divide &amp; conquer</span>
@@ -479,7 +479,7 @@
         <div class="note info"><span class="tag">partition invariant</span>At the top of each iteration of the scan, the array is split into four contiguous zones: <code class="inl">A[lo..i]</code> are all <code class="inl">&le; pivot</code>; <code class="inl">A[i+1..j&minus;1]</code> are all <code class="inl">&gt; pivot</code>; <code class="inl">A[j..hi&minus;1]</code> are not yet examined; and <code class="inl">A[hi]</code> is the pivot. Each step restores it. When <code class="inl">j</code> reaches <code class="inl">hi</code>, the final swap drops the pivot exactly between the &le; and &gt; zones — its sorted home.</div>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 320" style="--mw:744px" role="img" aria-labelledby="f1t f1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 320" style="--mw:878px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">A snapshot of Lomuto partition mid-scan, showing the four invariant zones</title>
             <desc id="f1d">A nine-cell array being partitioned around pivot value six parked at the last index. Indices zero to two hold two, one, four and form the less-than-or-equal zone ending at pointer i. Indices three to five hold seven, nine, eleven and form the greater-than zone. Indices six and seven hold three and ten and are unexamined, with the scan pointer j at index six. The next step compares three to six, finds it smaller, advances i and swaps it across the boundary.</desc>
 
@@ -536,7 +536,7 @@
               <marker id="ahb" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
               <marker id="ahr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 — the partition invariant.</b> One pivot, two zones growing toward each other, one comparison per scanned cell. The whole cost of quicksort is the <em>sum of partition sizes</em> over the recursion — which is why a balanced split is everything, and the pivot decides the split.</figcaption>
         </figure>
 
@@ -690,7 +690,7 @@
         <p>Final array <code class="inl">[1,2,3,5,8,9]</code>. Total comparisons on this run: <code class="inl">5 + 1 + 2 = 8</code>. The recursion tree — the actual object whose total node-work <em>is</em> the running time — looks like this:</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 360" style="--mw:744px" role="img" aria-labelledby="f2t f2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 360" style="--mw:878px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">The quicksort recursion tree for the worked array</title>
             <desc id="f2d">A tree of partition calls. The root partitions the six-element array around pivot three, doing five comparisons, splitting into a left block of two and a right block of three. The left block partitions around pivot one for one comparison, the right block around pivot eight for two comparisons, each producing singleton leaves. Summing comparisons over all internal nodes gives eight, and the sum of block sizes per level is at most n, illustrating why depth times n bounds the work.</desc>
 
@@ -742,7 +742,7 @@
               <marker id="ae2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
               <marker id="ae3" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--outline)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 — the recursion tree.</b> Comparisons live on the internal nodes; their sum is the running time. The pivots here split well, so the tree is shallow. A run of unlucky pivots would make this tree a tall thin chain — the <code class="inl">&#x398;(n&#xB2;)</code> worst case &mdash; which &sect;05 proves is improbable.</figcaption>
         </figure>
 
@@ -807,7 +807,7 @@
         <p>That is the wall. With <code class="inl">log&#8322;e &#8776; 1.443</code>, the floor is about <code class="inl">n&nbsp;log&#8322;n &minus; 1.44&nbsp;n</code> comparisons — for the 52-card deck, <code class="inl">log&#8322;(52!) &#8776; 225.6</code>, i.e. <strong>226</strong>, the number from the hook. And it is not only a worst-case statement: the <em>average</em> leaf depth of any binary tree with <code class="inl">L</code> leaves is at least <code class="inl">log&#8322;L</code>, so even the average-case comparison count of any comparison sort is <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code>. Merge sort and heapsort hit the floor in the worst case; randomized quicksort hits it in expectation. No comparison method does better, ever.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 380" style="--mw:744px" role="img" aria-labelledby="f3t f3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 380" style="--mw:878px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">A comparison-sort decision tree for three elements</title>
             <desc id="f3d">A binary decision tree sorting three elements a, b, c. The root compares a versus b. Each internal node is a comparison with two outcomes, less-or-equal to the left and greater to the right. The leaves are the six possible sorted orderings, equal to three factorial. The tree has height three, and three is the ceiling of log base two of six, showing the height must be at least log of the number of leaves.</desc>
 
@@ -867,7 +867,7 @@
               <marker id="al2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
               <marker id="al3" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--outline)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 — the decision tree.</b> Six leaves for <code class="inl">3! = 6</code> orderings; any binary tree holding six leaves is at least <code class="inl">&#8968;log&#8322;6&#8969; = 3</code> tall. Scale the count to <code class="inl">n!</code> leaves and the height — the worst-case comparisons — is forced up to <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code>. The bound is about the <em>shape every such tree is forced into</em>, not about any one algorithm.</figcaption>
         </figure>
       </div>
@@ -897,7 +897,7 @@
         <p>Two loops over <code class="inl">n</code> elements and one over <code class="inl">k</code> values give <code class="inl">&#x398;(n + k)</code> time and <code class="inl">&#x398;(n + k)</code> space. When <code class="inl">k = O(n)</code> — keys in a range proportional to the count — this is <strong><code class="inl">&#x398;(n)</code>, linear</strong>. And the right-to-left placement makes it <span class="term">stable</span>: equal keys keep their original relative order, which is the property that lets us bolt counting sort into radix sort next.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 360" style="--mw:744px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 360" style="--mw:878px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">Counting sort as a three-stage pipeline</title>
             <desc id="f4d">Counting sort of the array two, five, two, zero, one, two with keys in range zero to five. Stage one builds a histogram counting one zero, one one, three twos, no threes or fours, one five. Stage two takes a prefix sum so each entry holds the number of keys less than or equal to that value: one, two, five, five, five, six. Stage three places each element by decrementing its cumulative count, landing the sorted output zero, one, two, two, two, five.</desc>
 
@@ -960,7 +960,7 @@
               <marker id="ac"  markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
               <marker id="ac2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 — counting sort.</b> No two keys are ever compared. The histogram becomes a prefix sum, the prefix sum becomes an address book, and each element is dropped straight home. Linear when <code class="inl">k = O(n)</code>; the lower bound simply does not apply, because there is not a single comparison in sight.</figcaption>
         </figure>
       </div>
@@ -1002,7 +1002,7 @@
         </div>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 330" style="--mw:744px" role="img" aria-labelledby="f5t f5d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 330" style="--mw:878px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">LSD radix sort over two-digit numbers in two stable passes</title>
             <desc id="f5d">Six two-digit numbers thirty-two, ten, fifty-two, thirteen, eleven, thirty-one are sorted in two passes. Pass one sorts by the ones digit, giving ten, thirty-one, eleven, thirty-two, fifty-two, thirteen. Pass two sorts by the tens digit, and because the sort is stable the ones-digit order is preserved within each tens group, giving the fully sorted ten, eleven, thirteen, thirty-one, thirty-two, fifty-two.</desc>
 
@@ -1056,7 +1056,7 @@
               <marker id="ar"  markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
               <marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 5 — radix sort, LSD.</b> Sort by the least significant digit, then the next, using a <em>stable</em> inner sort so ties never undo earlier work. Watch <code class="inl">31</code> and <code class="inl">32</code>: pass&nbsp;1 puts <code class="inl">31</code> first by its ones digit; pass&nbsp;2, sorting by the shared tens digit <code class="inl">3</code>, leaves that order intact. Two passes, fully sorted, zero comparisons between keys.</figcaption>
         </figure>
 
@@ -1095,7 +1095,7 @@
             <tfoot><tr><td colspan="7">* <code>n log n</code> in <em>expectation</em>, over the algorithm's coins, for every input. The shaded rows are non-comparison sorts: linear when <code>k = O(n)</code> (counting) or keys are polynomially bounded (radix), and exempt from the <code>&#x3A9;(n log n)</code> floor entirely.</td></tr></tfoot>
           </table>
         </div>
-        <p>A practitioner's reading: comparison sorts are the universal default because they assume nothing about the keys; among them, merge sort buys worst-case <code class="inl">n&nbsp;log&nbsp;n</code> and stability at the cost of <code class="inl">&#x398;(n)</code> space, heapsort buys <code class="inl">&#x398;(1)</code> space and a worst-case guarantee but is cache-unfriendly, and randomized quicksort wins in raw speed thanks to a tiny constant and excellent locality (recall Lecture&nbsp;01) — at the price of only an <em>expected</em> bound. The integer-key sorts are the specialists: spectacular when their precondition holds, useless when it does not.</p>
+        <p>A practitioner's reading: comparison sorts are the universal default because they assume nothing about the keys; among them, merge sort buys worst-case <code class="inl">n&nbsp;log&nbsp;n</code> and stability at the cost of <code class="inl">&#x398;(n)</code> space, heapsort buys <code class="inl">&#x398;(1)</code> space and a worst-case guarantee but is cache-unfriendly, and randomized quicksort wins in raw speed thanks to a tiny constant and excellent locality (recall Deep&nbsp;study&nbsp;01) — at the price of only an <em>expected</em> bound. The integer-key sorts are the specialists: spectacular when their precondition holds, useless when it does not.</p>
       </div>
     </section>
 
@@ -1191,7 +1191,7 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 07</span>
+            <span class="lab">next &middot; deep study 07</span>
             <div class="ttl">The Dictionary Problem I: Balanced Search Trees and the Logarithmic Ideal</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
@@ -1240,6 +1240,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-05-probability-for-algorithms.html" rel="prev"><span>&larr; Lecture 05</span><strong>Probability for algorithms</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-07-balanced-search-trees.html" rel="next"><span>Lecture 07 &rarr;</span><strong>Balanced search trees</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/14-elementary-sorts.html">Lesson 14 &middot; Bubble, selection &amp; insertion sort</a><a href="../lessons/16-quick-sort.html">Lesson 16 &middot; Quick sort &amp; quickselect</a><a href="../lessons/17-linear-time-sorts.html">Lesson 17 &middot; Counting, radix &amp; the n log n barrier</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-05-probability-for-algorithms.html" rel="prev"><span>&larr; Deep study 05</span><strong>Probability for algorithms</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-07-balanced-search-trees.html" rel="next"><span>Deep study 07 &rarr;</span><strong>Balanced search trees</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/14-elementary-sorts.html">Lesson 14 &middot; Bubble, selection &amp; insertion sort</a><a href="../lessons/16-quick-sort.html">Lesson 16 &middot; Quick sort &amp; quickselect</a><a href="../lessons/17-linear-time-sorts.html">Lesson 17 &middot; Counting, radix &amp; the n log n barrier</a></p></nav>
 </body>
 </html>

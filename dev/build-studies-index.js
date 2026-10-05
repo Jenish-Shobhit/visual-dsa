@@ -221,14 +221,14 @@ const search = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const groups = GROUPS.map((g, i) => {
   const n = String(i + 1).padStart(2, '0');
   const cards = g.items.map(it => `<li class="lib-card">
-<p class="lib-card__top"><span class="lib-card__no">Lecture ${it.no}</span><span class="lib-card__time">&asymp; ${minutes[it.file]} min read</span></p>
+<p class="lib-card__top"><span class="lib-card__no">Deep study ${it.no}</span><span class="lib-card__time">&asymp; ${minutes[it.file]} min read</span></p>
 <h3 class="lib-card__title"><a href="${it.file}">${esc(it.title)}</a></h3>
 <p class="lib-card__note">${esc(it.note)}</p>
 <div class="lib-card__lessons" aria-label="Related lessons">${lessonChips(it.file)}</div>
 </li>`).join('\n');
   return `<section class="lib-group" aria-labelledby="group-${n}">
 <div class="lib-group__head"><span class="lib-group__num">${n} / 0${GROUPS.length}</span><h2 id="group-${n}">${esc(g.title)}</h2><p>${esc(g.desc)}</p></div>
-<ol class="lib-grid${g.items.length % 3 === 1 ? " lib-grid--pairs" : ""}">
+<ol class="lib-grid${g.items.length % 3 === 1 ? " lib-grid--pairs" : ""}${g.items.length === 5 ? " lib-grid--five" : ""}${g.items.length % 2 === 1 ? " lib-grid--odd" : ""}">
 ${cards}
 </ol>
 </section>`;
@@ -257,12 +257,12 @@ const html = `<!doctype html>
 <header class="lib-hero">
 <p class="kicker">Further reading</p>
 <h1>Deep studies</h1>
-<p class="lead">${total} long-form lectures that start from a concrete problem, derive the structure or algorithm, and end with exercises. Start with a <a href="../index.html">lesson</a> to see it move, then come here for the proofs and the edge cases.</p>
+<p class="lead">${total} long-form studies that start from a concrete problem, derive the structure or algorithm, and end with exercises. Start with a <a href="../index.html">lesson</a> to see it move, then come here for the proofs and the edge cases.</p>
 <ul class="lib-facts" aria-label="At a glance">
-<li><strong>${total}</strong> lectures</li>
+<li><strong>${total}</strong> deep studies</li>
 <li><strong>${GROUPS.length}</strong> themes</li>
 <li><strong>&asymp; ${totalHours} h</strong> of careful reading</li>
-<li><strong>Every lecture</strong> ends with problems</li>
+<li><strong>Every study</strong> ends with problems</li>
 </ul>
 </header>
 <div class="lib-tools" role="search">

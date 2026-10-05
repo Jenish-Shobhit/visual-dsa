@@ -212,7 +212,7 @@ figcaption b{color:var(--bau-ink)}
 .dg-yel-f{fill:var(--bau-yellow)}
 .dg-faint{stroke:var(--outline-variant);fill:none}
 .dg-lab{font-family:var(--mono);font-size:12px;fill:var(--on-surface)}
-.dg-lab-sm{font-family:var(--mono);font-size:11px;fill:var(--on-surface-variant)}
+.dg-lab-sm{font-family:var(--mono);font-size:12px;fill:var(--on-surface-variant)}
 .dg-val{font-family:var(--mono);font-size:15px;font-weight:700;fill:var(--bau-ink)}
 .dg-ttl{font-family:var(--geo);font-size:14px;font-weight:800;fill:var(--bau-ink)}
 .dg-white{fill:#fff}
@@ -324,7 +324,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
 
     <!-- 01 HOOK -->
     <section id="hook" class="hero reveal">
-      <p class="eyebrow"><span class="bar"></span>Dynamic Programming · Lecture 15</p>
+      <p class="eyebrow"><span class="bar"></span>Dynamic Programming · Deep study 15</p>
       <h1>Optimal substructure over a <span class="em">subproblem&nbsp;DAG</span></h1>
 <p class="study-related"><span class="study-related__label">Related lessons</span><a href="../lessons/34-dynamic-programming.html">Lesson 34 · Dynamic programming I</a><a href="../lessons/35-dynamic-programming-2d.html">Lesson 35 · Dynamic programming II</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -348,7 +348,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           <div class="v">≈ 8 × 10<small>8</small></div>
         </div>
       </div>
-      <p class="note">Same arithmetic, same answer. The difference is purely organisational: a recursion <em>tree</em> versus a recursion <em>graph</em>. This lecture is about seeing the graph.</p>
+      <p class="note">Same arithmetic, same answer. The difference is purely organisational: a recursion <em>tree</em> versus a recursion <em>graph</em>. This study is about seeing the graph.</p>
     </section>
 
     <!-- 02 OBJECTIVES + PREREQS -->
@@ -370,22 +370,22 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <div class="cardgrid">
         <div class="cell">
           <div class="lab"><span class="dot"></span>Recursion</div>
-          <p>Self-reference and base cases. Seen in <a href="dsa-03-divide-solve-combine.html">Lecture 03 · Divide, Solve, Combine</a>.</p>
+          <p>Self-reference and base cases. Seen in <a href="dsa-03-divide-solve-combine.html">Deep study 03 · Divide, Solve, Combine</a>.</p>
         </div>
         <div class="cell">
           <div class="lab"><span class="dot"></span>Directed acyclic graphs</div>
-          <p>Topological order — every edge points “forward.” (Graph traversals, Lecture 11.)</p>
+          <p>Topological order — every edge points “forward.” (Graph traversals, Deep study 11.)</p>
         </div>
         <div class="cell">
           <div class="lab"><span class="dot"></span>Shortest-path relaxation</div>
-          <p>The <code>relax(u→v)</code> move: <code>d[v] = min(d[v], d[u]+w)</code>. (Lecture 13.)</p>
+          <p>The <code>relax(u→v)</code> move: <code>d[v] = min(d[v], d[u]+w)</code>. (Deep study 13.)</p>
         </div>
         <div class="cell">
           <div class="lab"><span class="dot"></span>The memoisation idea</div>
           <p>Cache a function of its arguments so it is computed at most once.</p>
         </div>
       </div>
-      <p class="note">You also met <strong>Floyd–Warshall</strong> as an <em>algorithm</em> in Lecture 14. Here we will see <em>why</em> it is correct: it is dynamic programming, and we will rebuild it.</p>
+      <p class="note">You also met <strong>Floyd–Warshall</strong> as an <em>algorithm</em> in Deep study 14. Here we will see <em>why</em> it is correct: it is dynamic programming, and we will rebuild it.</p>
     </section>
 
     <hr class="rule">
@@ -400,7 +400,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p>Start with the smallest honest example. The Fibonacci numbers obey <code>F(n) = F(n−1) + F(n−2)</code>. Write that as recursion and you get a <em>tree</em> of calls. But look closely: <code>F(3)</code> is computed twice, <code>F(2)</code> three times, <code>F(1)</code> five times. The tree is fat with <strong>repetition</strong>. Now do the one move that matters — <strong>quotient the tree by equal state</strong>: glue together every node that asks the same question. The fat tree collapses into a thin graph.</p>
 
       <figure>
-        <svg viewBox="-14 0 934 430" style="--mw:804px" role="img" aria-labelledby="fig1t fig1d">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="-14 0 934 430" style="--mw:872px" role="img" aria-labelledby="fig1t fig1d">
           <title id="fig1t">Figure 1 — the Fibonacci recursion tree collapsing into a subproblem DAG</title>
           <desc id="fig1d">On the left, the call tree for F(5) has fifteen nodes with many repeats: F(2) appears three times, F(1) five times. An arrow labelled "quotient by equal state" leads to the right, where the same computation is a chain of six distinct nodes F0 through F5, evaluated left to right.</desc>
 
@@ -476,7 +476,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
             <text x="470" y="258" class="dg-lab-sm">topological order: F0 → F1 → … → F5  (one left-to-right sweep)</text>
             <text x="470" y="290" class="dg-lab" fill="var(--bau-blue-ink)">Work = number of nodes = n+1, not number of paths.</text>
           </g>
-        </svg>
+        </svg></div>
         <figcaption><span class="fig-num">FIG 1</span> · The exponential blow-up was never in the <b>arithmetic</b>; it was in <b>re-asking</b>. Collapse equal questions into one node and the cost is the count of distinct nodes. This collapse — tree&nbsp;→&nbsp;DAG — <b>is</b> dynamic programming.</figcaption>
       </figure>
 
@@ -492,10 +492,10 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
         <p>The same subproblem is reached by many different routes. In graph terms, nodes have <strong>in-degree &gt; 1</strong>: the recursion <em>reconverges</em>. This is exactly what makes caching pay — there are far fewer distinct nodes than root-to-leaf paths.</p>
       </div>
 
-      <p>The contrast sharpens both. <strong>Divide-and-conquer</strong> (mergesort) also has optimal substructure — but its subproblems are <em>disjoint</em>. The recursion is a genuine tree; nothing reconverges; there is nothing to cache. <strong>Greedy</strong> (Lecture 16) goes further and claims you never even need to compare alternatives: one local choice is provably optimal. Dynamic programming is the regime <em>in between</em> — subproblems overlap, so you must remember; but choices interact, so you must compare. <strong>DP = remember + compare.</strong></p>
+      <p>The contrast sharpens both. <strong>Divide-and-conquer</strong> (mergesort) also has optimal substructure — but its subproblems are <em>disjoint</em>. The recursion is a genuine tree; nothing reconverges; there is nothing to cache. <strong>Greedy</strong> (Deep study 16) goes further and claims you never even need to compare alternatives: one local choice is provably optimal. Dynamic programming is the regime <em>in between</em> — subproblems overlap, so you must remember; but choices interact, so you must compare. <strong>DP = remember + compare.</strong></p>
 
       <h3>The formal skeleton: a weighted DAG and one relaxation pass</h3>
-      <p>Here is the abstraction that holds every example in this lecture. Let the subproblems be the vertices <code>V</code> of a directed graph; put an edge <code>u → v</code> whenever the optimum at <code>v</code> may be built from the optimum at <code>u</code> by taking a decision of cost <code>w(u,v)</code>. Because every state depends only on <em>strictly smaller</em> states, this graph is <strong>acyclic</strong>. The DP value of a node is:</p>
+      <p>Here is the abstraction that holds every example in this study. Let the subproblems be the vertices <code>V</code> of a directed graph; put an edge <code>u → v</code> whenever the optimum at <code>v</code> may be built from the optimum at <code>u</code> by taking a decision of cost <code>w(u,v)</code>. Because every state depends only on <em>strictly smaller</em> states, this graph is <strong>acyclic</strong>. The DP value of a node is:</p>
 
       <div class="mathrow">
         <div class="cap">The master recurrence — a DAG relaxation in a semiring</div>
@@ -511,7 +511,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
 
       <p>The pair <code>(⊕, ⊗)</code> is a <em class="term">semiring</em> — choose it to fit the question:</p>
       <ul>
-        <li><code>(min, +)</code> — shortest path / fewest edits / least cost. <em>This is exactly the relaxation move from Lecture 13.</em></li>
+        <li><code>(min, +)</code> — shortest path / fewest edits / least cost. <em>This is exactly the relaxation move from Deep study 13.</em></li>
         <li><code>(max, +)</code> — longest path / most value (knapsack).</li>
         <li><code>(+, ×)</code> — counting the number of solutions / paths.</li>
         <li><code>(∨, ∧)</code> — feasibility / reachability (can it be done at all?).</li>
@@ -519,7 +519,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p>And the algorithm is now embarrassingly small: <strong>evaluate the nodes in topological order, relaxing each edge once.</strong> On a DAG, a single pass in topological order is exact — no Dijkstra priority queue, no Bellman–Ford iteration, because there are no back-edges to invalidate a finished node. Memoisation finds that order lazily (depth-first, fill on the way back up); tabulation commits to it eagerly (loop in increasing state size).</p>
 
       <figure>
-        <svg viewBox="0 0 900 380" style="--mw:774px" role="img" aria-labelledby="fig3t fig3d">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 900 380" style="--mw:917px" role="img" aria-labelledby="fig3t fig3d">
           <title id="fig3t">Figure 2 — dynamic programming as one relaxation pass over a topologically ordered subproblem DAG</title>
           <desc id="fig3d">A small directed acyclic graph of seven subproblem nodes laid out left to right in topological order from a base node to an answer node. One node is magnified to show its value computed as the semiring combination over its incoming edges. A legend lists four semirings and the problems they solve.</desc>
 
@@ -568,7 +568,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
 
           <!-- legend -->
           <g transform="translate(648,40)">
-            <rect x="0" y="0" width="228" height="300" rx="4" fill="var(--surface-1)" stroke="var(--bau-ink)" stroke-width="1.5"/>
+            <rect x="0" y="0" width="250" height="300" rx="4" fill="var(--surface-1)" stroke="var(--bau-ink)" stroke-width="1.5"/>
             <text x="16" y="26" class="dg-ttl">PICK THE SEMIRING</text>
             <g font-family="var(--mono)" font-size="12.5">
               <rect x="16" y="44" width="14" height="14" class="dg-red-f"/><text x="38" y="56" class="dg-fill-ink">(min, +)</text><text x="118" y="56" class="dg-lab-sm">shortest · edits</text>
@@ -576,16 +576,16 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
               <rect x="16" y="128" width="14" height="14" class="dg-yel-f" stroke="var(--bau-ink)"/><text x="38" y="140" class="dg-fill-ink">( +, × )</text><text x="118" y="140" class="dg-lab-sm">count paths</text>
               <rect x="16" y="170" width="14" height="14" class="dg-fill-ink"/><text x="38" y="182" class="dg-fill-ink">(∨, ∧)</text><text x="118" y="182" class="dg-lab-sm">feasible?</text>
             </g>
-            <line x1="16" y1="206" x2="212" y2="206" class="dg-faint"/>
+            <line x1="16" y1="206" x2="234" y2="206" class="dg-faint"/>
             <text x="16" y="230" class="dg-lab-sm" font-weight="700">Same loop. Same DAG.</text>
             <text x="16" y="250" class="dg-lab-sm">Only (⊕,⊗) and the</text>
             <text x="16" y="268" class="dg-lab-sm">state definition change.</text>
           </g>
-        </svg>
-        <figcaption><span class="fig-num">FIG 2</span> · The unifier. Every DP in this lecture is <b>this picture</b> with a different state and a different semiring. Knapsack, edit distance, Floyd–Warshall, interval DP — one algorithm, four costumes.</figcaption>
+        </svg></div>
+        <figcaption><span class="fig-num">FIG 2</span> · The unifier. Every DP in this study is <b>this picture</b> with a different state and a different semiring. Knapsack, edit distance, Floyd–Warshall, interval DP — one algorithm, four costumes.</figcaption>
       </figure>
 
-      <div class="pq">A dynamic program is a shortest path you forgot you were drawing.<span class="by">— the thesis of Lecture 15</span></div>
+      <div class="pq">A dynamic program is a shortest path you forgot you were drawing.<span class="by">— the thesis of Deep study 15</span></div>
 
       <h3>The recipe — what can be mechanised</h3>
       <p>Designing a DP is not inspiration; it is a procedure. Five of these seven steps are fully mechanical. Two — defining the state and writing the recurrence that proves substructure — are where judgement lives, and that boundary is the real lesson.</p>
@@ -664,7 +664,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p>Now the payoff: watch the grid fill and the answer fall out as the value in the corner. Below, each cell holds <code>dp[i][j]</code>; the bold red line is the optimal path the reconstruction walks back.</p>
 
       <figure>
-        <svg viewBox="0 0 600 540" style="--mw:516px" role="img" aria-labelledby="fig2t fig2d">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 600 540" style="--mw:611px" role="img" aria-labelledby="fig2t fig2d">
           <title id="fig2t">Figure 3 — the filled edit-distance grid for horse to ros with the optimal alignment path</title>
           <desc id="fig2d">A six-row by four-column grid. Rows are indexed by the characters of horse (h, o, r, s, e) plus an empty prefix; columns by the characters of ros (r, o, s) plus an empty prefix. Each cell shows the dynamic-programming value. A red path runs from the top-left corner value 0 diagonally and downward to the bottom-right value 3, marking the operations replace, match, delete, match, delete.</desc>
 
@@ -741,7 +741,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           </g>
           <text x="300" y="500" text-anchor="middle" class="dg-ttl" fill="var(--bau-red-ink)">answer = dp[5][3] = 3 edits</text>
           <text x="300" y="522" text-anchor="middle" class="dg-lab-sm">yellow = base cases (free top row / left column)</text>
-        </svg>
+        </svg></div>
         <figcaption><span class="fig-num">FIG 3</span> · The grid <b>is</b> the DAG: each non-base cell has three in-edges (↑ delete, ← insert, ↖ match/replace). Filling row-major is a topological sweep. <b>Reconstruction</b> walks the corner back to the origin, emitting one operation per edge: <b>replace h→r, keep o, delete r, keep s, delete e</b> — turning “horse” into “ros” in three moves.</figcaption>
       </figure>
 
@@ -845,9 +845,9 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
 
     <!-- 06 FLOYD-WARSHALL -->
     <section id="fw" class="reveal">
-      <p class="kicker"><span class="n">06</span> The headline · re-deriving Lecture 14</p>
+      <p class="kicker"><span class="n">06</span> The headline · re-deriving Deep study 14</p>
       <h2>Floyd–Warshall: a dimension that acyclifies the graph</h2>
-      <p class="lede">You met Floyd–Warshall as an algorithm — three nested loops, all-pairs shortest paths, <code>O(n³)</code>. But a graph can contain <em>cycles</em>; how can shortest paths be a DAG of subproblems? The resolution is the deepest idea in this lecture: you invent a new dimension whose growth is, by construction, acyclic.</p>
+      <p class="lede">You met Floyd–Warshall as an algorithm — three nested loops, all-pairs shortest paths, <code>O(n³)</code>. But a graph can contain <em>cycles</em>; how can shortest paths be a DAG of subproblems? The resolution is the deepest idea in this study: you invent a new dimension whose growth is, by construction, acyclic.</p>
 
       <h4>The state that does the trick</h4>
       <p>Number the vertices <code>1…n</code>. Define <code>d<sup>(k)</sup>[i][j]</code> = the length of the shortest path from <code>i</code> to <code>j</code> that is permitted to use intermediate vertices only from the set <code>{1, …, k}</code>. The index <code>k</code> is not a vertex on the path — it is a <em>permission level</em>: “how much of the graph am I allowed to route through.”</p>
@@ -870,7 +870,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p>Base: <code>d<sup>(0)</sup>[i][j]</code> = the direct edge weight (or <code>∞</code>, with 0 on the diagonal). Answer: <code>d<sup>(n)</sup></code>. Crucially, every cell of layer <code>k</code> depends <em>only</em> on layer <code>k−1</code>. The subproblem graph is layered by <code>k</code> — and a layered graph is acyclic <strong>no matter what the input graph looks like</strong>. The added dimension <em>is</em> the topological order.</p>
 
       <figure>
-        <svg viewBox="0 0 900 380" style="--mw:774px" role="img" aria-labelledby="fig4t fig4d">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 900 380" style="--mw:840px" role="img" aria-labelledby="fig4t fig4d">
           <title id="fig4t">Figure 4 — Floyd–Warshall: a cyclic input graph becomes an acyclic stack of permission layers</title>
           <desc id="fig4d">On the left, a directed graph on four vertices contains a cycle, so it is not acyclic. On the right, the subproblems form a stack of layers d superscript 0 through d superscript n, each an n by n matrix, connected by downward arrows labelled "unlock vertex k". A callout shows cell i,j of layer k built from three cells of layer k minus one.</desc>
 
@@ -932,7 +932,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
             <text x="16" y="214" class="dg-lab-sm">"route through k,</text>
             <text x="16" y="232" class="dg-lab-sm">or don't" — (min, +).</text>
           </g>
-        </svg>
+        </svg></div>
         <figcaption><span class="fig-num">FIG 4</span> · The move that makes shortest paths a DP. The <b>input graph may be cyclic</b>, but the <b>subproblem graph</b> — indexed by how many vertices you are allowed to route through — is a clean stack. Sweeping <code>k = 1…n</code> is the topological order. Three loops, <code>O(n³)</code>, and the in-place version even reuses one matrix because layer <code>k</code> never reads a value it has already overwritten.</figcaption>
       </figure>
 
@@ -1101,14 +1101,14 @@ Constraints: 2 ≤ n ≤ 100 ; weights, threshold ≤ 10⁴</p>
       </div>
       <p>If a problem resists it, the resistance is informative: either the substructure fails (your pieces interfere) or your state is too thin to be memoryless. Diagnose <em>which</em>, and you will know whether to add a dimension or to abandon DP for something else.</p>
 
-      <a class="nextcard" href="#" onclick="return false;" aria-label="Next lecture, number 16, on greedy algorithms">
+      <a class="nextcard" href="#" onclick="return false;" aria-label="Next deep study, number 16, on greedy algorithms">
         <div>
-          <div class="meta">Next in the DSA syllabus · Lecture 16</div>
+          <div class="meta">Next in the DSA syllabus · Deep study 16</div>
           <div class="t">When Is Greedy Optimal? Exchange Arguments &amp; Matroids</div>
         </div>
         <span class="arrow">→</span>
       </a>
-      <p class="note">DP compares every alternative. Lecture 16 asks the sharper question: <em>when can you stop comparing</em> and trust a single local choice? The answer — exchange arguments and the matroid — is where greedy stops being a guess and becomes a theorem.</p>
+      <p class="note">DP compares every alternative. Deep study 16 asks the sharper question: <em>when can you stop comparing</em> and trust a single local choice? The answer — exchange arguments and the matroid — is where greedy stops being a guess and becomes a theorem.</p>
 
       
     </section>
@@ -1134,6 +1134,6 @@ document.documentElement.classList.add('js');
   els.forEach(function(e){ io.observe(e); });
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-14-all-pairs-shortest-paths-floyd-warshall-johnson.html" rel="prev"><span>&larr; Lecture 14</span><strong>All-pairs shortest paths</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-16-when-is-greedy-optimal-exchange-arguments-and-matroids.html" rel="next"><span>Lecture 16 &rarr;</span><strong>When greedy is optimal</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/34-dynamic-programming.html">Lesson 34 &middot; Dynamic programming I</a><a href="../lessons/35-dynamic-programming-2d.html">Lesson 35 &middot; Dynamic programming II</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-14-all-pairs-shortest-paths-floyd-warshall-johnson.html" rel="prev"><span>&larr; Deep study 14</span><strong>All-pairs shortest paths</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-16-when-is-greedy-optimal-exchange-arguments-and-matroids.html" rel="next"><span>Deep study 16 &rarr;</span><strong>When greedy is optimal</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/34-dynamic-programming.html">Lesson 34 &middot; Dynamic programming I</a><a href="../lessons/35-dynamic-programming-2d.html">Lesson 35 &middot; Dynamic programming II</a></p></nav>
 </body>
 </html>

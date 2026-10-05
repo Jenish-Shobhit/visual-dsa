@@ -249,7 +249,7 @@
   .dg-muted{fill:var(--on-surface-variant)}
   .dg-blue-f{fill:var(--bau-blue)} .dg-red-f{fill:var(--bau-red)} .dg-yellow-f{fill:var(--bau-yellow)}
   .dg-label{font-family:var(--font-mono); font-size:13px; fill:var(--on-surface)}
-  .dg-label.sm{font-size:11px; fill:var(--on-surface-variant)}
+  .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
   .dg-cap{font-family:var(--font-display); font-size:14px; font-weight:600; fill:var(--on-surface)}
   /* flow-graph helpers */
   .dg-edge{stroke:var(--bau-ink); stroke-width:2.5; fill:none}
@@ -348,7 +348,7 @@
     <path d="M96 26 L210 8 L150 40 Z" class="dg-red-f" opacity="0"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 17</span> max-flow, min-cut &amp; duality</div>
+    <div class="eyebrow"><span class="n">Deep study 17</span> max-flow, min-cut &amp; duality</div>
     <h1>Max-Flow, Min-Cut &amp; the Power of Duality</h1>
 <p class="study-related"><span class="study-related__label">Related lesson</span><a href="../lessons/31-network-flow.html">Lesson 31 · Max flow &amp; min cut</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -356,12 +356,12 @@
   <div class="study-brief-grid"><p><span>Build on</span>Directed graphs and residual edges</p><p><span>Core invariant</span>Residual edges let flow algorithms undo earlier choices; a cut certifies the final value.</p></div>
   <details class="study-check"><summary>Try this first · Why can a reverse residual edge have positive capacity?</summary><p>It represents the option to cancel flow already sent on the corresponding forward edge.</p></details>
 </div>
-    <p class="lede col">Picture a pipeline network &mdash; a source, a sink, and pipes of fixed capacity between them. Two questions sound opposite. <strong>How much</strong> can you push from source to sink at once? And <strong>how little</strong> would you have to sever &mdash; which pipes to cut, paying their capacities &mdash; to stop all flow entirely? The astonishing fact, and the whole of this lecture, is that <em>these are the same number</em>. The maximum you can push equals the cheapest wall you can build. That single equality &mdash; <span class="term">max-flow = min-cut</span> &mdash; is one of the most useful theorems in all of computing.</p>
+    <p class="lede col">Picture a pipeline network &mdash; a source, a sink, and pipes of fixed capacity between them. Two questions sound opposite. <strong>How much</strong> can you push from source to sink at once? And <strong>how little</strong> would you have to sever &mdash; which pipes to cut, paying their capacities &mdash; to stop all flow entirely? The astonishing fact, and the whole of this study, is that <em>these are the same number</em>. The maximum you can push equals the cheapest wall you can build. That single equality &mdash; <span class="term">max-flow = min-cut</span> &mdash; is one of the most useful theorems in all of computing.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
-        <p style="margin-bottom:.5em"><strong>The number that frames the lecture.</strong> The problem came from a secret 1955 RAND study by Ted Harris and Frank Ross of the Soviet rail network &mdash; the &ldquo;flow&rdquo; was rail tonnage, and the &ldquo;min cut&rdquo; was the cheapest set of links to bomb to sever it &mdash; and Ford and Fulkerson, who had the problem from Harris, proved max-flow = min-cut in 1956. For sixty-six years the best algorithms crept forward: <code class="inl">O(VE&sup2;)</code>, then <code class="inl">O(V&sup2;E)</code>, then a long plateau. Then in <strong>2022</strong>, Chen, Kyng, Liu, Peng, Probst&nbsp;Gutenberg and Sachdeva broke it open with an algorithm running in <strong>m<sup>1+o(1)</sup></strong> time &mdash; <em>almost-linear</em> in the number of edges, essentially as fast as <em>reading the graph</em>.</p>
+        <p style="margin-bottom:.5em"><strong>The number that frames the study.</strong> The problem came from a secret 1955 RAND study by Ted Harris and Frank Ross of the Soviet rail network &mdash; the &ldquo;flow&rdquo; was rail tonnage, and the &ldquo;min cut&rdquo; was the cheapest set of links to bomb to sever it &mdash; and Ford and Fulkerson, who had the problem from Harris, proved max-flow = min-cut in 1956. For sixty-six years the best algorithms crept forward: <code class="inl">O(VE&sup2;)</code>, then <code class="inl">O(V&sup2;E)</code>, then a long plateau. Then in <strong>2022</strong>, Chen, Kyng, Liu, Peng, Probst&nbsp;Gutenberg and Sachdeva broke it open with an algorithm running in <strong>m<sup>1+o(1)</sup></strong> time &mdash; <em>almost-linear</em> in the number of edges, essentially as fast as <em>reading the graph</em>.</p>
         <p style="margin-bottom:0">The same theorem that once chose where to cut a railway now finds maximum matchings, segments images, schedules airlines, and selects projects. We build it from the source edge outward &mdash; and end at that 2022 frontier.</p>
       </div>
     </div>
@@ -372,7 +372,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>Two questions, one number</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -420,7 +420,7 @@
         </ul>
 
         <h3>Prerequisites</h3>
-        <p>Three ideas carry the whole lecture. Augmenting-path search is breadth-first search wearing a hat; the duality argument leans on the same &ldquo;reachable set&rdquo; idea BFS computes.</p>
+        <p>Three ideas carry the whole study. Augmenting-path search is breadth-first search wearing a hat; the duality argument leans on the same &ldquo;reachable set&rdquo; idea BFS computes.</p>
         <div class="chips">
           <a class="chip" href="dsa-11-graphs-and-their-traversals.html">graph traversal (BFS)</a>
           <span class="chip">augmenting-path / greedy</span>
@@ -477,7 +477,7 @@
         <p>That is the entire specification: maximize <code class="inl">|f|</code> over all functions <code class="inl">f</code> obeying the two laws. Here is the concrete network we will solve in full, by Edmonds&ndash;Karp, in &sect;08. Read each edge as <em>capacity</em>.</p>
 
         <figure>
-          <svg viewBox="0 0 840 440" style="--mw:638px" role="img" aria-labelledby="g1t g1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 840 440" style="--mw:753px" role="img" aria-labelledby="g1t g1d">
             <title id="g1t">A flow network on six vertices</title>
             <desc id="g1d">Source s on the left, sink t on the right, with middle vertices a and b in a left column and c and d in a right column. Eight directed edges carry capacities: s to a 12, s to b 12, a to c 5, a to d 3, b to c 3, b to d 6, c to t 12, d to t 12.</desc>
             <defs>
@@ -514,7 +514,7 @@
               <circle class="dg-node" cx="540" cy="320" r="28"/><text class="dg-nt" x="540" y="320">d</text>
               <circle class="dg-node-t" cx="760" cy="220" r="28"/><text class="dg-nt" x="760" y="220">t</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 &mdash; the input network.</b> Source <code class="inl">s</code>, sink <code class="inl">t</code>, six vertices, eight directed edges labelled with capacities. The source can emit up to 24 and the sink can absorb up to 24, yet &mdash; as the duality theorem will pin down &mdash; a wall <em>in the middle</em> limits everything. Watch for it.</figcaption>
         </figure>
       </div>
@@ -539,7 +539,7 @@
         <p>The backward edge is the entire trick, so let us watch it earn its keep on the smallest network where greed goes wrong. Capacities are large on the outside, and a single fat diagonal <code class="inl">u&rarr;v</code> tempts the first path into a commitment it must later partly undo.</p>
 
         <figure>
-          <svg viewBox="0 0 900 320" style="--mw:774px" role="img" aria-labelledby="g2t g2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 900 320" style="--mw:840px" role="img" aria-labelledby="g2t g2d">
             <title id="g2t">A residual augmentation that uses a backward edge</title>
             <desc id="g2d">Left panel: a greedy first path s to u to v to t carries 20 units and then no forward path remains, so flow is stuck at 20. Right panel: in the residual graph an augmenting path s to v to u to t uses the backward edge v to u, cancelling 10 units on u-v and raising the flow to 30.</desc>
             <defs>
@@ -583,7 +583,7 @@
               <text class="dg-label sm" x="668" y="155" fill="var(--bau-red)">back 20</text>
               <text class="dg-label sm" x="730" y="100" fill="var(--bau-blue)">+10</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 &mdash; the backward edge, drawn.</b> Capacities: <code class="inl">s&rarr;u=20</code>, <code class="inl">s&rarr;v=10</code>, <code class="inl">u&rarr;v=30</code>, <code class="inl">u&rarr;t=10</code>, <code class="inl">v&rarr;t=20</code>. <b>Left:</b> a greedy first push of 20 along <code class="inl">s&rarr;u&rarr;v&rarr;t</code> saturates <code class="inl">s&rarr;u</code> and <code class="inl">v&rarr;t</code>; no forward <code class="inl">s</code>&ndash;<code class="inl">t</code> path survives, so greed halts at 20. <b>Right:</b> the residual graph still offers <code class="inl">s&rarr;v&rarr;u&rarr;t</code> &mdash; the middle hop runs <span style="color:var(--bau-red)">backward</span> along <code class="inl">u&rarr;v</code>, cancelling 10 units there. Pushing 10 lifts the flow to its true maximum, <b>30</b>.</figcaption>
         </figure>
 
@@ -732,7 +732,7 @@
         <details>
           <summary>Corollary &mdash; the integrality theorem (why matching will work)</summary>
           <div class="body">
-            <p>If every capacity is an integer, then the Ford&ndash;Fulkerson method produces a maximum flow in which <em>every edge carries integer flow</em>. The induction is one line: the zero flow is integral; each augmentation adds or subtracts an integer bottleneck (the min of integer residual capacities), preserving integrality. So there is always an <strong>integral</strong> maximum flow. This is exactly what makes the matching reduction of &sect;09 sound &mdash; with unit capacities, an integral flow is forced to be <em>0/1</em> on every edge, i.e. a set of chosen edges, i.e. a matching. The same fact underlies the half-dozen modeling tricks in this lecture: solve the relaxed flow, and integrality hands you a combinatorial object back, with no rounding.</p>
+            <p>If every capacity is an integer, then the Ford&ndash;Fulkerson method produces a maximum flow in which <em>every edge carries integer flow</em>. The induction is one line: the zero flow is integral; each augmentation adds or subtracts an integer bottleneck (the min of integer residual capacities), preserving integrality. So there is always an <strong>integral</strong> maximum flow. This is exactly what makes the matching reduction of &sect;09 sound &mdash; with unit capacities, an integral flow is forced to be <em>0/1</em> on every edge, i.e. a set of chosen edges, i.e. a matching. The same fact underlies the half-dozen modeling tricks in this study: solve the relaxed flow, and integrality hands you a combinatorial object back, with no rounding.</p>
           </div>
         </details>
       </div>
@@ -767,7 +767,7 @@
         <p>Watch the fourth row carefully. By round 4, edge <code class="inl">s&rarr;a</code> has only <code class="inl">12&minus;8=4</code> residual left and <code class="inl">a</code>&rsquo;s out-edges <code class="inl">a&rarr;c, a&rarr;d</code> are both saturated &mdash; so <code class="inl">a</code> is a dead end in the residual graph. The only way forward from <code class="inl">s</code> is through <code class="inl">b</code>, and after <code class="inl">b&rarr;d</code> fills, <code class="inl">b</code> is a dead end too. The residual frontier collapses to <code class="inl">{s,a,b}</code>. By the theorem&rsquo;s (2)&rArr;(3) step, <em>that reachable set is a minimum cut</em>.</p>
 
         <figure>
-          <svg viewBox="0 0 840 460" style="--mw:638px" role="img" aria-labelledby="g3t g3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 840 460" style="--mw:784px" role="img" aria-labelledby="g3t g3d">
             <title id="g3t">The maximum flow and the minimum cut of Figure 1</title>
             <desc id="g3d">The same network with flow over capacity labelled on each edge. The four middle edges a-c, a-d, b-c, b-d are saturated and drawn bold blue. A dashed red cut line separates the source side {s, a, b} from the sink side {c, d, t}; the four edges it severs total capacity seventeen, equal to the maximum flow.</desc>
             <defs>
@@ -817,10 +817,10 @@
             </g>
             <!-- total badge -->
             <g>
-              <rect x="612" y="392" width="200" height="44" rx="10" fill="var(--bau-ink)"/>
-              <text x="712" y="415" text-anchor="middle" font-family="var(--font-mono)" font-size="14.5" fill="var(--bau-yellow)" font-weight="700">|f| = cut = 5+3+3+6 = 17</text>
+              <rect x="540" y="392" width="270" height="44" rx="10" fill="var(--study-panel)" stroke="var(--line-strong)" stroke-width="1.5"/>
+              <text x="675" y="415" text-anchor="middle" font-family="var(--font-mono)" font-size="14.5" fill="var(--study-glow)" font-weight="700">|f| = cut = 5+3+3+6 = 17</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 &mdash; max flow equals min cut.</b> The four <b style="color:var(--bau-blue)">blue</b> middle edges are saturated; the dashed <span style="color:var(--bau-red)">red</span> line is the minimum cut <code class="inl">(S,T)</code> with <code class="inl">S={s,a,b}</code>. Its capacity <code class="inl">5+3+3+6=17</code> equals the flow value exactly. The bottleneck was never at the source (out-capacity 24) or the sink (in-capacity 24), but at the <em>wall in the middle</em> &mdash; which the duality theorem found for us.</figcaption>
         </figure>
 
@@ -839,7 +839,7 @@
         <p>You have a set <code class="inl">L</code> of workers and a set <code class="inl">R</code> of jobs, with an edge wherever a worker can do a job. A <span class="term">matching</span> is a set of worker&ndash;job pairs using each worker and each job at most once; you want the largest. Build a network: a super-source <code class="inl">s</code> with a capacity-1 edge to every worker, the original worker&rarr;job edges (capacity 1), and a capacity-1 edge from every job to a super-sink <code class="inl">t</code>.</p>
 
         <figure>
-          <svg viewBox="0 0 720 360" style="--mw:619px" role="img" aria-labelledby="g4t g4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 360" style="--mw:672px" role="img" aria-labelledby="g4t g4d">
             <title id="g4t">Bipartite matching as a flow network</title>
             <desc id="g4d">A super source s connects to three workers x1 x2 x3 with unit edges; workers connect to jobs y1 y2 y3 by the allowed assignments; jobs connect to a super sink t with unit edges. A maximum matching of size three is highlighted: x1-y1, x2-y2, x3-y3.</desc>
             <defs>
@@ -881,7 +881,7 @@
               <circle class="dg-node-t" cx="646" cy="180" r="22"/><text class="dg-nt" x="646" y="180" font-size="14">t</text>
             </g>
             <text class="dg-label sm" x="150" y="44">all edges capacity 1</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 &mdash; matching is flow.</b> Every edge has capacity 1, so by the integrality theorem the maximum flow is <em>0/1</em> on each edge &mdash; a set of vertex-disjoint <code class="inl">s&rarr;x&rarr;y&rarr;t</code> routes, i.e. a matching. Here the maximum flow is <b>3</b>, the matching <code class="inl">{x&#8321;y&#8321;, x&#8322;y&#8322;, x&#8323;y&#8323;}</code>. An augmenting path in this network is precisely an <em>augmenting path</em> in the classical matching sense.</figcaption>
         </figure>
 
@@ -946,7 +946,7 @@
         <p>For decades, max-flow was a showcase of <em>combinatorial</em> algorithms &mdash; augmenting paths, blocking flows, scaling &mdash; and progress stalled around <code class="inl">O(VE)</code>. The breakthrough came from a different continent of mathematics. Beginning with M&#x105;dry&rsquo;s electrical-flow methods (2013) and the interior-point revolution of Lee&ndash;Sidford and others, researchers reframed max-flow as a <em>continuous</em> optimization &mdash; an objective minimized by gliding through the interior of the polytope of feasible flows, taking Newton-like steps. Each step is itself a graph problem (a min-ratio cycle, or an undirected min-cost flow) solved approximately by a dynamic data structure that maintains low-stretch trees and sparsifiers on a slowly changing graph.</p>
 
         <figure>
-          <svg viewBox="0 0 880 300" style="--mw:757px" role="img" aria-labelledby="g5t g5d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 880 300" style="--mw:822px" role="img" aria-labelledby="g5t g5d">
             <title id="g5t">The running-time exponent for max-flow, 1956 to 2022</title>
             <desc id="g5d">A timeline showing milestones whose dependence on graph size falls from capacity-dependent and high-polynomial bounds in the mid twentieth century toward an almost-linear m to the one plus little-o of one bound in 2022.</desc>
             <!-- baseline -->
@@ -987,7 +987,7 @@
               <rect x="700" y="120" width="170" height="34" rx="8" fill="var(--bau-ink)"/>
               <text x="785" y="142" text-anchor="middle" font-size="14" fill="var(--bau-yellow)" font-weight="700">2022: m<tspan baseline-shift="super" font-size="70%">(1+o(1))</tspan></text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 5 &mdash; the 66-year arc.</b> Combinatorial augmenting-path and blocking-flow methods (blue/red dots) carried the field from capacity-dependent bounds to <code class="inl">O(VE)</code>; the 2022 result of Chen, Kyng, Liu, Peng, Probst Gutenberg and Sachdeva &mdash; built on continuous interior-point optimization rather than augmenting paths &mdash; finally reached <strong>almost-linear</strong> <code class="inl">m<sup>1+o(1)</sup></code>, and for minimum-<em>cost</em> flow as well.</figcaption>
         </figure>
 
@@ -1080,12 +1080,12 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 18</span>
+            <span class="lab">next &middot; deep study 18</span>
             <div class="ttl">Algorithms on Text I: Linear-Time Exact Matching (KMP, Z, Rabin&ndash;Karp)</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">We leave graphs for strings &mdash; but the habits of mind carry over. Lecture&nbsp;18 builds linear-time pattern matching: the Knuth&ndash;Morris&ndash;Pratt failure function, the Z-algorithm, and Rabin&ndash;Karp&rsquo;s rolling-hash fingerprints. KMP&rsquo;s linear bound, like union-find&rsquo;s, is an <em>amortized</em> argument &mdash; a potential on a single pointer that never moves backward too far. The duality you met here has a cousin there too: the failure function is the string &ldquo;remembering&rdquo; its own structure so it never re-scans what it already proved.</p>
+        <p style="margin-top:1em">We leave graphs for strings &mdash; but the habits of mind carry over. Deep&nbsp;study&nbsp;18 builds linear-time pattern matching: the Knuth&ndash;Morris&ndash;Pratt failure function, the Z-algorithm, and Rabin&ndash;Karp&rsquo;s rolling-hash fingerprints. KMP&rsquo;s linear bound, like union-find&rsquo;s, is an <em>amortized</em> argument &mdash; a potential on a single pointer that never moves backward too far. The duality you met here has a cousin there too: the failure function is the string &ldquo;remembering&rdquo; its own structure so it never re-scans what it already proved.</p>
       </div>
     </section>
 
@@ -1129,6 +1129,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-16-when-is-greedy-optimal-exchange-arguments-and-matroids.html" rel="prev"><span>&larr; Lecture 16</span><strong>When greedy is optimal</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-18-linear-time-exact-matching.html" rel="next"><span>Lecture 18 &rarr;</span><strong>Linear-time exact matching</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/31-network-flow.html">Lesson 31 &middot; Max flow &amp; min cut</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-16-when-is-greedy-optimal-exchange-arguments-and-matroids.html" rel="prev"><span>&larr; Deep study 16</span><strong>When greedy is optimal</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-18-linear-time-exact-matching.html" rel="next"><span>Deep study 18 &rarr;</span><strong>Linear-time exact matching</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/31-network-flow.html">Lesson 31 &middot; Max flow &amp; min cut</a></p></nav>
 </body>
 </html>

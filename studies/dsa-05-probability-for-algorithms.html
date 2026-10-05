@@ -345,7 +345,7 @@
     <path d="M120 4 L186 4 L153 64 Z" class="dg-red-f"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 05</span> the third lens on cost</div>
+    <div class="eyebrow"><span class="n">Deep study 05</span> the third lens on cost</div>
     <h1>Probability for Algorithms</h1>
 <div class="study-brief" aria-label="Study at a glance">
   <div class="study-brief-title"><span>FIELD NOTE / 05</span><strong>Before the long read</strong></div>
@@ -358,7 +358,7 @@
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
         <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Sort a billion items with <strong>quicksort</strong>. Its <em>worst case</em> is <code class="inl">&#x398;(n&sup2;)</code> &mdash; about <code class="inl">10&#185;&#8312;</code> comparisons, roughly <strong>thirty years</strong> of computing. Its <em>expected case</em> is <code class="inl">&#8776; 2n&nbsp;ln&nbsp;n</code> &mdash; about <code class="inl">4&times;10&#185;&#8304;</code> comparisons, <strong>under a minute</strong>.</p>
-        <p style="margin-bottom:0">Both numbers describe the <em>same program on the same machine</em>. The only thing that changed is a coin we chose to flip when picking each pivot. Worst-case asymptotics (Lecture 00) and amortized cost (Lecture 02) both reason about a fixed, adversarial world. This lecture installs the <strong>third cost lens &mdash; expected cost under randomness</strong> &mdash; and, crucially, the machinery to prove the bad case stays <em>improbable</em>.</p>
+        <p style="margin-bottom:0">Both numbers describe the <em>same program on the same machine</em>. The only thing that changed is a coin we chose to flip when picking each pivot. Worst-case asymptotics (Deep study 00) and amortized cost (Deep study 02) both reason about a fixed, adversarial world. This study installs the <strong>third cost lens &mdash; expected cost under randomness</strong> &mdash; and, crucially, the machinery to prove the bad case stays <em>improbable</em>.</p>
       </div>
     </div>
   </div>
@@ -368,7 +368,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>Possible vs probable</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -411,7 +411,7 @@
           <div class="stat"><div class="big">e<sup>&#8722;&#x398;(n)</sup></div><span class="lab">how fast the tail of a sum of coins decays &mdash; &sect;09</span></div>
         </div>
 
-        <p>The slogan for the whole lecture: an algorithm's worst case is what is <em>possible</em>; its expectation is what is <em>typical</em>; and a concentration bound is the proof that the possible stays <em>improbable</em>. Cost analysis is no longer a single number &mdash; it is a distribution, and we are learning to bound its shape.</p>
+        <p>The slogan for the whole study: an algorithm's worst case is what is <em>possible</em>; its expectation is what is <em>typical</em>; and a concentration bound is the proof that the possible stays <em>improbable</em>. Cost analysis is no longer a single number &mdash; it is a distribution, and we are learning to bound its shape.</p>
       </div>
     </section>
 
@@ -430,13 +430,13 @@
         </ul>
 
         <h3>Prerequisites</h3>
-        <p>This lecture assumes two things, both light:</p>
+        <p>This study assumes two things, both light:</p>
         <div class="chips">
           <span class="chip">discrete math &mdash; counting &amp; summations</span>
           <span class="chip">harmonic &amp; geometric sums</span>
           <span class="chip">asymptotic notation (Big-O / &#x398; / &#x3A9;)</span>
         </div>
-        <p style="margin-top:1em">If <code class="inl">&#x398;</code>, <code class="inl">O</code>, and <code class="inl">&#x3A9;</code> are not yet reflexes, revisit <a class="inline" href="dsa-00-cost-of-a-computation.html">Lecture 00 &mdash; The Cost of a Computation</a>; the harmonic number <code class="inl wrap">H&#8345; = 1 + &#189; + &#8531; + &#8943; + 1/n &#8776; ln n</code> will appear in &sect;07 and is the one summation worth memorizing. No prior probability is assumed &mdash; we build it.</p>
+        <p style="margin-top:1em">If <code class="inl">&#x398;</code>, <code class="inl">O</code>, and <code class="inl">&#x3A9;</code> are not yet reflexes, revisit <a class="inline" href="dsa-00-cost-of-a-computation.html">Deep study 00 &mdash; The Cost of a Computation</a>; the harmonic number <code class="inl wrap">H&#8345; = 1 + &#189; + &#8531; + &#8943; + 1/n &#8776; ln n</code> will appear in &sect;07 and is the one summation worth memorizing. No prior probability is assumed &mdash; we build it.</p>
       </div>
     </section>
 
@@ -453,7 +453,7 @@
 
         <div class="note info">
           <span class="tag">the abstraction that matters</span>
-          A random variable is a lens that turns an outcome into a cost. Once an algorithm's running time is named as a random variable <code class="inl">T</code>, every question we care about &mdash; &ldquo;typical cost?&rdquo;, &ldquo;risk of a slow run?&rdquo; &mdash; becomes a question about the <em>distribution of one function</em>, and the rest of this lecture is a kit for answering those.
+          A random variable is a lens that turns an outcome into a cost. Once an algorithm's running time is named as a random variable <code class="inl">T</code>, every question we care about &mdash; &ldquo;typical cost?&rdquo;, &ldquo;risk of a slow run?&rdquo; &mdash; becomes a question about the <em>distribution of one function</em>, and the rest of this study is a kit for answering those.
         </div>
 
         <p>We will lean almost entirely on <strong>discrete</strong> random variables &mdash; counts, which take values in <code class="inl">{0, 1, 2, &#8943;}</code> &mdash; because the cost of an algorithm is a count: of comparisons, of probes, of recursive calls. Continuous probability we will not need.</p>
@@ -484,7 +484,7 @@
           </math></div>
         </div>
 
-        <p>The left form sums over <em>values</em>, weighting each by how likely it is. The right form sums over <em>outcomes</em>, weighting each by its probability &mdash; and this second form, dull as it looks, is the secret engine of the whole lecture. It says expectation is a sum over <code class="inl">&#x3A9;</code>, and sums can be reordered freely. Hold that thought one section.</p>
+        <p>The left form sums over <em>values</em>, weighting each by how likely it is. The right form sums over <em>outcomes</em>, weighting each by its probability &mdash; and this second form, dull as it looks, is the secret engine of the whole study. It says expectation is a sum over <code class="inl">&#x3A9;</code>, and sums can be reordered freely. Hold that thought one section.</p>
 
         <p>A die: <code class="inl">E[X] = &#8537;(1+2+3+4+5+6) = 3.5</code>. Note the expectation need not be a value the variable can take &mdash; you never roll a 3.5. Expectation is the <em>balance point</em> of the distribution, not a typical outcome. A fair coin paying <code class="inl">&#36;1</code> for heads and <code class="inl">&#36;0</code> for tails has <code class="inl">E = &#36;0.50</code>, a payout that can never actually occur.</p>
 
@@ -592,7 +592,7 @@
         <p>A warm-up to feel the magic. Flip <code class="inl">n</code> fair coins; how many heads, in expectation? Let <code class="inl">&#120793;<sub>i</sub> = 1</code> if flip <code class="inl">i</code> is heads. Then <code class="inl">X = &#8721;&#120793;<sub>i</sub></code> and <code class="inl wrap">E[X] = &#8721; P(flip i is heads) = n &#8226; &#189; = n/2</code>. Trivial here &mdash; the flips happen to be independent &mdash; but watch what we did <em>not</em> use: independence. The same three lines work when the events are gnarled together.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 900 250" style="--mw:713px" role="img" aria-labelledby="f0t f0d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 900 250" style="--mw:840px" role="img" aria-labelledby="f0t f0d">
             <title id="f0t">A count rewritten as a row of indicator bits whose expectations add</title>
             <desc id="f0d">Eight cells each holding a zero or one indicator for whether a coin came up heads. The count X is their sum, here four. Linearity says the expected count equals the sum of the eight individual head-probabilities, each one half, giving n over two regardless of any dependence among the flips.</desc>
             <text x="24" y="40" class="dg-cap">X = &#120793;&#8321; + &#120793;&#8322; + &#120793;&#8323; + &#8943; + &#120793;&#8328;&#8195;&mdash;&#8195;a count is a sum of 0/1 levers</text>
@@ -634,7 +634,7 @@
               <text x="86" y="54" text-anchor="middle" class="dg-label sm">E[X] = &#8721; &#189; = n/2</text>
             </g>
             <text x="24" y="220" class="dg-label sm">Linearity totals the column of expectations &mdash; it never asks whether the levers move together.</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 &mdash; the indicator method, in one row.</b> Decompose the count into <code class="inl">0/1</code> levers, replace each lever's expectation by its event's probability, and add. The picture is trivial because the flips are independent; the <em>method</em> survives unchanged when they are not &mdash; which is the entire reason it is worth learning.</figcaption>
         </figure>
       </div>
@@ -645,7 +645,7 @@
       <div class="eyebrow"><span class="n">07</span> worked example A</div>
       <h2>Quicksort's expected comparison count, derived</h2>
       <div class="col">
-        <p>Now the example that makes the loom sing &mdash; and which Lecture 06 will lean on directly. <span class="term">Randomized quicksort</span>: to sort an array, pick a pivot <em>uniformly at random</em>, partition the rest into those below and above it by comparing each to the pivot, then recurse on the two sides. Every comparison in the entire run is between some element and a pivot. We want <code class="inl">E[X]</code>, where <code class="inl">X</code> is the total number of comparisons, <em>for an arbitrary input</em>.</p>
+        <p>Now the example that makes the loom sing &mdash; and which Deep study 06 will lean on directly. <span class="term">Randomized quicksort</span>: to sort an array, pick a pivot <em>uniformly at random</em>, partition the rest into those below and above it by comparing each to the pivot, then recurse on the two sides. Every comparison in the entire run is between some element and a pivot. We want <code class="inl">E[X]</code>, where <code class="inl">X</code> is the total number of comparisons, <em>for an arbitrary input</em>.</p>
 
         <pre><code><span class="tok-kw">def</span> <span class="tok-fn">quicksort</span>(A, lo, hi):
     <span class="tok-kw">if</span> lo &gt;= hi: <span class="tok-kw">return</span>
@@ -714,7 +714,7 @@
         <p>Read it: <em>adjacent ranks</em> (<code class="inl">j = i+1</code>) are compared with probability <code class="inl">2/2 = 1</code> &mdash; they must be, no value sits between to separate them &mdash; while <em>far-apart ranks</em> are compared rarely, probability <code class="inl">&#8776; 2/(j-i)</code>. Figure 2 draws this.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 920 430" style="--mw:728px" role="img" aria-labelledby="f2t f2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 920 430" style="--mw:859px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">Why two values are compared with probability two over the block size, and the resulting triangular table of pair-probabilities</title>
             <desc id="f2d">Left: nine values in sorted order with a bracket over the block from z three to z seven; the two endpoints are highlighted and the label states the pair is compared exactly when the first pivot from the five-element block is an endpoint, probability two fifths. Right: an upper-triangular grid indexed by i and j, each cell shaded by two over j minus i plus one, darkest on the diagonal where adjacent ranks are always compared and fading away from it.</desc>
 
@@ -750,7 +750,7 @@
             <text x="238" y="160" text-anchor="middle" class="dg-label">block size j&#8722;i+1 = 5</text>
             <!-- favourable -->
             <g transform="translate(24,184)">
-              <rect x="0" y="0" width="430" height="86" rx="8" fill="var(--surface-2)" stroke="var(--outline-variant)"/>
+              <rect x="0" y="0" width="474" height="86" rx="8" fill="var(--surface-2)" stroke="var(--outline-variant)"/>
               <circle cx="22" cy="28" r="7" class="dg-blue-f"/><circle cx="40" cy="28" r="7" class="dg-red-f"/>
               <text x="60" y="33" class="dg-label">first pivot from block = an endpoint &#8594; <tspan class="dg-ink" font-weight="700">compared</tspan></text>
               <rect x="14" y="52" width="14" height="14" class="dg-cell"/><rect x="32" y="52" width="14" height="14" class="dg-cell"/><rect x="50" y="52" width="14" height="14" class="dg-cell"/>
@@ -803,7 +803,7 @@
             </g>
             <text x="560" y="372" class="dg-label sm">diagonal (adjacent ranks): always compared, P=1</text>
             <text x="560" y="392" class="dg-label sm">far from diagonal: faint &mdash; rarely compared</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 &mdash; the actual structure of the count.</b> Left: a pair meets exactly when the first pivot drawn from the block between them is one of the two endpoints &mdash; <code class="inl">2</code> good cases out of <code class="inl">j-i+1</code>. Right: the resulting upper-triangular table of pair-probabilities, brightest on the diagonal. Summing every cell gives <code class="inl">E[X]</code>.</figcaption>
         </figure>
 
@@ -908,7 +908,7 @@
         <p>Here the independence hypothesis you escaped in &sect;05 returns and must be honoured. For an indicator, <code class="inl">Var[&#120793;<sub>i</sub>] = p(1-p)</code>. So for <code class="inl">X</code> = heads in <code class="inl">n</code> fair flips, <code class="inl">Var[X] = n &#8226; &#188; = n/4</code> &mdash; the variance grows like <code class="inl">n</code>, the standard deviation like <code class="inl">&#8730;n</code>. That sublinear spread &mdash; the deviation <code class="inl">&#8730;n</code> being vanishingly small next to the mean <code class="inl">n/2</code> &mdash; is the first whisper of <em>concentration</em>: big sums of independent pieces huddle tightly around their mean.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 900 320" style="--mw:713px" role="img" aria-labelledby="f3t f3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 900 320" style="--mw:840px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">Two distributions with the same mean but different variance</title>
             <desc id="f3d">Two histograms share an identical mean marked by a dashed vertical line. The upper distribution is narrow with small standard deviation and is a reliable algorithm; the lower is broad with large standard deviation and is a volatile one. Expectation cannot tell them apart; variance is exactly what distinguishes them.</desc>
             <!-- shared mean line -->
@@ -949,7 +949,7 @@
 
             <text x="660" y="120" class="dg-label">E[X] identical</text>
             <text x="660" y="144" class="dg-label dg-red-f">Var[X] is the difference</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 &mdash; why a second moment.</b> Same expectation, opposite reliability. The mean locates the balance point; only the variance &mdash; and through it Chebyshev, next &mdash; can certify that an algorithm rarely strays far from it.</figcaption>
         </figure>
       </div>
@@ -1039,7 +1039,7 @@
         </div>
 
         <figure class="reveal">
-          <svg viewBox="0 0 900 400" style="--mw:713px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 900 400" style="--mw:840px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">One tail capped three ways, showing Markov above Chebyshev above Chernoff</title>
             <desc id="f4d">Axes plot the bound on the probability of deviating at least t from the mean, against the deviation t. Markov is a high nearly flat curve decaying like one over t. Chebyshev is a lower hyperbola decaying like one over t squared. Chernoff is a steep exponential cliff that plunges far below both. The true tail probability hugs the bottom, beneath all three caps, which nest in that order.</desc>
 
@@ -1068,7 +1068,7 @@
 
             <!-- ordering bracket -->
             <text x="120" y="372" class="dg-label sm">tighter assumptions &#8594; the cap drops from red, to blue, to the exponential cliff</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 &mdash; the money diagram.</b> The same tail probability, bounded three ways. Markov (red) sits highest on the mean alone; Chebyshev (blue) drops to <code class="inl">1/k&sup2;</code> with the variance; Chernoff (ink) plunges exponentially once the pieces are independent. The true tail lies beneath all three &mdash; each bound is a ceiling, and we climb the ladder for a lower one.</figcaption>
         </figure>
       </div>
@@ -1106,7 +1106,7 @@
 
         <div class="note">
           <span class="tag">the moral of the table</span>
-          All three are <em>correct</em>. They differ only in how much structure you let them exploit. Markov sees a non-negative variable; Chebyshev sees its variance; Chernoff sees that it is a sum of <em>independent</em> pieces &mdash; and that last fact, paid for honestly, buys you a guarantee strong enough to bet a data centre on. This is the exact pattern Lecture 08 uses to bound hash-table chains and Lecture 22 to certify skip lists and Bloom filters.
+          All three are <em>correct</em>. They differ only in how much structure you let them exploit. Markov sees a non-negative variable; Chebyshev sees its variance; Chernoff sees that it is a sum of <em>independent</em> pieces &mdash; and that last fact, paid for honestly, buys you a guarantee strong enough to bet a data centre on. This is the exact pattern Deep study 08 uses to bound hash-table chains and Deep study 22 to certify skip lists and Bloom filters.
         </div>
       </div>
     </section>
@@ -1173,7 +1173,7 @@
         <div>
           <h3>The longest hash chain</h3>
           <p class="meta">balls into bins &middot; Chernoff + union bound &middot; max load</p>
-          <p>Hash <code class="inl">n</code> keys independently and uniformly into <code class="inl">n</code> buckets (the idealized model behind Lecture 08's chaining). Let <code class="inl">L</code> be the maximum bucket load. (a) Using indicators, show the expected load of a fixed bucket is exactly <code class="inl">1</code>. (b) Prove that with probability at least <code class="inl">1 &#8722; 1/n</code>, <em>every</em> bucket has load <code class="inl">O(log n / log log n)</code> &mdash; bound <code class="inl">P(bucket i &#8805; t)</code> with a Chernoff bound, then take a union bound over all <code class="inl">n</code> buckets, and solve for the threshold <code class="inl">t</code> that makes the total at most <code class="inl">1/n</code>. (c) Conclude the worst-case chain length for hashing-with-chaining is <code class="inl">&#x398;(log n / log log n)</code> w.h.p., not <code class="inl">O(1)</code> &mdash; and explain why part (a) alone could never have told you this.</p>
+          <p>Hash <code class="inl">n</code> keys independently and uniformly into <code class="inl">n</code> buckets (the idealized model behind Deep study 08's chaining). Let <code class="inl">L</code> be the maximum bucket load. (a) Using indicators, show the expected load of a fixed bucket is exactly <code class="inl">1</code>. (b) Prove that with probability at least <code class="inl">1 &#8722; 1/n</code>, <em>every</em> bucket has load <code class="inl">O(log n / log log n)</code> &mdash; bound <code class="inl">P(bucket i &#8805; t)</code> with a Chernoff bound, then take a union bound over all <code class="inl">n</code> buckets, and solve for the threshold <code class="inl">t</code> that makes the total at most <code class="inl">1/n</code>. (c) Conclude the worst-case chain length for hashing-with-chaining is <code class="inl">&#x398;(log n / log log n)</code> w.h.p., not <code class="inl">O(1)</code> &mdash; and explain why part (a) alone could never have told you this.</p>
         </div>
       </div>
 
@@ -1182,7 +1182,7 @@
         <div>
           <h3>Boost a noisy estimator: Chebyshev, then median-of-means</h3>
           <p class="meta">Chebyshev &middot; Chernoff boosting &middot; streaming sketches</p>
-          <p>You hold an unbiased estimator <code class="inl">Y</code> for an unknown <code class="inl">&#956;</code>, with <code class="inl">E[Y] = &#956;</code> and <code class="inl">Var[Y] = &#963;&sup2;</code>; one evaluation costs one sample. (a) Average <code class="inl">m</code> independent copies into <code class="inl">&#562;</code>; using Chebyshev, find the smallest <code class="inl">m</code> (in terms of <code class="inl">&#963;&sup2;</code>, <code class="inl">&#956;</code>, <code class="inl">&#949;</code>) so that <code class="inl">P(|&#562; &#8722; &#956;| &#8805; &#949;&#956;) &#8804; 1/3</code>. (b) Take the <em>median</em> of <code class="inl">t</code> such independent averages; let <code class="inl">G</code> count how many of them are &ldquo;good&rdquo; (within <code class="inl">&#949;&#956;</code>). Using a Chernoff bound on <code class="inl">G</code>, show the median is good with probability <code class="inl">&#8805; 1 &#8722; &#948;</code> once <code class="inl">t = O(log(1/&#948;))</code>. (c) State the total sample count <code class="inl">mt</code> as a function of <code class="inl">&#963;&sup2;, &#956;, &#949;, &#948;</code> &mdash; the &ldquo;median-of-means&rdquo; guarantee behind the streaming sketches of Lecture 23.</p>
+          <p>You hold an unbiased estimator <code class="inl">Y</code> for an unknown <code class="inl">&#956;</code>, with <code class="inl">E[Y] = &#956;</code> and <code class="inl">Var[Y] = &#963;&sup2;</code>; one evaluation costs one sample. (a) Average <code class="inl">m</code> independent copies into <code class="inl">&#562;</code>; using Chebyshev, find the smallest <code class="inl">m</code> (in terms of <code class="inl">&#963;&sup2;</code>, <code class="inl">&#956;</code>, <code class="inl">&#949;</code>) so that <code class="inl">P(|&#562; &#8722; &#956;| &#8805; &#949;&#956;) &#8804; 1/3</code>. (b) Take the <em>median</em> of <code class="inl">t</code> such independent averages; let <code class="inl">G</code> count how many of them are &ldquo;good&rdquo; (within <code class="inl">&#949;&#956;</code>). Using a Chernoff bound on <code class="inl">G</code>, show the median is good with probability <code class="inl">&#8805; 1 &#8722; &#948;</code> once <code class="inl">t = O(log(1/&#948;))</code>. (c) State the total sample count <code class="inl">mt</code> as a function of <code class="inl">&#963;&sup2;, &#956;, &#949;, &#948;</code> &mdash; the &ldquo;median-of-means&rdquo; guarantee behind the streaming sketches of Deep study 23.</p>
         </div>
       </div>
     </section>
@@ -1199,12 +1199,12 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 06</span>
+            <span class="lab">next &middot; deep study 06</span>
             <div class="ttl">Sorting and the &#x3A9;(n log n) Comparison Barrier</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">We derived randomized quicksort's <code class="inl">&#8776; 2n&nbsp;ln&nbsp;n</code> expected comparisons here; Lecture 06 turns that into a full analysis, then proves the matching lower bound &mdash; that <em>every</em> comparison sort needs <code class="inl">&#x3A9;(n log n)</code>, by a decision-tree counting argument &mdash; and shows how counting and radix sort slip beneath it by leaving the comparison model entirely. The toolkit you built today is the lens every later randomized structure is read through: hashing (08), skip lists and Bloom filters (22), streaming (23).</p>
+        <p style="margin-top:1em">We derived randomized quicksort's <code class="inl">&#8776; 2n&nbsp;ln&nbsp;n</code> expected comparisons here; Deep study 06 turns that into a full analysis, then proves the matching lower bound &mdash; that <em>every</em> comparison sort needs <code class="inl">&#x3A9;(n log n)</code>, by a decision-tree counting argument &mdash; and shows how counting and radix sort slip beneath it by leaving the comparison model entirely. The toolkit you built today is the lens every later randomized structure is read through: hashing (08), skip lists and Bloom filters (22), streaming (23).</p>
       </div>
     </section>
 
@@ -1248,6 +1248,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-04-fast-fourier-transform.html" rel="prev"><span>&larr; Lecture 04</span><strong>The fast Fourier transform</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-06-sorting-and-the-comparison-barrier.html" rel="next"><span>Lecture 06 &rarr;</span><strong>Sorting and the comparison barrier</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-04-fast-fourier-transform.html" rel="prev"><span>&larr; Deep study 04</span><strong>The fast Fourier transform</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-06-sorting-and-the-comparison-barrier.html" rel="next"><span>Deep study 06 &rarr;</span><strong>Sorting and the comparison barrier</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a></p></nav>
 </body>
 </html>

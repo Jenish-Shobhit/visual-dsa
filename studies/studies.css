@@ -35,9 +35,9 @@
 
   /* "Bauhaus" figure palette -> semantic states, nudged toward the ink so small text stays legible */
   --bau-ink: var(--ink);
-  --bau-red: color-mix(in srgb, var(--st-swap) 84%, var(--ink));
+  --bau-red: color-mix(in srgb, var(--st-swap) 72%, var(--ink));
   --bau-red-deep: var(--bau-red); --bau-red-ink: var(--bau-red);
-  --bau-blue: color-mix(in srgb, var(--st-active) 86%, var(--ink));
+  --bau-blue: color-mix(in srgb, var(--st-active) 76%, var(--ink));
   --bau-blue-ink: var(--bau-blue);
   --bau-red-d: var(--bau-red); --bau-blue-d: var(--bau-blue); --bau-black: var(--ink);
   --bau-yellow: #f0be2a;
@@ -95,8 +95,18 @@ html:has(.study-page) { overflow-x: hidden; }
 .study-page svg text[fill="var(--on-state)"] { fill: var(--on-state); }
 .study-page svg text[fill="var(--ink)"] { fill: var(--ink); }
 .study-page svg text.yes, .study-page svg text.no { fill: var(--ink); }
-/* Code panels stay dark in both themes, so number tokens need a light colour on them. */
-.study-page pre :is(.num, .tok-num) { color: #ff9e7d; }
+/* Code panels stay dark in both themes, so every token needs a colour chosen for a dark ground (not the page theme). */
+.study-page pre, .study-page .code {
+  --tok-keyword: #c49bff; --tok-string: #7ee2b0; --tok-number: #ffab70;
+  --tok-comment: #939aae; --tok-function: #8ab4ff; --tok-operator: #d8c3a5;
+}
+.study-page pre :is(.kw, .tok-kw) { color: #8ab4ff; }
+.study-page pre :is(.fn, .tok-fn, .cost) { color: #ffa3a8; }
+.study-page pre :is(.num, .tok-num, .nu) { color: #ffab70; }
+.study-page pre :is(.str, .tok-str) { color: #7ee2b0; }
+.study-page pre :is(.com, .tok-com) { color: #a9b0c4; }
+.study-page pre :is(.op, .tok-op) { color: #d8dbe6; }
+.study-page :is(.next, .nextcard) a { color: var(--study-panel-ink); }
 
 /* Status words in tables were tuned for a light page. */
 :root[data-theme="dark"] .study-page .vg.good { color: var(--st-done); }
@@ -246,8 +256,18 @@ html:has(.study-page) { overflow-x: hidden; }
 .lib-card__lessons a:hover { background: var(--accent-soft); }
 .lib-card__lessons .is-soon { color: var(--ink-3); border-style: dashed; font-weight: 500; }
 .lib-card__lessons .is-solo { padding: 0; border: 0; background: none; color: var(--ink-3); font-weight: 500; font-size: 12.5px; }
+/* Every card in a theme row is as tall as the tallest, so rows line up. */
+.lib-grid { grid-auto-rows: 1fr; }
 /* groups of 4 (3+1 orphan) lay out as 2 x 2 on wide screens */
 @media (min-width: 760px) { .lib-grid--pairs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Odd groups (3 or 5) never leave an empty cell: the last card of a two-column row runs the full width,
+   and five cards sit as 3 over 2 on a six-column grid at desktop widths. */
+@media (min-width: 760px) and (max-width: 999px) { .lib-grid--odd > .lib-card:last-child { grid-column: 1 / -1; } }
+@media (min-width: 1000px) {
+  .lib-grid--five:not(:has(> [hidden])) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .lib-grid--five:not(:has(> [hidden])) > .lib-card { grid-column: span 2; }
+  .lib-grid--five:not(:has(> [hidden])) > .lib-card:nth-child(n+4) { grid-column: span 3; }
+}
 .lib [hidden] { display: none !important; }
 .lib-empty { padding: 32px; text-align: center; color: var(--ink-2); border: 1px dashed var(--line-strong); border-radius: var(--r-lg); }
 
@@ -290,17 +310,18 @@ html:has(.study-page) { overflow-x: hidden; }
 .study-page :is(h2, h3, h4) + p { margin-top: 0; }
 .study-page .content h2 + p, .study-page .content h2 + .lede { margin-top: .6em; }
 
-/* Narrow screens: keep diagram text legible by letting a figure pan sideways instead of shrinking to a smudge.
-   Each figure carries --mw: the width at which its smallest labels still render at about 9.5px. */
+/* Narrow screens: a figure keeps the size at which its smallest label still renders at about 11px and pans
+   sideways inside its own .fig-scroll box (the shared edge fade from shell.js shows which side continues).
+   The caption stays outside the scrolling box, so a title is never cut. Each svg carries --mw, that width. */
+.study-page .fig-scroll { max-width: 100%; }
 @media screen and (max-width: 899px) {
-  .study-page figure { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: thin; }
-  .study-page figure svg[style*="--mw"] { min-width: var(--mw); }
-  .study-page figure > figcaption { position: sticky; left: 0; }
+  .study-page .fig-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: thin; }
+  .study-page .fig-scroll > svg[style*="--mw"] { min-width: var(--mw); }
 }
 @media screen and (max-width: 640px) {
-  .study-page figure:has(> svg[style*="--mw"])::before {
-    content: "Swipe the figure \2194"; display: block; position: sticky; left: 0;
-    padding: 0 2px 6px; font: 600 10.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+  .study-page figure:has(> .fig-scroll)::before {
+    content: "Swipe the figure \2194"; display: block;
+    padding: 0 2px 6px; font: 600 11px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
   }
 }
 

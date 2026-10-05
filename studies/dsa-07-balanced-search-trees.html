@@ -258,7 +258,7 @@
   .dg-label.sm{font-size:12px; fill:var(--on-surface-variant)}
   .dg-val{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface)}
   .dg-cap{font-family:var(--font-display); font-size:15px; font-weight:600; fill:var(--on-surface)}
-  /* tree-node helpers (added for this lecture) */
+  /* tree-node helpers (added for this study) */
   .dg-edge{stroke:var(--bau-ink); stroke-width:2; fill:none}
   .dg-node{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2.5}
   .dg-node-hot{fill:var(--bau-yellow); stroke:var(--bau-ink); stroke-width:2.5}
@@ -267,7 +267,7 @@
   .dg-nt{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
   .dg-nt.w{fill:var(--on-state)}
   .dg-tri{fill:var(--primary-container); stroke:var(--bau-ink); stroke-width:2}
-  .dg-bf{font-family:var(--font-mono); font-size:11px; font-weight:700; fill:var(--bau-red)}
+  .dg-bf{font-family:var(--font-mono); font-size:12px; font-weight:700; fill:var(--bau-red)}
 
   /* ===== inline cell strips (HTML, for state traces) ===== */
   .cells{display:flex; gap:5px; flex-wrap:wrap; margin:.5em 0 1em; font-family:var(--font-mono); font-size:14px; align-items:flex-end}
@@ -351,7 +351,7 @@
     <path d="M120 4 L186 4 L153 64 Z" class="dg-red-f"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 07</span> the dictionary problem, part i</div>
+    <div class="eyebrow"><span class="n">Deep study 07</span> the dictionary problem, part i</div>
     <h1>Balanced Search Trees &amp; the Logarithmic Ideal</h1>
 <p class="study-related"><span class="study-related__label">Related lessons</span><a href="../lessons/18-trees.html">Lesson 18 · Trees &amp; traversals</a><a href="../lessons/19-binary-search-trees.html">Lesson 19 · Binary search trees</a><a href="../lessons/20-balanced-trees.html">Lesson 20 · Balanced trees: AVL &amp; red-black</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -359,13 +359,13 @@
   <div class="study-brief-grid"><p><span>Build on</span>Binary search trees</p><p><span>Core invariant</span>Balanced trees constrain height, so search cost depends on logarithmic height even after updates.</p></div>
   <details class="study-check"><summary>Try this first · Can a rotation change the in order sequence of keys?</summary><p>No. A rotation changes shape while preserving the binary search ordering and therefore the in order sequence.</p></details>
 </div>
-    <p class="lede col">A <em>dictionary</em> is the most-used abstraction in all of computing: store keyed records, then <strong>search</strong>, <strong>insert</strong>, and <strong>delete</strong> by key. The binary search tree promises to do all three in <code class="inl">O(log&nbsp;n)</code> &mdash; the logarithmic ideal &mdash; by mechanising binary search into a structure. But the promise is conditional, and the condition is <strong>balance</strong>. Break it and the same tree degrades, silently, into a linked list. This lecture is about the invariants that make the promise unconditional.</p>
+    <p class="lede col">A <em>dictionary</em> is the most-used abstraction in all of computing: store keyed records, then <strong>search</strong>, <strong>insert</strong>, and <strong>delete</strong> by key. The binary search tree promises to do all three in <code class="inl">O(log&nbsp;n)</code> &mdash; the logarithmic ideal &mdash; by mechanising binary search into a structure. But the promise is conditional, and the condition is <strong>balance</strong>. Break it and the same tree degrades, silently, into a linked list. This study is about the invariants that make the promise unconditional.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
         <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Load one million keys into a textbook binary search tree. If they arrive in a <em>random</em> order the tree is short and a lookup costs about <strong>20</strong> comparisons. If they arrive already <em>sorted</em> &mdash; the single most common shape real data takes &mdash; the very same code builds a tree of height <strong>999,999</strong>, and a lookup costs up to <strong>a million</strong> comparisons.</p>
-        <p style="margin-bottom:0">Same data structure. Same operations. A <strong>50,000&times;</strong> gap, opened by nothing but the <em>order of arrival</em>. The self-balancing tree exists to close that gap by force &mdash; to guarantee the short tree no matter what the adversary feeds it. Learning the invariant that delivers the guarantee is the craft of this lecture.</p>
+        <p style="margin-bottom:0">Same data structure. Same operations. A <strong>50,000&times;</strong> gap, opened by nothing but the <em>order of arrival</em>. The self-balancing tree exists to close that gap by force &mdash; to guarantee the short tree no matter what the adversary feeds it. Learning the invariant that delivers the guarantee is the craft of this study.</p>
       </div>
     </div>
   </div>
@@ -375,7 +375,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>The dictionary problem</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -404,8 +404,8 @@
       <h2>What a dictionary really asks</h2>
       <div class="col">
         <p>Begin by separating the <em>operation</em> from the <em>engine</em> that performs it. Here the operation is ancient and simple: keep a collection of records, each labelled by a <span class="term">key</span> drawn from some ordered universe, and support three verbs &mdash; <em>find</em> the record with a given key, <em>insert</em> a new one, <em>delete</em> an old one. This is the <span class="term">dictionary problem</span>, and it is everywhere: a symbol table in a compiler, an index in a database, the routing table in a switch, the set of live objects in a memory allocator. Solve it well and a thousand systems get faster at once.</p>
-        <p>Lecture 01 gave us two ways to lay a sequence in memory, and each answers the dictionary problem badly. A <strong>sorted array</strong> searches in <code class="inl">O(log n)</code> by binary search &mdash; excellent &mdash; but every insert or delete shifts half the array, <code class="inl">&#x398;(n)</code> per update. An <strong>unsorted linked list</strong> inserts in <code class="inl">O(1)</code> but searches in <code class="inl">&#x398;(n)</code>. Each structure makes one verb cheap by making another dear. The dictionary problem asks for <em>all three verbs cheap at once</em>, and neither linear layout can give it.</p>
-        <p>The binary search tree is the idea that you need not choose. It takes the decisive <em>act</em> of binary search &mdash; &ldquo;compare to the middle, then discard half&rdquo; &mdash; and freezes it into the shape of the data itself, so that the halving structure persists across edits instead of being rebuilt each time. The catch is that the halving only happens if the tree stays <em>short</em>. The whole lecture turns on one quantity, the tree's <strong>height</strong>, and on the invariants that hold it down.</p>
+        <p>Deep study 01 gave us two ways to lay a sequence in memory, and each answers the dictionary problem badly. A <strong>sorted array</strong> searches in <code class="inl">O(log n)</code> by binary search &mdash; excellent &mdash; but every insert or delete shifts half the array, <code class="inl">&#x398;(n)</code> per update. An <strong>unsorted linked list</strong> inserts in <code class="inl">O(1)</code> but searches in <code class="inl">&#x398;(n)</code>. Each structure makes one verb cheap by making another dear. The dictionary problem asks for <em>all three verbs cheap at once</em>, and neither linear layout can give it.</p>
+        <p>The binary search tree is the idea that you need not choose. It takes the decisive <em>act</em> of binary search &mdash; &ldquo;compare to the middle, then discard half&rdquo; &mdash; and freezes it into the shape of the data itself, so that the halving structure persists across edits instead of being rebuilt each time. The catch is that the halving only happens if the tree stays <em>short</em>. The whole study turns on one quantity, the tree's <strong>height</strong>, and on the invariants that hold it down.</p>
         <div class="note info"><span class="tag">the formal lens</span>One problem, many engines. We will hold the <em>contract</em> &mdash; search, insert, delete by key &mdash; absolutely fixed, and vary only the representation. Every cost we meet is a property of the representation, never of the contract.</div>
       </div>
     </section>
@@ -445,13 +445,13 @@
           <li><code class="inl">search(k)</code> &mdash; return the value stored under key <code class="inl">k</code>, or &ldquo;absent&rdquo;;</li>
           <li><code class="inl">insert(k, v)</code> / <code class="inl">delete(k)</code> &mdash; add or remove a pair by key.</li>
         </ul>
-        <p>If that were the whole contract, a hash table &mdash; next lecture &mdash; would answer it in expected <code class="inl">O(1)</code> and trees would be a curiosity. But most real dictionaries quietly demand a richer contract: the keys are <em>ordered</em>, and we want the order back. The <span class="term">Ordered Dictionary</span> adds:</p>
+        <p>If that were the whole contract, a hash table &mdash; next study &mdash; would answer it in expected <code class="inl">O(1)</code> and trees would be a curiosity. But most real dictionaries quietly demand a richer contract: the keys are <em>ordered</em>, and we want the order back. The <span class="term">Ordered Dictionary</span> adds:</p>
         <ul>
           <li><code class="inl">min()</code> / <code class="inl">max()</code> &mdash; the extreme keys;</li>
           <li><code class="inl">predecessor(k)</code> / <code class="inl">successor(k)</code> &mdash; the neighbouring keys in sorted order;</li>
           <li><code class="inl">range(lo, hi)</code> &mdash; every key in an interval, in order.</li>
         </ul>
-        <p>These are exactly the queries a hash table <em>cannot</em> answer cheaply, because hashing deliberately destroys order to spread keys uniformly. A search tree keeps the keys <em>sorted by structure</em>, so it answers all of them along the same <code class="inl">O(h)</code> root-to-leaf walk. That is the real reason trees survive in the age of hashing: <strong>they remember the order.</strong> Hold this distinction; it is the spine connecting this lecture to the next.</p>
+        <p>These are exactly the queries a hash table <em>cannot</em> answer cheaply, because hashing deliberately destroys order to spread keys uniformly. A search tree keeps the keys <em>sorted by structure</em>, so it answers all of them along the same <code class="inl">O(h)</code> root-to-leaf walk. That is the real reason trees survive in the age of hashing: <strong>they remember the order.</strong> Hold this distinction; it is the spine connecting this study to the next.</p>
         <div class="pull">Hashing buys <span>speed</span> by forgetting the order. A search tree's whole value is that it <span>remembers</span> it.</div>
       </div>
     </section>
@@ -520,7 +520,7 @@
         <p>The gap between those two ends is the whole drama. At the floor, <code class="inl">h&asymp;log&#8322;n</code>, and a million keys cost twenty steps &mdash; the logarithmic ideal. At the ceiling, <code class="inl">h=n&minus;1</code>, and the tree <em>is</em> a linked list: the same <code class="inl">&#x398;(h)</code> law now reads <code class="inl">&#x398;(n)</code>, and we have built an elaborate pointer structure that performs strictly worse than the array we were trying to beat. A plain BST gives you no say in which end you land at &mdash; the <em>order of insertion</em> decides. Figure 1 shows both fates for the same seven keys.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 470" style="--mw:608px" role="img" aria-labelledby="f1t f1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 960 470" style="--mw:768px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The same seven keys as a balanced tree and as a degenerate path</title>
             <desc id="f1d">On the left, the keys one through seven inserted in the order four, two, six, one, three, five, seven form a balanced tree of height two; any search takes at most three comparisons. On the right, the same keys inserted in sorted order one through seven form a single right-leaning path of height six; a search for seven takes seven comparisons. Both are valid binary search trees; only the insertion order differs.</desc>
 
@@ -577,7 +577,7 @@
               <text x="16" y="25" class="dg-label">height = 6</text>
               <text x="16" y="46" class="dg-val dg-red-f">search &#8804; 7: a list</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 &mdash; two fates, one set of keys.</b> Both are legal binary search trees over <code class="inl">{1&hellip;7}</code>; their in-order traversals are identical. Only the order of insertion differs, yet one is height <code class="inl">2</code> and the other height <code class="inl">6</code>. The structure does nothing to defend itself &mdash; balance is something we must <em>impose</em>.</figcaption>
         </figure>
 
@@ -597,7 +597,7 @@
       <div class="col">
         <p>It is tempting to wave the degenerate tree away as a pathological corner that never happens in practice. The opposite is true. <em>Sorted or nearly-sorted input is the single most common shape real data arrives in.</em> Timestamps land in time order. Auto-increment database keys arrive ascending. Log files, version numbers, re-imported exports, the output of a previous sort &mdash; all monotone. Feed any ascending stream to the plain <code class="inl">INSERT</code> of &sect;04 and <em>every</em> new key is larger than all before it, so it walks to the far right and hangs there. The tree grows as a single right-leaning stick of height <code class="inl">n&minus;1</code>. The most natural input produces the worst possible tree.</p>
         <p>One might hope the average saves us, and on paper it nearly does: a BST built from a <em>uniformly random</em> permutation has expected height <code class="inl">&#x398;(log n)</code>, with the average node sitting about <code class="inl">1.39&middot;log&#8322;n</code> deep. But &ldquo;average over random insertion orders&rdquo; is a promise about a distribution you do not control. The adversary &mdash; or merely an upstream <code class="inl">ORDER BY</code> &mdash; chooses the order, and a single sorted batch lands you on the <code class="inl">&#x398;(n)</code> ceiling. Relying on the average here is relying on luck you have already lost.</p>
-        <div class="note warn"><span class="tag">the boundary of the average</span>&ldquo;Balanced in expectation&rdquo; and &ldquo;balanced in the worst case&rdquo; are different guarantees. Expectation is defended only against a random adversary; a self-balancing invariant is defended against <em>every</em> adversary. The next four sections build that unconditional defence. (Randomness can be re-introduced deliberately &mdash; the treap of Lecture 22 &mdash; but as a designed tool, not a hope.)</p></div>
+        <div class="note warn"><span class="tag">the boundary of the average</span>&ldquo;Balanced in expectation&rdquo; and &ldquo;balanced in the worst case&rdquo; are different guarantees. Expectation is defended only against a random adversary; a self-balancing invariant is defended against <em>every</em> adversary. The next four sections build that unconditional defence. (Randomness can be re-introduced deliberately &mdash; the treap of Deep study 22 &mdash; but as a designed tool, not a hope.)</p></div>
         <p>The fix cannot be &ldquo;ask callers to insert in random order.&rdquo; It must be structural: after each update, <em>detect</em> when the tree is leaning too far and <em>repair</em> it &mdash; cheaply, in <code class="inl">O(log n)</code>, without disturbing the ordering that makes it a search tree at all. There is exactly one primitive that can do this. Everything that follows is built from it.</p>
       </div>
     </section>
@@ -616,7 +616,7 @@
         <p>Why is the ordering safe? Read off the in-order sequence before and after. Before the rotation the order is <code class="inl">A</code>, <code class="inl">x</code>, <code class="inl">B</code>, <code class="inl">y</code>, <code class="inl">C</code>. After it the order is&hellip; <code class="inl">A</code>, <code class="inl">x</code>, <code class="inl">B</code>, <code class="inl">y</code>, <code class="inl">C</code> &mdash; identical. The constraints <code class="inl">A &lt; x &lt; B &lt; y &lt; C</code> hold in both shapes; the rotation merely re-hangs <code class="inl">B</code> from <code class="inl">y</code> to <code class="inl">x</code>, the one subtree that sits, in value, <em>between</em> them and so is legal under either parent. A <strong>right rotation</strong> is the exact mirror, lifting a left child. Because in-order is preserved, a rotation is invisible to <code class="inl">search</code> &mdash; it changes only the heights, which is exactly what we want to adjust.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 390" style="--mw:760px" role="img" aria-labelledby="f2t f2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 960 390" style="--mw:896px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">A left rotation at x pivots x and its right child y</title>
             <desc id="f2d">Before: x is the root with left subtree A and right child y; y has left subtree B and right subtree C. After a left rotation at x, y becomes the root with x as its left child and C as its right subtree; x keeps A on its left and receives B on its right. The in-order sequence A, x, B, y, C is identical before and after, so the binary-search-tree ordering is preserved while the heights change.</desc>
 
@@ -665,8 +665,8 @@
               <marker id="ahL" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
               <marker id="ahR" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
             </defs>
-          </svg>
-          <figcaption><b>Figure 2 &mdash; the balancing primitive.</b> A rotation is <code class="inl">O(1)</code> pointer surgery that re-hangs the single &ldquo;between&rdquo; subtree <code class="inl">B</code>. Left and right rotations are inverses. Every balanced tree in this lecture &mdash; AVL, red-black, even the splits inside a B-tree &mdash; is, at bottom, a disciplined schedule of these.</figcaption>
+          </svg></div>
+          <figcaption><b>Figure 2 &mdash; the balancing primitive.</b> A rotation is <code class="inl">O(1)</code> pointer surgery that re-hangs the single &ldquo;between&rdquo; subtree <code class="inl">B</code>. Left and right rotations are inverses. Every balanced tree in this study &mdash; AVL, red-black, even the splits inside a B-tree &mdash; is, at bottom, a disciplined schedule of these.</figcaption>
         </figure>
         <p>A rotation, then, is a knob: it shifts one unit of height from one side of a pivot to the other, for free, without anyone downstream noticing. A self-balancing tree is nothing more than a <em>policy</em> for when to turn that knob. There are two famous policies.</p>
       </div>
@@ -722,7 +722,7 @@
         <p>Maintaining the invariant is the art. After an <code class="inl">INSERT</code>, walk back up from the new leaf updating heights; the first node whose balance factor reaches <code class="inl">&#177;2</code> is the lowest point of damage. Exactly one of four configurations holds there, named for the two steps of the path from that node down toward the new leaf, and each is repaired by one or two rotations:</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 360" style="--mw:608px" role="img" aria-labelledby="f3t f3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 960 360" style="--mw:717px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">The four AVL imbalance cases and their rotations</title>
             <desc id="f3d">Four small diagrams. Left-Left: the heavy path goes left then left from the unbalanced node z, fixed by a single right rotation at z. Right-Right: heavy path right then right, fixed by a single left rotation at z. Left-Right: heavy path left then right, fixed by a left rotation at the child y followed by a right rotation at z. Right-Left: heavy path right then left, fixed by a right rotation at y followed by a left rotation at z.</desc>
 
@@ -753,7 +753,7 @@
             <circle cx="620" cy="246" r="17" class="dg-node"/><text x="620" y="246" class="dg-nt">z</text>
             <circle cx="665" cy="301" r="17" class="dg-node"/><text x="665" y="301" class="dg-nt">y</text>
             <circle cx="625" cy="335" r="17" class="dg-node-hot"/><text x="625" y="335" class="dg-nt">x</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 &mdash; the four cases.</b> <code class="inl">z</code> is the lowest unbalanced node, <code class="inl">y</code> its taller child, <code class="inl">x</code> the grandchild on the heavy path (red). When <code class="inl">z</code> and <code class="inl">y</code> lean the <em>same</em> way (LL, RR) a single rotation suffices; when they lean <em>opposite</em> ways (LR, RL) the zig-zag must first be straightened by rotating <code class="inl">y</code>, then <code class="inl">z</code>. A single insertion needs at most one such repair.</figcaption>
         </figure>
 
@@ -803,7 +803,7 @@
         <p>The last row is the instructive one. After inserting <code class="inl">25</code>, node <code class="inl">20</code> is right-heavy (<code class="inl">+2</code>) but its right child <code class="inl">40</code> is left-heavy (<code class="inl">&minus;1</code>) &mdash; opposite leans, the <strong>RL</strong> zig-zag. A single left rotation at <code class="inl">20</code> would merely tip the imbalance the other way; we must first <em>straighten</em> by rotating <code class="inl">40</code> right, then rotate <code class="inl">20</code> left. Figure 4 freezes all three states.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 980 330" style="--mw:843px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 980 330" style="--mw:915px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">The right-left double rotation that rebalances after inserting 25</title>
             <desc id="f4d">Panel one: after inserting 25, node 20 is unbalanced with balance factor plus two; its right child is 40 with left child 30 with left child 25. Panel two: a right rotation at 40 lifts 30, producing the chain 20, 30, with 25 left of 30 and 40 right of 30, and 50 right of 40. Panel three: a left rotation at 20 lifts 30 to the root, giving 30 with left child 20 (children 10 and 25) and right child 40 (right child 50), a balanced tree of height two.</desc>
 
@@ -861,7 +861,7 @@
             <circle cx="760" cy="192" r="17" class="dg-node"/><text x="760" y="192" class="dg-nt">10</text>
             <circle cx="838" cy="192" r="17" class="dg-node-r"/><text x="838" y="192" class="dg-nt w">25</text>
             <circle cx="945" cy="192" r="17" class="dg-node"/><text x="945" y="192" class="dg-nt">50</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 &mdash; a double rotation, step by step.</b> The newly inserted <code class="inl">25</code> (red) sits in the &ldquo;inner&rdquo; position, between <code class="inl">20</code> and <code class="inl">40</code> in value. The first rotation pulls it onto the straight path; the second lifts <code class="inl">30</code> to the top. Throughout, the in-order order <code class="inl">10,20,25,30,40,50</code> is untouched.</figcaption>
         </figure>
       </div>
@@ -890,7 +890,7 @@
         </details>
 
         <figure class="reveal">
-          <svg viewBox="0 0 720 300" style="--mw:570px" role="img" aria-labelledby="f5t f5d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 300" style="--mw:672px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">A valid red-black tree with black-height two</title>
             <desc id="f5d">A red-black tree: black root 4 with two red children 2 and 6; each red node has two black children, namely 1 and 3 under 2, and 5 and 7 under 6. No red node has a red child, and every path from the root to a leaf crosses the same number of black nodes, giving a black-height of two.</desc>
             <g class="dg-edge">
@@ -911,7 +911,7 @@
             <!-- legend -->
             <circle cx="40" cy="266" r="9" class="dg-node-b"/><text x="58" y="266" class="dg-label sm" dominant-baseline="central">black: counts toward black-height</text>
             <circle cx="360" cy="266" r="9" class="dg-node-r"/><text x="378" y="266" class="dg-label sm" dominant-baseline="central">red: never has a red child</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 5 &mdash; colours as a budget.</b> Below the root, every root-to-leaf path here meets exactly two black nodes (a black leaf, then its black <code class="inl">nil</code> child), so the root's black-height is <code class="inl">2</code>. The reds are &ldquo;free&rdquo; nodes that may be inserted without lengthening the black budget &mdash; but never two in a row, which caps the total height at twice the black-height.</figcaption>
         </figure>
 
@@ -925,7 +925,7 @@
       <div class="eyebrow"><span class="n">11</span> when memory is not flat</div>
       <h2>B-trees: changing the cost model changes the tree</h2>
       <div class="col">
-        <p>Everything so far has assumed Lecture 00's RAM model, where every memory access costs the same <code class="inl">1</code>. Lecture 01 already showed that promise fraying against the cache. Push the data onto a disk or SSD and it shatters completely: a random read does not fetch a byte, it fetches a whole <span class="term">block</span> &mdash; thousands of bytes &mdash; and that single transfer costs as much as millions of arithmetic operations. The honest cost model is no longer &ldquo;count comparisons&rdquo; but the <span class="term">external-memory model</span>: <strong>count block transfers (I/Os)</strong>, each moving <code class="inl">B</code> items at once.</p>
+        <p>Everything so far has assumed Deep study 00's RAM model, where every memory access costs the same <code class="inl">1</code>. Deep study 01 already showed that promise fraying against the cache. Push the data onto a disk or SSD and it shatters completely: a random read does not fetch a byte, it fetches a whole <span class="term">block</span> &mdash; thousands of bytes &mdash; and that single transfer costs as much as millions of arithmetic operations. The honest cost model is no longer &ldquo;count comparisons&rdquo; but the <span class="term">external-memory model</span>: <strong>count block transfers (I/Os)</strong>, each moving <code class="inl">B</code> items at once.</p>
         <p>Under that model a balanced <em>binary</em> tree is a disaster. Its <code class="inl">log&#8322;n &#8776; 30</code> levels for a billion keys become up to thirty <em>separate</em> block reads, each a random seek, because consecutive nodes on the path live in unrelated blocks. The structure is right; the branching factor is wrong. The fix, due to Bayer and McCreight in 1970, is to <em>match the node to the block</em>: let each node hold not one key but as many as fill a block &mdash; hundreds or thousands &mdash; with one more child pointer than it has keys. This is the <span class="term">B-tree</span>.</p>
         <p>A B-tree of <span class="term">minimum degree</span> <code class="inl">t</code> keeps every node (bar the root) between <code class="inl">t&minus;1</code> and <code class="inl">2t&minus;1</code> keys, holds all leaves at the <em>same</em> depth, and keeps each node's keys sorted so that its children interleave as separators. With branching factor up to <code class="inl">2t</code>, its height is <code class="inl">O(log<sub>B</sub>n)</code> &mdash; a logarithm in base <em>thousands</em>, not base two:</p>
         <div class="eq">
@@ -943,7 +943,7 @@
         </div>
 
         <figure class="reveal">
-          <svg viewBox="0 0 980 320" style="--mw:776px" role="img" aria-labelledby="f6t f6d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 980 320" style="--mw:915px" role="img" aria-labelledby="f6t f6d">
             <title id="f6t">A B-tree node is a whole disk block, giving high fan-out and few levels</title>
             <desc id="f6d">A B-tree root block holds two separator keys, 17 and 35, with three child pointers. Each child is itself a block holding several sorted keys. Each block read is one disk I/O. A side panel notes that with fan-out about one thousand, a billion keys fit in a tree of height three, so any record is found in three I/Os, versus about thirty random seeks for a binary tree.</desc>
 
@@ -1000,10 +1000,10 @@
               <text x="18" y="26" class="dg-val dg-blue-f">fan-out &#8776; 1000  &#8658;  10&#8313; keys in height 3  &#8658;  3 I/Os</text>
               <text x="18" y="50" class="dg-label sm">a binary tree over the same keys: &#8776;30 levels &#8658; up to 30 random seeks &mdash; about 10&times; slower</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 6 &mdash; fat nodes, flat tree.</b> By making each node a block, the B-tree trades many shallow comparisons inside a node (cheap, in cache) for very few block transfers between nodes (expensive). The <code class="inl">B&#8314;</code>-tree variant keeps all values in the leaves and links them, so a range scan walks a sorted linked list of blocks &mdash; which is why it backs essentially every relational database index and filesystem.</figcaption>
         </figure>
-        <p>This is the same lesson as Lecture 01's array-versus-list timing, escalated: the abstract <code class="inl">&#x398;(log n)</code> was never the whole story; the <em>base</em> of the logarithm, set by how much useful work one memory transfer buys, is where the real performance lives. Change the cost model and the optimal tree changes with it. The binary search tree is the right answer in RAM; the B-tree is the right answer on disk; both are the same idea &mdash; a balanced, ordered, logarithmic-height search structure &mdash; tuned to a different machine.</p>
+        <p>This is the same lesson as Deep study 01's array-versus-list timing, escalated: the abstract <code class="inl">&#x398;(log n)</code> was never the whole story; the <em>base</em> of the logarithm, set by how much useful work one memory transfer buys, is where the real performance lives. Change the cost model and the optimal tree changes with it. The binary search tree is the right answer in RAM; the B-tree is the right answer on disk; both are the same idea &mdash; a balanced, ordered, logarithmic-height search structure &mdash; tuned to a different machine.</p>
         <div class="note info"><span class="tag">cross-link</span>This is the structure under <em>DBMS &middot; indexes</em>: a SQL <code class="inl">CREATE INDEX</code> builds a B&#8314;-tree, and the query planner's love of it is exactly the <code class="inl">log<sub>B</sub>n</code> I/O bound made concrete.</div>
       </div>
     </section>
@@ -1013,7 +1013,7 @@
       <div class="eyebrow"><span class="n">12</span> the ledger</div>
       <h2>Every structure, every operation</h2>
       <div class="col">
-        <p>The whole lecture, tabulated. Read the columns as a story: the linear layouts of Lecture 01 each fail one verb; the balanced trees make all of <em>search / insert / delete</em> logarithmic and worst-case; and only the ordered structures answer the order-dependent queries at all. The hash table &mdash; next lecture &mdash; is previewed in the last column precisely to show what it gives up.</p>
+        <p>The whole study, tabulated. Read the columns as a story: the linear layouts of Deep study 01 each fail one verb; the balanced trees make all of <em>search / insert / delete</em> logarithmic and worst-case; and only the ordered structures answer the order-dependent queries at all. The hash table &mdash; next study &mdash; is previewed in the last column precisely to show what it gives up.</p>
         <div class="tbl-wrap">
           <table>
             <caption>Cost of the dictionary operations by representation (n keys)</caption>
@@ -1052,7 +1052,7 @@
         <p>The most common BST bug in existence: testing <code class="inl wrap">left.key &lt; node.key &lt; right.key</code> at each node and calling it valid. The invariant is about whole <em>subtrees</em>, not immediate children. The tree with root <code class="inl">5</code>, right child <code class="inl">7</code>, and <code class="inl">7</code>'s <em>left</em> child <code class="inl">3</code> passes every local check yet is not a BST &mdash; <code class="inl">3</code> sits in <code class="inl">5</code>'s right subtree but is smaller than <code class="inl">5</code>. Validate with a descending <code class="inl">(low, high)</code> bound or by confirming the in-order traversal is strictly increasing (Practice 1).</p>
 
         <h3>2 &middot; Trusting &ldquo;average&rdquo; balance against real input</h3>
-        <p>A plain BST is <code class="inl">O(log n)</code> only in expectation over random insertion orders &mdash; and real data is the opposite of random. Sorted timestamps, auto-increment keys, or the output of a prior sort drive it straight to the <code class="inl">&#x398;(n)</code> stick of &sect;06. If you cannot guarantee random insertion order &mdash; and you almost never can &mdash; you must use a self-balancing tree or a randomized one (treap, Lecture 22). &ldquo;It tested fine on shuffled data&rdquo; is how this ships and then melts in production on the first bulk import.</p>
+        <p>A plain BST is <code class="inl">O(log n)</code> only in expectation over random insertion orders &mdash; and real data is the opposite of random. Sorted timestamps, auto-increment keys, or the output of a prior sort drive it straight to the <code class="inl">&#x398;(n)</code> stick of &sect;06. If you cannot guarantee random insertion order &mdash; and you almost never can &mdash; you must use a self-balancing tree or a randomized one (treap, Deep study 22). &ldquo;It tested fine on shuffled data&rdquo; is how this ships and then melts in production on the first bulk import.</p>
 
         <h3>3 &middot; Implementing insert but botching delete</h3>
         <p>Insertion always lands at a leaf; deletion has the awkward two-children case and is where hand-rolled trees go wrong. Forgetting that the in-order successor must be spliced out <em>after</em> copying its key, copying the successor's <em>key</em> but not its satellite data, or &mdash; in a balanced tree &mdash; returning up the recursion without re-checking balance/colour, all silently corrupt the structure. In AVL especially, remember that a delete may require rotations at <em>several</em> ancestors, not just one.</p>
@@ -1110,7 +1110,7 @@
         <div>
           <h3>k-th smallest, then make it fast under updates</h3>
           <p class="meta">in-order + augmentation &middot; order-statistic tree &middot; LeetCode 230</p>
-          <p>Given the <code class="inl">root</code> of a BST and integer <code class="inl">k</code> (1-indexed), return the k-th smallest key. The base case is a partial in-order traversal in <code class="inl">O(h+k)</code>. Now the real question (LeetCode's follow-up): if the BST is <em>modified often</em> and you must answer many such queries, redesign so each <code class="inl">kthSmallest</code> is <code class="inl">O(log n)</code> on a balanced tree. Specify the augmentation (subtree <code class="inl">size</code>), give <code class="inl">select(k)</code> and its mirror <code class="inl">rank(key)</code>, and &mdash; the crux &mdash; prove the <code class="inl">size</code> field is maintainable in <code class="inl">O(1)</code> per node through both updates and rotations. This is an order-statistic tree; it foreshadows Lecture 10.</p>
+          <p>Given the <code class="inl">root</code> of a BST and integer <code class="inl">k</code> (1-indexed), return the k-th smallest key. The base case is a partial in-order traversal in <code class="inl">O(h+k)</code>. Now the real question (LeetCode's follow-up): if the BST is <em>modified often</em> and you must answer many such queries, redesign so each <code class="inl">kthSmallest</code> is <code class="inl">O(log n)</code> on a balanced tree. Specify the augmentation (subtree <code class="inl">size</code>), give <code class="inl">select(k)</code> and its mirror <code class="inl">rank(key)</code>, and &mdash; the crux &mdash; prove the <code class="inl">size</code> field is maintainable in <code class="inl">O(1)</code> per node through both updates and rotations. This is an order-statistic tree; it foreshadows Deep study 10.</p>
         </div>
       </div>
     </section>
@@ -1127,12 +1127,12 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 08</span>
+            <span class="lab">next &middot; deep study 08</span>
             <div class="ttl">The Dictionary Problem II: Hashing and Expected-Constant Access</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">We bounded the dictionary's worst case at <code class="inl">O(log n)</code> by keeping order. Lecture 08 asks the opposite question: if you are willing to <em>forget</em> the order and trade worst-case determinism for an expectation, can you get all the way to <code class="inl">O(1)</code>? That is hashing &mdash; collisions, load factors, universal and perfect families &mdash; and the concentration bounds (Lecture 05) that keep the tail in check. The two lectures are the two halves of how every map you will ever use is actually built.</p>
+        <p style="margin-top:1em">We bounded the dictionary's worst case at <code class="inl">O(log n)</code> by keeping order. Deep study 08 asks the opposite question: if you are willing to <em>forget</em> the order and trade worst-case determinism for an expectation, can you get all the way to <code class="inl">O(1)</code>? That is hashing &mdash; collisions, load factors, universal and perfect families &mdash; and the concentration bounds (Deep study 05) that keep the tail in check. The two studies are the two halves of how every map you will ever use is actually built.</p>
       </div>
     </section>
 
@@ -1176,6 +1176,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-06-sorting-and-the-comparison-barrier.html" rel="prev"><span>&larr; Lecture 06</span><strong>Sorting and the comparison barrier</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-08-hashing-and-expected-constant-access.html" rel="next"><span>Lecture 08 &rarr;</span><strong>Hashing and expected constant access</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/18-trees.html">Lesson 18 &middot; Trees &amp; traversals</a><a href="../lessons/19-binary-search-trees.html">Lesson 19 &middot; Binary search trees</a><a href="../lessons/20-balanced-trees.html">Lesson 20 &middot; Balanced trees: AVL &amp; red-black</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-06-sorting-and-the-comparison-barrier.html" rel="prev"><span>&larr; Deep study 06</span><strong>Sorting and the comparison barrier</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-08-hashing-and-expected-constant-access.html" rel="next"><span>Deep study 08 &rarr;</span><strong>Hashing and expected constant access</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/18-trees.html">Lesson 18 &middot; Trees &amp; traversals</a><a href="../lessons/19-binary-search-trees.html">Lesson 19 &middot; Binary search trees</a><a href="../lessons/20-balanced-trees.html">Lesson 20 &middot; Balanced trees: AVL &amp; red-black</a></p></nav>
 </body>
 </html>

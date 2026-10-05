@@ -366,14 +366,14 @@
     <circle cx="127" cy="110" r="3" fill="var(--bau-ink)"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 21</span> coping with the intractable</div>
+    <div class="eyebrow"><span class="n">Deep study 21</span> coping with the intractable</div>
     <h1>Living with Hardness</h1>
 <div class="study-brief" aria-label="Study at a glance">
   <div class="study-brief-title"><span>FIELD NOTE / 21</span><strong>Before the long read</strong></div>
   <div class="study-brief-grid"><p><span>Build on</span>NP hardness and approximation</p><p><span>Core invariant</span>When exact general solutions are expensive, state which guarantee you can afford: ratio, parameter, or heuristic.</p></div>
   <details class="study-check"><summary>Try this first · What does a 2 approximation for minimization promise?</summary><p>Its solution cost is at most twice the optimum, for every input covered by the theorem.</p></details>
 </div>
-    <p class="lede col">The previous lecture built a wall. It proved that for a whole continent of problems &mdash; routing, scheduling, covering, packing &mdash; no polynomial-time algorithm can return the exact optimum on every input, unless <code class="inl">P=NP</code>. But the problems do not retreat just because we proved them hard. The trucks still must be routed tomorrow morning. So this lecture is about the doors cut through the wall: how to get a <em>provably</em> good answer fast by relaxing exactly one of the demands we secretly bundled into the word &ldquo;solve.&rdquo;</p>
+    <p class="lede col">The previous study built a wall. It proved that for a whole continent of problems &mdash; routing, scheduling, covering, packing &mdash; no polynomial-time algorithm can return the exact optimum on every input, unless <code class="inl">P=NP</code>. But the problems do not retreat just because we proved them hard. The trucks still must be routed tomorrow morning. So this study is about the doors cut through the wall: how to get a <em>provably</em> good answer fast by relaxing exactly one of the demands we secretly bundled into the word &ldquo;solve.&rdquo;</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
@@ -389,7 +389,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>The wall &amp; three doors</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -414,18 +414,18 @@
       <div class="eyebrow"><span class="n">01</span> locate the difficulty before you fight it</div>
       <h2>The wall, and the three doors</h2>
       <div class="col">
-        <p>I always begin by separating the problem from the demand we make of it. When we declared a problem &ldquo;intractable,&rdquo; we quietly fused four separate requirements into one word. We wanted (1) the <strong>exact optimum</strong>, (2) on <strong>every</strong> input, (3) in <strong>polynomial time</strong>, (4) with a <strong>worst-case guarantee</strong>. The Cook&ndash;Levin theorem and the reductions of the last lecture forbid having (1), (2), and (3) <em>together</em> &mdash; assuming <code class="inl">P&ne;NP</code>. They say nothing about any <em>three</em> of the four held while one is released.</p>
+        <p>I always begin by separating the problem from the demand we make of it. When we declared a problem &ldquo;intractable,&rdquo; we quietly fused four separate requirements into one word. We wanted (1) the <strong>exact optimum</strong>, (2) on <strong>every</strong> input, (3) in <strong>polynomial time</strong>, (4) with a <strong>worst-case guarantee</strong>. The Cook&ndash;Levin theorem and the reductions of the last study forbid having (1), (2), and (3) <em>together</em> &mdash; assuming <code class="inl">P&ne;NP</code>. They say nothing about any <em>three</em> of the four held while one is released.</p>
         <p>That is the whole strategy, and it is a strategy of formalization, not of cleverness. Write the demand down precisely, and you can see which clause is load-bearing for your particular instance &mdash; and release exactly that one.</p>
 
         <ul class="obj">
           <li><strong>Release exactness</strong> &mdash; keep polynomial time and every input, but accept an answer provably within a factor of optimal. This is the world of <span class="term">approximation algorithms</span>, with their guaranteed ratios.</li>
           <li><strong>Release input-uniformity</strong> &mdash; keep the exact optimum, but stop charging the cost to <code class="inl">n</code> alone. Identify a parameter <code class="inl">k</code> that captures the combinatorial core, and confine the exponential blow-up to <code class="inl">k</code>. This is <span class="term">fixed-parameter tractability</span> (FPT).</li>
-          <li><strong>Release the worst-case guarantee</strong> &mdash; allow randomness or heuristic search, trading a certainty for a high probability. That door is <a class="inline" href="#s12">Lecture&nbsp;22</a>; we name it here only to keep the map honest.</li>
+          <li><strong>Release the worst-case guarantee</strong> &mdash; allow randomness or heuristic search, trading a certainty for a high probability. That door is <a class="inline" href="#s12">Deep&nbsp;study&nbsp;22</a>; we name it here only to keep the map honest.</li>
         </ul>
 
-        <p>This lecture walks through the first two doors at full depth. They look unrelated &mdash; one gives up the right answer, the other keeps it &mdash; but they share a single conviction, which is the thesis I will keep returning to: <strong>hardness is a statement about a resource demand over a domain, and you defeat it by reshaping the demand, never by wishing the problem easier.</strong></p>
+        <p>This study walks through the first two doors at full depth. They look unrelated &mdash; one gives up the right answer, the other keeps it &mdash; but they share a single conviction, which is the thesis I will keep returning to: <strong>hardness is a statement about a resource demand over a domain, and you defeat it by reshaping the demand, never by wishing the problem easier.</strong></p>
 
-        <div class="stats" aria-label="The four headline guarantees of this lecture">
+        <div class="stats" aria-label="The four headline guarantees of this study">
           <div class="stat lead"><span class="big">2&times;</span><span class="lab">Vertex Cover, approximated in linear time</span></div>
           <div class="stat"><span class="big">ln&nbsp;n</span><span class="lab">Set Cover greedy ratio &mdash; and provably the best possible</span></div>
           <div class="stat"><span class="big">3/2</span><span class="lab">metric TSP via Christofides</span></div>
@@ -449,7 +449,7 @@
         </ul>
 
         <h3>Prerequisites</h3>
-        <p>Three ideas carry the lecture. The first sets the stakes (why we relax at all); the second and third are the two engines we re-purpose &mdash; greedy choice for the approximation ratios, and dynamic programming for the exact parameterized solutions.</p>
+        <p>Three ideas carry the study. The first sets the stakes (why we relax at all); the second and third are the two engines we re-purpose &mdash; greedy choice for the approximation ratios, and dynamic programming for the exact parameterized solutions.</p>
         <div class="chips">
           <span class="chip">NP-completeness &amp; reductions</span>
           <a class="chip" href="dsa-12-minimum-spanning-trees-and-union-find.html">greedy algorithms</a>
@@ -502,7 +502,7 @@
         <p>Read it right to left and the trick disappears into obviousness: if our answer is within a factor <code class="inl">&alpha;</code> of <em>something no larger than the optimum</em>, it is within <code class="inl">&alpha;</code> of the optimum. The craft of approximation is almost entirely the craft of <em>finding the right computable lower bound</em>. For Vertex Cover it will be the size of a matching; for Set Cover, a pigeonhole count; for metric TSP, the minimum spanning tree. Each is a structure from earlier in this course, pressed into service as a certificate.</p>
 
         <figure>
-          <svg viewBox="0 0 720 250" style="--mw:619px" role="img" aria-labelledby="f1t f1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 250" style="--mw:734px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The lower-bound sandwich</title>
             <desc id="f1d">A cost axis. A computable lower bound L sits at the left, the unknown optimum OPT lives in a bracketed region to its right, and the algorithm's output ALG sits further right, at or below alpha times L. Because L is at most OPT, ALG is at most alpha times OPT.</desc>
             <!-- axis -->
@@ -534,8 +534,8 @@
             <text class="dg-label" x="60" y="40" fill="var(--bau-blue)">L &#8804; OPT</text>
             <text class="dg-label" x="180" y="40" fill="var(--on-surface-variant)">&#8757;</text>
             <text class="dg-label" x="210" y="40" fill="var(--bau-red)">ALG &#8804; &#945;&middot;L &#8804; &#945;&middot;OPT</text>
-          </svg>
-          <figcaption><b>Figure 1 &mdash; the sandwich.</b> We never locate <code class="inl">OPT</code>. We pin a computable lower bound <code class="inl">L</code> below it and prove our output sits within <code class="inl">&alpha;</code> of that <em>same</em> <code class="inl">L</code>. The unknown optimum is trapped, and the ratio falls out. Every approximation proof in this lecture is one instance of this picture.</figcaption>
+          </svg></div>
+          <figcaption><b>Figure 1 &mdash; the sandwich.</b> We never locate <code class="inl">OPT</code>. We pin a computable lower bound <code class="inl">L</code> below it and prove our output sits within <code class="inl">&alpha;</code> of that <em>same</em> <code class="inl">L</code>. The unknown optimum is trapped, and the ratio falls out. Every approximation proof in this study is one instance of this picture.</figcaption>
         </figure>
 
         <div class="note info"><span class="tag">the formal lens</span>This is reasoning about an object you cannot construct, via a bound you can. It is exactly the discipline of the engine: you do not need to enumerate the answer to certify a property of it. Hold that thought &mdash; it is what separates an approximation algorithm from a hopeful heuristic.</div>
@@ -549,7 +549,7 @@
       <div class="col">
         <p>Fix the object. Given an undirected graph <code class="inl">G=(V,E)</code>, a <span class="term">vertex cover</span> is a set <code class="inl">S&sube;V</code> such that every edge has at least one endpoint in <code class="inl">S</code> &mdash; every edge is &ldquo;watched&rdquo; by a chosen vertex. The <span class="term">minimum vertex cover</span> is the smallest such <code class="inl">S</code>. Deciding whether one of size <code class="inl">&le;k</code> exists is NP-complete; finding the minimum is NP-hard. We will return a cover guaranteed to be at most twice the minimum, and we will do it in the time it takes to read the edges.</p>
 
-        <p>The algorithm is almost insultingly simple, and that simplicity is precisely where its proof lives. Recall from the <a class="inline" href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html">max-flow lecture</a> the idea of a <span class="term">matching</span>: a set of edges no two of which share a vertex. A matching is <span class="term">maximal</span> if you cannot add another edge without a collision. Here is the whole method.</p>
+        <p>The algorithm is almost insultingly simple, and that simplicity is precisely where its proof lives. Recall from the <a class="inline" href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html">max-flow study</a> the idea of a <span class="term">matching</span>: a set of edges no two of which share a vertex. A matching is <span class="term">maximal</span> if you cannot add another edge without a collision. Here is the whole method.</p>
 
         <pre><code><span class="tok-kw">def</span> <span class="tok-fn">vertex_cover_2approx</span>(V, E):       <span class="tok-com"># E = list of edges (u, v)</span>
     matched = <span class="tok-fn">set</span>()                   <span class="tok-com"># vertices already touched by the matching</span>
@@ -585,7 +585,7 @@
         <p>Take the seven-vertex graph below. Scan edges in the order <code class="inl wrap">a&ndash;b, c&ndash;d, e&ndash;f, b&ndash;c, d&ndash;e, d&ndash;g, f&ndash;g</code>.</p>
 
         <figure>
-          <svg viewBox="0 0 720 340" style="--mw:619px" role="img" aria-labelledby="f2t f2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 340" style="--mw:734px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">Vertex Cover by maximal matching on a seven-vertex graph</title>
             <desc id="f2d">Vertices a,c,e on top and b,d,f on the bottom, with g at the right. Three vertical edges a-b, c-d, e-f form a maximal matching, drawn as thick yellow bands. All six of their endpoints are filled blue as the cover. Vertex g is unmatched and hollow; its edges to d and f are still covered. The optimum cover is b, d, f of size three.</desc>
             <!-- matching highlight (under edges) -->
@@ -620,7 +620,7 @@
               <circle class="dg-free" cx="540" cy="0" r="9"/>
               <text class="dg-label sm" x="556" y="4">free vertex</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 &mdash; the 2-approximation, exactly tight.</b> The scan matches <code class="inl">a&ndash;b</code>, then <code class="inl">c&ndash;d</code>, then <code class="inl">e&ndash;f</code> (each met with both ends free); after that every remaining edge has a matched endpoint, so the matching is maximal. Output cover <code class="inl">{a,b,c,d,e,f}</code>, size <code class="inl">6=2|M|</code>. The optimum is <code class="inl">{b,d,f}</code> of size <code class="inl">3</code> &mdash; check that <code class="inl">b,d,f</code> touch every edge. Ratio <code class="inl">6/3=2</code>: this instance <em>achieves</em> the worst case, which is why the bound cannot be improved by a smarter tie-break alone.</figcaption>
         </figure>
 
@@ -722,7 +722,7 @@
         <p>Build the MST <code class="inl">T</code>. Double every edge of <code class="inl">T</code>: now every vertex has even degree, so the multigraph has an <span class="term">Euler tour</span> &mdash; a closed walk using each (doubled) edge once &mdash; of cost exactly <code class="inl">2&middot;MST</code>. That walk visits some vertices more than once. Walk it, and whenever it would revisit a city, <em>shortcut</em> straight to the next unvisited one. By the triangle inequality each shortcut only shortens the walk. The result is a genuine tour (each city once) of cost <code class="inl">&le;2&middot;MST&le;2&middot;OPT</code>.</p>
 
         <figure>
-          <svg viewBox="0 0 720 330" style="--mw:619px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 330" style="--mw:734px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">Metric TSP by MST-doubling</title>
             <desc id="f4d">Left panel: six cities with a minimum spanning tree drawn in blue. Right panel: the same cities with the doubled tree traced as a dashed Euler walk and the final shortcut Hamiltonian tour drawn in red, skipping repeated visits.</desc>
             <!-- divider -->
@@ -773,7 +773,7 @@
               <line class="dg-double" x1="0" y1="0" x2="30" y2="0"/><text class="dg-label sm" x="38" y="4">doubled tree (Euler walk)</text>
               <line class="dg-tour" x1="210" y1="0" x2="240" y2="0"/><text class="dg-label sm" x="248" y="4">shortcut tour</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 &mdash; MST-doubling.</b> The blue tree (left) has cost at most <code class="inl">OPT</code>. Doubling it gives an Eulerian multigraph whose Euler walk costs exactly <code class="inl">2&middot;MST</code>; shortcutting repeats (right, red) can only shorten it. Final tour <code class="inl">&le;2&middot;MST&le;2&middot;OPT</code> &mdash; a 2-approximation, and the triangle inequality is what licenses every shortcut.</figcaption>
         </figure>
 
@@ -782,7 +782,7 @@
         <p>The patch is cheap. Walk the optimal tour and look only at the vertices of <code class="inl">O</code> in the order it visits them: shortcutting (triangle inequality) gives a closed tour on <code class="inl">O</code> of cost <code class="inl">&le;OPT</code>. Since <code class="inl">|O|</code> is even, that cycle splits into <em>two</em> perfect matchings on <code class="inl">O</code> (alternate edges); the cheaper one costs <code class="inl">&le;OPT/2</code>, and the minimum matching is no costlier still. So <code class="inl">M&le;OPT/2</code> and the tour costs <code class="inl">&le;MST+M&le;OPT+OPT/2=3/2 OPT</code>.</p>
 
         <figure>
-          <svg viewBox="0 0 720 250" style="--mw:619px" role="img" aria-labelledby="f5t f5d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 250" style="--mw:734px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">Christofides: matching the odd-degree vertices of the MST</title>
             <desc id="f5d">A minimum spanning tree in blue. Four vertices of odd degree are circled in red. A minimum-weight perfect matching on just those four, drawn as red dashed edges, makes every degree even so the graph becomes Eulerian.</desc>
             <!-- MST -->
@@ -818,7 +818,7 @@
               <circle class="dg-odd" cx="14" cy="28" r="10"/><text class="dg-label sm" x="34" y="32">odd degree</text>
               <line class="dg-matchedge" x1="0" y1="56" x2="28" y2="56"/><text class="dg-label sm" x="34" y="60">matching M</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 &mdash; Christofides&rsquo; patch.</b> Only the odd-degree vertices of the MST (red rings) violate the Eulerian even-degree condition. A minimum perfect matching among <em>just those</em> (red dashed) repairs all of them at cost <code class="inl">&le;OPT/2</code>, giving a tour <code class="inl">&le;3/2 OPT</code> instead of <code class="inl">2&middot;OPT</code>.</figcaption>
         </figure>
 
@@ -881,7 +881,7 @@
         <p>The recursion is a binary tree. Each node spends one of the <code class="inl">k</code> budget units, so the tree has depth at most <code class="inl">k</code>; with two children per node that is at most <code class="inl">2<sup>k</sup></code> leaves, and each node does <code class="inl">O(n+m)</code> work removing a vertex and its incident edges. Total: <code class="inl">O(2<sup>k</sup>&middot;(n+m))</code> &mdash; textbook FPT. The exponential is real but <em>caged</em> inside <code class="inl">2<sup>k</sup></code>; the dependence on the graph size is linear.</p>
 
         <figure>
-          <svg viewBox="0 0 720 360" style="--mw:619px" role="img" aria-labelledby="f6t f6d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 360" style="--mw:734px" role="img" aria-labelledby="f6t f6d">
             <title id="f6t">The bounded search tree for Vertex Cover at most k</title>
             <desc id="f6d">A binary recursion tree. The root holds the whole graph with budget k. Each node picks an edge u-v and branches into a left child that puts u in the cover with budget k minus one, and a right child that puts v in the cover. Depth is at most k, giving at most two to the k leaves. One root-to-leaf path is highlighted as a successful cover; others are pruned when the budget reaches zero with edges remaining.</desc>
             <!-- edges of the tree -->
@@ -894,11 +894,11 @@
               <line x1="530" y1="158" x2="610" y2="230"/>
             </g>
             <!-- branch labels -->
-            <text class="dg-tlabel" x="252" y="98">u&#8712;C</text>
-            <text class="dg-tlabel" x="442" y="98">v&#8712;C</text>
+            <text class="dg-tlabel" x="252" y="98" style="paint-order:stroke; stroke:var(--surface-1,var(--bg-elev)); stroke-width:6px; stroke-linejoin:round">u&#8712;C</text>
+            <text class="dg-tlabel" x="442" y="98" style="paint-order:stroke; stroke:var(--surface-1,var(--bg-elev)); stroke-width:6px; stroke-linejoin:round">v&#8712;C</text>
             <!-- root -->
             <g>
-              <rect class="dg-tnode" x="288" y="30" width="144" height="30" rx="6"/>
+              <rect class="dg-tnode" x="266" y="30" width="188" height="30" rx="6"/>
               <text class="dg-label" x="360" y="50" text-anchor="middle">(G, k)  pick edge u&ndash;v</text>
             </g>
             <!-- level 1 -->
@@ -926,7 +926,7 @@
             <!-- bound annotation -->
             <text class="dg-cap" x="490" y="300" fill="var(--bau-red)">depth &#8804; k</text>
             <text class="dg-cap" x="455" y="324" fill="var(--bau-red)">&#8804; 2<tspan baseline-shift="super" font-size="75%">k</tspan> leaves</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 5 &mdash; the bounded search tree.</b> Branching on &ldquo;<code class="inl">u</code> or <code class="inl">v</code> covers edge <code class="inl">u&ndash;v</code>&rdquo; spends one budget unit per level, so the tree is at most <code class="inl">k</code> deep and has at most <code class="inl">2<sup>k</sup></code> leaves. A leaf succeeds (blue) when the graph runs out of edges within budget; it fails (red) when the budget hits zero with edges remaining. The whole exponential cost is <code class="inl">2<sup>k</sup></code>, multiplied by only linear graph work.</figcaption>
         </figure>
 
@@ -1087,12 +1087,12 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 22</span>
+            <span class="lab">next &middot; deep study 22</span>
             <div class="ttl">Randomness as a Design Tool: Skip Lists, Treaps, Bloom Filters, and Karger&rsquo;s Cut</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">We named a third door and walked past it: releasing the worst-case <em>guarantee</em> in exchange for randomness. Lecture&nbsp;22 opens it. A coin flip, used deliberately, gives a balanced search tree with no balancing logic (treaps), a sorted dictionary with no rotations (skip lists), set membership in a few bits (Bloom filters), and a global minimum cut from nothing but random edge contractions (Karger). The concentration bounds from <a class="inline" href="dsa-05-probability-for-algorithms.html">Lecture&nbsp;5</a> are what turn &ldquo;probably&rdquo; back into a guarantee &mdash; the same move we made here, now over the algorithm&rsquo;s own coins instead of over the input.</p>
+        <p style="margin-top:1em">We named a third door and walked past it: releasing the worst-case <em>guarantee</em> in exchange for randomness. Deep&nbsp;study&nbsp;22 opens it. A coin flip, used deliberately, gives a balanced search tree with no balancing logic (treaps), a sorted dictionary with no rotations (skip lists), set membership in a few bits (Bloom filters), and a global minimum cut from nothing but random edge contractions (Karger). The concentration bounds from <a class="inline" href="dsa-05-probability-for-algorithms.html">Deep&nbsp;study&nbsp;5</a> are what turn &ldquo;probably&rdquo; back into a guarantee &mdash; the same move we made here, now over the algorithm&rsquo;s own coins instead of over the input.</p>
       </div>
     </section>
 
@@ -1136,6 +1136,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-20-p-np-reductions-and-np-completeness.html" rel="prev"><span>&larr; Lecture 20</span><strong>P, NP, and reductions</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-22-randomness-as-a-design-tool.html" rel="next"><span>Lecture 22 &rarr;</span><strong>Randomness as a design tool</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-20-p-np-reductions-and-np-completeness.html" rel="prev"><span>&larr; Deep study 20</span><strong>P, NP, and reductions</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-22-randomness-as-a-design-tool.html" rel="next"><span>Deep study 22 &rarr;</span><strong>Randomness as a design tool</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a></p></nav>
 </body>
 </html>

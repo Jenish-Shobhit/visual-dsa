@@ -363,7 +363,7 @@
     <rect x="166" y="52" width="14" height="14" class="dg-red-f"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 20</span> the boundary of efficiency</div>
+    <div class="eyebrow"><span class="n">Deep study 20</span> the boundary of efficiency</div>
     <h1>P, NP, Reductions &amp; NP-Completeness</h1>
 <p class="study-related"><span class="study-related__label">Related lesson</span><a href="../lessons/37-p-vs-np.html">Lesson 37 · P, NP &amp; hard problems</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -371,13 +371,13 @@
   <div class="study-brief-grid"><p><span>Build on</span>Decision problems and polynomial time</p><p><span>Core invariant</span>A reduction maps instances while preserving yes and no answers; direction matters.</p></div>
   <details class="study-check"><summary>Try this first · To show a new problem H is NP hard, which way should a known NP hard problem reduce?</summary><p>Known hard problem ≤ₚ H. An algorithm for H would then solve the known hard problem.</p></details>
 </div>
-    <p class="lede col">Here is the strangest asymmetry in all of computing. Hand me a filled-in Sudoku and I can <em>check</em> it in a glance; hand me a blank one and the world's fastest method is barely better than guessing. A 1000-variable logic formula has <strong>2<sup>1000</sup></strong> possible answers &mdash; more than the atoms in the universe squared &mdash; yet a <em>claimed</em> answer is verified in microseconds. This lecture formalizes that gulf. We define the class of problems we can <em>solve</em> fast (<strong>P</strong>), the class we can merely <em>verify</em> fast (<strong>NP</strong>), and the machine &mdash; the polynomial-time <em>reduction</em> &mdash; that lets one problem inherit another's difficulty. Then we prove that a single problem, <strong>SAT</strong>, is hard enough to encode them all, and learn the craft of pinning a new problem to that same wall.</p>
+    <p class="lede col">Here is the strangest asymmetry in all of computing. Hand me a filled-in Sudoku and I can <em>check</em> it in a glance; hand me a blank one and the world's fastest method is barely better than guessing. A 1000-variable logic formula has <strong>2<sup>1000</sup></strong> possible answers &mdash; more than the atoms in the universe squared &mdash; yet a <em>claimed</em> answer is verified in microseconds. This study formalizes that gulf. We define the class of problems we can <em>solve</em> fast (<strong>P</strong>), the class we can merely <em>verify</em> fast (<strong>NP</strong>), and the machine &mdash; the polynomial-time <em>reduction</em> &mdash; that lets one problem inherit another's difficulty. Then we prove that a single problem, <strong>SAT</strong>, is hard enough to encode them all, and learn the craft of pinning a new problem to that same wall.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
         <p style="margin-bottom:.5em"><strong>A number to set the stakes.</strong> Brute force on a SAT instance with just <strong>100</strong> Boolean variables means searching <code class="inl">2<sup>100</sup> &asymp; 1.3 &times; 10<sup>30</sup></code> assignments. At a billion checks per second that is <strong>40 trillion years</strong> &mdash; three thousand times the age of the universe. Verifying <em>one</em> proposed assignment: about a hundred operations, instant.</p>
-        <p style="margin-bottom:0">The whole question of this lecture &mdash; the <strong>P&nbsp;vs&nbsp;NP</strong> problem, one of seven Clay Millennium Prizes, <strong>$1,000,000</strong> unclaimed since 2000 &mdash; is whether that gulf is <em>real</em> or merely a failure of our imagination. And the astonishing fact we will prove is that thousands of unrelated problems, in scheduling and biology and circuit design, are <em>secretly the same problem</em>: solve one efficiently and they all fall; prove one truly hard and they all stand.</p>
+        <p style="margin-bottom:0">The whole question of this study &mdash; the <strong>P&nbsp;vs&nbsp;NP</strong> problem, one of seven Clay Millennium Prizes, <strong>$1,000,000</strong> unclaimed since 2000 &mdash; is whether that gulf is <em>real</em> or merely a failure of our imagination. And the astonishing fact we will prove is that thousands of unrelated problems, in scheduling and biology and circuit design, are <em>secretly the same problem</em>: solve one efficiently and they all fall; prove one truly hard and they all stand.</p>
       </div>
     </div>
   </div>
@@ -387,7 +387,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>Solve vs. verify</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -416,7 +416,7 @@
         <p>I begin, as always, by stripping the surface away to find the <em>computational skeleton</em>. Behind &ldquo;route a delivery fleet,&rdquo; &ldquo;pack a container,&rdquo; &ldquo;schedule the exams,&rdquo; &ldquo;fold this protein,&rdquo; lies the same skeleton, and it has two faces. One face asks you to <strong>produce</strong> a solution from nothing. The other merely asks you to <strong>recognize</strong> a solution someone hands you. For an astonishing range of problems, the second is easy and the first appears impossibly hard &mdash; and nobody on Earth can prove the appearance is not an illusion.</p>
         <p>To reason about this precisely we must shrink the problems to their most austere form. An optimization problem (&ldquo;find the <em>shortest</em> tour&rdquo;) carries a number in its answer; that is awkward to classify. So we convert every problem into a <span class="term">decision problem</span> &mdash; one whose answer is a single bit, <strong>yes</strong> or <strong>no</strong>. Not &ldquo;what is the shortest tour?&rdquo; but &ldquo;<em>is there</em> a tour of length &le;&nbsp;<code class="inl">k</code>?&rdquo; This loses nothing essential: if you can answer the decision version for every <code class="inl">k</code> efficiently, a binary search over <code class="inl">k</code> recovers the optimum with only a logarithmic number of extra calls. The decision form is the clean object the whole theory is built on.</p>
         <p>A decision problem is, formally, a <span class="term">language</span> <code class="inl">L</code>: the set of all input strings whose answer is &ldquo;yes.&rdquo; Encode an input <code class="inl">x</code> as a string of bits; then deciding the problem means deciding membership, <code class="inl">x &isin; L</code>? Every class we define &mdash; P, NP &mdash; is a set of languages, a set of decision problems grouped by how much work membership costs. This is the abstraction that makes the boundary of efficiency a mathematical object rather than a feeling.</p>
-        <div class="note info"><span class="tag">the formal lens</span>Two verbs, two costs. <em>Solving</em> is a function from inputs to answers; <em>verifying</em> is a function from (input, proposed-answer) pairs to a single accept/reject bit. The entire drama of this lecture is whether a fast verifier can always be turned into a fast solver. Hold that distinction; everything hangs on it.</div>
+        <div class="note info"><span class="tag">the formal lens</span>Two verbs, two costs. <em>Solving</em> is a function from inputs to answers; <em>verifying</em> is a function from (input, proposed-answer) pairs to a single accept/reject bit. The entire drama of this study is whether a fast verifier can always be turned into a fast solver. Hold that distinction; everything hangs on it.</div>
       </div>
     </section>
 
@@ -530,10 +530,10 @@
       <h2>P vs NP: a picture of two worlds</h2>
       <div class="col">
         <p>Does <code class="inl">P = NP</code>? Is every problem whose solutions are easy to <em>check</em> also easy to <em>find</em>? Nobody knows. It is the deepest open problem in computer science and among the most famous in all of mathematics. The overwhelming consensus &mdash; from decades of failed attempts to collapse the two &mdash; is that <code class="inl">P &ne; NP</code>: that there really are problems whose answers we can recognize but never quickly discover. But consensus is not proof, and the $1,000,000 prize sits untouched.</p>
-        <p>The stakes are not academic. If <code class="inl">P = NP</code> and the algorithm were practical, most modern cryptography would dissolve overnight (breaking a code is verifying a key, which would become as easy as finding one), while optimal logistics, automated theorem-proving, and protein design would become routine. If <code class="inl">P &ne; NP</code>, we gain a permanent licence to <em>stop searching</em> for fast exact algorithms on a vast catalogue of problems &mdash; and to spend our effort instead on approximation and heuristics, the subject of the next lecture.</p>
+        <p>The stakes are not academic. If <code class="inl">P = NP</code> and the algorithm were practical, most modern cryptography would dissolve overnight (breaking a code is verifying a key, which would become as easy as finding one), while optimal logistics, automated theorem-proving, and protein design would become routine. If <code class="inl">P &ne; NP</code>, we gain a permanent licence to <em>stop searching</em> for fast exact algorithms on a vast catalogue of problems &mdash; and to spend our effort instead on approximation and heuristics, the subject of the next study.</p>
 
         <figure>
-          <svg viewBox="0 0 760 360" style="--mw:654px" role="img" aria-labelledby="f1t f1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 360" style="--mw:774px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The complexity landscape under the two hypotheses</title>
             <desc id="f1d">Left: if P is not equal to NP, then inside NP the regions P and NP-complete are disjoint, with a gap between them, and NP-hard reaches beyond NP. Right: if P equals NP, then P, NP, and NP-complete all collapse into a single region, while NP-hard still extends beyond.</desc>
             <!-- ===== LEFT: P != NP ===== -->
@@ -570,7 +570,7 @@
             <text class="dg-cap" x="486" y="226" fill="var(--bau-red)">= NP-complete</text>
             <text class="dg-label sm" x="512" y="252">everything checkable</text>
             <text class="dg-label sm" x="512" y="268">is also solvable</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 &mdash; the landscape, drawn twice.</b> Left, the world almost everyone believes: P and the NP-complete problems sit in NP but never touch, separated by a permanent gap. Right, the collapse: a fast algorithm for any one NP-complete problem would pull all of NP down into P. In <em>both</em> pictures NP-hard reaches outside NP &mdash; some problems (like the Halting Problem) are at least as hard as everything in NP yet are not even in it.</figcaption>
         </figure>
       </div>
@@ -601,7 +601,7 @@
         <p>What does it buy you? A solver for B becomes a solver for A: given <code class="inl">x</code>, compute <code class="inl">f(x)</code>, run B's solver, return its answer. Since <code class="inl">f</code> is polynomial and (by closure) a polynomial fed into a polynomial stays polynomial, <strong>if <code class="inl">B &isin; P</code> then <code class="inl">A &isin; P</code></strong>. Contrapositively &mdash; the way we always use it &mdash; <strong>if A is hard, then B is hard.</strong> The reduction <em>transports difficulty from A to B</em>.</p>
 
         <figure>
-          <svg viewBox="0 0 760 310" style="--mw:654px" role="img" aria-labelledby="f2t f2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 310" style="--mw:774px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">A reduction as a machine</title>
             <desc id="f2d">An instance x of problem A passes through a polynomial-time transformer f, producing an instance f of x of problem B, which is fed to a solver for B; the solver's yes-or-no answer is returned unchanged as the answer for x. Yes-instances map to yes-instances and no-instances to no-instances.</desc>
             <!-- pipeline -->
@@ -641,7 +641,7 @@
               <marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L9 5 L0 10 z" fill="var(--bau-ink)"/></marker>
               <marker id="ahr" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L9 5 L0 10 z" fill="var(--bau-red)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 &mdash; the reduction machine.</b> One pre-processing pass <code class="inl">f</code> converts A into B; B's solver does the work; the answer returns unchanged. Because <code class="inl">f</code> is polynomial, B's efficiency (or hardness) flows straight back to A.</figcaption>
         </figure>
 
@@ -697,7 +697,7 @@
         <p>Take any <code class="inl">L &isin; NP</code>. By definition some nondeterministic machine <code class="inl">M</code> decides it: on input <code class="inl">x</code> of length <code class="inl">n</code>, <code class="inl">M</code> guesses a certificate and checks it within <code class="inl">T = p(n)</code> steps for some polynomial <code class="inl">p</code>. We capture an entire run as a <span class="term">tableau</span>: a <code class="inl">T &times; T</code> grid whose row <code class="inl">i</code> is the machine's full configuration (tape contents, head position, internal state) at time <code class="inl">i</code>. Introduce one Boolean variable for each possible &ldquo;cell&nbsp;(i,j) holds symbol&nbsp;s&rdquo; &mdash; polynomially many in all. Now constrain those variables with four families of clauses, every one of polynomial size:</p>
 
         <figure>
-          <svg viewBox="0 0 760 340" style="--mw:654px" role="img" aria-labelledby="f3t f3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 340" style="--mw:774px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">The Cook–Levin computation tableau</title>
             <desc id="f3d">A grid of T rows by T columns. The top row is shaded as the start configuration encoding the input. A two-row by three-column window is highlighted in the middle to show local consistency checking. The bottom row is shaded as an accepting configuration. Each cell is a Boolean variable for which symbol it holds.</desc>
             <!-- column header -->
@@ -765,7 +765,7 @@
             <defs>
               <marker id="ah3" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L9 5 L0 10 z" fill="var(--bau-ink)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 &mdash; computation as a grid of Boolean variables.</b> The four clause families say: row 0 encodes <code class="inl">x</code> and the guessed certificate (yellow); exactly one symbol sits in each cell; <em>every</em> 2&times;3 window is consistent with M's transition table (blue); and some row accepts (red). The formula is satisfiable iff M has an accepting run on <code class="inl">x</code>.</figcaption>
         </figure>
 
@@ -825,7 +825,7 @@
         <p>Three clauses, so <code class="inl">k = 3</code>. The construction yields three triangles wired together by the conflict edges <code class="inl">x<sub>1</sub>&ndash;&not;x<sub>1</sub></code>, <code class="inl">x<sub>2</sub>&ndash;&not;x<sub>2</sub></code>, <code class="inl">x<sub>3</sub>&ndash;&not;x<sub>3</sub></code>:</p>
 
         <figure>
-          <svg viewBox="0 0 760 400" style="--mw:654px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 400" style="--mw:774px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">The graph built from the 3-SAT instance</title>
             <desc id="f4d">Three triangles, one per clause. Triangle C1 has vertices x1, x2, not-x3; C2 has not-x1, x2, x3; C3 has x1, not-x2, not-x3. Dashed red conflict edges join each variable to its negation across triangles. A chosen independent set of size three is highlighted: x1 in C1, x2 in C2, and x1 in C3.</desc>
 
@@ -861,7 +861,7 @@
             <!-- clause labels -->
             <text class="dg-cap" x="58" y="100">C&#8321;</text>
             <text class="dg-cap" x="330" y="296">C&#8322;</text>
-            <text class="dg-cap" x="612" y="100">C&#8323;</text>
+            <text class="dg-cap" x="584" y="100">C&#8323;</text>
 
             <!-- nodes: selected get dg-node-sel -->
             <!-- C1 -->
@@ -878,7 +878,7 @@
             <circle class="dg-node" cx="700" cy="210" r="26"/><text class="dg-nt" x="700" y="210">&#172;x&#8323;</text>
 
             <!-- legend -->
-            <g>
+            <g transform="translate(-200,-22)">
               <line class="dg-edge" x1="468" y1="40" x2="498" y2="40"/>
               <text class="dg-label sm" x="506" y="44">triangle (clause) edge</text>
               <line class="dg-confl" x1="468" y1="62" x2="498" y2="62"/>
@@ -886,7 +886,7 @@
               <circle class="dg-node-sel" cx="483" cy="84" r="9"/>
               <text class="dg-label sm" x="506" y="88">chosen independent set</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 &mdash; the gadget graph.</b> One triangle per clause caps the picks at one-per-clause; the dashed conflict edges forbid choosing <code class="inl">x<sub>i</sub></code> and <code class="inl">&not;x<sub>i</sub></code> together. The highlighted independent set <code class="inl">{x<sub>1</sub>&isin;C<sub>1</sub>, x<sub>2</sub>&isin;C<sub>2</sub>, x<sub>1</sub>&isin;C<sub>3</sub>}</code> has size 3 = k and witnesses the satisfying assignment <code class="inl">x<sub>1</sub>=x<sub>2</sub>=x<sub>3</sub>=</code>&nbsp;true.</figcaption>
         </figure>
 
@@ -914,7 +914,7 @@
         <p>Because reductions compose, every problem you reduce 3-SAT to becomes a new launchpad. In 1972 &mdash; one year after Cook&ndash;Levin &mdash; Richard Karp published <strong>21 problems</strong>, each proven NP-complete by a short chain of reductions from SAT. Today the catalogue runs into the thousands, spanning logistics, scheduling, biology, circuit layout, and games. They form a single connected genealogy: prove <em>any</em> one of them is in P and the whole tree collapses into P with it.</p>
 
         <figure>
-          <svg viewBox="0 0 760 360" style="--mw:654px" role="img" aria-labelledby="f5t f5d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 360" style="--mw:774px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">A genealogy of NP-complete problems</title>
             <desc id="f5d">SAT at the top reduces to 3-SAT, which fans out by polynomial reductions into a graph family (Independent Set, Clique, Vertex Cover), a coloring problem, a number family (Subset Sum, Partition, Knapsack), and a tour family (Hamiltonian Cycle, then Traveling Salesman). Arrows are labelled with the polynomial reduction symbol.</desc>
 
@@ -951,7 +951,7 @@
             <path class="dg-arrow" d="M110 210 V238" marker-end="url(#ah5)"/>
             <path class="dg-arrow" d="M150 210 C176 226, 176 250, 152 296" marker-end="url(#ah5)"/>
             <text class="dg-label sm" x="118" y="230">&#8804;&#8407;</text>
-            <text class="dg-label sm" x="14" y="226" fill="var(--bau-red)">this lecture &#8599;</text>
+            <text class="dg-label sm" x="14" y="226" fill="var(--bau-red)">this study &#8599;</text>
 
             <!-- COLORING -->
             <rect class="dg-box" x="248" y="170" width="128" height="40" rx="8"/>
@@ -980,7 +980,7 @@
             <defs>
               <marker id="ah5" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--bau-ink)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 5 &mdash; the reduction genealogy.</b> Each arrow is a polynomial reduction <code class="inl">&le;<sub>p</sub></code>. SAT seeds 3-SAT, which fans out into graph, coloring, number, and tour families; transitivity carries hardness down every edge. The blue arrow marks the reduction we built in &sect;9.</figcaption>
         </figure>
 
@@ -1011,7 +1011,7 @@
         <p>A reduction must preserve the answer <em>both</em> ways: yes-maps-to-yes and no-maps-to-no. It is easy to design <code class="inl">f</code> so that satisfying assignments produce solutions, then forget to rule out a &ldquo;spurious&rdquo; solution to <code class="inl">f(x)</code> when <code class="inl">x</code> was a no-instance. The (&lArr;) direction &mdash; <em>every</em> solution to the constructed instance forces a solution to the original &mdash; is exactly where gadgets are designed to be tight.</p>
 
         <h3>6. Pseudo-polynomial is not polynomial &mdash; weak vs. strong</h3>
-        <p>Subset Sum and Knapsack have <code class="inl">O(n&middot;t)</code> dynamic programs (Lecture&nbsp;15) &mdash; yet they are NP-complete. No contradiction: <code class="inl">t</code> is a <em>value</em>, and writing it takes only <code class="inl">log&nbsp;t</code> bits, so <code class="inl">O(n&middot;t)</code> is exponential in the input <em>size</em>. Such algorithms are <span class="term">pseudo-polynomial</span>, and these problems are only <em>weakly</em> NP-complete. Problems like 3-SAT and TSP are <em>strongly</em> NP-complete &mdash; hard even when all numbers are small &mdash; and admit no pseudo-polynomial algorithm unless <code class="inl">P=NP</code>. Never quote an <code class="inl">O(n&middot;t)</code> bound as proof that you have beaten an NP-complete problem.</p>
+        <p>Subset Sum and Knapsack have <code class="inl">O(n&middot;t)</code> dynamic programs (Deep&nbsp;study&nbsp;15) &mdash; yet they are NP-complete. No contradiction: <code class="inl">t</code> is a <em>value</em>, and writing it takes only <code class="inl">log&nbsp;t</code> bits, so <code class="inl">O(n&middot;t)</code> is exponential in the input <em>size</em>. Such algorithms are <span class="term">pseudo-polynomial</span>, and these problems are only <em>weakly</em> NP-complete. Problems like 3-SAT and TSP are <em>strongly</em> NP-complete &mdash; hard even when all numbers are small &mdash; and admit no pseudo-polynomial algorithm unless <code class="inl">P=NP</code>. Never quote an <code class="inl">O(n&middot;t)</code> bound as proof that you have beaten an NP-complete problem.</p>
 
         <h3>7. The empirical fallacy</h3>
         <p>&ldquo;I tried hard and couldn't find a polynomial algorithm, so it's NP-complete&rdquo; is not a proof &mdash; it is a confession. Hardness is established <em>only</em> by an explicit reduction from a known NP-complete problem (plus membership). Conversely, do not assume a problem that <em>looks</em> like a hard one inherits its hardness: 2-SAT is in P though 3-SAT is NP-complete; shortest path is easy though longest path is NP-hard. Small changes leap across the boundary, so prove, never presume.</p>
@@ -1071,17 +1071,17 @@
       <div class="col">
         <div class="band flush">
           <div class="accentbar" aria-hidden="true"></div>
-          <p style="margin-bottom:0; font-size:1.12rem"><strong>P is what you can solve fast; NP is what you can check fast; and a polynomial reduction <code class="inl">A&le;<sub>p</sub>B</code> pours A's difficulty into B.</strong> Cook&ndash;Levin proved one problem, SAT, is hard enough to encode <em>all</em> of NP &mdash; because computation is locally checkable, a run becomes a Boolean formula. Every NP-completeness proof since is the same five-step ritual: show your problem is in NP, then reduce a <em>known</em> hard problem <em>into</em> it and prove the two-way iff. Read the direction correctly, prove both sides, and never mistake pseudo-polynomial for polynomial. When you finish such a proof you have earned the right to stop searching for a perfect algorithm &mdash; and that is exactly where the next lecture begins.</p>
+          <p style="margin-bottom:0; font-size:1.12rem"><strong>P is what you can solve fast; NP is what you can check fast; and a polynomial reduction <code class="inl">A&le;<sub>p</sub>B</code> pours A's difficulty into B.</strong> Cook&ndash;Levin proved one problem, SAT, is hard enough to encode <em>all</em> of NP &mdash; because computation is locally checkable, a run becomes a Boolean formula. Every NP-completeness proof since is the same five-step ritual: show your problem is in NP, then reduce a <em>known</em> hard problem <em>into</em> it and prove the two-way iff. Read the direction correctly, prove both sides, and never mistake pseudo-polynomial for polynomial. When you finish such a proof you have earned the right to stop searching for a perfect algorithm &mdash; and that is exactly where the next study begins.</p>
         </div>
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 21</span>
+            <span class="lab">next &middot; deep study 21</span>
             <div class="ttl">Living with Hardness: Approximation and Parameterized Algorithms</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">If a problem is NP-complete you cannot have <em>fast, exact,</em> and <em>general</em> all at once &mdash; so give one up. <strong>Approximation</strong> algorithms surrender exactness for a provable ratio (a vertex cover at most twice optimal, in linear time); <strong>parameterized</strong> algorithms surrender generality, confining the exponential blow-up to a small parameter so the problem is tractable whenever that parameter is modest. Lecture&nbsp;21 turns the wall we built here into a set of doors. The hardness proof was never the end of the story &mdash; it is the map that tells you which door to take.</p>
+        <p style="margin-top:1em">If a problem is NP-complete you cannot have <em>fast, exact,</em> and <em>general</em> all at once &mdash; so give one up. <strong>Approximation</strong> algorithms surrender exactness for a provable ratio (a vertex cover at most twice optimal, in linear time); <strong>parameterized</strong> algorithms surrender generality, confining the exponential blow-up to a small parameter so the problem is tractable whenever that parameter is modest. Deep&nbsp;study&nbsp;21 turns the wall we built here into a set of doors. The hardness proof was never the end of the story &mdash; it is the map that tells you which door to take.</p>
       </div>
     </section>
 
@@ -1125,6 +1125,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-19-tries-and-suffix-structures.html" rel="prev"><span>&larr; Lecture 19</span><strong>Tries and suffix structures</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-21-living-with-hardness-approximation-and-parameterized-algorithms.html" rel="next"><span>Lecture 21 &rarr;</span><strong>Living with hardness</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/37-p-vs-np.html">Lesson 37 &middot; P, NP &amp; hard problems</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-19-tries-and-suffix-structures.html" rel="prev"><span>&larr; Deep study 19</span><strong>Tries and suffix structures</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-21-living-with-hardness-approximation-and-parameterized-algorithms.html" rel="next"><span>Deep study 21 &rarr;</span><strong>Living with hardness</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/37-p-vs-np.html">Lesson 37 &middot; P, NP &amp; hard problems</a></p></nav>
 </body>
 </html>

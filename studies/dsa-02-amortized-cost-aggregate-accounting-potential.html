@@ -352,7 +352,7 @@
     <path d="M120 4 L186 4 L153 64 Z" class="dg-red-f"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 02</span> when an expensive step is already paid for</div>
+    <div class="eyebrow"><span class="n">Deep study 02</span> when an expensive step is already paid for</div>
     <h1>Amortized Cost</h1>
 <p class="study-related"><span class="study-related__label">Related lesson</span><a href="../lessons/06-arrays.html">Lesson 6 · Arrays &amp; dynamic arrays</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -360,13 +360,13 @@
   <div class="study-brief-grid"><p><span>Build on</span>Worst case versus a sequence</p><p><span>Core invariant</span>A costly resize is paid for by many cheap appends; distinguish per operation cost from amortized cost.</p></div>
   <details class="study-check"><summary>Try this first · After 1,000,000 appends with doubling capacity from 1, what is the largest single copy?</summary><p>524,288 elements. The next resize at capacity 1,048,576 has not occurred.</p></details>
 </div>
-    <p class="lede col">Lecture 01 left an asterisk on every &ldquo;append is <code class="inl">&#x398;(1)</code>.&rdquo; Here we cash it. A single append to a growing array can copy <em>the entire array</em> — a genuine <code class="inl">&#x398;(n)</code> spike — and yet a run of <code class="inl">n</code> appends costs under <code class="inl">3n</code> steps in total, fewer than three apiece. This lecture explains how an operation that is <em>sometimes</em> linear can be <em>always</em> constant on average, and gives you the three instruments that prove it: the <strong>aggregate</strong>, the <strong>accountant's ledger</strong>, and the <strong>potential</strong>.</p>
+    <p class="lede col">Deep study 01 left an asterisk on every &ldquo;append is <code class="inl">&#x398;(1)</code>.&rdquo; Here we cash it. A single append to a growing array can copy <em>the entire array</em> — a genuine <code class="inl">&#x398;(n)</code> spike — and yet a run of <code class="inl">n</code> appends costs under <code class="inl">3n</code> steps in total, fewer than three apiece. This study explains how an operation that is <em>sometimes</em> linear can be <em>always</em> constant on average, and gives you the three instruments that prove it: the <strong>aggregate</strong>, the <strong>accountant's ledger</strong>, and the <strong>potential</strong>.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
         <p style="margin-bottom:.5em"><strong>A number to unsettle you.</strong> Append a million items to an initially empty dynamic array that doubles when full. One unlucky append copies <strong>524,288</strong> existing elements to a bigger block — a Big-&Theta;(n) operation, plainly not constant. So is the structure &ldquo;<code class="inl">O(1)</code> append&rdquo; a lie?</p>
-        <p style="margin-bottom:0">No. The million appends together perform fewer than <strong>3,000,000</strong> primitive steps. The spikes are real but rare, and the cheap steps in between have <em>already paid</em> for them. That is not an average over luck — it is a guarantee over <em>every</em> sequence. Learning to see, and to prove, that guarantee is the whole of this lecture.</p>
+        <p style="margin-bottom:0">No. The million appends together perform fewer than <strong>3,000,000</strong> primitive steps. The spikes are real but rare, and the cheap steps in between have <em>already paid</em> for them. That is not an average over luck — it is a guarantee over <em>every</em> sequence. Learning to see, and to prove, that guarantee is the whole of this study.</p>
       </div>
     </div>
   </div>
@@ -376,7 +376,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>The asterisk comes due</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -404,9 +404,9 @@
       <div class="eyebrow"><span class="n">01</span> the asterisk comes due</div>
       <h2>An operation that is sometimes linear, yet always constant</h2>
       <div class="col">
-        <p>I drew a sharp line in Lecture 01 between the <em>operation</em> — the abstract thing we wish to perform — and the <em>engine</em> that carries it out. We met the engine's bill there: contiguity makes <code class="inl">access(i)</code> a single arithmetic step but charges <code class="inl">&#x398;(n)</code> to edit the interior, because the no-gaps promise forces a cascade of shifts. I attached an asterisk to one happy exception. Appending at the <em>end</em> disturbs no one — <em>provided spare capacity exists.</em> Manufacturing that spare capacity cheaply is the whole trick, and the asterisk now comes due.</p>
+        <p>I drew a sharp line in Deep study 01 between the <em>operation</em> — the abstract thing we wish to perform — and the <em>engine</em> that carries it out. We met the engine's bill there: contiguity makes <code class="inl">access(i)</code> a single arithmetic step but charges <code class="inl">&#x398;(n)</code> to edit the interior, because the no-gaps promise forces a cascade of shifts. I attached an asterisk to one happy exception. Appending at the <em>end</em> disturbs no one — <em>provided spare capacity exists.</em> Manufacturing that spare capacity cheaply is the whole trick, and the asterisk now comes due.</p>
         <p>Here is the difficulty stated plainly. A <span class="term">dynamic array</span> keeps a backing block larger than it strictly needs, so most appends just drop a value into a waiting slot — one step. But the block has a fixed size. When it fills, there is nowhere to put the next element, so we must allocate a <em>larger</em> block and copy every existing element across. That copy is <code class="inl">&#x398;(n)</code>. So <code class="inl">append</code> has two faces: a constant-time common case and a linear-time rare case. Its <em>worst-case-per-operation</em> cost is therefore <code class="inl">&#x398;(n)</code>, and if that were the honest figure, dynamic arrays would be useless.</p>
-        <p>They are not useless; they are the default sequence in every language's standard library. The resolution is that worst-case-per-operation is the <em>wrong lens</em> here. It prices each append as if every one might be the expensive one — but they cannot all be expensive, because each costly copy <em>doubles</em> the runway before the next. The expensive operations are forced to be rare by the very mechanism that makes them expensive. To see that, we need a lens that prices a <em>sequence</em>, not an isolated call. That lens is <span class="term">amortized analysis</span>, and it is the second of this course's three ways to measure cost — worst-case, amortized, and (later, Lecture 05) expected.</p>
+        <p>They are not useless; they are the default sequence in every language's standard library. The resolution is that worst-case-per-operation is the <em>wrong lens</em> here. It prices each append as if every one might be the expensive one — but they cannot all be expensive, because each costly copy <em>doubles</em> the runway before the next. The expensive operations are forced to be rare by the very mechanism that makes them expensive. To see that, we need a lens that prices a <em>sequence</em>, not an isolated call. That lens is <span class="term">amortized analysis</span>, and it is the second of this course's three ways to measure cost — worst-case, amortized, and (later, Deep study 05) expected.</p>
         <div class="note info"><span class="tag">the formal lens</span>Amortization is what you reach for whenever a structure has occasional expensive operations whose cost is <em>structurally bounded</em> by the cheap operations preceding them. The art is to make &ldquo;preceding cheap work pays for the rare spike&rdquo; into a theorem, not a hope.</div>
       </div>
     </section>
@@ -422,17 +422,17 @@
           <li><strong>Derive</strong> why the growth must be <em>geometric</em>: that doubling (or any factor <code class="inl">a&gt;1</code>) gives <code class="inl">&#x398;(1)</code> amortized while adding a constant gives <code class="inl">&#x398;(n)</code> — and read off the time&ndash;space trade-off in the factor.</li>
           <li><strong>Build</strong> a potential function, verify its two obligations (<code class="inl">&#x3A6;</code> starts at 0 and never goes negative), and compute amortized cost as <code class="inl">actual + &Delta;&#x3A6;</code>.</li>
           <li><strong>Diagnose</strong> the failures: the halve-at-half-full thrash, arithmetic growth, mistaking amortized for worst-case under a real-time deadline, and a potential that dips below its start.</li>
-          <li><strong>Recognise</strong> the same telescoping argument when it returns — in the binary counter, the two-stack queue, KMP's failure links (Lecture 18), and union-find's near-constant operations (Lecture 12).</li>
+          <li><strong>Recognise</strong> the same telescoping argument when it returns — in the binary counter, the two-stack queue, KMP's failure links (Deep study 18), and union-find's near-constant operations (Deep study 12).</li>
         </ul>
 
         <h3>Prerequisites</h3>
-        <p>Three ideas, each a phrase you should hold comfortably. The first two are taught in Lecture 00; the third in Lecture 01.</p>
+        <p>Three ideas, each a phrase you should hold comfortably. The first two are taught in Deep study 00; the third in Deep study 01.</p>
         <div class="chips">
           <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotic notation — O / &Theta; / &Omega;</a>
           <a class="chip" href="dsa-00-cost-of-a-computation.html">the RAM cost model</a>
           <a class="chip" href="dsa-01-linear-layouts-and-access-disciplines.html">arrays &amp; linked structures</a>
         </div>
-        <p style="margin-top:1em">If you can read <code class="inl">&#x398;(1)</code> as &ldquo;a bounded number of steps, independent of <code class="inl">n</code>,&rdquo; trust the RAM model's charge of <code class="inl">1</code> per memory access, and recall from Lecture 01 that an array append is free only when capacity remains, you are ready. We now make &ldquo;manufacture the capacity cheaply&rdquo; exact.</p>
+        <p style="margin-top:1em">If you can read <code class="inl">&#x398;(1)</code> as &ldquo;a bounded number of steps, independent of <code class="inl">n</code>,&rdquo; trust the RAM model's charge of <code class="inl">1</code> per memory access, and recall from Deep study 01 that an array append is free only when capacity remains, you are ready. We now make &ldquo;manufacture the capacity cheaply&rdquo; exact.</p>
       </div>
     </section>
 
@@ -462,7 +462,7 @@
               <tr class="wrap-row"><th scope="row">amortized</th><td>the operations in any one sequence</td><td><b>none</b> — deterministic</td><td>holds for <b>every</b> sequence</td><td class="mono">array append = &#x398;(1)</td></tr>
               <tr><th scope="row">average / expected</th><td>a distribution of inputs or coin-flips</td><td>essential</td><td>holds <em>in expectation</em>; can be unlucky</td><td class="mono">hash insert = O(1) exp.</td></tr>
             </tbody>
-            <tfoot><tr><td colspan="5">Worst-case (Lec. 00) &middot; amortized (here) &middot; expected (Lec. 05) — three different promises. Never substitute one word for another.</td></tr></tfoot>
+            <tfoot><tr><td colspan="5">Worst-case (Deep study 00) &middot; amortized (here) &middot; expected (Lec. 05) — three different promises. Never substitute one word for another.</td></tr></tfoot>
           </table>
         </div>
       </div>
@@ -488,12 +488,12 @@
     B[i] <span class="tok-op">&#8592;</span> D.A[i]
   D.A <span class="tok-op">&#8592;</span> B;  D.C <span class="tok-op">&#8592;</span> newC      <span class="tok-com">// old block is freed</span></code></pre>
 
-        <p>The cost model, in the RAM units of Lecture 00: a cheap append is <strong>1</strong> (a single write). A growing append copies the <code class="inl">n</code> live elements and then writes the new one, costing <strong><code class="inl">n + 1</code></strong>. We start from an empty array with no backing store (<code class="inl">C = 0</code>); the first append allocates a single cell, copying nothing. The doubling rule — <code class="inl">C &rarr; 2C</code> — is the one design choice that makes everything work, and &sect;05 shows why no gentler rule will do.</p>
+        <p>The cost model, in the RAM units of Deep study 00: a cheap append is <strong>1</strong> (a single write). A growing append copies the <code class="inl">n</code> live elements and then writes the new one, costing <strong><code class="inl">n + 1</code></strong>. We start from an empty array with no backing store (<code class="inl">C = 0</code>); the first append allocates a single cell, copying nothing. The doubling rule — <code class="inl">C &rarr; 2C</code> — is the one design choice that makes everything work, and &sect;05 shows why no gentler rule will do.</p>
 
         <p>The picture below is the physical event hidden inside <code class="inl">GROW</code>: a full block of capacity <code class="inl">C</code> is abandoned for a fresh block of capacity <code class="inl">2C</code>, every element copied across, leaving the new block <em>exactly half full</em>. That &ldquo;half full just after growth&rdquo; fact is the seed of the entire analysis — remember it.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 330" style="--mw:744px" role="img" aria-labelledby="f1t f1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 330" style="--mw:878px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The GROW event: copying a full capacity-four block into a fresh capacity-eight block</title>
             <desc id="f1d">A full array of capacity four holding A B C D is abandoned. A new array of capacity eight is allocated; the four elements are copied across into its first four slots, and a fifth element E is written. The new block is exactly half full, with four empty slots of fresh runway.</desc>
 
@@ -533,7 +533,7 @@
             <defs>
               <marker id="g1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 — the GROW event.</b> The expensive case made physical: <code class="inl">n</code> copies plus one write. Note the outcome — the new block is <em>exactly half full</em>, so the next <code class="inl">C</code> appends are all cheap before another GROW can occur. The spike <em>builds its own runway</em>.</figcaption>
         </figure>
       </div>
@@ -587,7 +587,7 @@
             <tbody>
               <tr><th scope="row" class="mono">add k (a&rarr;1)</th><td class="bad">&#x398;(n) &mdash; diverges</td><td class="good">tiny</td><td>the tempting bug</td></tr>
               <tr><th scope="row" class="mono">1.5&#xD7;</th><td class="mid">3.0</td><td>~33%</td><td>Java ArrayList, MSVC, folly</td></tr>
-              <tr class="wrap-row"><th scope="row" class="mono">2&#xD7;</th><td class="good">2.0</td><td>~50%</td><td>this lecture, many libcxx builds</td></tr>
+              <tr class="wrap-row"><th scope="row" class="mono">2&#xD7;</th><td class="good">2.0</td><td>~50%</td><td>this study, many libcxx builds</td></tr>
               <tr><th scope="row" class="mono">3&#xD7;</th><td class="good">1.5</td><td>~67%</td><td>aggressive, copy-averse</td></tr>
             </tbody>
             <tfoot><tr><td colspan="4">Smaller <span class="mono">a</span> wastes less memory but copies more; larger <span class="mono">a</span> copies less but reserves more. Any <span class="mono">a&gt;1</span> gives <span class="mono">O(1)</span> amortized. (Some allocators favour 1.5&#xD7; so a freed block can be reused by the next growth.)</td></tr></tfoot>
@@ -595,7 +595,7 @@
         </div>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 360" style="--mw:744px" role="img" aria-labelledby="f2t f2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 360" style="--mw:878px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">Cumulative cost of n appends: geometric growth stays linear, arithmetic growth turns quadratic</title>
             <desc id="f2d">Two curves of total cost against number of appends. The geometric (doubling) curve rises as a straight line through small staircase jumps at the resize points one, two, four, eight, sixteen, which spread further apart. The arithmetic (add k) curve bends upward as a parabola, its resize points evenly and densely spaced, overtaking the doubling curve.</desc>
 
@@ -630,7 +630,7 @@
             <!-- crossover note -->
             <line x1="455" y1="300" x2="455" y2="282" class="dg-dash"/>
             <text x="455" y="320" text-anchor="middle" class="dg-label sm">curves cross; beyond here arithmetic loses badly</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 — geometry beats arithmetic.</b> Doubling's resize points spread out geometrically, so their costs form a convergent-ratio series and the total stays linear. Adding a constant keeps the resizes dense and equally costly, so their total grows like the area of a triangle — quadratic. The growth <em>rule</em>, not the growth <em>amount</em>, decides the asymptotics.</figcaption>
         </figure>
       </div>
@@ -698,7 +698,7 @@
         <p>Why exactly two? Here is the accountant's intuition, and it is lovely. When the array next doubles, every element must be copied — but only the elements added <em>since the previous</em> doubling still carry credit; the older half spent theirs in that previous doubling and are now &ldquo;freeloaders.&rdquo; Because the array is always half full just after a doubling (&sect;04, Figure 1), the new half is exactly as numerous as the old half. So give each new element <em>two</em> coins: one to copy <em>itself</em> at the next doubling, and one to copy <em>one freeloader</em> from the old half. Every copy at the next doubling is then prepaid, and the bank never dips below zero.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 340" style="--mw:744px" role="img" aria-labelledby="f3t f3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 340" style="--mw:878px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">The banker's ledger: two coins on each newly added element prepay all copies at the next doubling</title>
             <desc id="f3d">A full array of capacity eight. Its first four elements, added before the last doubling, carry no coins and are labelled freeloaders. Its last four elements each carry two coins. When the array doubles, each new element spends one coin to copy itself and one coin to copy a freeloader, so all eight copies are prepaid and the credit returns to zero.</desc>
 
@@ -737,7 +737,7 @@
 
             <!-- ledger box -->
             <g transform="translate(600,86)">
-              <rect x="0" y="0" width="316" height="170" rx="10" fill="var(--surface-2)" stroke="var(--outline-variant)"/>
+              <rect x="0" y="0" width="336" height="170" rx="10" fill="var(--surface-2)" stroke="var(--outline-variant)"/>
               <text x="18" y="30" class="dg-cap">at the doubling, 8 coins pay 8 copies</text>
               <text x="18" y="62" class="dg-label sm">each new element spends:</text>
               <text x="34" y="86" class="dg-label sm dg-blue-f">&#x2022; 1 coin &rarr; copy itself</text>
@@ -745,7 +745,7 @@
               <text x="18" y="138" class="dg-label sm">4 new &#xD7; 2 = 8 credits = 8 copies</text>
               <text x="18" y="160" class="dg-val dg-blue-f">credit after &rarr; 0  (invariant held)</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 — the banker's ledger.</b> Two coins per append is precisely enough: the new half is as large as the old half (the half-full fact again), so each new element prepays its own future copy <em>and</em> one orphaned older element's. Charge 3, store 2, and the bank never breaks. Amortized cost <code class="inl">= 3 = O(1)</code>.</figcaption>
         </figure>
 
@@ -849,7 +849,7 @@
         <p>Look at what happened in the resize case. The actual cost spiked to <code class="inl">n+1</code> — but the potential <em>crashed</em> by almost exactly the same amount. Before the resize the array was full and fully charged (<code class="inl">&#x3A6; = n</code>); after, it is half full and discharged (<code class="inl">&#x3A6; = 2</code>). That <code class="inl">&minus;(n-2)</code> drop is the structure spending its stored energy to pay for the copy, leaving an amortized cost of a flat <span class="big-amort">3</span>. <strong>The spike in actual cost and the crash in potential cancel by design.</strong> That cancellation is the whole beauty of the method, and the figure below is its portrait.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 380" style="--mw:744px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 380" style="--mw:878px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">The potential sawtooth: potential rises by two each cheap append and crashes at each resize, exactly cancelling the actual-cost spike</title>
             <desc id="f4d">Across seventeen appends, the actual per-operation cost is one for cheap appends and rises to spikes of size two, three, five, nine, and seventeen at the resizes (appends two, three, five, nine, seventeen). The potential climbs in steps of two between resizes, forming a rising sawtooth, and plunges back to two at every resize. At every operation the amortized cost, actual plus the change in potential, equals three — drawn as a flat dashed line.</desc>
 
@@ -906,7 +906,7 @@
             <defs>
               <marker id="s4" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 — the potential sawtooth.</b> The blue sawtooth is <code class="inl">&#x3A6; = 2n - C</code>: it climbs <code class="inl">+2</code> per cheap append, storing energy, and plunges at each resize as that energy is spent on copies. Wherever a red spike stabs upward, the sawtooth drops by the same height. Their sum — the amortized cost — is the flat dashed line at 3.</figcaption>
         </figure>
       </div>
@@ -1000,7 +1000,7 @@
         <p>Sit the array exactly full, <code class="inl">n = C</code>, and feed it <code class="inl wrap">append, delete, append, delete, &hellip;</code> The append finds no room and triggers a <em>doubling</em> (copy <code class="inl">C</code> elements, new capacity <code class="inl">2C</code>). The delete takes the size back to <code class="inl">C</code>, which is exactly half of <code class="inl">2C</code>, so the shrink rule fires and a <em>halving</em> copies <code class="inl">C</code> elements again &mdash; and we are back where we started. Each operation copies <code class="inl">&#x398;(n)</code> elements; nothing is ever amortised because no cheap operations accumulate between the expensive ones. The amortized bound is destroyed. The cause, in potential terms: after each resize the structure sits <em>right at</em> the next resize's trigger, with zero runway — exactly what doubling was careful to avoid.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 250" style="--mw:744px" role="img" aria-labelledby="f5t f5d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 250" style="--mw:878px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">Halve-at-half-full thrashes; halve-at-quarter-full leaves a safe buffer</title>
             <desc id="f5d">Two number lines of load factor from empty to full. In the bad rule the grow trigger at full and the shrink trigger at one half sit adjacent, so an operation at the boundary bounces between resizes every step. In the good rule the shrink trigger is moved down to one quarter, leaving a wide buffer between one quarter and full, so after any resize the array is half full and needs many operations before the next resize.</desc>
 
@@ -1026,7 +1026,7 @@
             <defs>
               <marker id="t1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 5 — hysteresis defeats the thrash.</b> Move the shrink trigger from <code class="inl">&#xBD;</code> down to <code class="inl">&#xBC;</code>. Now after either resize the array lands at half full, a comfortable distance from <em>both</em> triggers, guaranteeing <code class="inl">&#x398;(C)</code> cheap operations before the next resize — which is exactly what restores <code class="inl">O(1)</code> amortized for appends <em>and</em> deletes.</figcaption>
         </figure>
 
@@ -1062,7 +1062,7 @@
       <div class="eyebrow"><span class="n">12</span> horizon</div>
       <h2>The same trick bounds union-find</h2>
       <div class="col">
-        <p>I want you to leave this lecture seeing the potential method not as a fact about arrays but as a <em>general instrument</em>, because its most striking use is still ten lectures away. In Lecture 12 we build <span class="term">union-find</span> (the disjoint-set structure) to track connected components — the engine inside Kruskal's minimum-spanning-tree algorithm. It supports <code class="inl">find</code> (which set is <code class="inl">x</code> in?) and <code class="inl">union</code> (merge two sets), and with two optimisations — <em>union by rank</em> and <em>path compression</em> — its operations run in <span class="term">inverse-Ackermann</span> time:</p>
+        <p>I want you to leave this study seeing the potential method not as a fact about arrays but as a <em>general instrument</em>, because its most striking use is still ten studies away. In Deep study 12 we build <span class="term">union-find</span> (the disjoint-set structure) to track connected components — the engine inside Kruskal's minimum-spanning-tree algorithm. It supports <code class="inl">find</code> (which set is <code class="inl">x</code> in?) and <code class="inl">union</code> (merge two sets), and with two optimisations — <em>union by rank</em> and <em>path compression</em> — its operations run in <span class="term">inverse-Ackermann</span> time:</p>
         <div class="eq">
           <span class="lbl">union-find with both heuristics</span>
           <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -1077,7 +1077,7 @@
           </math></div>
         </div>
         <p>The function <code class="inl">&#x3B1;(n)</code>, the inverse of Ackermann's explosively-growing function, is below 5 for any <code class="inl">n</code> you could ever store — effectively a constant, though provably <em>not</em> one. No single <code class="inl">find</code> is <code class="inl">O(1)</code> worst-case; the near-constant cost is purely amortized, and the proof is a potential argument exactly in the shape you just learned. The difference is only in the <em>potential function</em>: instead of <code class="inl">2n - C</code>, one assigns each node a potential derived from its rank and how far its rank sits below its parent's, so that the rare expensive <code class="inl">find</code> — the one that walks a long path — is paid for by the potential released when path compression flattens that path. Same telescoping sum; same &ldquo;spike cancels a potential drop&rdquo;; a vastly cleverer <code class="inl">&#x3A6;</code>.</p>
-        <p>That is the promise of this method, and the reason it is worth mastering on the humble array first: <strong>the technique you just used to tame a doubling array is, structurally, the technique that tames one of the most subtle data structures in the field.</strong> When you meet it again in Lecture 12, you will recognise the machinery — and the recognition is the point.</p>
+        <p>That is the promise of this method, and the reason it is worth mastering on the humble array first: <strong>the technique you just used to tame a doubling array is, structurally, the technique that tames one of the most subtle data structures in the field.</strong> When you meet it again in Deep study 12, you will recognise the machinery — and the recognition is the point.</p>
       </div>
     </section>
 
@@ -1092,7 +1092,7 @@
         <p>The single resize really does cost <code class="inl">&#x398;(n)</code>. If your system has a hard deadline on <em>every</em> operation — a 60-frames-per-second render loop with 16ms per frame, an audio callback, a pacemaker — then &ldquo;<code class="inl">O(1)</code> amortized&rdquo; is cold comfort the frame the array decides to copy a million elements. Remedies: <strong>pre-reserve</strong> capacity when the final size is known (one growth up front, then all cheap appends), or <strong>de-amortize</strong> by spreading the copy incrementally across many operations so each does <code class="inl">O(1)</code> worst-case work (this is Practice Problem 3). Know which guarantee your setting demands.</p>
 
         <h3>2 &middot; Amortized is not average-case</h3>
-        <p>Worth repeating because it is the field's favourite slip. There is no probability in our proof; the bound holds for the adversary's worst sequence. Do not &ldquo;defend&rdquo; an amortized bound by saying expensive operations are unlikely — they are not unlikely, they are <em>infrequent by construction</em>, which is stronger. And do not import amortized reasoning to justify a hash table's <code class="inl">O(1)</code>: that one really is probabilistic and really can be unlucky (Lecture 08).</p>
+        <p>Worth repeating because it is the field's favourite slip. There is no probability in our proof; the bound holds for the adversary's worst sequence. Do not &ldquo;defend&rdquo; an amortized bound by saying expensive operations are unlikely — they are not unlikely, they are <em>infrequent by construction</em>, which is stronger. And do not import amortized reasoning to justify a hash table's <code class="inl">O(1)</code>: that one really is probabilistic and really can be unlucky (Deep study 08).</p>
 
         <h3>3 &middot; The halve-at-half-full thrash</h3>
         <p>The &sect;11 disaster, restated because it is a real bug in real code: making the shrink threshold meet the grow threshold lets an adversary (or an unlucky workload) force <code class="inl">&#x398;(n)</code> on every operation. Always leave hysteresis — shrink at a quarter, not a half. The same logic forbids shrinking eagerly after a single delete.</p>
@@ -1107,7 +1107,7 @@
         <p>The whole argument assumes a <em>single linear timeline</em> of operations, so that spent potential stays spent. If a structure is <em>persistent</em> — you can save an old version and resume from it — an adversary can return to a fully-charged state (an about-to-resize array) and trigger the expensive operation again and again, each time from the same saved state, paying the spike repeatedly without the cheap operations that funded it. The amortized bound is then <em>false</em>. This is why naive amortized structures need care (and techniques like lazy evaluation) to survive in a functional setting. Amortized bounds are about histories, not snapshots.</p>
 
         <h3>7 &middot; Forgetting to free, or to null, the old block</h3>
-        <p>An engine-level mistake, not an analysis one: after <code class="inl">GROW</code> copies into the new block, the old block must be released, and in a garbage-collected language any references the array held to popped objects must be nulled (the classic loitering-reference leak from Lecture 01's stack). The amortized <em>time</em> bound says nothing about <em>space</em> hygiene; mind both.</p>
+        <p>An engine-level mistake, not an analysis one: after <code class="inl">GROW</code> copies into the new block, the old block must be released, and in a garbage-collected language any references the array held to popped objects must be nulled (the classic loitering-reference leak from Deep study 01's stack). The amortized <em>time</em> bound says nothing about <em>space</em> hygiene; mind both.</p>
       </div>
     </section>
 
@@ -1167,12 +1167,12 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 03</span>
+            <span class="lab">next &middot; deep study 03</span>
             <div class="ttl">Divide, Solve, Combine: Recurrences and the Master Theorem</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">We have priced a structure by summing across its operations. Next we price <em>algorithms</em> that split a problem into smaller copies of itself — merge sort, binary search, Karatsuba multiplication — and learn to solve the recurrences that result, by recursion trees and the Master Theorem. The doubling we exploited here returns there as the branching of a divide-and-conquer tree, and sets up the question Lecture 04 answers: can we multiply faster still?</p>
+        <p style="margin-top:1em">We have priced a structure by summing across its operations. Next we price <em>algorithms</em> that split a problem into smaller copies of itself — merge sort, binary search, Karatsuba multiplication — and learn to solve the recurrences that result, by recursion trees and the Master Theorem. The doubling we exploited here returns there as the branching of a divide-and-conquer tree, and sets up the question Deep study 04 answers: can we multiply faster still?</p>
       </div>
     </section>
 
@@ -1216,6 +1216,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-01-linear-layouts-and-access-disciplines.html" rel="prev"><span>&larr; Lecture 01</span><strong>Linear layouts and access disciplines</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-03-divide-solve-combine.html" rel="next"><span>Lecture 03 &rarr;</span><strong>Divide, solve, combine</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/06-arrays.html">Lesson 6 &middot; Arrays &amp; dynamic arrays</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-01-linear-layouts-and-access-disciplines.html" rel="prev"><span>&larr; Deep study 01</span><strong>Linear layouts and access disciplines</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-03-divide-solve-combine.html" rel="next"><span>Deep study 03 &rarr;</span><strong>Divide, solve, combine</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/06-arrays.html">Lesson 6 &middot; Arrays &amp; dynamic arrays</a></p></nav>
 </body>
 </html>

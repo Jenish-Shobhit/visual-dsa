@@ -344,7 +344,7 @@
 <!-- ============ HERO / HOOK ============ -->
 <div class="hero">
   <svg class="shapes" width="210" height="168" viewBox="0 0 210 168" aria-hidden="true">
-    <!-- a small implicit binary tree over four leaves: the motif of the whole lecture -->
+    <!-- a small implicit binary tree over four leaves: the motif of the whole study -->
     <line x1="105" y1="30" x2="55"  y2="78" class="dg-stroke"/>
     <line x1="105" y1="30" x2="155" y2="78" class="dg-stroke"/>
     <line x1="55"  y1="92" x2="28"  y2="134" class="dg-stroke"/>
@@ -360,7 +360,7 @@
     <rect x="169" y="135" width="26" height="26" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 10</span> two demands that pull in opposite directions</div>
+    <div class="eyebrow"><span class="n">Deep study 10</span> two demands that pull in opposite directions</div>
     <h1>Range Queries on Sequences: Fenwick &amp; Segment Trees</h1>
 <p class="study-related"><span class="study-related__label">Related lesson</span><a href="../lessons/23-segment-and-fenwick-trees.html">Lesson 23 · Segment &amp; Fenwick trees</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -368,7 +368,7 @@
   <div class="study-brief-grid"><p><span>Build on</span>Prefix sums</p><p><span>Core invariant</span>Store aggregates at scales that let both updates and queries touch logarithmically many nodes.</p></div>
   <details class="study-check"><summary>Try this first · What changes if range sum queries stay fixed but point values never change?</summary><p>A prefix sum array gives O(1) range queries after O(n) preprocessing. Dynamic updates motivate Fenwick or segment trees.</p></details>
 </div>
-    <p class="lede col">Give me an array and two demands at once: <em>change any element</em>, and <em>aggregate any contiguous block</em> &mdash; sum, minimum, maximum &mdash; over and over, interleaved, online. A plain array makes the change instant but the aggregate slow; a prefix-sum table makes the aggregate instant but the change slow. Each structure is fast at exactly the operation the other is slow at. This lecture builds the two structures that refuse the trade &mdash; the <strong>Fenwick tree</strong> (a tree hidden inside the <em>bits of an index</em>) and the <strong>segment tree</strong> (a tree hidden inside an <em>array</em>) &mdash; and answers <em>both</em> operations in <code class="inl">O(log&nbsp;n)</code>.</p>
+    <p class="lede col">Give me an array and two demands at once: <em>change any element</em>, and <em>aggregate any contiguous block</em> &mdash; sum, minimum, maximum &mdash; over and over, interleaved, online. A plain array makes the change instant but the aggregate slow; a prefix-sum table makes the aggregate instant but the change slow. Each structure is fast at exactly the operation the other is slow at. This study builds the two structures that refuse the trade &mdash; the <strong>Fenwick tree</strong> (a tree hidden inside the <em>bits of an index</em>) and the <strong>segment tree</strong> (a tree hidden inside an <em>array</em>) &mdash; and answers <em>both</em> operations in <code class="inl">O(log&nbsp;n)</code>.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
@@ -384,7 +384,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>The two-sided wall</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -414,7 +414,7 @@
           <li><strong>Update</strong> &mdash; <code class="inl">a[i] &larr; x</code>, or <code class="inl">a[i] += &delta;</code>. Change one cell.</li>
           <li><strong>Range query</strong> &mdash; aggregate <code class="inl">a[l] &oplus; a[l+1] &oplus; &hellip; &oplus; a[r&minus;1]</code> for some associative <code class="inl">&oplus;</code> (sum, min, max, gcd, &hellip;).</li>
         </ul>
-        <p>Two obvious data structures each solve <em>one</em> side perfectly and collapse on the other. This is not bad luck; it is the shape of the problem, and seeing it clearly is half the lecture:</p>
+        <p>Two obvious data structures each solve <em>one</em> side perfectly and collapse on the other. This is not bad luck; it is the shape of the problem, and seeing it clearly is half the study:</p>
 
         <div class="two">
           <div class="band">
@@ -431,7 +431,7 @@
 
         <p>So on a workload of <code class="inl">q</code> <em>mixed</em> operations, whichever structure you choose, the adversary feeds you the operation it is slow at and you pay <code class="inl">&#x398;(n)</code> each time &mdash; <code class="inl">&#x398;(nq)</code> overall. The raw array stores too <em>little</em> (only the leaves); the prefix table stores too <em>much</em> in too rigid a form (only the global running total, so one edit ripples forever). The escape is to store something <em>in between</em>: partial aggregates over <code class="inl">O(n)</code> carefully chosen sub-ranges, arranged so that <em>both</em> a query and an update touch only <code class="inl">O(log&nbsp;n)</code> of them.</p>
 
-        <div class="note info"><span class="tag">the formal lens</span>The prefix table is a Fenwick tree with the tree flattened all the way down &mdash; one block of length <code class="inl">k</code> per index. Flat blocks make queries trivial and updates global. A balanced hierarchy of blocks of lengths <code class="inl">1, 2, 4, &hellip;</code> balances the two costs at <code class="inl">log&nbsp;n</code> apiece. The whole lecture is the search for the <em>right granularity of stored partial answers</em>.</p></div>
+        <div class="note info"><span class="tag">the formal lens</span>The prefix table is a Fenwick tree with the tree flattened all the way down &mdash; one block of length <code class="inl">k</code> per index. Flat blocks make queries trivial and updates global. A balanced hierarchy of blocks of lengths <code class="inl">1, 2, 4, &hellip;</code> balances the two costs at <code class="inl">log&nbsp;n</code> apiece. The whole study is the search for the <em>right granularity of stored partial answers</em>.</p></div>
       </div>
     </section>
 
@@ -450,7 +450,7 @@
         </ul>
 
         <h3>Prerequisites</h3>
-        <p>This lecture stands on four ideas. Two are taught on linked pages; the others arrive earlier in this syllabus and are restated where first used.</p>
+        <p>This study stands on four ideas. Two are taught on linked pages; the others arrive earlier in this syllabus and are restated where first used.</p>
         <div class="chips">
           <a class="chip" href="dsa-01-linear-layouts-and-access-disciplines.html">arrays &amp; prefix sums</a>
           <a class="chip" href="dsa-03-divide-solve-combine.html">divide &amp; conquer</a>
@@ -544,7 +544,7 @@
         <p>Picture those responsibility ranges drawn over the data. An odd index covers just itself (length 1); index <code class="inl">2</code> covers <code class="inl">a[1..2]</code>; index <code class="inl">4</code> covers <code class="inl">a[1..4]</code>; index <code class="inl">8</code> covers all eight. The lengths are exactly the powers of two reading off the lowest set bit &mdash; a staircase of blocks:</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 470" style="--mw:744px" role="img" aria-labelledby="f1t f1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 940 470" style="--mw:878px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">Fenwick responsibility ranges over eight elements</title>
             <desc id="f1d">Eight array cells indexed one to eight hold values five, three, seven, nine, six, four, eight, two. Above them, eight horizontal bars show what each tree cell aggregates: tree one covers cell one, tree two covers cells one to two, tree three covers cell three, tree four covers cells one to four, tree five covers cell five, tree six covers cells five to six, tree seven covers cell seven, and tree eight covers all cells one to eight. Bar lengths equal the lowest set bit of the index: one, two, one, four, one, two, one, eight.</desc>
 
@@ -596,7 +596,7 @@
               <text x="742" y="444" text-anchor="middle" class="dg-label sm">7 &#xB7; 111</text>
               <text x="846" y="444" text-anchor="middle" class="dg-label sm">8 &#xB7; 1000</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 &mdash; the responsibility ladder.</b> Data <code class="inl">a[1..8] = [5,3,7,9,6,4,8,2]</code>. Each bar is one <code class="inl">tree[i]</code>; its length is <code class="inl">lowbit(i)</code>, read straight off the binary index below. The right edge of every bar lands on its index <code class="inl">i</code>. This single picture explains both algorithms that follow.</figcaption>
         </figure>
 
@@ -690,7 +690,7 @@
         <p>Lay it in an array <code class="inl">t[1&hellip;2n]</code> with the implicit layout: leaves at <code class="inl">t[n&hellip;2n&minus;1]</code>, and each internal node <code class="inl">t[k] = t[2k] &oplus; t[2k+1]</code>. A query for <code class="inl">[l,r)</code> walks up from the two ends, harvesting any node that sits <em>entirely</em> inside the range and never descending into it again. Those harvested nodes are the canonical decomposition &mdash; <code class="inl">O(log&nbsp;n)</code> of them.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 482" style="--mw:760px" role="img" aria-labelledby="f3t f3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 960 482" style="--mw:896px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">A segment tree over eight elements with a range query decomposition</title>
             <desc id="f3d">A binary segment tree over array five three seven nine six four eight two. The root spans index zero to eight with sum forty-four. Its children span zero to four with sum twenty-four and four to eight with sum twenty. The leaves hold the eight values. The query for the half-open range two to seven is covered by three highlighted canonical nodes: the node spanning two to four with sum sixteen, the node spanning four to six with sum ten, and the leaf at index six with value eight. Their sum is thirty-four.</desc>
 
@@ -768,7 +768,7 @@
               <line x1="810" y1="408" x2="810" y2="424" class="dg-stroke dg-red" stroke-width="2.4"/>
               <text x="540" y="444" text-anchor="middle" class="dg-val" fill="var(--bau-red)">query range [2,7)  &#8594;  sum = 34</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 &mdash; the segment tree &amp; a query decomposition.</b> Same data as Figure&nbsp;1, here 0-indexed. The range <code class="inl">[2,7)</code> is covered by three <span style="color:var(--bau-red);font-weight:650">canonical nodes</span> &mdash; <code class="inl">[2,4)=16</code>, <code class="inl">[4,6)=10</code>, leaf <code class="inl">[6,7)=8</code> &mdash; summing to <code class="inl">34</code>, agreeing with the Fenwick. A range of five leaves needs three reads; in general at most <code class="inl">2&lfloor;log&#8322;n&rfloor;</code>.</figcaption>
         </figure>
 
@@ -808,7 +808,7 @@
         <p>For range-add / range-sum the bookkeeping is exact. A node covering <code class="inl">len</code> elements, told to add <code class="inl">&delta;</code> to all of them, updates <code class="inl">sum += &delta; &middot; len</code> and remembers <code class="inl">lazy += &delta;</code>. Before <em>ever</em> recursing into its children, it first flushes that pending <code class="inl">lazy</code> to both of them. That single discipline &mdash; <strong>push down before you descend</strong> &mdash; keeps every node's stored sum correct-as-seen and the children correct-when-visited.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 860 332" style="--mw:681px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 860 332" style="--mw:803px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">Lazy propagation push-down</title>
             <desc id="f4d">A parent node spanning index zero to four has an updated sum of thirty-six and a pending lazy tag of plus three covering four elements. Before the algorithm descends, it pushes the tag to both children: the left child spanning zero to two has its sum raised from eight to fourteen and inherits lazy plus three, and the right child spanning two to four has its sum raised from sixteen to twenty-two and inherits lazy plus three. The parent then clears its own lazy tag to zero.</desc>
 
@@ -840,7 +840,7 @@
             <text x="665" y="226" text-anchor="middle" class="dg-val">child [2,4) &#xB7; len 2</text>
             <text x="665" y="248" text-anchor="middle" class="dg-label">sum 16 &#8594; 22</text>
             <text x="665" y="268" text-anchor="middle" class="dg-label" fill="var(--bau-red)">lazy += 3</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 &mdash; push-down.</b> The covered node <code class="inl">[0,4)</code> already shows the correct raised <code class="inl">sum 36</code>; its children still show stale sums until a descent forces the tag down, lifting each child by <code class="inl">+3&middot;len</code> and copying the tag one level deeper. Work is done <em>only along paths actually visited</em> &mdash; the source of the <code class="inl">O(log&nbsp;n)</code> bound.</figcaption>
         </figure>
 
@@ -887,7 +887,7 @@
         <p>The point of these structures is not range sums for their own sake &mdash; it is that a Fenwick over <em>value space</em> becomes a live, sorted multiset you can interrogate. Two classic uses make this vivid.</p>
 
         <h3>A &mdash; Counting inversions in O(n log n)</h3>
-        <p>An <span class="term">inversion</span> is a pair <code class="inl">i&lt;j</code> with <code class="inl">a[i]&gt;a[j]</code> &mdash; a measure of how unsorted a sequence is. You met inversion counting through the <a class="inline" href="dsa-03-divide-solve-combine.html">merge-sort &ldquo;count while you merge&rdquo;</a> trick in Lecture&nbsp;03. Here is the Fenwick way, often simpler to reason about. Sweep <code class="inl">j</code> from left to right, keeping a Fenwick over <em>ranks</em> that counts how many already-seen elements have each rank. At step <code class="inl">j</code>, the elements already inserted are exactly those at indices <code class="inl">&lt;j</code>; among them the ones <em>greater</em> than <code class="inl">a[j]</code> are inversions ending at <code class="inl">j</code>. That count is <code class="inl">(seen) &minus; prefix(rank(a[j]))</code>.</p>
+        <p>An <span class="term">inversion</span> is a pair <code class="inl">i&lt;j</code> with <code class="inl">a[i]&gt;a[j]</code> &mdash; a measure of how unsorted a sequence is. You met inversion counting through the <a class="inline" href="dsa-03-divide-solve-combine.html">merge-sort &ldquo;count while you merge&rdquo;</a> trick in Deep&nbsp;study&nbsp;03. Here is the Fenwick way, often simpler to reason about. Sweep <code class="inl">j</code> from left to right, keeping a Fenwick over <em>ranks</em> that counts how many already-seen elements have each rank. At step <code class="inl">j</code>, the elements already inserted are exactly those at indices <code class="inl">&lt;j</code>; among them the ones <em>greater</em> than <code class="inl">a[j]</code> are inversions ending at <code class="inl">j</code>. That count is <code class="inl">(seen) &minus; prefix(rank(a[j]))</code>.</p>
 
         <pre><code><span class="tok-kw">def</span> <span class="tok-fn">count_inversions</span>(a):              <span class="tok-com"># O(n log n)</span>
     rank <span class="tok-op">=</span> <span class="tok-fn">compress</span>(a)               <span class="tok-com"># map values &rarr; 1..m, order-preserving</span>
@@ -1066,11 +1066,11 @@
       <div class="col">
         <p><strong>Store partial aggregates over a logarithmic skeleton of canonical sub-ranges &mdash; neither the whole nor the parts.</strong> Then every range query is a short fold of stored rungs, and every update repairs a short ladder of rungs. The Fenwick hides that skeleton in the bits of an index and demands an invertible aggregate (a group); the segment tree hides it in an array of nodes and asks only for an associative one (a monoid); lazy propagation extends the segment tree to range updates by deferring work onto tags and pushing them down only along visited paths. Two operations, both <code class="inl">O(log&nbsp;n)</code>, from one idea about granularity.</p>
 
-        <p>What changed between Lectures 1&ndash;9 and this one: until now a structure committed to being good at <em>one</em> thing. The implicit tree is the first structure on this syllabus that refuses the trade by storing answers at <em>every scale at once</em>. Next we let go of the line entirely &mdash; elements stop being a sequence and become a graph, where &ldquo;range&rdquo; gives way to &ldquo;reachable,&rdquo; and the traversal order itself exposes the structure.</p>
+        <p>What changed between Deep studies 1&ndash;9 and this one: until now a structure committed to being good at <em>one</em> thing. The implicit tree is the first structure on this syllabus that refuses the trade by storing answers at <em>every scale at once</em>. Next we let go of the line entirely &mdash; elements stop being a sequence and become a graph, where &ldquo;range&rdquo; gives way to &ldquo;reachable,&rdquo; and the traversal order itself exposes the structure.</p>
 
         <div class="next" role="note">
           <div>
-            <div class="lab">up next &middot; lecture 11</div>
+            <div class="lab">up next &middot; deep study 11</div>
             <div class="ttl">Graphs and Their Traversals: BFS, DFS, and the Structure They Expose</div>
           </div>
           <div class="arrow" aria-hidden="true">&#8594;</div>
@@ -1118,6 +1118,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-09-partial-order-is-enough-heaps-and-priority-queues.html" rel="prev"><span>&larr; Lecture 09</span><strong>Heaps and priority queues</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-11-graphs-and-their-traversals.html" rel="next"><span>Lecture 11 &rarr;</span><strong>Graphs and their traversals</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/23-segment-and-fenwick-trees.html">Lesson 23 &middot; Segment &amp; Fenwick trees</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-09-partial-order-is-enough-heaps-and-priority-queues.html" rel="prev"><span>&larr; Deep study 09</span><strong>Heaps and priority queues</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-11-graphs-and-their-traversals.html" rel="next"><span>Deep study 11 &rarr;</span><strong>Graphs and their traversals</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/23-segment-and-fenwick-trees.html">Lesson 23 &middot; Segment &amp; Fenwick trees</a></p></nav>
 </body>
 </html>

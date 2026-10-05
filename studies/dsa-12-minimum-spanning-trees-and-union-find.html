@@ -353,7 +353,7 @@
     <rect x="154" y="94" width="32" height="32" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="2"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 12</span> greedy on graphs</div>
+    <div class="eyebrow"><span class="n">Deep study 12</span> greedy on graphs</div>
     <h1>Minimum Spanning Trees &amp; the Union-Find Structure</h1>
 <p class="study-related"><span class="study-related__label">Related lessons</span><a href="../lessons/24-union-find.html">Lesson 24 · Union-find</a><a href="../lessons/30-minimum-spanning-trees.html">Lesson 30 · Minimum spanning trees</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -361,13 +361,13 @@
   <div class="study-brief-grid"><p><span>Build on</span>Graph traversal and sets</p><p><span>Core invariant</span>A cut property certifies a safe spanning edge; union find detects whether it joins different components.</p></div>
   <details class="study-check"><summary>Try this first · Can a minimum spanning tree contain a cycle?</summary><p>No. Removing the heaviest edge of a cycle keeps connectivity and never raises total weight.</p></details>
 </div>
-    <p class="lede col">You hold a connected, weighted graph &mdash; cities and the cost of every cable that might join them &mdash; and you must wire them all together for the least money. The cheapest connector is a <strong>tree</strong>: connect everything, waste nothing on a cycle. The number of candidate trees is astronomical, yet a stubbornly <em>local</em> rule &mdash; always take the next-cheapest edge that does not close a loop &mdash; finds the single global optimum in nearly the time it takes to read the edges. This lecture is about <em>why</em> that greed is licensed, and the two structures that execute it.</p>
+    <p class="lede col">You hold a connected, weighted graph &mdash; cities and the cost of every cable that might join them &mdash; and you must wire them all together for the least money. The cheapest connector is a <strong>tree</strong>: connect everything, waste nothing on a cycle. The number of candidate trees is astronomical, yet a stubbornly <em>local</em> rule &mdash; always take the next-cheapest edge that does not close a loop &mdash; finds the single global optimum in nearly the time it takes to read the edges. This study is about <em>why</em> that greed is licensed, and the two structures that execute it.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
         <p style="margin-bottom:.5em"><strong>A number to set the stakes.</strong> Take just <strong>50</strong> cities, fully interconnectable. By Cayley's formula the number of distinct spanning trees on <code class="inl">n</code> labelled nodes is <code class="inl">n<sup>n&minus;2</sup></code> &mdash; for <code class="inl">n=50</code> that is <code class="inl">50<sup>48</sup></code>, more than <strong>10<sup>81</sup></strong>. That is larger than the estimated number of atoms in the observable universe.</p>
-        <p style="margin-bottom:0">You could not enumerate them before the stars burn out. And yet the minimum-cost one among all <code class="inl">10<sup>81</sup></code> is pinned down in <code class="inl">O(E&nbsp;log&nbsp;V)</code> &mdash; a few thousand operations &mdash; by a method so simple a clerk could run it. The whole lecture is the proof that the simple method is <em>right</em>, and never merely lucky.</p>
+        <p style="margin-bottom:0">You could not enumerate them before the stars burn out. And yet the minimum-cost one among all <code class="inl">10<sup>81</sup></code> is pinned down in <code class="inl">O(E&nbsp;log&nbsp;V)</code> &mdash; a few thousand operations &mdash; by a method so simple a clerk could run it. The whole study is the proof that the simple method is <em>right</em>, and never merely lucky.</p>
       </div>
     </div>
   </div>
@@ -377,7 +377,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>The connection problem</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -404,7 +404,7 @@
       <div class="col">
         <p>I begin, as always, by separating the <em>problem</em> from the <em>engine</em>. The problem is older than computing: a set of points must be joined so that every point can reach every other, and joining any two of them carries a cost. Lay telephone lines between towns; etch traces between pads on a circuit board; choose which roads to clear of snow so the country stays connected; cluster data by linking nearest neighbours. In each, the question is the same &mdash; <em>which connections do I buy so that the whole is connected for the least total cost?</em></p>
         <p>Strip away the towns and the cables and what remains is a <span class="term">weighted graph</span> <code class="inl">G=(V,E,w)</code>: a set of vertices <code class="inl">V</code>, a set of possible edges <code class="inl">E</code>, and a weight <code class="inl">w(e)</code> on each edge &mdash; its cost. We want a subset of edges that (i) keeps the graph connected and (ii) costs as little as possible. The instant you write that down, one fact falls out: the answer never contains a cycle. A cycle is a redundant loop; delete its heaviest edge and everything is still connected for strictly less money. <strong>A minimum connector is therefore acyclic and connected &mdash; it is a tree.</strong> A tree that touches every vertex is a <span class="term">spanning tree</span>, and the cheapest one is the <span class="term">minimum spanning tree</span>, the MST.</p>
-        <p>That is the whole specification. What makes it a <em>great</em> problem &mdash; the kind that earns a lecture &mdash; is the gulf between how many candidates exist and how easily the best is found. The hero number above (<code class="inl">10<sup>81</sup></code> trees for 50 nodes) is the size of the search space; the algorithms we build search none of it. They make a sequence of irrevocable local choices and arrive at the global optimum by a guarantee, not a search. The name for that style is <span class="term">greedy</span>, and the MST is the cleanest place in all of algorithms to see exactly when greed is provably correct.</p>
+        <p>That is the whole specification. What makes it a <em>great</em> problem &mdash; the kind that earns a study &mdash; is the gulf between how many candidates exist and how easily the best is found. The hero number above (<code class="inl">10<sup>81</sup></code> trees for 50 nodes) is the size of the search space; the algorithms we build search none of it. They make a sequence of irrevocable local choices and arrive at the global optimum by a guarantee, not a search. The name for that style is <span class="term">greedy</span>, and the MST is the cleanest place in all of algorithms to see exactly when greed is provably correct.</p>
         <div class="note info"><span class="tag">the formal lens</span>Hold the contract fixed &mdash; "a minimum-weight spanning subgraph" &mdash; and notice the contract <em>forces</em> the shape of the answer (a tree) before we choose any algorithm. The cost is a property of the structure; our freedom is only in <em>how we find</em> it.</div>
       </div>
     </section>
@@ -459,10 +459,10 @@
           </math></div>
         </div>
 
-        <p>The <span class="term">minimum spanning tree</span> is the spanning tree of least total weight. Note what the objective does <em>not</em> ask for: it says nothing about distances <em>between</em> particular vertices, only about the total. That omission is the source of the most common misconception in &sect;10 &mdash; the MST is not the network of shortest routes. For now, here is the concrete graph we will solve twice, by two different algorithms, later in the lecture.</p>
+        <p>The <span class="term">minimum spanning tree</span> is the spanning tree of least total weight. Note what the objective does <em>not</em> ask for: it says nothing about distances <em>between</em> particular vertices, only about the total. That omission is the source of the most common misconception in &sect;10 &mdash; the MST is not the network of shortest routes. For now, here is the concrete graph we will solve twice, by two different algorithms, later in the study.</p>
 
         <figure>
-          <svg viewBox="0 0 720 470" style="--mw:489px" role="img" aria-labelledby="g1t g1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 470" style="--mw:576px" role="img" aria-labelledby="g1t g1d">
             <title id="g1t">A weighted graph on six vertices</title>
             <desc id="g1d">Six vertices A, B, C, D, E, F joined by nine weighted edges, the input to the worked example.</desc>
             <!-- edges (drawn first, under the nodes) -->
@@ -498,7 +498,7 @@
               <circle class="dg-node" cx="615" cy="255" r="27"/><text class="dg-nt" x="615" y="255">F</text>
               <circle class="dg-node" cx="355" cy="415" r="27"/><text class="dg-nt" x="355" y="415">E</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 &mdash; the input graph.</b> Six vertices, nine edges, weights all distinct (so the MST will be unique). We will find its minimum spanning tree by Kruskal's edge-greedy method and again by Prim's vertex-greedy method, and watch them agree.</figcaption>
         </figure>
       </div>
@@ -509,7 +509,7 @@
       <div class="eyebrow"><span class="n">04</span> the theorem that licenses greed</div>
       <h2>The cut property</h2>
       <div class="col">
-        <p>Greedy algorithms are usually wrong. Take the locally cheapest move at every step and you typically paint yourself into a corner &mdash; the cheap first bite costs you dearly later. The MST is one of the rare problems where local greed is <em>globally</em> optimal, and the reason is a single structural theorem. Everything else in this lecture is a corollary of it.</p>
+        <p>Greedy algorithms are usually wrong. Take the locally cheapest move at every step and you typically paint yourself into a corner &mdash; the cheap first bite costs you dearly later. The MST is one of the rare problems where local greed is <em>globally</em> optimal, and the reason is a single structural theorem. Everything else in this study is a corollary of it.</p>
         <p>First a definition. A <span class="term">cut</span> <code class="inl">(S, V&#8726;S)</code> is any partition of the vertices into two non-empty groups. An edge <span class="term">crosses</span> the cut if its two endpoints lie on opposite sides. Picture a line drawn through the graph: the crossing edges are the ones the line severs.</p>
 
         <div class="band flush" style="margin:1.4em 0">
@@ -546,7 +546,7 @@
         <p>Form <code class="inl">T&prime; = T &minus; e&prime; + e</code>: delete the cycle edge <code class="inl">e&prime;</code>, keep the new edge <code class="inl">e</code>. Removing an edge from a cycle cannot disconnect the graph, and we still have exactly <code class="inl">|V|&minus;1</code> edges, so <code class="inl">T&prime;</code> is again a spanning tree. By the inequality, <code class="inl">w(T&prime;)&le;w(T)</code>. But <code class="inl">T</code> was an MST, so no spanning tree is lighter &mdash; hence <code class="inl">w(T&prime;)=w(T)</code>, and <code class="inl">T&prime;</code> is itself an MST, one that <em>contains</em> <code class="inl">e</code>. Therefore <code class="inl">e</code> lies in some MST. If the weights are distinct the inequality is strict unless <code class="inl">e&prime;=e</code>, which forces <code class="inl">e</code> into <em>every</em> MST. <strong>&#9633;</strong></p>
 
         <figure>
-          <svg viewBox="0 0 720 380" style="--mw:526px" role="img" aria-labelledby="g2t g2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 380" style="--mw:734px" role="img" aria-labelledby="g2t g2d">
             <title id="g2t">The cut-property exchange argument</title>
             <desc id="g2d">A spanning tree split by a cut. Adding the light crossing edge e creates a cycle that also contains a heavier crossing tree-edge e-prime; swapping e for e-prime keeps a spanning tree of no greater weight.</desc>
             <!-- S region -->
@@ -585,7 +585,7 @@
             <!-- labels for e and e' -->
             <text class="dg-label" x="318" y="163" fill="var(--bau-blue)" font-weight="700">e (add)</text>
             <text class="dg-label" x="320" y="335" fill="var(--bau-red)" font-weight="700">e&#8242; (remove)</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 &mdash; the proof, drawn.</b> The tree (black) is split by the cut. The light crossing edge <b style="color:var(--bau-blue)">e&nbsp;=&nbsp;(u,v)</b> closes the <span style="background:color-mix(in oklab,var(--bau-yellow) 45%,transparent)">highlighted cycle</span>, which must cross back over a heavier tree edge <b style="color:var(--bau-red)">e&prime;</b>. Swap <code class="inl">e&prime;</code> out for <code class="inl">e</code>: still a spanning tree, no heavier. That single move is the entire correctness proof of both algorithms below.</figcaption>
         </figure>
 
@@ -643,7 +643,7 @@
         <p>Keep an integer <code class="inl">rank[x]</code>, an upper bound on the height of <code class="inl">x</code>'s subtree. When you union two roots, <strong>hang the lower-rank root beneath the higher-rank one</strong>, so the tree never gets taller than it must. Only when the two ranks are <em>equal</em> does the surviving root's rank tick up by one.</p>
 
         <h3>Heuristic 2 &mdash; path compression</h3>
-        <p>During <code class="inl">find</code>, after you have located the root, <strong>point every node you walked past directly at the root</strong>. The next <code class="inl">find</code> on any of them is a single hop. The walk you already paid for doubles as a flattening of the path &mdash; this is the amortization, the same &ldquo;pay-it-forward&rdquo; bookkeeping of <a class="inline" href="dsa-02-amortized-cost-aggregate-accounting-potential.html">Lecture&nbsp;02</a>, now cashed out on pointers.</p>
+        <p>During <code class="inl">find</code>, after you have located the root, <strong>point every node you walked past directly at the root</strong>. The next <code class="inl">find</code> on any of them is a single hop. The walk you already paid for doubles as a flattening of the path &mdash; this is the amortization, the same &ldquo;pay-it-forward&rdquo; bookkeeping of <a class="inline" href="dsa-02-amortized-cost-aggregate-accounting-potential.html">Deep&nbsp;study&nbsp;02</a>, now cashed out on pointers.</p>
 
         <pre><code><span class="tok-kw">class</span> <span class="tok-fn">DSU</span>:
     <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, n):
@@ -666,7 +666,7 @@
         <span class="tok-kw">return</span> <span class="tok-kw">True</span></code></pre>
 
         <figure>
-          <svg viewBox="0 0 720 350" style="--mw:619px" role="img" aria-labelledby="g3t g3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 350" style="--mw:734px" role="img" aria-labelledby="g3t g3d">
             <title id="g3t">Union by rank and path compression</title>
             <desc id="g3d">Left: union by rank hangs the shorter tree under the taller root. Right: path compression re-points every node on a find path directly to the root.</desc>
             <!-- divider -->
@@ -724,7 +724,7 @@
               <circle class="dg-node" cx="708" cy="168" r="18"/><text class="dg-nt" x="708" y="168" font-size="13">4</text>
               <text class="dg-label sm" x="604" y="208">after</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 &mdash; the two heuristics, on the actual pointer forest.</b> Arrows run from child to parent (toward the root). <b>Left:</b> union by rank attaches the shorter tree under the taller, so height grows only when two equal-rank roots meet. <b>Right:</b> path compression replays the <code class="inl">find(4)</code> walk and re-points every node on it straight at the root, so the chain never re-forms.</figcaption>
         </figure>
 
@@ -749,7 +749,7 @@
         </div>
 
         <h3>The headline: near-constant with both</h3>
-        <p>Add path compression and the bound collapses further. Tarjan's analysis (1975), built on the potential method of Lecture&nbsp;02, proves that a sequence of <code class="inl">m</code> operations on <code class="inl">n</code> elements costs</p>
+        <p>Add path compression and the bound collapses further. Tarjan's analysis (1975), built on the potential method of Deep&nbsp;study&nbsp;02, proves that a sequence of <code class="inl">m</code> operations on <code class="inl">n</code> elements costs</p>
         <div class="eq">
           <span class="lbl">rank + path compression (amortized)</span>
           <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
@@ -789,7 +789,7 @@
                 Q.<span class="tok-fn">decrease_key</span>(v, weight)
     <span class="tok-kw">return</span> {(v, parent[v]) <span class="tok-kw">for</span> v <span class="tok-kw">in</span> V <span class="tok-kw">if</span> parent[v] <span class="tok-kw">is</span> <span class="tok-kw">not</span> <span class="tok-kw">None</span>}</code></pre>
 
-        <p>Look closely and you will recognise the skeleton: a priority queue, an extract-min, and a relaxation of neighbours. It is <em>exactly</em> the shape of Dijkstra's shortest-path algorithm in the next lecture &mdash; the only difference is the key. Prim keys a vertex by the weight of the single edge that would attach it, <code class="inl">key[v]=w(u,v)</code>; Dijkstra keys it by the whole accumulated distance, <code class="inl">dist[u]+w(u,v)</code>. Same machine, two greedily-different definitions of &ldquo;nearest.&rdquo;</p>
+        <p>Look closely and you will recognise the skeleton: a priority queue, an extract-min, and a relaxation of neighbours. It is <em>exactly</em> the shape of Dijkstra's shortest-path algorithm in the next study &mdash; the only difference is the key. Prim keys a vertex by the weight of the single edge that would attach it, <code class="inl">key[v]=w(u,v)</code>; Dijkstra keys it by the whole accumulated distance, <code class="inl">dist[u]+w(u,v)</code>. Same machine, two greedily-different definitions of &ldquo;nearest.&rdquo;</p>
         <div class="note"><span class="tag">lazy vs. eager</span>Two implementations exist. <em>Eager</em> Prim keeps one entry per vertex and uses <code class="inl">decrease_key</code> (the code above). <em>Lazy</em> Prim skips <code class="inl">decrease_key</code>, instead pushing every edge it sees and discarding stale ones when popped (an edge whose endpoints are both already in <code class="inl">S</code>). Lazy is simpler to code with a plain binary heap; forget the staleness check and it returns nonsense.</div>
       </div>
     </section>
@@ -854,7 +854,7 @@
         <p>Read the two &ldquo;Edge added&rdquo; columns side by side. Kruskal commits the edges in pure weight order <code class="inl">1,2,3,4,5</code>; Prim commits them in <em>proximity</em> order <code class="inl">1,4,2,3,5</code> &mdash; whatever is cheapest from the current frontier. Different journeys, identical destination, because the destination is forced by the cut property and the weights are distinct.</p>
 
         <figure>
-          <svg viewBox="0 0 720 470" style="--mw:489px" role="img" aria-labelledby="g4t g4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 720 470" style="--mw:576px" role="img" aria-labelledby="g4t g4d">
             <title id="g4t">The minimum spanning tree of Figure 1</title>
             <desc id="g4d">The same six-vertex graph with the five MST edges drawn bold blue and the four rejected edges drawn faint and dashed; total weight fifteen.</desc>
             <!-- rejected edges (faint, dashed) -->
@@ -898,7 +898,7 @@
               <rect x="556" y="392" width="140" height="46" rx="10" fill="var(--bau-ink)"/>
               <text x="626" y="415" text-anchor="middle" font-family="var(--font-mono)" font-size="15" fill="var(--bau-yellow)" font-weight="700">&#931; w = 15</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 &mdash; the minimum spanning tree.</b> Five <b style="color:var(--bau-blue)">blue</b> edges (D is the hub) join all six vertices for total weight 15; the four <span style="color:var(--on-surface-variant)">dashed</span> edges were rejected as cycle-closers. Notice the MST path from A to B runs A&ndash;C&ndash;D&ndash;B (weight 10), even though the direct edge A&ndash;B costs only 6 &mdash; the seed of the misconception in &sect;10.</figcaption>
         </figure>
       </div>
@@ -948,7 +948,7 @@
         <p>The MST is forgiving in theory and treacherous in practice. Every trap below is something the formal lens flags early &mdash; a confusion of objectives, or a violated invariant.</p>
 
         <h3>1. An MST is not a shortest-path tree</h3>
-        <p>The single most expensive misconception. The objective minimizes <em>total edge weight</em>, and says <em>nothing</em> about the distance between any particular pair. In Figure&nbsp;4 the MST route from A to B is A&ndash;C&ndash;D&ndash;B at cost 10, while the direct edge A&ndash;B costs 6 &mdash; the MST is happy to make two vertices far apart if it saves on the global total. If you need shortest routes from a source, you want Dijkstra (Lecture&nbsp;13), a different greedy on a different key. Never use an MST to answer a distance query.</p>
+        <p>The single most expensive misconception. The objective minimizes <em>total edge weight</em>, and says <em>nothing</em> about the distance between any particular pair. In Figure&nbsp;4 the MST route from A to B is A&ndash;C&ndash;D&ndash;B at cost 10, while the direct edge A&ndash;B costs 6 &mdash; the MST is happy to make two vertices far apart if it saves on the global total. If you need shortest routes from a source, you want Dijkstra (Deep&nbsp;study&nbsp;13), a different greedy on a different key. Never use an MST to answer a distance query.</p>
 
         <h3>2. Forgetting union-find &mdash; quadratic Kruskal</h3>
         <p>Testing &ldquo;same component?&rdquo; by a BFS/DFS per edge, or by scanning a component-label array and relabelling on every merge, makes Kruskal <code class="inl">O(VE)</code> or worse. The entire competitiveness of Kruskal rests on the <code class="inl">&alpha;(V)</code> find/union. If you have written Kruskal and it is slow, this is almost always why.</p>
@@ -1025,12 +1025,12 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 13</span>
+            <span class="lab">next &middot; deep study 13</span>
             <div class="ttl">Single-Source Shortest Paths and the Relaxation Paradigm: Dijkstra and Bellman-Ford</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">Prim already hinted at it: a priority queue, an extract-min, a relaxation of neighbours. Keep that exact skeleton and change only the key &mdash; from &ldquo;weight of the attaching edge&rdquo; to &ldquo;accumulated distance from a source&rdquo; &mdash; and Prim becomes <strong>Dijkstra</strong>. Lecture&nbsp;13 follows that thread into the shortest-path world, where greed survives only while weights stay non-negative, and where negative edges force a wholly different, relaxation-until-stable idea (Bellman&ndash;Ford). The MST taught you <em>when</em> greed is provably right; shortest paths will teach you exactly where it stops.</p>
+        <p style="margin-top:1em">Prim already hinted at it: a priority queue, an extract-min, a relaxation of neighbours. Keep that exact skeleton and change only the key &mdash; from &ldquo;weight of the attaching edge&rdquo; to &ldquo;accumulated distance from a source&rdquo; &mdash; and Prim becomes <strong>Dijkstra</strong>. Deep&nbsp;study&nbsp;13 follows that thread into the shortest-path world, where greed survives only while weights stay non-negative, and where negative edges force a wholly different, relaxation-until-stable idea (Bellman&ndash;Ford). The MST taught you <em>when</em> greed is provably right; shortest paths will teach you exactly where it stops.</p>
       </div>
     </section>
 
@@ -1074,6 +1074,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-11-graphs-and-their-traversals.html" rel="prev"><span>&larr; Lecture 11</span><strong>Graphs and their traversals</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-13-single-source-shortest-paths.html" rel="next"><span>Lecture 13 &rarr;</span><strong>Single-source shortest paths</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/24-union-find.html">Lesson 24 &middot; Union-find</a><a href="../lessons/30-minimum-spanning-trees.html">Lesson 30 &middot; Minimum spanning trees</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-11-graphs-and-their-traversals.html" rel="prev"><span>&larr; Deep study 11</span><strong>Graphs and their traversals</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-13-single-source-shortest-paths.html" rel="next"><span>Deep study 13 &rarr;</span><strong>Single-source shortest paths</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/24-union-find.html">Lesson 24 &middot; Union-find</a><a href="../lessons/30-minimum-spanning-trees.html">Lesson 30 &middot; Minimum spanning trees</a></p></nav>
 </body>
 </html>

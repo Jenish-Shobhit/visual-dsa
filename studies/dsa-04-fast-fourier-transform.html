@@ -337,14 +337,14 @@
     <circle cx="56" cy="56" r="20" fill="var(--surface)"/>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 04</span> the transform that broke the quadratic wall</div>
+    <div class="eyebrow"><span class="n">Deep study 04</span> the transform that broke the quadratic wall</div>
     <h1>The Fast Fourier Transform</h1>
 <div class="study-brief" aria-label="Study at a glance">
   <div class="study-brief-title"><span>FIELD NOTE / 04</span><strong>Before the long read</strong></div>
   <div class="study-brief-grid"><p><span>Build on</span>Polynomials and divide and conquer</p><p><span>Core invariant</span>Evaluation changes convolution into pointwise multiplication; inverse evaluation restores coefficients.</p></div>
   <details class="study-check"><summary>Try this first · Two length 5 coefficient lists are multiplied. What is the smallest radix 2 transform length?</summary><p>The result needs 5 + 5 − 1 = 9 coefficients, so pad each list to length 16.</p></details>
 </div>
-    <p class="lede col">To multiply two polynomials — or two enormous integers — schoolbook arithmetic pairs every digit with every other: <code class="inl">&#x398;(n&#178;)</code>. Lecture&nbsp;03 reduced the growth to <code class="inl">&#x398;(n<sup>1.585</sup>)</code> with Karatsuba. This lecture changes representation: evaluate the polynomials at carefully chosen points, multiply the values, then interpolate. The translations cost <code class="inl">&#x398;(n&#160;log&#160;n)</code> overall.</p>
+    <p class="lede col">To multiply two polynomials — or two enormous integers — schoolbook arithmetic pairs every digit with every other: <code class="inl">&#x398;(n&#178;)</code>. Deep&nbsp;study&nbsp;03 reduced the growth to <code class="inl">&#x398;(n<sup>1.585</sup>)</code> with Karatsuba. This study changes representation: evaluate the polynomials at carefully chosen points, multiply the values, then interpolate. The translations cost <code class="inl">&#x398;(n&#160;log&#160;n)</code> overall.</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
@@ -360,7 +360,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>The idea vs. the engine</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -389,7 +389,7 @@
       <div class="col">
         <p>Start with a useful separation: there is the <em>operation</em> we wish to perform, and there is the <em>representation</em> in which we perform it. Confuse them and a problem looks hard that is merely badly coordinated. Ada Lovelace described how the Analytical Engine weaves algebraic patterns as the Jacquard loom weaves leaves &mdash; but only once the pattern has been arranged onto cards the loom can read. The art is in the arranging.</p>
         <p>The Fast Fourier Transform is a clear illustration of that art. Direct coefficient convolution takes <code class="inl">&#x398;(n&#178;)</code> time. A polynomial also has a <strong>second, equally faithful representation</strong> as values at distinct points, where the multiplication step is pointwise. The algorithm pays to translate out of coefficient form and back.</p>
-        <p>So this lecture is not really about Fourier, or about signal processing, or even about complex numbers &mdash; those are the <em>engine</em>. It is about a move you will make again and again in this course: when an operation is expensive, do not grind harder at it. Ask whether a change of representation makes it disappear. The FFT is the canonical case where it does.</p>
+        <p>So this study is not really about Fourier, or about signal processing, or even about complex numbers &mdash; those are the <em>engine</em>. It is about a move you will make again and again in this course: when an operation is expensive, do not grind harder at it. Ask whether a change of representation makes it disappear. The FFT is the canonical case where it does.</p>
       </div>
     </section>
 
@@ -408,14 +408,14 @@
         </ul>
 
         <h3>Prerequisites</h3>
-        <p>Four ideas, each a short phrase you should hold comfortably. The first two are taught in earlier lectures of this very syllabus.</p>
+        <p>Four ideas, each a short phrase you should hold comfortably. The first two are taught in earlier studies of this very syllabus.</p>
         <div class="chips">
           <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotics — O / &Theta; / &Omega;</a>
           <span class="chip">divide &amp; conquer + the Master Theorem</span>
           <span class="chip">complex numbers — roots of unity</span>
           <span class="chip">polynomials — degree, coefficients</span>
         </div>
-        <p style="margin-top:1em">You need only this much of complex numbers: <code class="inl">i&#178;=&minus;1</code>; a unit-modulus number <code class="inl">e<sup>i&theta;</sup>=cos&theta;+i&#160;sin&theta;</code> is the point on the unit circle at angle <code class="inl">&theta;</code>; and multiplying two such points <em>adds</em> their angles. From Lecture&nbsp;03 you need the reflex that a recurrence <code class="inl">T(n)=2T(n/2)+&#x398;(n)</code> solves to <code class="inl">&#x398;(n&#160;log&#160;n)</code>. We are about to manufacture exactly that recurrence.</p>
+        <p style="margin-top:1em">You need only this much of complex numbers: <code class="inl">i&#178;=&minus;1</code>; a unit-modulus number <code class="inl">e<sup>i&theta;</sup>=cos&theta;+i&#160;sin&theta;</code> is the point on the unit circle at angle <code class="inl">&theta;</code>; and multiplying two such points <em>adds</em> their angles. From Deep&nbsp;study&nbsp;03 you need the reflex that a recurrence <code class="inl">T(n)=2T(n/2)+&#x398;(n)</code> solves to <code class="inl">&#x398;(n&#160;log&#160;n)</code>. We are about to manufacture exactly that recurrence.</p>
       </div>
     </section>
 
@@ -484,7 +484,7 @@
         <p>One multiplication per point. <code class="inl">&#x398;(n)</code> for the whole product, against <code class="inl">&#x398;(n&#178;)</code> for the same answer in the other language. The catch &mdash; and it is the only catch &mdash; is that <code class="inl">C</code> has degree <code class="inl">2n&minus;2</code>, so it needs <code class="inl">2n&minus;1</code> point&#8209;values to be determined. We must therefore evaluate <code class="inl">A</code> and <code class="inl">B</code> at <strong>at least <code class="inl">2n&minus;1</code> points</strong> (we will pad up to the next power of two), treating each as a degree-<code class="inl">&lt;2n</code> polynomial with high coefficients zero.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 430" style="--mw:760px" role="img" aria-labelledby="f1t f1d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 960 430" style="--mw:896px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The two roads from coefficients of A and B to coefficients of their product</title>
             <desc id="f1d">A commutative diagram. Top-left: A and B as coefficient vectors. Top-right: C as a coefficient vector. The direct top road is schoolbook convolution costing Theta of n squared. The lower road descends by the forward FFT to point-value form in Theta n log n, crosses by pointwise multiplication in Theta n, then climbs back by the inverse FFT in Theta n log n. The detour is asymptotically faster than the direct road.</desc>
 
@@ -532,7 +532,7 @@
               <marker id="a-red" markerWidth="11" markerHeight="11" refX="8" refY="5.5" orient="auto"><path d="M0 0 L11 5.5 L0 11 z" fill="var(--bau-red)"/></marker>
               <marker id="a-blue" markerWidth="11" markerHeight="11" refX="8" refY="5.5" orient="auto"><path d="M0 0 L11 5.5 L0 11 z" fill="var(--bau-blue)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 &mdash; the two roads.</b> The red road multiplies in coefficient-language: <code class="inl">&#x398;(n&#178;)</code>. The blue detour drops into point&#8209;value land, where multiplication is a cheap <code class="inl">&#x398;(n)</code> pointwise step, and the only real cost is the two translations. This single picture <em>is</em> the FFT strategy; everything that follows just makes each blue arrow concrete.</figcaption>
         </figure>
       </div>
@@ -575,7 +575,7 @@
             </mrow>
           </math></div>
         </div>
-        <p>Each half has <code class="inl">n/2</code> coefficients. They reassemble into <code class="inl">A</code> by the one identity this whole lecture turns on &mdash; verify it term by term:</p>
+        <p>Each half has <code class="inl">n/2</code> coefficients. They reassemble into <code class="inl">A</code> by the one identity this whole study turns on &mdash; verify it term by term:</p>
         <div class="eq">
           <span class="lbl">the even/odd identity — the algebraic heart of the FFT</span>
           <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -611,7 +611,7 @@
         <p>They sit equally spaced around the unit circle. Now square one: <code class="inl">(&#969;<sub>n</sub><sup>k</sup>)&#178; = &#969;<sub>n</sub><sup>2k</sup> = &#969;<sub>n/2</sub><sup>k</sup></code> &mdash; squaring an <code class="inl">n</code>-th root yields an <code class="inl">(n/2)</code>-th root. And it is exactly two-to-one: the points <code class="inl">&#969;<sub>n</sub><sup>k</sup></code> and <code class="inl">&#969;<sub>n</sub><sup>k+n/2</sup></code> &mdash; diametrically opposite, since <code class="inl">&#969;<sub>n</sub><sup>n/2</sup>=e<sup>i&#960;</sup>=&minus;1</code> makes them negatives of one another &mdash; square to the <em>same</em> value. So the <code class="inl">n</code> roots, squared, give precisely <code class="inl">n/2</code> distinct points, which are themselves the <code class="inl">(n/2)</code>-th roots of unity: <strong>the structure we demanded, delivered exactly, and self-similar at every level.</strong></p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 470" style="--mw:760px" role="img" aria-labelledby="f2t f2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 960 470" style="--mw:896px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">The eight 8th-roots of unity on the unit circle and how squaring collapses them to four</title>
             <desc id="f2d">Left: the unit circle with eight equally spaced 8th-roots of unity marked at multiples of 45 degrees, omega-8 to the 0 equals 1 at the right, omega-8 to the 2 equals i at the top, omega-8 to the 4 equals minus 1 at the left, omega-8 to the 6 equals minus i at the bottom. Dashed diameters join each antipodal pair k and k plus 4, which are negatives of each other and square to the same point. Right: a smaller circle showing the four 4th-roots of unity, the squared images, with an arrow labelled z maps to z squared from the large circle to the small one.</desc>
 
@@ -647,8 +647,8 @@
               <circle cx="380" cy="366" r="8" class="dg-ink"/>
               <text x="388" y="388" class="dg-val">&#969;&#8311;</text>
             </g>
-            <text x="250" y="235" text-anchor="middle" class="dg-label sm" dy="-6">the 8th roots</text>
-            <text x="250" y="235" text-anchor="middle" class="dg-label sm" dy="12">&#969;&#8312;<tspan dy="-4" font-size="9">k</tspan></text>
+            <text x="250" y="235" text-anchor="middle" class="dg-label sm" dy="-8" style="paint-order:stroke; stroke:var(--surface-1); stroke-width:7px; stroke-linejoin:round">the 8th roots</text>
+            <text x="250" y="235" text-anchor="middle" class="dg-label sm" dy="16" style="paint-order:stroke; stroke:var(--surface-1); stroke-width:7px; stroke-linejoin:round">&#969;&#8328;<tspan dy="-5" font-size="11">k</tspan></text>
 
             <!-- squaring arrow -->
             <path d="M470 235 C 560 200, 590 200, 650 235" class="dg-stroke dg-blue" fill="none" marker-end="url(#a-sq)"/>
@@ -665,12 +665,12 @@
               <circle cx="682" cy="235" r="7" class="dg-red-f"/><text x="650" y="226" class="dg-val">&#8722;1</text>
               <circle cx="800" cy="353" r="7" class="dg-yellow-f" stroke="var(--bau-ink)" stroke-width="1.5"/><text x="810" y="372" class="dg-val">&#8722;i</text>
             </g>
-            <text x="800" y="235" text-anchor="middle" class="dg-label sm">the 4th roots</text>
+            <text x="800" y="235" text-anchor="middle" class="dg-label sm" dy="-8" style="paint-order:stroke; stroke:var(--surface-1); stroke-width:7px; stroke-linejoin:round">the 4th roots</text>
 
             <defs>
               <marker id="a-sq" markerWidth="11" markerHeight="11" refX="8" refY="5.5" orient="auto"><path d="M0 0 L11 5.5 L0 11 z" fill="var(--bau-blue)"/></marker>
             </defs>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 &mdash; why these points work.</b> Each coloured diameter joins an antipodal pair <code class="inl">&#969;<sup>k</sup></code>, <code class="inl">&#969;<sup>k+4</sup>=&minus;&#969;<sup>k</sup></code>. The two ends square to one point, so eight roots collapse to four &mdash; the 4th roots &mdash; which collapse to two, then one. That self-similar halving gives this FFT its divide-and-conquer structure.</figcaption>
         </figure>
       </div>
@@ -712,7 +712,7 @@
         </div>
         <p>Two outputs &mdash; one in the top half of the answer, one in the bottom half &mdash; from one multiplication <code class="inl">&#969;<sub>n</sub><sup>k</sup>&middot;A<sub>o</sub>(&hellip;)</code> computed once. That sharing is what makes the combine step <code class="inl">&#x398;(n)</code> rather than <code class="inl">&#x398;(n&#178;)</code>. The work obeys</p>
         <div class="eq">
-          <span class="lbl">the FFT recurrence (Lecture 03's Master Theorem, case 2)</span>
+          <span class="lbl">the FFT recurrence (Deep study 03's Master Theorem, case 2)</span>
           <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
             <mrow>
               <mi>T</mi><mo>(</mo><mi>n</mi><mo>)</mo>
@@ -725,10 +725,10 @@
             </mrow>
           </math></div>
         </div>
-        <p>This is the merge-sort recurrence exactly. Two halves, linear glue, logarithmically many levels &mdash; the same shape Lecture&nbsp;03 taught you to recognise on sight. The map from coefficients to values at the roots of unity is the <span class="term">Discrete Fourier Transform</span> (DFT); this recursive way of computing it in <code class="inl">&#x398;(n&#160;log&#160;n)</code> instead of the definition's <code class="inl">&#x398;(n&#178;)</code> is the <span class="term">Fast Fourier Transform</span>.</p>
+        <p>This is the merge-sort recurrence exactly. Two halves, linear glue, logarithmically many levels &mdash; the same shape Deep&nbsp;study&nbsp;03 taught you to recognise on sight. The map from coefficients to values at the roots of unity is the <span class="term">Discrete Fourier Transform</span> (DFT); this recursive way of computing it in <code class="inl">&#x398;(n&#160;log&#160;n)</code> instead of the definition's <code class="inl">&#x398;(n&#178;)</code> is the <span class="term">Fast Fourier Transform</span>.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 380" style="--mw:760px" role="img" aria-labelledby="f3t f3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 960 380" style="--mw:896px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">The FFT recursion tree for eight coefficients, splitting by index parity</title>
             <desc id="f3d">A three-level recursion tree. The root holds all eight coefficients a0 through a7. It splits into an even child a0 a2 a4 a6 and an odd child a1 a3 a5 a7. Each splits again into pairs, and those into single coefficients at the leaves. The right margin notes that each of the log base 2 of 8 equals 3 levels does Theta of n combine work across the level, for a total of Theta of n log n.</desc>
 
@@ -790,8 +790,8 @@
               <text x="8" y="288" class="dg-label sm">leaves</text><text x="8" y="302" class="dg-label sm">1-pt DFT</text>
               <text x="48" y="338" class="dg-cap">log&#8322; n = 3 levels of combining, &#x398;(n) each = &#x398;(n log n)</text>
             </g>
-          </svg>
-          <figcaption><b>Figure 3 &mdash; the divide structure.</b> Splitting by index parity halves the coefficient count each level, bottoming out at single coefficients (a 1-point DFT is the value itself). There are <code class="inl">log&#8322;&#160;n</code> levels; each spends <code class="inl">&#x398;(n)</code> on its butterflies. The product is the bound &mdash; the very recursion tree from Lecture&nbsp;03, now drawn for the transform.</figcaption>
+          </svg></div>
+          <figcaption><b>Figure 3 &mdash; the divide structure.</b> Splitting by index parity halves the coefficient count each level, bottoming out at single coefficients (a 1-point DFT is the value itself). There are <code class="inl">log&#8322;&#160;n</code> levels; each spends <code class="inl">&#x398;(n)</code> on its butterflies. The product is the bound &mdash; the very recursion tree from Deep&nbsp;study&nbsp;03, now drawn for the transform.</figcaption>
         </figure>
       </div>
     </section>
@@ -823,7 +823,7 @@
         <p>An <code class="inl">E</code> shared, an <code class="inl">O</code> twiddled once, an add and a subtract. Cross two lines, fork two outputs &mdash; the wings give it its name. A full FFT level is just <code class="inl">n/2</code> of these butterflies side by side; the whole transform is <code class="inl">log&#160;n</code> stacked levels of them. Below, the network for <code class="inl">n=4</code> &mdash; the exact size of the worked example in &sect;10.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 400" style="--mw:760px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 960 400" style="--mw:896px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">A single butterfly close-up and the full four-point FFT butterfly network</title>
             <desc id="f4d">Left: one butterfly takes inputs E on top and O on the bottom, multiplies O by the twiddle t equals omega-n to the k, and outputs E plus t on top and E minus t on the bottom. Right: the four-point FFT network. Inputs a0, a2, a1, a3 in bit-reversed order enter on the left. Stage one pairs a0 with a2 and a1 with a3 using twiddle 1. Stage two combines across with twiddles omega-4 to the 0 equals 1 and omega-4 to the 1 equals i, producing outputs A-hat 0, A-hat 1, A-hat 2, A-hat 3.</desc>
 
@@ -907,7 +907,7 @@
               <circle cx="860" cy="265" r="5" class="dg-blue-f"/><text x="872" y="270" class="dg-val">&#194;&#8322;</text>
               <circle cx="860" cy="335" r="5" class="dg-blue-f"/><text x="872" y="340" class="dg-val">&#194;&#8323;</text>
             </g>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 &mdash; the butterfly and the n=4 network.</b> Inputs enter <em>bit-reversed</em> (<code class="inl">a&#8320;,a&#8322;,a&#8321;,a&#8323;</code>) so that the recursion's even/odd splits line up into adjacent pairs. Two stages of two butterflies each &mdash; <code class="inl">(n/2)&#160;log&#160;n = 2&times;2 = 4</code> butterflies &mdash; turn four coefficients into four point&#8209;values. With <code class="inl">A=[1,2,0,0]</code>: stage&nbsp;1 gives <code class="inl">u&#8320;=1,u&#8321;=1,v&#8320;=2,v&#8321;=2</code>; stage&nbsp;2 gives <code class="inl">&#194;=[3,&#160;1+2i,&#160;&minus;1,&#160;1&minus;2i]</code>.</figcaption>
         </figure>
       </div>
@@ -1073,7 +1073,7 @@
             </thead>
             <tbody>
               <tr><th scope="row">Schoolbook</th><td>every coefficient times every coefficient</td><td class="bad">&#x398;(n&#178;)</td><td class="mid">&mdash; (baseline)</td></tr>
-              <tr><th scope="row">Karatsuba (Lec 03)</th><td>3 half-size multiplies, not 4</td><td class="mid">&#x398;(n<sup>1.585</sup>)</td><td class="mid">tens of terms</td></tr>
+              <tr><th scope="row">Karatsuba (Deep study 03)</th><td>3 half-size multiplies, not 4</td><td class="mid">&#x398;(n<sup>1.585</sup>)</td><td class="mid">tens of terms</td></tr>
               <tr class="wrap-row"><th scope="row">FFT</th><td>evaluate &middot; pointwise multiply &middot; interpolate</td><td class="good">&#x398;(n log n)</td><td class="good">hundreds&ndash;thousands of terms</td></tr>
             </tbody>
             <tfoot><tr><td colspan="4">Each row beats the one above only past a crossover; for a 3-term multiply, schoolbook wins outright.</td></tr></tfoot>
@@ -1170,12 +1170,12 @@
 
         <div class="next">
           <div>
-            <span class="lab">next &middot; lecture 05</span>
+            <span class="lab">next &middot; deep study 05</span>
             <div class="ttl">Probability for Algorithms: Expectation, Indicator Variables, and Concentration Bounds</div>
           </div>
           <span class="arrow" aria-hidden="true">&#8594;</span>
         </div>
-        <p style="margin-top:1em">We have now seen two of the three cost lenses &mdash; worst-case asymptotics (Lec&nbsp;00) and the amortised average (Lec&nbsp;02). Lecture&nbsp;05 completes the trio with the <em>expected</em> cost under randomness: linearity of expectation, indicator variables, and the Markov, Chebyshev, and Chernoff bounds &mdash; the toolkit behind randomized quicksort, hashing, and every randomized structure to come. From transforms back to the arithmetic of chance.</p>
+        <p style="margin-top:1em">We have now seen two of the three cost lenses &mdash; worst-case asymptotics (Deep&nbsp;study&nbsp;00) and the amortised average (Deep&nbsp;study&nbsp;02). Deep&nbsp;study&nbsp;05 completes the trio with the <em>expected</em> cost under randomness: linearity of expectation, indicator variables, and the Markov, Chebyshev, and Chernoff bounds &mdash; the toolkit behind randomized quicksort, hashing, and every randomized structure to come. From transforms back to the arithmetic of chance.</p>
       </div>
     </section>
 
@@ -1219,6 +1219,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-03-divide-solve-combine.html" rel="prev"><span>&larr; Lecture 03</span><strong>Divide, solve, combine</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-05-probability-for-algorithms.html" rel="next"><span>Lecture 05 &rarr;</span><strong>Probability for algorithms</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-03-divide-solve-combine.html" rel="prev"><span>&larr; Deep study 03</span><strong>Divide, solve, combine</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-05-probability-for-algorithms.html" rel="next"><span>Deep study 05 &rarr;</span><strong>Probability for algorithms</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a></p></nav>
 </body>
 </html>

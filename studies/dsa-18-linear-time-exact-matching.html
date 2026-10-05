@@ -324,7 +324,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
 
     <!-- 01 HOOK -->
     <section id="hook" class="hero reveal">
-      <p class="eyebrow"><span class="bar"></span>Algorithms on Text · Lecture 18</p>
+      <p class="eyebrow"><span class="bar"></span>Algorithms on Text · Deep study 18</p>
       <h1>Linear-time exact <span class="em">matching</span></h1>
 <p class="study-related"><span class="study-related__label">Related lesson</span><a href="../lessons/36-string-matching.html">Lesson 36 · String matching</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -332,7 +332,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
   <div class="study-brief-grid"><p><span>Build on</span>String matching</p><p><span>Core invariant</span>A failure function reuses what the pattern already tells us after a mismatch.</p></div>
   <details class="study-check"><summary>Try this first · Why does KMP avoid moving the text pointer backwards?</summary><p>It shifts the pattern state using a precomputed border, so each text character is processed a constant number of times.</p></details>
 </div>
-      <p class="standfirst">Search a million-character log for a thousand-character pattern with the loop you wrote by instinct, and on the wrong input it performs <b>a billion</b> character comparisons. The honest answer needs about <b>two million</b> — it reads the text once and never looks back. The whole of this lecture is the single idea that closes that gap: <em class="term">the pattern already knows where it can fail, so precompute that and stop re-reading what you have already understood.</em></p>
+      <p class="standfirst">Search a million-character log for a thousand-character pattern with the loop you wrote by instinct, and on the wrong input it performs <b>a billion</b> character comparisons. The honest answer needs about <b>two million</b> — it reads the text once and never looks back. The whole of this study is the single idea that closes that gap: <em class="term">the pattern already knows where it can fail, so precompute that and stop re-reading what you have already understood.</em></p>
 
       <div class="stats" role="group" aria-label="The matching gap">
         <div class="stat lead">
@@ -348,7 +348,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           <div class="v">0</div>
         </div>
       </div>
-      <p class="note">Same alphabet, same answer set. The difference is purely organisational: a matcher that <em>forgets</em> what it just matched versus one that <em>remembers</em>. This lecture is about that memory — and it is a small, precomputable, finite object.</p>
+      <p class="note">Same alphabet, same answer set. The difference is purely organisational: a matcher that <em>forgets</em> what it just matched versus one that <em>remembers</em>. This study is about that memory — and it is a small, precomputable, finite object.</p>
     </section>
 
     <!-- 02 OBJECTIVES + PREREQS -->
@@ -371,22 +371,22 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <div class="cardgrid">
         <div class="cell">
           <div class="lab"><span class="dot"></span>Arrays &amp; strings</div>
-          <p>Indexing, prefixes, suffixes, and substrings as half-open ranges. (<a href="dsa-01-linear-layouts-and-access-disciplines.html">Lecture 01</a>.)</p>
+          <p>Indexing, prefixes, suffixes, and substrings as half-open ranges. (<a href="dsa-01-linear-layouts-and-access-disciplines.html">Deep study 01</a>.)</p>
         </div>
         <div class="cell">
           <div class="lab"><span class="dot"></span>Hashing</div>
-          <p>Mapping data to a small fingerprint; collisions and load. Powers Rabin–Karp. (<a href="dsa-08-hashing-and-expected-constant-access.html">Lecture 08</a>.)</p>
+          <p>Mapping data to a small fingerprint; collisions and load. Powers Rabin–Karp. (<a href="dsa-08-hashing-and-expected-constant-access.html">Deep study 08</a>.)</p>
         </div>
         <div class="cell">
           <div class="lab"><span class="dot"></span>Amortized analysis</div>
-          <p>The potential method: <code>amortized = actual + ΔΦ</code>. This is the engine of the KMP proof. (<a href="dsa-02-amortized-cost-aggregate-accounting-potential.html">Lecture 02</a>.)</p>
+          <p>The potential method: <code>amortized = actual + ΔΦ</code>. This is the engine of the KMP proof. (<a href="dsa-02-amortized-cost-aggregate-accounting-potential.html">Deep study 02</a>.)</p>
         </div>
         <div class="cell">
           <div class="lab"><span class="dot"></span>Modular arithmetic</div>
           <p>Addition and multiplication mod a prime <code>q</code>, and why a prime modulus behaves well.</p>
         </div>
       </div>
-      <p class="note">The deepest tie is to Lecture 02. KMP's linearity is <em>not</em> obvious line-by-line — a single text character can trigger many failure-link jumps. The potential method is exactly the tool that makes “rare expensive steps, paid for in advance” into a clean <code>O(n)</code>.</p>
+      <p class="note">The deepest tie is to Deep study 02. KMP's linearity is <em>not</em> obvious line-by-line — a single text character can trigger many failure-link jumps. The potential method is exactly the tool that makes “rare expensive steps, paid for in advance” into a clean <code>O(n)</code>.</p>
     </section>
 
     <hr class="rule">
@@ -408,7 +408,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p>So the design question is forced, and it is the right question: <em>what is the minimal precomputed object that lets the matcher never re-read a text character?</em> The answer is a table of the pattern's own <strong>self-similarity</strong>. When we have matched a prefix of <code>P</code> against the text and then mismatch, the characters we just consumed are <em>known</em> — they equal that prefix of <code>P</code>. If some suffix of what we matched is also a prefix of <code>P</code>, we may slide the pattern so that this shorter prefix lines up, and continue <em>without moving the text pointer back at all</em>. The amount we can keep is the length of the longest <em class="term">border</em> — a string that is simultaneously a proper prefix and a proper suffix — of the part we matched.</p>
 
       <figure>
-        <svg viewBox="0 0 900 380" style="--mw:774px" role="img" aria-labelledby="fig1t fig1d">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 900 380" style="--mw:917px" role="img" aria-labelledby="fig1t fig1d">
           <title id="fig1t">Figure 1 — a mismatch, and the smart shift that reuses the matched border</title>
           <desc id="fig1d">The text shows the characters a b a b a then a mismatching b. The pattern a b a b a c a is aligned at shift zero and fails where its c meets the text's b. A faint dashed copy shows the naive shift of one, which re-reads four characters. Below it the KMP shift of two re-aligns the border a b a under the text's already-matched a b a, and resumes the comparison at the text's mismatch position without moving the text pointer back.</desc>
 
@@ -471,7 +471,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           <!-- resume arrow from text col5 down to KMP resume cell -->
           <g class="dg-blue" stroke-width="2"><line x1="487" y1="100" x2="487" y2="286"/><polygon points="481,286 487,296 493,286" class="dg-blue-f"/></g>
           <text x="278" y="350" class="dg-lab-sm" fill="var(--bau-blue-ink)">border "aba" = π[4]=3 re-aligns; resume at P[3] vs the SAME text char. Shift = 5 − 3 = 2.</text>
-        </svg>
+        </svg></div>
         <figcaption><span class="fig-num">FIG 1</span> · The matched run was <b>ababa</b>. Its longest border — a string that is both a proper prefix and a proper suffix — is <b>aba</b>, of length 3. So we slide the pattern by <code>5 − 3 = 2</code>, the border lands under the text's own trailing <b>aba</b> for free, and the next comparison is the text's mismatch char against <code>P[3]</code>. The <b>text pointer never retreats</b>. The naïve <b>+1</b> (ghosted) re-reads everything. The border table is the entire trick.</figcaption>
       </figure>
 
@@ -507,7 +507,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p>The empty border (<code>k=0</code>) always qualifies, so <code>π</code> is well-defined and <code>π[0]=0</code> always. The decisive structural fact — the one that makes the computation linear — is that <strong>the borders of a string form a chain</strong>: the next-longest border of <code>P[0…i]</code> is the longest border of its own longest border. That is why, when the character at the current border length disagrees, we fall back to <code>π[k−1]</code> rather than starting over: we are walking down the border chain, trying ever-shorter candidates.</p>
 
       <figure>
-        <svg viewBox="0 0 900 320" style="--mw:774px" role="img" aria-labelledby="fig2t fig2d">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 900 320" style="--mw:917px" role="img" aria-labelledby="fig2t fig2d">
           <title id="fig2t">Figure 2 — the prefix function of the pattern ababaca, and the border that defines pi at index 4</title>
           <desc id="fig2d">The seven characters a b a b a c a are shown in a row with their index above and the prefix-function value below: 0, 0, 1, 2, 3, 0, 1. Above the prefix ending at index 4, two brackets mark the prefix a b a over positions 0 to 2 and the suffix a b a over positions 2 to 4, which are equal, so pi of 4 equals 3.</desc>
 
@@ -553,7 +553,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           <!-- reading -->
           <text x="134" y="266" class="dg-lab" fill="var(--bau-blue-ink)">π[4] = 3  ⇒  "ababa" has border "aba": its prefix aba (blue) equals its suffix aba (red).</text>
           <text x="134" y="288" class="dg-lab-sm">π[5]=0 — "ababac" has no border (the c breaks it). π[6]=1 — "ababaca" borders on "a".</text>
-        </svg>
+        </svg></div>
         <figcaption><span class="fig-num">FIG 2</span> · <code>π[i]</code> reads off the longest border of each growing prefix. At <code>i=4</code> the prefix <b>ababa</b> overlaps itself by <b>aba</b> (blue prefix = red suffix), so <code>π[4]=3</code> — and that 3 is precisely the shift logic of Figure 1. The drop to <code>π[5]=0</code> is the <code>c</code> destroying all overlap; <code>π[6]=1</code> rebuilds a one-character border on <code>a</code>.</figcaption>
       </figure>
 
@@ -606,7 +606,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
     <section id="kmp" class="reveal">
       <p class="kicker"><span class="n">05</span> The match, and why it is linear</p>
       <h2>KMP, and the potential argument on the pointer</h2>
-      <p class="lede">With <code>π</code> in hand, matching is the same loop applied to the text — and the famous part is the proof. KMP is <em>not</em> obviously linear: one text character can trigger a whole cascade of failure-link jumps. The fix is the potential method from Lecture 02.</p>
+      <p class="lede">With <code>π</code> in hand, matching is the same loop applied to the text — and the famous part is the proof. KMP is <em>not</em> obviously linear: one text character can trigger a whole cascade of failure-link jumps. The fix is the potential method from Deep study 02.</p>
 
       <p>The matcher scans <code>T</code> with the identical mechanics: keep <code>k</code> = how many pattern characters currently match the text ending here; on agreement advance, on disagreement fall back along <code>π</code>; when <code>k</code> reaches <code>m</code> we have a full occurrence, and we fall back to <code>π[m−1]</code> to keep hunting (this is what lets overlapping matches be found).</p>
 
@@ -674,7 +674,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p>Therefore the total number of failure-link jumps across the <em>entire</em> search is bounded by the total rise plus the starting balance: <code class="wrap">(jumps) ≤ (rises) + Φ_start − Φ_end ≤ n</code>. The outer loop runs <code>n</code> times; the inner loop runs <code>≤ n</code> times <em>in total</em>. The whole match is <code>O(n)</code>, and the same argument on the pattern gives <code>O(m)</code> to build <code>π</code> — so KMP is <code>O(n+m)</code>. Each matched character banks one unit of credit; each fall-back spends credit it cannot overdraw.</p>
 
       <figure>
-        <svg viewBox="0 0 900 360" style="--mw:774px" role="img" aria-labelledby="fig3t fig3d">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 900 360" style="--mw:917px" role="img" aria-labelledby="fig3t fig3d">
           <title id="fig3t">Figure 3 — the potential Phi equals k, plotted while building pi for ababaca</title>
           <desc id="fig3d">A plot with the step index i on the horizontal axis and the pointer value k on the vertical axis. The value rises by one at i equals 2, 3 and 4, banking credit, reaching three. At i equals 5 two red downward arrows drop it from three to one to zero, spending the banked credit. At i equals 6 it rises again to one. A caption states that total falls are at most total rises, which is at most m.</desc>
 
@@ -726,7 +726,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
             <rect x="0" y="0" width="680" height="40" rx="4" fill="var(--surface-1)" stroke="var(--bau-ink)" stroke-width="1.5"/>
             <text x="16" y="25" class="dg-lab" fill="var(--bau-ink)">Σ(falls) ≤ Σ(rises) + Φ_start ≤ m.  The deep red drop is paid for by the three blue rises before it.</text>
           </g>
-        </svg>
+        </svg></div>
         <figcaption><span class="fig-num">FIG 3</span> · The pointer <code>k</code> <b>is</b> the potential. Blue rises are matched characters, each banking one credit; the red cascade at <code>i=5</code> (the <code>c</code> in <b>ababaca</b>) spends three banked credits to fall <code>3 → 1 → 0</code>. Because the balance never goes negative, the spending can never exceed the banking, so the total fall-back work is <code>≤ m</code> — and the identical picture over the text gives <code>≤ n</code>. That is the entire linearity proof.</figcaption>
       </figure>
     </section>
@@ -744,7 +744,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p>When we reach a new index <code>i</code> that lies <em>inside</em> the current box (<code>i &lt; r</code>), its answer is partly known for free: the box says <code>S[i …]</code> mirrors <code>S[i−l …]</code> near the front, so <code>Z[i]</code> starts at <code>min(r−i, Z[i−l])</code> — copy the mirror value, but never trust it past the box edge <code>r</code>. Only the part <em>beyond</em> <code>r</code> needs real character comparisons, and every such comparison pushes <code>r</code> forward — which (another potential argument) can happen only <code>n</code> times total.</p>
 
       <figure>
-        <svg viewBox="0 0 900 300" style="--mw:774px" role="img" aria-labelledby="fig4t fig4d">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 900 300" style="--mw:917px" role="img" aria-labelledby="fig4t fig4d">
           <title id="fig4t">Figure 4 — the Z-box reuse on the string aabaabaab</title>
           <desc id="fig4d">The nine characters a a b a a b a a b with indices zero through eight. A blue box spans indices three through eight, marked as a copy of the prefix because Z of three equals six. Position i equals four sits inside the box; an arrow maps it to its mirror at index one near the front, whose Z value of one is copied to position four for free without any character comparison.</desc>
 
@@ -782,7 +782,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           <text x="482" y="196" class="dg-lab-sm" fill="var(--bau-blue-ink)">Z[4]=min(r−i, Z[1])=1</text>
           <text x="120" y="276" class="dg-lab-sm">Copied for free — no character comparison.</text>
           <text x="120" y="294" class="dg-lab-sm">Only matches that would push past r=9 cost real work.</text>
-        </svg>
+        </svg></div>
         <figcaption><span class="fig-num">FIG 4</span> · The box <code>[3, 9)</code> certifies that <b>aabaab</b> (from index 3) equals the prefix. For <code>i=4</code> inside it, the mirror at <code>j = i−l = 1</code> already holds <code>Z[1]=1</code>, so <code>Z[4] = min(r−i, Z[1]) = 1</code> is read off with <b>zero</b> comparisons. Work happens only when a match would extend past <code>r</code>, and each such step advances <code>r</code> — so total work is <code>O(n)</code>, the Z-algorithm's twin of the KMP potential.</figcaption>
       </figure>
 
@@ -860,7 +860,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       </div>
 
       <figure>
-        <svg viewBox="0 0 900 340" style="--mw:774px" role="img" aria-labelledby="fig5t fig5d">
+        <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 900 340" style="--mw:917px" role="img" aria-labelledby="fig5t fig5d">
           <title id="fig5t">Figure 5 — Rabin-Karp rolling hash over the digits 313156 with base 10 mod 13</title>
           <desc id="fig5d">The six digits 3 1 3 1 5 6 are shown. The first window covering 3 1 has fingerprint 31 mod 13 equals 5. Sliding to the window 1 3 uses the rolling formula: subtract the high digit 3 times ten, multiply by ten, add the low digit 3, giving 13 mod 13 equals 0. The pattern 31 has fingerprint 5, matching windows zero and two, with a note that hash matches must be verified because 44 would also hash to 5.</desc>
 
@@ -898,7 +898,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
             <text x="16" y="23" class="dg-lab" fill="var(--bau-ink)">P="31" → hp=5. Hash hits windows 0 &amp; 2 — but VERIFY: "44" also ≡ 5 (mod 13).</text>
             <text x="16" y="44" class="dg-lab" fill="var(--bau-ink)">A hash match is a candidate, not a proof.</text>
           </g>
-        </svg>
+        </svg></div>
         <figcaption><span class="fig-num">FIG 5</span> · Sliding from <b>31</b> to <b>13</b> is one subtraction, one multiply, one add, all mod 13 — independent of <code>m</code>. The pattern <b>31</b> fingerprints to 5 and flags windows 0 and 2. Because the modulus folds many strings onto each residue (here <b>44</b> also lands on 5), an equal fingerprint is only a <b>candidate</b>: confirm with a direct character check to stay exact.</figcaption>
       </figure>
 
@@ -986,7 +986,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <div class="prob">
         <div class="head"><span class="pn">01</span><span class="pt">Find the Index of the First Occurrence in a String</span><span class="lc">LeetCode 28 · KMP</span></div>
         <div class="body">
-          <p>Return the index of the first occurrence of <code>needle</code> in <code>haystack</code>, or <code>-1</code> if it is not part of <code>haystack</code>. Aim for <code>O(n+m)</code> — the naïve scan is the thing this lecture exists to beat.</p>
+          <p>Return the index of the first occurrence of <code>needle</code> in <code>haystack</code>, or <code>-1</code> if it is not part of <code>haystack</code>. Aim for <code>O(n+m)</code> — the naïve scan is the thing this study exists to beat.</p>
           <p class="sig">def strStr(haystack: str, needle: str) -> int</p>
           <p class="ex">Example 1:  haystack = "sadbutsad", needle = "sad"  → 0
 Example 2:  haystack = "leetcode",  needle = "leeto" → -1
@@ -1042,11 +1042,11 @@ Constraints: 2 ≤ len(s) ≤ 3·10<sup>4</sup> ; lowercase English letters</p>
       <div class="recap">
         <p style="margin:0;font-size:21px;line-height:1.5"><strong>Linear-time matching is precomputed self-similarity.</strong> A pattern's borders (the prefix function <code>π</code>) — or, mirrored, its Z-array — tell the matcher exactly how far it may slide on a mismatch without ever re-reading the text, and the failure-link pointer's own value is the potential that proves the whole thing runs in <code>O(n+m)</code>. Rabin–Karp makes the orthogonal bet: a string is a number, the window rolls in <code>O(1)</code>, and a quick verification keeps the answer exact.</p>
       </div>
-      <p>Notice the shape of the trick, because it recurs: when a brute-force method <em>forgets</em>, the cure is a small precomputed table of structure, and the cost of consulting it is paid by an amortized argument. That is the same melody as the doubling array (Lecture 02) and union-find (Lecture 12) — the failure-link pointer is just one more potential function.</p>
+      <p>Notice the shape of the trick, because it recurs: when a brute-force method <em>forgets</em>, the cure is a small precomputed table of structure, and the cost of consulting it is paid by an amortized argument. That is the same melody as the doubling array (Deep study 02) and union-find (Deep study 12) — the failure-link pointer is just one more potential function.</p>
 
-      <a class="nextcard" href="#" onclick="return false;" aria-label="Next lecture, number 19, on tries and suffix structures">
+      <a class="nextcard" href="#" onclick="return false;" aria-label="Next deep study, number 19, on tries and suffix structures">
         <div>
-          <div class="meta">Next in the DSA syllabus · Lecture 19</div>
+          <div class="meta">Next in the DSA syllabus · Deep study 19</div>
           <div class="t">Algorithms on Text II: Tries &amp; Suffix Structures</div>
         </div>
         <span class="arrow">→</span>
@@ -1077,6 +1077,6 @@ document.documentElement.classList.add('js');
   els.forEach(function(e){ io.observe(e); });
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html" rel="prev"><span>&larr; Lecture 17</span><strong>Max-flow and min-cut</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-19-tries-and-suffix-structures.html" rel="next"><span>Lecture 19 &rarr;</span><strong>Tries and suffix structures</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/36-string-matching.html">Lesson 36 &middot; String matching</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html" rel="prev"><span>&larr; Deep study 17</span><strong>Max-flow and min-cut</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-19-tries-and-suffix-structures.html" rel="next"><span>Deep study 19 &rarr;</span><strong>Tries and suffix structures</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/36-string-matching.html">Lesson 36 &middot; String matching</a></p></nav>
 </body>
 </html>

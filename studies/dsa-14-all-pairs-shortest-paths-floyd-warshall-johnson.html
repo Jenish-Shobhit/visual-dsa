@@ -377,7 +377,7 @@
     </g>
   </svg>
   <div class="wrap">
-    <div class="eyebrow"><span class="n">Lecture 14</span> one source was never the question</div>
+    <div class="eyebrow"><span class="n">Deep study 14</span> one source was never the question</div>
     <h1>All-Pairs Shortest Paths</h1>
 <p class="study-related"><span class="study-related__label">Related lesson</span><a href="../lessons/29-bellman-ford-and-floyd-warshall.html">Lesson 29 · Bellman-Ford &amp; Floyd-Warshall</a></p>
 <div class="study-brief" aria-label="Study at a glance">
@@ -385,7 +385,7 @@
   <div class="study-brief-grid"><p><span>Build on</span>Single source shortest paths</p><p><span>Core invariant</span>Floyd–Warshall adds allowed intermediate vertices; Johnson reweights edges while preserving path order.</p></div>
   <details class="study-check"><summary>Try this first · What does a negative diagonal entry after Floyd–Warshall reveal?</summary><p>A negative weight cycle is reachable from that vertex back to itself.</p></details>
 </div>
-    <p class="lede col">Last lecture answered one source: stand at a vertex, learn the distance to everyone. But the questions that bite want the whole <em>matrix</em> &mdash; the distance between <em>every</em> ordered pair. The diameter of a network (its longest shortest path). A routing table. The closeness of every node to every other. You can get all of it by running a single-source algorithm <code class="inl">n</code> times &mdash; or you can compute the entire <code class="inl">n &times; n</code> table with <strong>three nested loops and five lines</strong>. This lecture builds that loop from first principles (<strong>Floyd&ndash;Warshall</strong>, <code class="inl">&#x398;(n&sup3;)</code> for <em>any</em> weights), then sharpens it for sparse graphs by <em>reshaping the weights themselves</em> (<strong>Johnson&rsquo;s reweighting</strong>).</p>
+    <p class="lede col">Last study answered one source: stand at a vertex, learn the distance to everyone. But the questions that bite want the whole <em>matrix</em> &mdash; the distance between <em>every</em> ordered pair. The diameter of a network (its longest shortest path). A routing table. The closeness of every node to every other. You can get all of it by running a single-source algorithm <code class="inl">n</code> times &mdash; or you can compute the entire <code class="inl">n &times; n</code> table with <strong>three nested loops and five lines</strong>. This study builds that loop from first principles (<strong>Floyd&ndash;Warshall</strong>, <code class="inl">&#x398;(n&sup3;)</code> for <em>any</em> weights), then sharpens it for sparse graphs by <em>reshaping the weights themselves</em> (<strong>Johnson&rsquo;s reweighting</strong>).</p>
 
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
@@ -401,7 +401,7 @@
 <div class="grid">
 
   <!-- ============ LEFT RAIL ============ -->
-  <nav class="rail" aria-label="Lecture contents">
+  <nav class="rail" aria-label="Deep study contents">
     <ol>
       <li><a href="#s01"><span class="num">01</span><span>The whole-matrix problem</span></a></li>
       <li><a href="#s02"><span class="num">02</span><span>Objectives &amp; prerequisites</span></a></li>
@@ -479,7 +479,7 @@
         </ul>
 
         <h3>Prerequisites</h3>
-        <p>This lecture stands on the single-source machinery and a little algebra of recurrences. Where a prerequisite has its own page in this syllabus, it is linked.</p>
+        <p>This study stands on the single-source machinery and a little algebra of recurrences. Where a prerequisite has its own page in this syllabus, it is linked.</p>
         <div class="chips">
           <span class="chip">single-source shortest paths &mdash; Dijkstra, Bellman&ndash;Ford</span>
           <span class="chip">edge relaxation</span>
@@ -487,7 +487,7 @@
           <span class="chip">graph representation (adjacency matrix / list)</span>
           <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotics &mdash; O / &Theta; / &Omega;</a>
         </div>
-        <p style="margin-top:1em">Two facts you must hold firmly from Lecture&nbsp;13. First, <strong>relaxation</strong>: an edge <code class="inl">(u,v)</code> is <em>relaxed</em> by testing whether going to <code class="inl">v</code> via <code class="inl">u</code> beats the best known route &mdash; <code class="inl wrap">if d[u]+w(u,v) &lt; d[v]: d[v]=d[u]+w(u,v)</code>. Every shortest-path algorithm is a discipline for ordering relaxations. Second, a shortest path in a graph with <strong>no negative cycle is simple</strong> &mdash; it repeats no vertex &mdash; because excising any repeated stretch (a cycle of weight <code class="inl">&ge; 0</code>) never makes the path longer. That simplicity is the hinge of today&rsquo;s correctness proof.</p>
+        <p style="margin-top:1em">Two facts you must hold firmly from Deep&nbsp;study&nbsp;13. First, <strong>relaxation</strong>: an edge <code class="inl">(u,v)</code> is <em>relaxed</em> by testing whether going to <code class="inl">v</code> via <code class="inl">u</code> beats the best known route &mdash; <code class="inl wrap">if d[u]+w(u,v) &lt; d[v]: d[v]=d[u]+w(u,v)</code>. Every shortest-path algorithm is a discipline for ordering relaxations. Second, a shortest path in a graph with <strong>no negative cycle is simple</strong> &mdash; it repeats no vertex &mdash; because excising any repeated stretch (a cycle of weight <code class="inl">&ge; 0</code>) never makes the path longer. That simplicity is the hinge of today&rsquo;s correctness proof.</p>
       </div>
     </section>
 
@@ -541,10 +541,10 @@
           </math></div>
         </div>
 
-        <p>Look at what just happened. A two-dimensional question (a matrix of distances) became a three-dimensional table (the same matrix, indexed also by how many vertices it may use). The extra index is pure bookkeeping &mdash; it never appears in the input or the output &mdash; yet it converts a global optimisation over exponentially many paths into <code class="inl">n</code> sweeps of a trivial local choice. That is the signature of a dynamic program, and the next lecture will name it as such. For now, watch the decision drawn out:</p>
+        <p>Look at what just happened. A two-dimensional question (a matrix of distances) became a three-dimensional table (the same matrix, indexed also by how many vertices it may use). The extra index is pure bookkeeping &mdash; it never appears in the input or the output &mdash; yet it converts a global optimisation over exponentially many paths into <code class="inl">n</code> sweeps of a trivial local choice. That is the signature of a dynamic program, and the next study will name it as such. For now, watch the decision drawn out:</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 300" style="--mw:602px" role="img" aria-labelledby="f2t f2d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 300" style="--mw:710px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">The Floyd&ndash;Warshall relaxation: route i to j directly or through vertex k</title>
             <desc id="f2d">Vertex i on the left and vertex j on the right. A lower straight arrow from i to j is labelled d superscript k minus one of i j, the best route that does not use vertex k. An upper two-segment route goes from i up to vertex k at top centre and down to j, labelled d superscript k minus one of i k plus d superscript k minus one of k j. The layer-k value is the minimum of the two.</desc>
 
@@ -579,7 +579,7 @@
 
             <!-- min brace -->
             <text x="380" y="200" text-anchor="middle" class="dg-label">d<tspan baseline-shift="super" font-size="70%">(k)</tspan>(i,j) = min( &darr; , &uarr; )</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 1 &mdash; the only decision the algorithm ever makes.</b> Admitting vertex <code class="inl">k</code> gives each pair one new candidate route &mdash; bend the path through <code class="inl">k</code> &mdash; weighed against the best route that ignores it. Everything else is sweeping this choice across all <code class="inl">i,j</code> for <code class="inl">k=1&hellip;n</code>.</figcaption>
         </figure>
 
@@ -650,7 +650,7 @@
         <p>Nothing teaches this loop like turning the crank by hand. Here is a four-vertex directed graph. One edge is negative (<code class="inl">2&rarr;3</code> at <code class="inl">&minus;2</code>), but every cycle has non-negative total weight, so all distances are finite and well-defined.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 360" style="--mw:481px" role="img" aria-labelledby="f3t f3d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 360" style="--mw:568px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">The example directed weighted graph on four vertices</title>
             <desc id="f3d">Four vertices arranged in a square: vertex 1 top-left, vertex 2 top-right, vertex 3 bottom-right, vertex 4 bottom-left. Directed edges with weights: 1 to 2 weight 3, 1 to 3 weight 8, 1 to 4 weight 10, 2 to 3 weight minus 2 in red, 2 to 4 weight 5, 3 to 4 weight 2, and 4 to 1 weight 7.</desc>
 
@@ -691,7 +691,7 @@
             <circle cx="600" cy="80"  r="30" class="dg-fill"/><text x="600" y="87" text-anchor="middle" class="dg-val">2</text>
             <circle cx="600" cy="300" r="30" class="dg-fill"/><text x="600" y="307" text-anchor="middle" class="dg-val">3</text>
             <circle cx="200" cy="300" r="30" class="dg-fill"/><text x="200" y="307" text-anchor="middle" class="dg-val">4</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 2 &mdash; the input graph.</b> Edges: <code class="inl wrap">1&rarr;2:3, 1&rarr;3:8, 1&rarr;4:10, 2&rarr;3:&minus;2, 2&rarr;4:5, 3&rarr;4:2, 4&rarr;1:7</code>. The lone negative edge is drawn in red. Check there is no negative cycle: the only cycle through <code class="inl">2&rarr;3</code> is <code class="inl wrap">2&rarr;3&rarr;4&rarr;1&rarr;2 = &minus;2+2+7+3 = 10 &gt; 0</code>.</figcaption>
         </figure>
 
@@ -857,7 +857,7 @@
         <p>We need <code class="inl">&#373;(u,v)=w(u,v)+h(u)&minus;h(v) &ge; 0</code>, i.e. <code class="inl">h(v) &le; h(u)+w(u,v)</code> for every edge. That inequality is exactly the <em>triangle inequality satisfied by shortest-path distances</em>. So pick any source <code class="inl">q</code> that can reach all vertices and set <code class="inl">h(v)=&delta;(q,v)</code>; the relaxation-stable condition <code class="inl">&delta;(q,v) &le; &delta;(q,u)+w(u,v)</code> then holds by definition. To guarantee <code class="inl">q</code> reaches everything, <strong>invent a super-source</strong>: add a new vertex <code class="inl">q</code> with a <code class="inl">0</code>-weight edge to every original vertex. It has no incoming edges, so it creates no new cycle and disturbs no existing distance. Compute <code class="inl">h(v)=&delta;(q,v)</code> with one Bellman&ndash;Ford run &mdash; which doubles as the negative-cycle test.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 320" style="--mw:602px" role="img" aria-labelledby="f4t f4d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 320" style="--mw:710px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">Johnson reweighting on a three-vertex path with potentials</title>
             <desc id="f4d">Three vertices a, b, c left to right with potentials h of a equals 0, h of b equals minus 2, h of c equals minus 3, computed by Bellman-Ford from a super-source. Original edge a to b weight minus 2 becomes reduced weight 0; edge b to c weight minus 1 becomes reduced weight 0; edge a to c weight 1 becomes reduced weight 4. All reduced weights are non-negative.</desc>
 
@@ -895,7 +895,7 @@
             <text x="650" y="240" text-anchor="middle" class="dg-label sm">h=&minus;3</text>
 
             <text x="380" y="290" text-anchor="middle" class="dg-label sm">recover: &delta;(a,c) = &delta;&#770;(a,c) &minus; h(a) + h(c) = 0 &minus; 0 + (&minus;3) = &minus;3 &nbsp;(= a&rarr;b&rarr;c)</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 3 &mdash; reweighting in action.</b> The negative edges <code class="inl">a&rarr;b</code> and <code class="inl">b&rarr;c</code> flatten to <code class="inl">0</code>; the direct edge <code class="inl">a&rarr;c</code> rises to <code class="inl">4</code>. Dijkstra now runs safely, still preferring <code class="inl">a&rarr;b&rarr;c</code> (reduced cost <code class="inl">0</code>) over the direct hop (reduced cost <code class="inl">4</code>) &mdash; the same winner as before. Un-reducing restores the true <code class="inl">&minus;3</code>.</figcaption>
         </figure>
 
@@ -930,7 +930,7 @@
         <p>The choice is governed by one variable: the edge count <code class="inl">m</code>, relative to <code class="inl">n&sup2;</code>. Floyd&ndash;Warshall is flat at <code class="inl">&#x398;(n&sup3;)</code> &mdash; insensitive to <code class="inl">m</code>. Johnson is <code class="inl">O(nm + n&sup2; log n)</code> &mdash; it rides up with density. Count Johnson&rsquo;s Dijkstras with a binary heap, <code class="inl">O(nm log n)</code>, and the two meet where <code class="inl">nm log n &asymp; n&sup3;</code>, i.e. <code class="inl">m &asymp; n&sup2;/log n</code>. (With the Fibonacci-heap bound <code class="inl">O(nm + n&sup2; log n)</code> Johnson stays below <code class="inl">n&sup3;</code> until <code class="inl">m</code> is genuinely <code class="inl">&Theta;(n&sup2;)</code>.)</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 360" style="--mw:602px" role="img" aria-labelledby="f5t f5d">
+          <div class="fig-scroll" data-scroll-fade><svg viewBox="0 0 760 360" style="--mw:710px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">Running time versus edge density for Floyd-Warshall and Johnson</title>
             <desc id="f5d">A plot with edge count m on the horizontal axis from sparse to dense and running time on the vertical axis. Floyd-Warshall is a flat horizontal line at height n cubed, independent of m. Johnson rises with m from low cost on sparse graphs to n cubed on dense graphs, crossing the Floyd-Warshall line near m equals n squared over log n. Left of the crossover, sparse, Johnson is faster; right of it, dense, Floyd-Warshall is the pragmatic choice.</desc>
 
@@ -959,7 +959,7 @@
             <rect x="84" y="44" width="384" height="20" fill="none"/>
             <text x="250" y="166" text-anchor="middle" class="dg-label sm" fill="var(--bau-blue)">sparse &rarr; Johnson wins</text>
             <text x="600" y="200" text-anchor="middle" class="dg-label sm" fill="var(--bau-red)">dense &rarr; use Floyd&ndash;Warshall</text>
-          </svg>
+          </svg></div>
           <figcaption><b>Figure 4 &mdash; the trade-off, drawn.</b> On a sparse graph Johnson&rsquo;s <code class="inl">n</code> Dijkstras sit far below the <code class="inl">n&sup3;</code> line; as edges fill in, Johnson climbs to meet it. At and beyond the crossover the two are asymptotically equal &mdash; and there Floyd&ndash;Warshall&rsquo;s tiny constant, branch-free inner loop, and cache-friendly matrix sweep make it the pragmatic winner.</figcaption>
         </figure>
 
@@ -1066,11 +1066,11 @@
       <div class="col">
         <p><strong>Solve a two-dimensional distance matrix by adding a third index: the count of vertices a path may pass through.</strong> Grow that permitted set from <code class="inl">&empty;</code> to all of <code class="inl">V</code>, one vertex at a time, and each step is a single relaxation &mdash; route through the new vertex <code class="inl">k</code>, or don&rsquo;t. That is Floyd&ndash;Warshall: <code class="inl">&#x398;(n&sup3;)</code>, five lines, negative edges welcome, the diagonal a built-in negative-cycle alarm. When the graph is sparse, don&rsquo;t pay <code class="inl">n&sup3;</code> &mdash; <em>reshape the weights</em> with a potential so they turn non-negative without disturbing any shortest path, then let Dijkstra run <code class="inl">n</code> times. Floyd&ndash;Warshall and Johnson are two answers to one question, split by density.</p>
 
-        <p>And notice the through-line. The recurrence over permitted intermediates is not really a graph trick &mdash; it is a <em>dynamic program</em>, an optimisation over a layered table of subproblems where each layer is a trivial choice over the last. The next lecture pulls that pattern into the open: optimal substructure, overlapping subproblems, and the realisation that Floyd&ndash;Warshall is shortest-path-over-a-DAG-of-subproblems in disguise.</p>
+        <p>And notice the through-line. The recurrence over permitted intermediates is not really a graph trick &mdash; it is a <em>dynamic program</em>, an optimisation over a layered table of subproblems where each layer is a trivial choice over the last. The next study pulls that pattern into the open: optimal substructure, overlapping subproblems, and the realisation that Floyd&ndash;Warshall is shortest-path-over-a-DAG-of-subproblems in disguise.</p>
 
         <div class="next" role="note">
           <div>
-            <div class="lab">up next &middot; lecture 15</div>
+            <div class="lab">up next &middot; deep study 15</div>
             <div class="ttl">Dynamic Programming: Optimal Substructure over a Subproblem DAG</div>
           </div>
           <div class="arrow" aria-hidden="true">&#8594;</div>
@@ -1118,6 +1118,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-13-single-source-shortest-paths.html" rel="prev"><span>&larr; Lecture 13</span><strong>Single-source shortest paths</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-15-dynamic-programming-optimal-substructure-over-a-subproblem-dag.html" rel="next"><span>Lecture 15 &rarr;</span><strong>Dynamic programming</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/29-bellman-ford-and-floyd-warshall.html">Lesson 29 &middot; Bellman-Ford &amp; Floyd-Warshall</a></p></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-13-single-source-shortest-paths.html" rel="prev"><span>&larr; Deep study 13</span><strong>Single-source shortest paths</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-15-dynamic-programming-optimal-substructure-over-a-subproblem-dag.html" rel="next"><span>Deep study 15 &rarr;</span><strong>Dynamic programming</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practice it:</span><a href="../lessons/29-bellman-ford-and-floyd-warshall.html">Lesson 29 &middot; Bellman-Ford &amp; Floyd-Warshall</a></p></nav>
 </body>
 </html>

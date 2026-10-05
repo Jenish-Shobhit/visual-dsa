@@ -11,7 +11,7 @@
   /* ================================================================== cost: worst-case comparisons vs n */
   L13.initGrowth = function () {
     var fig = V.$('#fig-growth');
-    var chart = V.views.chart(fig.querySelector('[data-stage]'), { type: 'line', label: 'Worst-case comparisons of linear and binary search', hover: true });
+    var chart = V.views.chart(fig.querySelector('[data-stage]'), { type: 'line', label: 'Worst-case comparisons of linear and binary search', hover: true, height: (fig.querySelector('[data-stage]').clientWidth || 800) < 520 ? 300 : undefined });
     var N = 64, log = false;
     function stairs(max) {
       var pts = [], k = 1;
@@ -347,7 +347,25 @@
     edges: [
       { from: 'q1', to: 'n1', label: 'no' }, { from: 'q1', to: 'q2', label: 'yes' },
       { from: 'q2', to: 'n2', label: 'no' }, { from: 'q2', to: 'q3', label: 'yes' },
-      { from: 'q3', to: 'e1', label: 'any match', via: { fromSide: 'left', toSide: 'top' } }, { from: 'q3', to: 'e2', label: 'first true' }, { from: 'q3', to: 'e3', label: 'last true', via: { fromSide: 'right', toSide: 'top' } }
+      { from: 'q3', to: 'e1', label: 'any match' }, { from: 'q3', to: 'e2', label: 'first true' }, { from: 'q3', to: 'e3', label: 'last true' }
+    ]
+  };
+  /* Phone-width version: the same diagram with shorter box text, so the type stays readable. */
+  var CHOOSE_N = {
+    nodes: [
+      { id: 'q1', type: 'decision', text: 'Jump to any position in O(1)?', col: 0, row: 0, maxWidth: 110 },
+      { id: 'n1', type: 'end', text: 'Not directly', col: 1, row: 0 },
+      { id: 'q2', type: 'decision', text: 'A yes/no test that flips once?', col: 0, row: 1, maxWidth: 120 },
+      { id: 'n2', type: 'end', text: 'Cannot halve', col: 1, row: 1 },
+      { id: 'q3', type: 'decision', text: 'What do you need?', col: 0, row: 2 },
+      { id: 'e1', type: 'end', text: 'Any match: exact search', col: 1, row: 2 },
+      { id: 'e2', type: 'end', text: 'First true: lower bound', col: 0, row: 3 },
+      { id: 'e3', type: 'end', text: 'Last true: upper bound − 1', col: 1, row: 3 }
+    ],
+    edges: [
+      { from: 'q1', to: 'n1', label: 'no' }, { from: 'q1', to: 'q2', label: 'yes' },
+      { from: 'q2', to: 'n2', label: 'no' }, { from: 'q2', to: 'q3', label: 'yes' },
+      { from: 'q3', to: 'e1', label: 'any' }, { from: 'q3', to: 'e2', label: 'first', via: { fromSide: 'left', toSide: 'left' } }, { from: 'q3', to: 'e3', label: 'last', via: { fromSide: 'bottom', toSide: 'left' } }
     ]
   };
   var CHOOSE_WHY = {
@@ -359,7 +377,7 @@
   };
   L13.initChooser = function () {
     var fig = V.$('#fig-choose');
-    var view = V.views.flowchart(fig.querySelector('[data-stage]'), CHOOSE, { interactive: true, label: 'Can I binary search this?', narrowWidth: 420 });
+    var view = V.views.flowchart(fig.querySelector('[data-stage]'), (fig.querySelector('[data-stage]').clientWidth || 800) < 480 ? CHOOSE_N : CHOOSE, { interactive: true, label: 'Can I binary search this?' });
     var out = fig.querySelector('[data-answer]');
     var path = ['q1'], taken = {};
     function show(d) {
@@ -395,7 +413,7 @@
       answer: 2,
       explain: [
         '2¹⁰ is only 1,024, so ten halvings leave up to a thousand candidates. Ten comparisons are not enough.',
-        '2¹⁹ = 524,288 is less than a million, so after 19 comparisons up to two candidates can remain. One more comparison is needed.',
+        '2¹⁹ = 524,288 is less than a million, so after 19 comparisons one candidate can still remain, and it has to be compared too: one more comparison.',
         'Right. ⌊log₂ 1,000,000⌋ + 1 = 19 + 1 = 20: 2²⁰ = 1,048,576 is the first power of two above a million.',
         'That would be a slow search, not a halving one: a thousand comparisons handle about 2¹⁰⁰⁰ values, far more than a million.'
       ]

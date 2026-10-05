@@ -640,7 +640,7 @@
       return g;
     }
     function draw(step, dur, W) {
-      var FH = 40, GAP = 5, maxF = 7, top = W < 520 ? 34 : 58, floor = top + maxF * (FH + GAP) + 6, H = floor + 44;
+      var FH = 40, GAP = 5, maxF = 6, top = W < 520 ? 34 : 58, floor = top + maxF * (FH + GAP) + 6, H = floor + 44;
       var colW = (W - 16) / 3, fw = Math.min(colW - 14, 190);
       V.clear(gStatic);
       TITLES.forEach(function (t, i) {
@@ -650,6 +650,8 @@
         if (!narrowL) gStatic.appendChild(s('text', { class: 'rc-lane__sub', x: cx, y: 36, 'text-anchor': 'middle' }, t[1]));
         gStatic.appendChild(s('line', { class: 'rc-lane__floor', x1: cx - fw / 2 - 6, x2: cx + fw / 2 + 6, y1: floor, y2: floor }));
         var lane = step.lanes[i];
+        // faint empty slots: the room a lane could use, so the blank above a short stack reads as free space
+        for (var q = 0; q < maxF; q++) gStatic.appendChild(s('rect', { class: 'rc-lslot', x: cx - fw / 2, y: floor - 4 - FH - q * (FH + GAP), width: fw, height: FH, rx: 8, ry: 8 }));
         gStatic.appendChild(s('text', { class: 'rc-lane__count', x: cx, y: floor + 20, 'text-anchor': 'middle' }, narrowL ? lane.frames.length + ' now · peak ' + step.peaks[i] : lane.frames.length + ' frame' + (lane.frames.length === 1 ? '' : 's') + ' now · peak ' + step.peaks[i]));
         if (lane.result !== undefined) gStatic.appendChild(s('text', { class: 'rc-lane__result', x: cx, y: floor + 38, 'text-anchor': 'middle' }, 'returned ' + lane.result));
         if (i) gStatic.appendChild(s('line', { class: 'rc-lane__sep', x1: 8 + colW * i, x2: 8 + colW * i, y1: 8, y2: floor + 30 }));

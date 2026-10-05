@@ -265,7 +265,7 @@
   .dg-wbadge{fill:var(--surface); stroke:var(--bau-ink); stroke-width:1.5}
   .dg-wbadge.mst{fill:var(--bau-blue); stroke:var(--bau-ink)}
   .dg-wnum{font-family:var(--font-mono); font-size:14px; font-weight:700; fill:var(--bau-ink); text-anchor:middle; dominant-baseline:central}
-  .dg-wnum.w{fill:#fff}
+  .dg-wnum.w{fill:var(--on-state)}
   .dg-cutline{stroke:var(--bau-red); stroke-width:2.5; stroke-dasharray:9 7; fill:none}
   .dg-region{fill:color-mix(in oklab,var(--bau-blue) 9%,transparent); stroke:var(--bau-blue); stroke-width:1.5; stroke-dasharray:4 5}
   .dg-arrow{stroke:var(--bau-ink); stroke-width:2.5; fill:none}
@@ -335,7 +335,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa3">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 12">
@@ -462,7 +462,7 @@
         <p>The <span class="term">minimum spanning tree</span> is the spanning tree of least total weight. Note what the objective does <em>not</em> ask for: it says nothing about distances <em>between</em> particular vertices, only about the total. That omission is the source of the most common misconception in &sect;10 &mdash; the MST is not the network of shortest routes. For now, here is the concrete graph we will solve twice, by two different algorithms, later in the lecture.</p>
 
         <figure>
-          <svg viewBox="0 0 720 470" role="img" aria-labelledby="g1t g1d">
+          <svg viewBox="0 0 720 470" style="--mw:489px" role="img" aria-labelledby="g1t g1d">
             <title id="g1t">A weighted graph on six vertices</title>
             <desc id="g1d">Six vertices A, B, C, D, E, F joined by nine weighted edges, the input to the worked example.</desc>
             <!-- edges (drawn first, under the nodes) -->
@@ -546,7 +546,7 @@
         <p>Form <code class="inl">T&prime; = T &minus; e&prime; + e</code>: delete the cycle edge <code class="inl">e&prime;</code>, keep the new edge <code class="inl">e</code>. Removing an edge from a cycle cannot disconnect the graph, and we still have exactly <code class="inl">|V|&minus;1</code> edges, so <code class="inl">T&prime;</code> is again a spanning tree. By the inequality, <code class="inl">w(T&prime;)&le;w(T)</code>. But <code class="inl">T</code> was an MST, so no spanning tree is lighter &mdash; hence <code class="inl">w(T&prime;)=w(T)</code>, and <code class="inl">T&prime;</code> is itself an MST, one that <em>contains</em> <code class="inl">e</code>. Therefore <code class="inl">e</code> lies in some MST. If the weights are distinct the inequality is strict unless <code class="inl">e&prime;=e</code>, which forces <code class="inl">e</code> into <em>every</em> MST. <strong>&#9633;</strong></p>
 
         <figure>
-          <svg viewBox="0 0 720 380" role="img" aria-labelledby="g2t g2d">
+          <svg viewBox="0 0 720 380" style="--mw:526px" role="img" aria-labelledby="g2t g2d">
             <title id="g2t">The cut-property exchange argument</title>
             <desc id="g2d">A spanning tree split by a cut. Adding the light crossing edge e creates a cycle that also contains a heavier crossing tree-edge e-prime; swapping e for e-prime keeps a spanning tree of no greater weight.</desc>
             <!-- S region -->
@@ -590,7 +590,7 @@
         </figure>
 
         <h3>The dual: the cycle property</h3>
-        <p>Turn the argument inside out and you get its mirror, which we will need in Practice&nbsp;4. <strong>The cycle property:</strong> for any cycle in <code class="inl">G</code>, a maximum-weight edge of that cycle belongs to <em>no</em> MST (to no MST at all, if its weight is the unique maximum). The proof is the same exchange run backwards: if an MST contained the heaviest edge <code class="inl">f</code> of a cycle, delete <code class="inl">f</code> &mdash; the tree splits into two parts &mdash; and the cycle supplies a lighter edge re-joining them, giving a strictly cheaper spanning tree, a contradiction. The cut property tells you what to <em>take</em>; the cycle property tells you what to <em>drop</em>. Kruskal is, quite literally, both at once.</p>
+        <p>Turn the argument inside out and you get its mirror, which we will need in Practice&nbsp;4. <strong>The cycle property:</strong> for any cycle in <code class="inl">G</code>, an edge that is the <em>unique</em> heaviest edge of that cycle belongs to <em>no</em> MST. (If the maximum is tied, at least one heaviest edge can always be dropped from some MST.) The proof is the same exchange run backwards: if an MST contained the unique heaviest edge <code class="inl">f</code> of a cycle, delete <code class="inl">f</code> &mdash; the tree splits into two parts &mdash; and the rest of the cycle supplies a lighter edge re-joining them, giving a strictly cheaper spanning tree, a contradiction. The cut property tells you what to <em>take</em>; the cycle property tells you what to <em>drop</em>. Kruskal is, quite literally, both at once.</p>
 
         <div class="pull col">One theorem &mdash; the lightest edge across any cut is safe &mdash; and <span>both</span> algorithms are merely two orders in which to apply it.</div>
       </div>
@@ -666,7 +666,7 @@
         <span class="tok-kw">return</span> <span class="tok-kw">True</span></code></pre>
 
         <figure>
-          <svg viewBox="0 0 720 350" role="img" aria-labelledby="g3t g3d">
+          <svg viewBox="0 0 720 350" style="--mw:619px" role="img" aria-labelledby="g3t g3d">
             <title id="g3t">Union by rank and path compression</title>
             <desc id="g3d">Left: union by rank hangs the shorter tree under the taller root. Right: path compression re-points every node on a find path directly to the root.</desc>
             <!-- divider -->
@@ -802,7 +802,7 @@
         <p>Take Figure&nbsp;1 and solve it twice. Because all nine weights are distinct, the MST is unique &mdash; so both algorithms must land on the very same five edges, even though they <em>discover</em> them in different orders. Watching that happen is the surest way to feel the cut property at work.</p>
 
         <h3>Kruskal: sort the edges, sweep upward</h3>
-        <p>Sorted by weight, the edges are <code class="inl">AC(1), DF(2), EF(3), CD(4), BD(5), AB(6), AD(7), BF(8), CE(9)</code>. Sweep, accepting an edge only when <code class="inl">find</code> says its endpoints live in different components.</p>
+        <p>Sorted by weight, the edges are <code class="inl wrap">AC(1), DF(2), EF(3), CD(4), BD(5), AB(6), AD(7), BF(8), CE(9)</code>. Sweep, accepting an edge only when <code class="inl">find</code> says its endpoints live in different components.</p>
 
         <div class="tbl-wrap">
           <table>
@@ -854,7 +854,7 @@
         <p>Read the two &ldquo;Edge added&rdquo; columns side by side. Kruskal commits the edges in pure weight order <code class="inl">1,2,3,4,5</code>; Prim commits them in <em>proximity</em> order <code class="inl">1,4,2,3,5</code> &mdash; whatever is cheapest from the current frontier. Different journeys, identical destination, because the destination is forced by the cut property and the weights are distinct.</p>
 
         <figure>
-          <svg viewBox="0 0 720 470" role="img" aria-labelledby="g4t g4d">
+          <svg viewBox="0 0 720 470" style="--mw:489px" role="img" aria-labelledby="g4t g4d">
             <title id="g4t">The minimum spanning tree of Figure 1</title>
             <desc id="g4d">The same six-vertex graph with the five MST edges drawn bold blue and the four rejected edges drawn faint and dashed; total weight fifteen.</desc>
             <!-- rejected edges (faint, dashed) -->
@@ -981,7 +981,7 @@
         <div>
           <h3>Min Cost to Connect All Points</h3>
           <p class="meta">MST from scratch &middot; dense graph &middot; LeetCode 1584</p>
-          <p>You are given <code class="inl">points</code>, an array of <code class="inl">n</code> distinct points <code class="inl">[x<sub>i</sub>, y<sub>i</sub>]</code> on the plane. The cost of connecting two points is their <em>Manhattan</em> distance <code class="inl">|x<sub>i</sub>&minus;x<sub>j</sub>| + |y<sub>i</sub>&minus;y<sub>j</sub>|</code>. Return the minimum total cost to connect all points so that there is exactly one simple path between any two. Constraints: <code class="inl">1 &le; n &le; 1000</code>. Example: <code class="inl">points=[[0,0],[2,2],[3,10],[5,2],[7,0]] &#8594; 20</code>. The graph is <em>complete</em> (every pair is an edge), so choose your algorithm with the <code class="inl">E&asymp;V&sup2;</code> density in mind and justify the complexity you achieve.</p>
+          <p>You are given <code class="inl">points</code>, an array of <code class="inl">n</code> distinct points <code class="inl">[x<sub>i</sub>, y<sub>i</sub>]</code> on the plane. The cost of connecting two points is their <em>Manhattan</em> distance <code class="inl">|x<sub>i</sub>&minus;x<sub>j</sub>| + |y<sub>i</sub>&minus;y<sub>j</sub>|</code>. Return the minimum total cost to connect all points so that there is exactly one simple path between any two. Constraints: <code class="inl">1 &le; n &le; 1000</code>. Example: <code class="inl wrap">points=[[0,0],[2,2],[3,10],[5,2],[7,0]] &#8594; 20</code>. The graph is <em>complete</em> (every pair is an edge), so choose your algorithm with the <code class="inl">E&asymp;V&sup2;</code> density in mind and justify the complexity you achieve.</p>
         </div>
       </div>
 
@@ -990,7 +990,7 @@
         <div>
           <h3>Redundant Connection</h3>
           <p class="meta">pure union-find &middot; the cycle test &middot; LeetCode 684</p>
-          <p>A tree on <code class="inl">n</code> nodes labelled <code class="inl">1&hellip;n</code> had exactly one extra edge added, creating a single cycle. You are given <code class="inl">edges</code> (length <code class="inl">n</code>, 1-indexed) in the order added. Return the one edge that can be removed so the result is again a tree; if several qualify, return the one that appears <em>last</em> in the input. Example: <code class="inl">edges=[[1,2],[1,3],[2,3]] &#8594; [2,3]</code>. This is the <em>reject</em> step of Kruskal in isolation: which property of &sect;04 tells you the first edge whose endpoints already share a component is the answer &mdash; and why does processing in input order automatically satisfy the &ldquo;last&rdquo; tie-break? Target <code class="inl">O(n&middot;&alpha;(n))</code>.</p>
+          <p>A tree on <code class="inl">n</code> nodes labelled <code class="inl">1&hellip;n</code> had exactly one extra edge added, creating a single cycle. You are given <code class="inl">edges</code> (length <code class="inl">n</code>, 1-indexed) in the order added. Return the one edge that can be removed so the result is again a tree; if several qualify, return the one that appears <em>last</em> in the input. Example: <code class="inl wrap">edges=[[1,2],[1,3],[2,3]] &#8594; [2,3]</code>. This is the <em>reject</em> step of Kruskal in isolation: which property of &sect;04 tells you the first edge whose endpoints already share a component is the answer &mdash; and why does processing in input order automatically satisfy the &ldquo;last&rdquo; tie-break? Target <code class="inl">O(n&middot;&alpha;(n))</code>.</p>
         </div>
       </div>
 
@@ -999,7 +999,7 @@
         <div>
           <h3>Number of Operations to Make Network Connected</h3>
           <p class="meta">components &middot; the |V|&minus;1 floor &middot; LeetCode 1319</p>
-          <p>There are <code class="inl">n</code> computers <code class="inl">0&hellip;n&minus;1</code> joined by <code class="inl">connections[i]=[a,b]</code> (each an existing cable). You may unplug any cable and replug it between any two computers. Return the minimum number of such moves to make the whole network connected, or <code class="inl">&minus;1</code> if it is impossible. Examples: <code class="inl">n=4, connections=[[0,1],[0,2],[1,2]] &#8594; 1</code>; <code class="inl">n=6, connections=[[0,1],[0,2],[0,3],[1,2],[1,3]] &#8594; 2</code>. Two sub-questions decide it: when is it <em>impossible</em> (count edges against the spanning-tree floor), and once it is possible, why is the answer exactly <code class="inl">(#components &minus; 1)</code> regardless of <em>which</em> spare cable you move? Use union-find to count components.</p>
+          <p>There are <code class="inl">n</code> computers <code class="inl">0&hellip;n&minus;1</code> joined by <code class="inl">connections[i]=[a,b]</code> (each an existing cable). You may unplug any cable and replug it between any two computers. Return the minimum number of such moves to make the whole network connected, or <code class="inl">&minus;1</code> if it is impossible. Examples: <code class="inl wrap">n=4, connections=[[0,1],[0,2],[1,2]] &#8594; 1</code>; <code class="inl wrap">n=6, connections=[[0,1],[0,2],[0,3],[1,2],[1,3]] &#8594; 2</code>. Two sub-questions decide it: when is it <em>impossible</em> (count edges against the spanning-tree floor), and once it is possible, why is the answer exactly <code class="inl">(#components &minus; 1)</code> regardless of <em>which</em> spare cable you move? Use union-find to count components.</p>
         </div>
       </div>
 
@@ -1074,6 +1074,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-11-graphs-and-their-traversals.html">← Previous study</a><a href="dsa-13-single-source-shortest-paths.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-11-graphs-and-their-traversals.html" rel="prev"><span>&larr; Lecture 11</span><strong>Graphs and their traversals</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-13-single-source-shortest-paths.html" rel="next"><span>Lecture 13 &rarr;</span><strong>Single-source shortest paths</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/24-union-find.html">Lesson 24 &middot; Union-find</a><a href="../lessons/30-minimum-spanning-trees.html">Lesson 30 &middot; Minimum spanning trees</a></p></nav>
 </body>
 </html>

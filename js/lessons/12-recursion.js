@@ -221,7 +221,7 @@
       { from: 'call', to: 'test' },
       { from: 'test', to: 'base', label: 'yes' },
       { from: 'test', to: 'shrink', label: 'no' },
-      { from: 'shrink', to: 'call', label: 'recurse', via: { fromSide: 'left', toSide: 'left' } },
+      { from: 'shrink', to: 'call', label: '↺', via: { fromSide: 'left', toSide: 'left' } },
       { from: 'shrink', to: 'combine', label: 'returns' },
       { from: 'combine', to: 'ret' },
     ]
@@ -449,13 +449,13 @@
   }
   var CHOOSE = {
     nodes: [
-      { id: 'q1', type: 'decision', text: 'Nested data, or splits into parts?', col: 1, row: 0, narrow: { col: 0, row: 0 } },
-      { id: 'loop', type: 'end', text: 'A loop: same work, one frame', col: 0, row: 1, narrow: { col: 1, row: 0 } },
-      { id: 'q2', type: 'decision', text: 'Do subproblems repeat?', col: 1, row: 1, narrow: { col: 0, row: 1 } },
-      { id: 'memo', type: 'end', text: 'Recursion + remembered answers', col: 2, row: 1, narrow: { col: 1, row: 1 } },
-      { id: 'q3', type: 'decision', text: 'Could the depth reach thousands?', col: 1, row: 2, narrow: { col: 0, row: 2 } },
-      { id: 'stack', type: 'end', text: 'A loop with your own stack', col: 2, row: 2, narrow: { col: 1, row: 2 } },
-      { id: 'rec', type: 'end', text: 'Plain recursion: clearest code', col: 1, row: 3, narrow: { col: 0, row: 3 } }
+      { id: 'q1', type: 'decision', text: 'Nested data, or splits into parts?', col: 0, row: 0 },
+      { id: 'loop', type: 'end', text: 'A loop: same work, one frame', col: 1, row: 0 },
+      { id: 'q2', type: 'decision', text: 'Do subproblems repeat?', col: 0, row: 1 },
+      { id: 'memo', type: 'end', text: 'Recursion + remembered answers', col: 1, row: 1 },
+      { id: 'q3', type: 'decision', text: 'Could the depth reach thousands?', col: 0, row: 2 },
+      { id: 'stack', type: 'end', text: 'A loop with your own stack', col: 1, row: 2 },
+      { id: 'rec', type: 'end', text: 'Plain recursion: clearest code', col: 0, row: 3 }
     ],
     edges: [
       { from: 'q1', to: 'loop', label: 'no' }, { from: 'q1', to: 'q2', label: 'yes' },
@@ -528,7 +528,7 @@
   }
   function costChart() {
     var fig = V.$('#fig-cost');
-    var chart = V.views.chart(fig.querySelector('[data-stage]'), { type: 'line', label: 'Total calls against n for five recursive functions' });
+    var chart = V.views.chart(fig.querySelector('[data-stage]'), { type: 'line', label: 'Total calls against n for five recursive functions', height: (fig.querySelector('[data-stage]').clientWidth || 800) < 520 ? 300 : undefined });
     function pts(f) { var out = []; for (var n = 1; n <= 20; n++) out.push([n, f(n)]); return out; }
     var series = [
       { id: 'hanoi', label: 'hanoi', points: pts(function (n) { return Math.pow(2, n) - 1; }), state: 'pivot' },

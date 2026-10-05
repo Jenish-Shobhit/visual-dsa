@@ -340,7 +340,7 @@
       var where = side === 'root' ? 'on the whole array' : 'on the ' + side + ' half ' + rangeText(lo, hi);
       var callCap = side === 'root'
         ? 'Call <code>mergeSort(a, 0, ' + (n - 1) + ')</code> on the whole array.'
-        : 'Call <code>mergeSort(a, ' + lo + ', ' + hi + ')</code> on the ' + side + ' half. Until it returns, only these ' + plural(size, 'value') + ' matter.';
+        : 'Call <code>mergeSort(a, ' + lo + ', ' + hi + ')</code> on the ' + side + ' half. Until it returns, only ' + (size === 1 ? 'this 1 value matters' : 'these ' + size + ' values matter') + '.';
       snap('call', {
         caption: callCap, line: side === 'root' ? 'sort' : side, flow: side === 'root' ? 'start|small' : 'conquer|small',
         regions: [span(lo, hi, depth, 'active')], vars: vars({ lo: lo, hi: hi }), range: [lo, hi, depth]

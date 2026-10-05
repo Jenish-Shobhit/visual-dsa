@@ -405,7 +405,7 @@
   /* ================================================================== cost: growth vs n */
   L14.initGrowth = function () {
     var fig = V.$('#fig-growth');
-    var chart = V.views.chart(fig.querySelector('[data-stage]'), { type: 'line', label: 'Operations as n grows' });
+    var chart = V.views.chart(fig.querySelector('[data-stage]'), { type: 'line', label: 'Operations as n grows', height: (fig.querySelector('[data-stage]').clientWidth || 800) < 520 ? 300 : undefined });
     var kase = 'random', metric = 'comparisons';
     var cache = {};
     function series(name) {
@@ -462,16 +462,16 @@
   /* ================================================================== which simple sort? */
   var CHOOSE = {
     nodes: [
-      { id: 'q1', type: 'decision', text: 'Thousands of items or more?', col: 0, row: 0 },
+      { id: 'q1', type: 'decision', text: 'Thousands of items or more?', col: 0, row: 0, narrow: { maxWidth: 124 } },
       { id: 'fast', type: 'end', text: 'Merge sort or quicksort', col: 1, row: 0 },
-      { id: 'q2', type: 'decision', text: 'Already nearly sorted?', col: 0, row: 1 },
+      { id: 'q2', type: 'decision', text: 'Already nearly sorted?', col: 0, row: 1, narrow: { maxWidth: 124 } },
       { id: 'insA', type: 'end', text: 'Insertion sort', col: 1, row: 1 },
-      { id: 'q3', type: 'decision', text: 'Writes far costlier than reads?', col: 0, row: 2 },
+      { id: 'q3', type: 'decision', text: 'Writes far costlier than reads?', col: 0, row: 2, narrow: { maxWidth: 124 } },
       { id: 'insB', type: 'end', text: 'Insertion sort', col: 1, row: 2 },
-      { id: 'q4', type: 'decision', text: 'Must equal keys keep their order?', col: 0, row: 3 },
+      { id: 'q4', type: 'decision', text: 'Must equal keys keep their order?', col: 0, row: 3, narrow: { maxWidth: 124 } },
       { id: 'insC', type: 'end', text: 'Insertion sort', col: 1, row: 3 },
       { id: 'sel', type: 'end', text: 'Selection sort', col: 0, row: 4 },
-      { id: 'bub', type: 'note', text: 'Bubble sort? Only as a one-pass “is it already sorted?” check.', col: 1, row: 4 }
+      { id: 'bub', type: 'note', text: 'Bubble sort? Only as a one-pass “is it already sorted?” check.', col: 1, row: 4, narrow: { maxWidth: 110 } }
     ],
     edges: [
       { from: 'q1', to: 'fast', label: 'yes' }, { from: 'q1', to: 'q2', label: 'no' },

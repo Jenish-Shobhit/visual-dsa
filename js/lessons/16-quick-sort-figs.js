@@ -363,7 +363,7 @@
   /* ================================================================== comparisons vs n for four pivot rules */
   L16.initStrategies = function () {
     var fig = V.$('#fig-strategies');
-    var chart = V.views.chart(fig.querySelector('[data-stage]'), { type: 'line', label: 'Comparisons against n for four pivot rules' });
+    var chart = V.views.chart(fig.querySelector('[data-stage]'), { type: 'line', label: 'Comparisons against n for four pivot rules', height: (fig.querySelector('[data-stage]').clientWidth || 800) < 520 ? 300 : undefined });
     var kind = 'sorted', log = false, cache = {};
     var RULES = [
       { id: 'last', label: 'Last element', pivot: 'last', color: 0 },

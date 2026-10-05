@@ -77,6 +77,9 @@
 /* ------------------------------------------------------------ two-panel stages */
 .rc-split { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; align-items: end; }
 .rc-split__a, .rc-split__b { min-width: 0; }
+/* The call-stack column reserves room for the deepest stack; draw that room so the empty top reads as "free stack space", not a gap. */
+#fig-stack .rc-split__a { position: relative; isolation: isolate; }
+#fig-stack .rc-split__a::before { content: "free stack space"; position: absolute; z-index: -1; inset: 0 6px 9px; display: flex; justify-content: center; align-items: flex-start; padding-top: 10px; border: 1.5px dashed var(--line-strong, var(--line)); border-bottom: 0; border-radius: 12px 12px 0 0; font: 600 11.5px var(--font-sans); letter-spacing: .02em; color: var(--ink-3); background: repeating-linear-gradient(135deg, transparent 0 9px, color-mix(in srgb, var(--ink-3) 7%, transparent) 9px 10px); }
 .rc-split--overflow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
 @container fig (max-width: 640px) { .rc-split, .rc-split--overflow { grid-template-columns: minmax(0, 1fr); } }
 
@@ -200,6 +203,7 @@
 .rc .rc-lane__title{ font: 700 13px var(--font-sans); fill: var(--ink); }
 .rc .rc-lane__sub{ font: 500 11px var(--font-mono); fill: var(--ink-3); }
 .rc .rc-lane__floor{ stroke: var(--line-strong); stroke-width: 2px; }
+.rc .rc-lslot{ fill: none; stroke: var(--line); stroke-width: 1.2px; stroke-dasharray: 3 4; opacity: .7; }
 .rc .rc-lane__sep{ stroke: var(--line); stroke-dasharray: 3 4; }
 .rc .rc-lane__count{ font: 600 11.5px var(--font-sans); fill: var(--ink-2); }
 .rc .rc-lane__result{ font: 700 11.5px var(--font-mono); fill: color-mix(in srgb, var(--st-done) 70%, var(--ink)); }

@@ -14,13 +14,13 @@
   var FLOW = {
     nodes: [
       { id: 'start', type: 'start', text: 'mergeSort(lo, hi)', col: 0, row: 0 },
-      { id: 'small', type: 'decision', text: 'small enough?\nhi − lo < 1', col: 0, row: 1 },
-      { id: 'base', type: 'end', text: 'Base case: one value\nis sorted, return', col: 1, row: 1 },
-      { id: 'divide', type: 'process', text: 'Divide\nmid = ⌊(lo + hi) / 2⌋', col: 0, row: 2 },
+      { id: 'small', type: 'decision', text: 'small enough?\nhi − lo < 1', col: 0, row: 1, narrow: { maxWidth: 108 } },
+      { id: 'base', type: 'end', text: 'Base case: one value\nis sorted, return', col: 1, row: 1, narrow: { text: 'Base case:\nreturn', maxWidth: 80 } },
+      { id: 'divide', type: 'process', text: 'Divide\nmid = ⌊(lo + hi) / 2⌋', col: 0, row: 2, narrow: { maxWidth: 120 } },
       { id: 'conquer', type: 'process', text: 'Conquer\nmergeSort(lo, mid)\nmergeSort(mid + 1, hi)', col: 0, row: 3 },
-      { id: 'combine', type: 'process', text: 'Combine\nmerge the two sorted halves', col: 0, row: 4 },
+      { id: 'combine', type: 'process', text: 'Combine\nmerge the two sorted halves', col: 0, row: 4, narrow: { text: 'Combine\nmerge the halves', maxWidth: 110 } },
       { id: 'ret', type: 'end', text: 'return', col: 0, row: 5 },
-      { id: 'note', type: 'note', text: 'Merge: two pointers, take the smaller front. Ties take the left one, so the sort is stable.', col: 1, row: 4, narrow: { col: 1, row: 4 }, maxWidth: 170 }
+      { id: 'note', type: 'note', text: 'Merge: two pointers, take the smaller front. Ties take the left one, so the sort is stable.', col: 1, row: 4, narrow: { col: 1, row: 4, maxWidth: 84, text: 'Take the smaller front; ties go left (stable).' }, maxWidth: 170 }
     ],
     edges: [
       { from: 'start', to: 'small' },
@@ -295,7 +295,7 @@
   /* ================================================================== growth: comparisons vs n */
   L15.initGrowth = function () {
     var fig = V.$('#fig-growth');
-    var chart = V.views.chart(fig.querySelector('[data-stage]'), { type: 'line', label: 'Comparisons made by merge sort and insertion sort as n grows' });
+    var chart = V.views.chart(fig.querySelector('[data-stage]'), { type: 'line', label: 'Comparisons made by merge sort and insertion sort as n grows', height: (fig.querySelector('[data-stage]').clientWidth || 800) < 520 ? 300 : undefined });
     var kase = 'random', log = false, cache = {};
     var XS = []; for (var x = 8; x <= 192; x += 8) XS.push(x);
     function arr(n, seed) {

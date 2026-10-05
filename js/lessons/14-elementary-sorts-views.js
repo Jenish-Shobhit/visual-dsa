@@ -129,7 +129,7 @@
         vz.text(rec.rank, val); vz.set(rec.rank, 'y', vz.n2(-h * 0.14)); vz.set(rec.rank, 'font-size', Math.round(G.font * 1.05));
         vz.text(rec.suit, it.label || ''); vz.set(rec.suit, 'y', vz.n2(h * 0.2)); vz.set(rec.suit, 'font-size', Math.round(G.font * 1.05));
         vz.text(rec.corner, val + (it.label || '')); vz.set(rec.corner, 'x', vz.n2(-w / 2 + 5)); vz.set(rec.corner, 'y', vz.n2(-h / 2 + 9));
-        vz.set(rec.corner, 'font-size', vz.clamp(Math.round(G.font * 0.46), 8, 11));
+        vz.set(rec.corner, 'font-size', vz.clamp(Math.round(G.font * 0.46), 10, 11));
         vz.toggle(rec.el, 'is-red', !!red);
       } else {
         var hasSub = it.label !== undefined && it.label !== null && it.label !== '' && h >= 30;

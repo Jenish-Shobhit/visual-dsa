@@ -183,7 +183,7 @@ test('chaining: duplicates, map values, delete and resize behave', () => {
   assert.equal(r.final.m, 11);
   assert.ok(r.final.size / r.final.m <= 0.75 + 1e-9);
   const grow = r.steps.filter(s => s.kind === 'growMove')[0];
-  assert.ok(grow.entries.every(e => e.state === 'swap' && e.bucket === e.key % 11), 'every key moved to k mod 11');
+  assert.ok(grow.entries.every(e => e.state === 'key' && e.bucket === e.key % 11), 'every key moved to k mod 11');
   // stops at the cap
   r = H.chaining(Array.from({ length: 40 }, (_, i) => ({ op: 'insert', key: i })), { m: 5, autoResize: true });
   assert.equal(r.final.m, 23);

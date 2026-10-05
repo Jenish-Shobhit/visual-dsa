@@ -110,7 +110,7 @@
     return makeLab({
       root: '#lab-chain', mode: 'chaining', threshold: 0.75, label: 'Hash table with separate chaining',
       code: function () { return A11.CODE.chaining; },
-      legend: [{ state: 'active', label: 'New key / target bucket' }, { state: 'compare', label: 'Compared' }, { state: 'found', label: 'Found' }, { state: 'error', label: 'Removed / not found' }, { state: 'swap', label: 'Moved by a resize' }],
+      legend: [{ state: 'active', label: 'New key / target bucket' }, { state: 'compare', label: 'Compared' }, { state: 'found', label: 'Found' }, { state: 'error', label: 'Removed / not found' }, { state: 'key', label: 'Moved by a resize' }],
       initial: { ops: ins(10, 24, 15, 9).concat([{ op: 'search', key: 24 }]), opts: { m: 7, hash: 'mod', autoResize: false } },
       generate: function (ops, opts) { return A11.chaining(ops, { m: opts.m, hash: opts.hash, autoResize: opts.autoResize, threshold: 0.75 }); },
       presets: [
@@ -175,7 +175,7 @@
     var lab = makeLab({
       root: '#lab-open', mode: 'open', threshold: 0.7, label: 'Hash table with open addressing',
       code: function (opts) { return A11.openCode(opts.kind); },
-      legend: [{ state: 'active', label: 'New key / home slot' }, { state: 'compare', label: 'Probed: slot taken' }, { state: 'found', label: 'Found' }, { state: 'error', label: 'Deleted / not found' }, { state: 'pivot', label: 'Cluster (3+ filled in a row)' }, { state: 'swap', label: 'Moved by a resize' }, { state: 'muted', shape: 'dash', label: '† Tombstone' }],
+      legend: [{ state: 'active', label: 'New key / home slot' }, { state: 'compare', label: 'Probed: slot taken' }, { state: 'found', label: 'Found' }, { state: 'error', label: 'Deleted / not found' }, { state: 'pivot', label: 'Cluster (3+ filled in a row)' }, { state: 'key', label: 'Moved by a resize' }, { state: 'muted', shape: 'dash', label: '† Tombstone' }],
       initial: { ops: ins(22, 33, 44, 15, 26).concat([{ op: 'search', key: 26 }]), opts: { m: 11, kind: 'linear', autoResize: true, clusters: true } },
       flow: flow,
       generate: function (ops, opts) { return A11.probing(ops, { m: opts.m, kind: opts.kind, autoResize: opts.autoResize, threshold: 0.7, clusters: opts.clusters }); },

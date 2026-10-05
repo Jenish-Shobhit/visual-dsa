@@ -176,7 +176,7 @@
       var longestBefore = 0; chains.forEach(function (c) { longestBefore = Math.max(longestBefore, c.length); });
       m = to; chains = emptyChains(to);
       old.forEach(function (chain) {
-        chain.forEach(function (e) { chains[hashOf(e.key, to, kind)].push(e); moved[keyId(e.key)] = 'swap'; });
+        chain.forEach(function (e) { chains[hashOf(e.key, to, kind)].push(e); moved[keyId(e.key)] = 'key'; });
       });
       var longestAfter = 0; chains.forEach(function (c) { longestAfter = Math.max(longestAfter, c.length); });
       snap('growMove', 'Every key is hashed again with <b>m = ' + to + '</b> and appended to its new chain. The old buckets are thrown away. Keys that shared a bucket often part ways, because <code>k mod ' + from + '</code> and <code>k mod ' + to + '</code> are different functions.',
@@ -354,7 +354,7 @@
       snap('growStart', why, 'growNew', { resizing: { from: from, to: to }, vars: { m: from, 'new m': to, size: live } });
       var old = slots, ns = []; for (var i = 0; i < to; i++) ns.push(null);
       var moved = {}, ok = true;
-      old.forEach(function (e) { if (e) { if (quietInsert(e.key, ns, to) < 0) ok = false; moved[keyId(e.key)] = 'swap'; } });
+      old.forEach(function (e) { if (e) { if (quietInsert(e.key, ns, to) < 0) ok = false; moved[keyId(e.key)] = 'key'; } });
       slots = ns; m = to; tomb = {};
       snap('growMove', 'Each key is hashed again with <b>m = ' + to + '</b> and probes into the new array from scratch' + (tCount ? '. The ' + tCount + ' tombstone' + (tCount === 1 ? ' is' : 's are') + ' gone: only live keys are copied' : '') + '. A key can land in a very different slot, because <code>k mod ' + from + '</code> is not <code>k mod ' + to + '</code>.',
         'growPush', { marks: moved, resizing: { from: from, to: to }, vars: { m: to, size: live } });

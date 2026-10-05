@@ -298,7 +298,7 @@
         r.setAttribute('x', -w / 2); r.setAttribute('y', -d.th / 2 + 1); r.setAttribute('width', w); r.setAttribute('height', Math.max(4, d.th - 2));
         r.setAttribute('rx', Math.min(8, d.th / 2));
         g.lastChild.style.display = d.th >= 12 ? '' : 'none';
-        g.lastChild.style.fontSize = Math.min(13, d.th - 3) + 'px';
+        g.lastChild.style.fontSize = Math.min(16, d.th - 3) + 'px';
       }
     });
     var badge = s('g', { class: 'gr-verdict', opacity: 0 });
@@ -313,7 +313,7 @@
         o = o || {};
         var dur = o.duration === undefined ? 450 : o.duration;
         setDur(svg, dur);
-        var th = Math.max(6, Math.min(20, 190 / Math.max(4, maxPicks)));
+        var th = Math.max(6, Math.min(34, 170 / Math.max(3, maxPicks)));
         var tray = [], coins = [];
         ['g', 'b'].forEach(function (k) {
           var side = k === 'g' ? st.greedy : st.best, hidden = k === 'b' && !side.shown;
@@ -460,13 +460,14 @@
   gr.forest = function (container, opts) {
     opts = opts || {};
     container = V.$(container);
-    var R = 17, DX = 46, DY = 62, PADX = 24, PADT = 26, PADB = 44;
+    var R = 17, DX = 46, DY = 62, PADX = 24, PADT = 26, PADB = 44, LG = 44;   // LG: left gutter for the level labels
     var svg = svgRoot('gr-forest', opts.label || 'Huffman forest');
     svg.style.display = 'block';
     container.appendChild(svg);
     var W = 300, H = 200, need = { slots: 2, depth: 1 };
     var edgeG = s('g', { class: 'gr-edges' });
-    svg.appendChild(edgeG);
+    var laneG = s('g', { class: 'gr-lanes', 'aria-hidden': 'true' });
+    svg.appendChild(laneG); svg.appendChild(edgeG);
     var edges = {}; // childId -> {g, line, txt, x1,y1,x2,y2, tw}
     var nodeL = layer(svg, {
       create: function (d) {
@@ -487,9 +488,16 @@
       }
     });
     function setSize() {
-      var natural = PADX * 2 + need.slots * DX;
+      var natural = LG + PADX * 2 + need.slots * DX;
       W = Math.max(container.clientWidth || 300, natural);
       H = PADT + need.depth * DY + PADB;
+      /* faint lanes, one per tree level: a level is a code length, so the frame is never blank */
+      V.clear(laneG);
+      for (var d = 0; d < need.depth; d++) {
+        var ly = PADT + d * DY;
+        laneG.appendChild(s('line', { class: 'gr-lane__line', x1: 6, x2: W - 6, y1: ly, y2: ly }));
+        laneG.appendChild(s('text', { class: 'gr-lane__txt', x: 8, y: ly - 5 }, d === 0 ? 'top' : d + (d === 1 ? ' bit down' : ' bits down')));
+      }
       svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('width', W); svg.setAttribute('height', H);
     }
     function layout(st) {
@@ -503,7 +511,7 @@
       }
       st.queue.forEach(function (id) { lay(id, 0); });
       var total = need.slots;
-      var offset = (W - (total - 1) * DX) / 2;
+      var offset = LG + (W - LG - (total - 1) * DX) / 2;
       var out = {};
       Object.keys(pos).forEach(function (id) { out[id] = { x: offset + pos[id].slot * DX, y: PADT + pos[id].depth * DY }; });
       return out;
@@ -584,7 +592,7 @@
       on: function () { return function () {}; },
       destroy: function () { if (svg.parentNode) svg.parentNode.removeChild(svg); }
     };
-    if (V.onResize) V.onResize(container, function () { var w = container.clientWidth; if (w && last && Math.abs(w - W) > 1 && w > PADX * 2 + need.slots * DX - 1) { setSize(); api.render(last, { duration: 0 }); } });
+    if (V.onResize) V.onResize(container, function () { var w = container.clientWidth; if (w && last && Math.abs(w - W) > 1 && w > LG + PADX * 2 + need.slots * DX - 1) { setSize(); api.render(last, { duration: 0 }); } });
     setSize();
     return api;
   };

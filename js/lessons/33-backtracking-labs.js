@@ -369,6 +369,7 @@
     ]);
     var boardV = B.boardView(fig.querySelector('[data-board]'), { label: 'N-Queens board' });
     var treeV = V.views.tree(fig.querySelector('[data-tree]'), { label: 'State-space tree of queen placements', nodeSize: 34, minNodeSize: 9, levelHeight: 46, gap: 0.35 });
+    var guides = B.levelGuides(fig.querySelector('[data-tree]'), { levels: function () { return cfg.n + 1; }, step: 46, label: function (d) { return d === 0 ? 'start: empty board' : 'row ' + (d - 1); } });
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: CODE.queens, default: 'pseudo', title: 'solveQueens', maxHeight: 360 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { row: 'compare', col: 'compare', cols: 'active', d1: 'pivot', d2: 'frontier' } });
     var cfg = { n: 6, all: false, collapse: true };
@@ -380,6 +381,7 @@
       else if (step.kind === 'place') cand = { r: step.row, c: step.col, state: 'ok' };
       boardV.render({ n: step.n, pieces: pieces, row: step.kind === 'start' ? 0 : step.row, cand: cand, attacker: step.attacker, mark: step.attacker ? [[step.attacker.r, step.attacker.c]] : [], solved: step.kind === 'solution' }, { duration: ctx.duration });
       treeV.render(B.toTree(step.tree), { duration: ctx.duration });
+      guides.update(step.kind === 'start' ? 0 : step.row + 1);
     }
     var player = V.player({
       root: fig, steps: gen.steps, render: render, code: code, vars: vars, flow: flowView || null,

@@ -277,6 +277,48 @@
   /* ================================================================== helpers */
   var PATHY = { active: 1, frontier: 1, found: 1, path: 1 };
   /* Generator tree nodes [{id, parent, label, state, badge, ret}] -> VDSA.views.tree state. */
+
+  /* Level guides behind a recursion tree: one faint lane per depth, labelled with what a level means ("row 3").
+     They exist from the first frame, so the stage is never blank, and the lane of the row being filled lights up with
+     the board's row band. B.levelGuides(host, {levels, step, label}) -> {update(activeDepth)}. */
+  B.levelGuides = function (host, o) {
+    var svg = null, g = null, lanes = [], built = 0;
+    function build() {
+      svg = host.querySelector('svg.vz');
+      if (!svg) return false;
+      if (g && g.parentNode) g.parentNode.removeChild(g);
+      lanes = [];
+      g = s('g', { class: 'bt-lanes', 'aria-hidden': 'true' });
+      svg.insertBefore(g, svg.querySelector('.vz-layer') || null);
+      var count = typeof o.levels === 'function' ? o.levels() : o.levels;
+      built = count;
+      for (var d = 0; d < count; d++) {
+        var line = s('line', { class: 'bt-lane__line' });
+        var txt = s('text', { class: 'bt-lane__txt' }, o.label(d));
+        g.appendChild(line); g.appendChild(txt); lanes.push({ line: line, txt: txt });
+      }
+      return true;
+    }
+    function update(active) {
+      var want = typeof o.levels === 'function' ? o.levels() : o.levels;
+      if ((!g || !g.parentNode || built !== want) && !build()) return;
+      var root = svg.querySelector('.vz-node'), y0 = 24;
+      if (root) {
+        var t = root.getAttribute('transform') || '', m = /translate\(\s*[-\d.e]+[ ,]+([-\d.e]+)/.exec(t);
+        if (m) y0 = parseFloat(m[1]); else if (root.__vdsa && typeof root.__vdsa.y === 'number') y0 = root.__vdsa.y;
+      }
+      var W = parseFloat(svg.getAttribute('viewBox') ? svg.getAttribute('viewBox').split(' ')[2] : 0) || svg.clientWidth;
+      lanes.forEach(function (l, d) {
+        var y = y0 + d * o.step;
+        l.line.setAttribute('x1', 6); l.line.setAttribute('x2', W - 6); l.line.setAttribute('y1', y); l.line.setAttribute('y2', y);
+        l.txt.setAttribute('x', 8); l.txt.setAttribute('y', y - 5);
+        var on = d === active;
+        l.line.setAttribute('class', 'bt-lane__line' + (on ? ' is-on' : ''));
+        l.txt.setAttribute('class', 'bt-lane__txt' + (on ? ' is-on' : ''));
+      });
+    }
+    return { update: update };
+  };
   B.toTree = function (list, o) {
     o = o || {};
     var kids = {};

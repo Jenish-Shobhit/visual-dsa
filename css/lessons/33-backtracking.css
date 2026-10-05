@@ -92,11 +92,11 @@
 .bt-sudoku .bt-peer { fill: color-mix(in srgb, var(--st-active) 9%, transparent); pointer-events: none; }
 .bt-sudoku .bt-line { stroke: var(--line-strong); stroke-width: 1; }
 .bt-sudoku .bt-line.thick { stroke: var(--ink-2); stroke-width: 2.2; }
-.bt-sudoku .bt-num { font: 650 25px var(--font-sans); fill: var(--st-active); }
+.bt-sudoku .bt-num { font: 650 25px var(--font-sans); fill: color-mix(in srgb, var(--st-active) 62%, var(--ink)); }
 .bt-sudoku .bt-num.given { fill: var(--ink); font-weight: 780; }
 .bt-sudoku .bt-num.solved:not(.given) { fill: var(--st-found); }
-.bt-sudoku .bt-cand { font: 600 10.5px var(--font-mono); fill: var(--ink-3); text-anchor: middle; opacity: 0; transition: opacity var(--t, 300ms) ease; }
-.bt-sudoku .bt-cand.on { opacity: .85; }
+.bt-sudoku .bt-cand { font: 600 10.5px var(--font-mono); fill: var(--ink-2); text-anchor: middle; opacity: 0; transition: opacity var(--t, 300ms) ease; }
+.bt-sudoku .bt-cand.on { opacity: 1; }
 .bt-sudoku .bt-cand.hot { fill: color-mix(in srgb, var(--st-compare) 80%, var(--ink)); font-weight: 800; opacity: 1; }
 .bt-sudoku .bt-sring { fill: none; stroke-width: 3.2; transition: stroke var(--t, 300ms) ease; pointer-events: none; }
 .bt-sudoku .bt-sring.is-compare { stroke: var(--st-compare); }
@@ -146,3 +146,9 @@
 .bt-duo { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); }
 .bt-duo .bt-board { max-width: 440px; }
 @container fig (max-width: 900px) { .bt-duo { grid-template-columns: minmax(0, 1fr); } }
+
+/* level guides behind the queens tree: lanes exist from the first frame and the active row lights up */
+.bt-lane__line { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 5; opacity: .9; transition: stroke var(--t, 200ms) ease; }
+.bt-lane__line.is-on { stroke: color-mix(in srgb, var(--st-compare) 70%, var(--line)); stroke-dasharray: none; }
+.bt-lane__txt { fill: var(--ink-3); font-size: 11px; font-weight: 600; font-family: var(--font-sans, inherit); }
+.bt-lane__txt.is-on { fill: var(--ink-2); }

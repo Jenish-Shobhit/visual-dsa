@@ -1086,7 +1086,7 @@ def insert(tree, key):
     var rc = rbCheck(t);
     paths.forEach(function (p, i) {
       var vals = p.ids.map(function (id) { return num(t.nodes[id].value) + (t.nodes[id].color === 'black' ? '●' : '○'); });
-      mk(p, 'Path ' + (i + 1) + ' of ' + paths.length + ': ' + vals.join(' → ') + ' → NIL. It has <b>' + blacks(p.ids) + '</b> black node' + (blacks(p.ids) === 1 ? '' : 's') + ' (● black, ○ red)' + (rc.valid ? ', the same as every other path.' : '.'), 'path');
+      mk(p, 'Path ' + (i + 1) + ' of ' + paths.length + ': ' + vals.join(' → ') + ' → NIL (the ' + p.side + ' child slot of ' + num(t.nodes[p.end].value) + '). It has <b>' + blacks(p.ids) + '</b> black node' + (blacks(p.ids) === 1 ? '' : 's') + ' (● black, ○ red)' + (rc.valid ? ', the same as every other path.' : '.'), 'path');
     });
     var short = paths.reduce(function (a, b) { return b.ids.length < a.ids.length ? b : a; });
     var long = paths.reduce(function (a, b) { return b.ids.length > a.ids.length ? b : a; });
@@ -1118,9 +1118,11 @@ def insert(tree, key):
       var hb = height(b), ha = height(a), hc = height(c);
       var idA = findId(a, k), idC = findId(c, k);
       var notes = [];
-      if (ra.rotations) notes.push('AVL rotated ' + plural(ra.rotations, 'time'));
-      if (rc.rotations) notes.push('red-black rotated ' + plural(rc.rotations, 'time'));
-      else if (rc.recolours > 1) notes.push('red-black only recoloured');
+      var rbRepair = rc.rotations ? 'rotated ' + plural(rc.rotations, 'time') : rc.recolours && i > 0 ? 'only recoloured' : '';
+      if (ra.rotations || rbRepair) {
+        notes.push(ra.rotations ? 'AVL rotated ' + plural(ra.rotations, 'time') : 'AVL needed no rotation');
+        notes.push(rbRepair ? 'red-black ' + rbRepair : 'red-black needed no repair');
+      }
       steps.push({
         kind: 'insert', key: k,
         caption: 'Insert <b>' + num(k) + '</b>. The plain tree hangs it at the far end (height <b>' + hb + '</b>). ' +
@@ -1193,9 +1195,9 @@ def insert(tree, key):
       var ka = Math.min(s, pa.length), kb = Math.min(s, pb.length);
       var doneA = s >= pa.length, doneB = s >= pb.length;
       var msg = [];
-      if (s <= pa.length) msg.push('Plain tree: at <b>' + a.nodes[pa[s - 1]].value + '</b>' + (s === pa.length ? ': found, after ' + s + ' comparisons.' : ': not it, go right.'));
-      if (s <= pb.length) msg.push('AVL tree: at <b>' + b.nodes[pb[s - 1]].value + '</b>' + (s === pb.length ? ': found, after ' + s + ' comparisons.' : ': not it, go right.'));
-      else msg.push('AVL tree: already done, after ' + pb.length + ' comparisons.');
+      if (s <= pa.length) msg.push('Plain tree: at <b>' + a.nodes[pa[s - 1]].value + '</b>' + (s === pa.length ? ': found, after ' + plural(s, 'comparison') + '.' : ': not it, go right.'));
+      if (s <= pb.length) msg.push('AVL tree: at <b>' + b.nodes[pb[s - 1]].value + '</b>' + (s === pb.length ? ': found, after ' + plural(s, 'comparison') + '.' : ': not it, go right.'));
+      else msg.push('AVL tree: already done, after ' + plural(pb.length, 'comparison') + '.');
       steps.push({ kind: 'search', a: side(a, pa, ka, doneA), b: side(b, pb, kb, doneB), counters: { plain: ka, balanced: kb }, heights: { a: height(a), b: height(b) }, caption: msg.join(' ') });
     }
     return { steps: steps, plain: pa.length, balanced: pb.length, trees: { a: a, b: b } };

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>DSA · Lesson 18 — Algorithms on Text I: Linear-Time Exact Matching</title>
+<title>Linear-Time Exact Matching: KMP, Z &amp; Rabin&ndash;Karp</title>
 <meta name="description" content="A visual study of linear-time exact string matching: the Knuth–Morris–Pratt prefix function, the Z-algorithm, and Rabin–Karp rolling-hash fingerprinting — with KMP's O(n) bound proved as a potential (amortized) argument on the failure-link pointer.">
 <link rel="stylesheet" href="../css/tokens.css">
 <link rel="stylesheet" href="../css/vdsa.css">
@@ -137,7 +137,7 @@ h1 .em{color:var(--bau-red)}
 .stat{background:var(--surface);padding:18px 20px}
 .stat.lead{background:var(--bau-yellow)}
 .stat .k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--on-surface-variant)}
-.stat.lead .k{color:oklch(34% 0.06 92)}
+.stat.lead .k{color:var(--ink)}
 .stat .v{font-family:var(--geo);font-weight:800;font-size:clamp(26px,4vw,40px);line-height:1.05;color:var(--bau-ink);margin-top:4px}
 .stat .v small{font-size:.5em;font-weight:700;color:var(--on-surface-variant)}
 
@@ -148,7 +148,7 @@ h1 .em{color:var(--bau-red)}
 .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--bau-red-ink);display:flex;align-items:center;gap:10px;margin:0}
 .kicker .n{display:inline-grid;place-items:center;width:26px;height:26px;background:var(--bau-ink);
-  color:#fff;border-radius:var(--r-xs);font-weight:700;font-size:12px}
+  color:var(--on-state);border-radius:var(--r-xs);font-weight:700;font-size:12px}
 .content h3{font-family:var(--geo);font-weight:700;font-size:21px;margin:34px 0 4px;color:var(--bau-ink)}
 .content h4{font-family:var(--geo);font-weight:700;font-size:16px;margin:24px 0 2px;color:var(--bau-blue-ink);
   text-transform:uppercase;letter-spacing:.04em}
@@ -192,7 +192,7 @@ li{margin:6px 0}
 .recipe>li{counter-increment:step;position:relative;padding:14px 16px 14px 56px;margin:2px 0;
   background:var(--surface-1);border:1.5px solid var(--outline-variant);border-radius:var(--r-sm)}
 .recipe>li::before{content:counter(step,decimal-leading-zero);position:absolute;left:14px;top:13px;
-  font-family:var(--mono);font-weight:700;font-size:14px;color:#fff;background:var(--bau-ink);
+  font-family:var(--mono);font-weight:700;font-size:14px;color:var(--on-state);background:var(--bau-ink);
   width:28px;height:24px;display:grid;place-items:center;border-radius:var(--r-xs)}
 .recipe b{color:var(--bau-blue-ink)}
 
@@ -258,7 +258,7 @@ details[open]{border-color:var(--bau-blue)}
 summary{cursor:pointer;padding:12px 16px;font-family:var(--geo);font-weight:700;font-size:15px;color:var(--bau-blue-ink);
   list-style:none;display:flex;align-items:center;gap:10px}
 summary::-webkit-details-marker{display:none}
-summary::before{content:"+";font-family:var(--mono);font-weight:700;color:#fff;background:var(--bau-blue);
+summary::before{content:"+";font-family:var(--mono);font-weight:700;color:var(--on-state);background:var(--bau-blue);
   width:20px;height:20px;display:grid;place-items:center;border-radius:var(--r-xs);font-size:14px}
 details[open] summary::before{content:"\2212"}
 details .inner{padding:0 16px 16px}
@@ -296,7 +296,7 @@ details .inner{padding:0 16px 16px}
 hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:var(--maxw)}
 .note{font-size:14px;color:var(--on-surface-variant)}
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 18">
@@ -371,22 +371,22 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <div class="cardgrid">
         <div class="cell">
           <div class="lab"><span class="dot"></span>Arrays &amp; strings</div>
-          <p>Indexing, prefixes, suffixes, and substrings as half-open ranges. (<a href="dsa-01-linear-layouts-and-access-disciplines.html">Lesson 01</a>.)</p>
+          <p>Indexing, prefixes, suffixes, and substrings as half-open ranges. (<a href="dsa-01-linear-layouts-and-access-disciplines.html">Lecture 01</a>.)</p>
         </div>
         <div class="cell">
           <div class="lab"><span class="dot"></span>Hashing</div>
-          <p>Mapping data to a small fingerprint; collisions and load. Powers Rabin–Karp. (<a href="dsa-08-hashing-and-expected-constant-access.html">Lesson 08</a>.)</p>
+          <p>Mapping data to a small fingerprint; collisions and load. Powers Rabin–Karp. (<a href="dsa-08-hashing-and-expected-constant-access.html">Lecture 08</a>.)</p>
         </div>
         <div class="cell">
           <div class="lab"><span class="dot"></span>Amortized analysis</div>
-          <p>The potential method: <code>amortized = actual + ΔΦ</code>. This is the engine of the KMP proof. (<a href="dsa-02-amortized-cost-aggregate-accounting-potential.html">Lesson 02</a>.)</p>
+          <p>The potential method: <code>amortized = actual + ΔΦ</code>. This is the engine of the KMP proof. (<a href="dsa-02-amortized-cost-aggregate-accounting-potential.html">Lecture 02</a>.)</p>
         </div>
         <div class="cell">
           <div class="lab"><span class="dot"></span>Modular arithmetic</div>
           <p>Addition and multiplication mod a prime <code>q</code>, and why a prime modulus behaves well.</p>
         </div>
       </div>
-      <p class="note">The deepest tie is to Lesson 02. KMP's linearity is <em>not</em> obvious line-by-line — a single text character can trigger many failure-link jumps. The potential method is exactly the tool that makes “rare expensive steps, paid for in advance” into a clean <code>O(n)</code>.</p>
+      <p class="note">The deepest tie is to Lecture 02. KMP's linearity is <em>not</em> obvious line-by-line — a single text character can trigger many failure-link jumps. The potential method is exactly the tool that makes “rare expensive steps, paid for in advance” into a clean <code>O(n)</code>.</p>
     </section>
 
     <hr class="rule">
@@ -408,7 +408,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p>So the design question is forced, and it is the right question: <em>what is the minimal precomputed object that lets the matcher never re-read a text character?</em> The answer is a table of the pattern's own <strong>self-similarity</strong>. When we have matched a prefix of <code>P</code> against the text and then mismatch, the characters we just consumed are <em>known</em> — they equal that prefix of <code>P</code>. If some suffix of what we matched is also a prefix of <code>P</code>, we may slide the pattern so that this shorter prefix lines up, and continue <em>without moving the text pointer back at all</em>. The amount we can keep is the length of the longest <em class="term">border</em> — a string that is simultaneously a proper prefix and a proper suffix — of the part we matched.</p>
 
       <figure>
-        <svg viewBox="0 0 900 380" role="img" aria-labelledby="fig1t fig1d">
+        <svg viewBox="0 0 900 380" style="--mw:774px" role="img" aria-labelledby="fig1t fig1d">
           <title id="fig1t">Figure 1 — a mismatch, and the smart shift that reuses the matched border</title>
           <desc id="fig1d">The text shows the characters a b a b a then a mismatching b. The pattern a b a b a c a is aligned at shift zero and fails where its c meets the text's b. A faint dashed copy shows the naive shift of one, which re-reads four characters. Below it the KMP shift of two re-aligns the border a b a under the text's already-matched a b a, and resumes the comparison at the text's mismatch position without moving the text pointer back.</desc>
 
@@ -425,7 +425,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
             <g><rect x="336" y="58" width="54" height="42" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="363" y="86" class="dg-fill-ink">b</text></g>
             <g><rect x="398" y="58" width="54" height="42" class="dg-yel-f" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="425" y="86" class="dg-fill-ink">a</text></g>
             <!-- mismatch char col5 (red) -->
-            <g><rect x="460" y="58" width="54" height="42" class="dg-red-f" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="487" y="86" fill="#fff">b</text></g>
+            <g><rect x="460" y="58" width="54" height="42" class="dg-red-f" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="487" y="86" fill="var(--on-state)">b</text></g>
             <!-- unread cols 6,7 (faint) -->
             <g><rect x="522" y="58" width="54" height="42" class="dg-white" stroke="var(--outline-variant)" stroke-width="1.4"/><text x="549" y="86" class="dg-lab-sm">?</text></g>
             <g><rect x="584" y="58" width="54" height="42" class="dg-white" stroke="var(--outline-variant)" stroke-width="1.4"/><text x="611" y="86" class="dg-lab-sm">?</text></g>
@@ -461,9 +461,9 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           <text x="24" y="312" class="dg-lab-sm" fill="var(--bau-blue-ink)">KMP +2</text>
           <g font-family="var(--mono)" font-size="16" font-weight="700" text-anchor="middle">
             <!-- border aba reused under text cols 2,3,4 -->
-            <g><rect x="274" y="288" width="54" height="40" fill="color-mix(in oklch,var(--bau-blue) 18%,#fff)" stroke="var(--bau-blue)" stroke-width="2"/><text x="301" y="315" class="dg-blue-ink" fill="var(--bau-blue-ink)">a</text></g>
-            <g><rect x="336" y="288" width="54" height="40" fill="color-mix(in oklch,var(--bau-blue) 18%,#fff)" stroke="var(--bau-blue)" stroke-width="2"/><text x="363" y="315" fill="var(--bau-blue-ink)">b</text></g>
-            <g><rect x="398" y="288" width="54" height="40" fill="color-mix(in oklch,var(--bau-blue) 18%,#fff)" stroke="var(--bau-blue)" stroke-width="2"/><text x="425" y="315" fill="var(--bau-blue-ink)">a</text></g>
+            <g><rect x="274" y="288" width="54" height="40" fill="color-mix(in oklch,var(--bau-blue) 18%,var(--bg-elev))" stroke="var(--bau-blue)" stroke-width="2"/><text x="301" y="315" class="dg-blue-ink" fill="var(--bau-blue-ink)">a</text></g>
+            <g><rect x="336" y="288" width="54" height="40" fill="color-mix(in oklch,var(--bau-blue) 18%,var(--bg-elev))" stroke="var(--bau-blue)" stroke-width="2"/><text x="363" y="315" fill="var(--bau-blue-ink)">b</text></g>
+            <g><rect x="398" y="288" width="54" height="40" fill="color-mix(in oklch,var(--bau-blue) 18%,var(--bg-elev))" stroke="var(--bau-blue)" stroke-width="2"/><text x="425" y="315" fill="var(--bau-blue-ink)">a</text></g>
             <!-- resume cell P[3] under text col5 -->
             <g><rect x="460" y="288" width="54" height="40" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="487" y="315" class="dg-fill-ink">b</text></g>
             <g><rect x="522" y="288" width="54" height="40" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.2"/><text x="549" y="315" class="dg-fill-ink">a</text></g>
@@ -507,7 +507,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p>The empty border (<code>k=0</code>) always qualifies, so <code>π</code> is well-defined and <code>π[0]=0</code> always. The decisive structural fact — the one that makes the computation linear — is that <strong>the borders of a string form a chain</strong>: the next-longest border of <code>P[0…i]</code> is the longest border of its own longest border. That is why, when the character at the current border length disagrees, we fall back to <code>π[k−1]</code> rather than starting over: we are walking down the border chain, trying ever-shorter candidates.</p>
 
       <figure>
-        <svg viewBox="0 0 900 320" role="img" aria-labelledby="fig2t fig2d">
+        <svg viewBox="0 0 900 320" style="--mw:774px" role="img" aria-labelledby="fig2t fig2d">
           <title id="fig2t">Figure 2 — the prefix function of the pattern ababaca, and the border that defines pi at index 4</title>
           <desc id="fig2d">The seven characters a b a b a c a are shown in a row with their index above and the prefix-function value below: 0, 0, 1, 2, 3, 0, 1. Above the prefix ending at index 4, two brackets mark the prefix a b a over positions 0 to 2 and the suffix a b a over positions 2 to 4, which are equal, so pi of 4 equals 3.</desc>
 
@@ -540,13 +540,13 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           </g>
           <!-- pi value boxes -->
           <g font-family="var(--mono)" font-size="16" font-weight="700" text-anchor="middle">
-            <g><rect x="134" y="178" width="80" height="34" class="dg-fill-ink"/><text x="174" y="201" fill="#fff">0</text></g>
-            <g><rect x="226" y="178" width="80" height="34" class="dg-fill-ink"/><text x="266" y="201" fill="#fff">0</text></g>
-            <g><rect x="318" y="178" width="80" height="34" class="dg-fill-ink"/><text x="358" y="201" fill="#fff">1</text></g>
-            <g><rect x="410" y="178" width="80" height="34" class="dg-fill-ink"/><text x="450" y="201" fill="#fff">2</text></g>
-            <g><rect x="502" y="178" width="80" height="34" class="dg-red-f"/><text x="542" y="201" fill="#fff">3</text></g>
-            <g><rect x="594" y="178" width="80" height="34" class="dg-fill-ink"/><text x="634" y="201" fill="#fff">0</text></g>
-            <g><rect x="686" y="178" width="80" height="34" class="dg-fill-ink"/><text x="726" y="201" fill="#fff">1</text></g>
+            <g><rect x="134" y="178" width="80" height="34" class="dg-fill-ink"/><text x="174" y="201" fill="var(--on-state)">0</text></g>
+            <g><rect x="226" y="178" width="80" height="34" class="dg-fill-ink"/><text x="266" y="201" fill="var(--on-state)">0</text></g>
+            <g><rect x="318" y="178" width="80" height="34" class="dg-fill-ink"/><text x="358" y="201" fill="var(--on-state)">1</text></g>
+            <g><rect x="410" y="178" width="80" height="34" class="dg-fill-ink"/><text x="450" y="201" fill="var(--on-state)">2</text></g>
+            <g><rect x="502" y="178" width="80" height="34" class="dg-red-f"/><text x="542" y="201" fill="var(--on-state)">3</text></g>
+            <g><rect x="594" y="178" width="80" height="34" class="dg-fill-ink"/><text x="634" y="201" fill="var(--on-state)">0</text></g>
+            <g><rect x="686" y="178" width="80" height="34" class="dg-fill-ink"/><text x="726" y="201" fill="var(--on-state)">1</text></g>
           </g>
           <text x="134" y="232" class="dg-lab-sm">π[i] (longest border length)</text>
 
@@ -606,7 +606,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
     <section id="kmp" class="reveal">
       <p class="kicker"><span class="n">05</span> The match, and why it is linear</p>
       <h2>KMP, and the potential argument on the pointer</h2>
-      <p class="lede">With <code>π</code> in hand, matching is the same loop applied to the text — and the famous part is the proof. KMP is <em>not</em> obviously linear: one text character can trigger a whole cascade of failure-link jumps. The fix is the potential method from Lesson 02.</p>
+      <p class="lede">With <code>π</code> in hand, matching is the same loop applied to the text — and the famous part is the proof. KMP is <em>not</em> obviously linear: one text character can trigger a whole cascade of failure-link jumps. The fix is the potential method from Lecture 02.</p>
 
       <p>The matcher scans <code>T</code> with the identical mechanics: keep <code>k</code> = how many pattern characters currently match the text ending here; on agreement advance, on disagreement fall back along <code>π</code>; when <code>k</code> reaches <code>m</code> we have a full occurrence, and we fall back to <code>π[m−1]</code> to keep hunting (this is what lets overlapping matches be found).</p>
 
@@ -624,7 +624,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
     <span class="kw">return</span> hits</code></pre>
 
       <details>
-        <summary>Trace <code>kmp_search("ababacababacab", "ababaca")</code> — note the reuse between the two hits</summary>
+        <summary>Trace <code class="wrap">kmp_search("ababacababacab", "ababaca")</code> — note the reuse between the two hits</summary>
         <div class="inner">
           <div class="tablewrap">
             <table>
@@ -671,10 +671,10 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
         <li><strong>Every failure-link jump strictly lowers Φ.</strong> Each inner-loop iteration sets <code>k = π[k−1] &lt; k</code>, so it drops <code>Φ</code> by at least 1.</li>
         <li><strong>Φ never goes negative</strong> (<code>k ≥ 0</code>), and starts at 0.</li>
       </ul>
-      <p>Therefore the total number of failure-link jumps across the <em>entire</em> search is bounded by the total rise plus the starting balance: <code>(jumps) ≤ (rises) + Φ_start − Φ_end ≤ n</code>. The outer loop runs <code>n</code> times; the inner loop runs <code>≤ n</code> times <em>in total</em>. The whole match is <code>O(n)</code>, and the same argument on the pattern gives <code>O(m)</code> to build <code>π</code> — so KMP is <code>O(n+m)</code>. Each matched character banks one unit of credit; each fall-back spends credit it cannot overdraw.</p>
+      <p>Therefore the total number of failure-link jumps across the <em>entire</em> search is bounded by the total rise plus the starting balance: <code class="wrap">(jumps) ≤ (rises) + Φ_start − Φ_end ≤ n</code>. The outer loop runs <code>n</code> times; the inner loop runs <code>≤ n</code> times <em>in total</em>. The whole match is <code>O(n)</code>, and the same argument on the pattern gives <code>O(m)</code> to build <code>π</code> — so KMP is <code>O(n+m)</code>. Each matched character banks one unit of credit; each fall-back spends credit it cannot overdraw.</p>
 
       <figure>
-        <svg viewBox="0 0 900 360" role="img" aria-labelledby="fig3t fig3d">
+        <svg viewBox="0 0 900 360" style="--mw:774px" role="img" aria-labelledby="fig3t fig3d">
           <title id="fig3t">Figure 3 — the potential Phi equals k, plotted while building pi for ababaca</title>
           <desc id="fig3d">A plot with the step index i on the horizontal axis and the pointer value k on the vertical axis. The value rises by one at i equals 2, 3 and 4, banking credit, reaching three. At i equals 5 two red downward arrows drop it from three to one to zero, spending the banked credit. At i equals 6 it rises again to one. A caption states that total falls are at most total rises, which is at most m.</desc>
 
@@ -744,7 +744,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       <p>When we reach a new index <code>i</code> that lies <em>inside</em> the current box (<code>i &lt; r</code>), its answer is partly known for free: the box says <code>S[i …]</code> mirrors <code>S[i−l …]</code> near the front, so <code>Z[i]</code> starts at <code>min(r−i, Z[i−l])</code> — copy the mirror value, but never trust it past the box edge <code>r</code>. Only the part <em>beyond</em> <code>r</code> needs real character comparisons, and every such comparison pushes <code>r</code> forward — which (another potential argument) can happen only <code>n</code> times total.</p>
 
       <figure>
-        <svg viewBox="0 0 900 300" role="img" aria-labelledby="fig4t fig4d">
+        <svg viewBox="0 0 900 300" style="--mw:774px" role="img" aria-labelledby="fig4t fig4d">
           <title id="fig4t">Figure 4 — the Z-box reuse on the string aabaabaab</title>
           <desc id="fig4d">The nine characters a a b a a b a a b with indices zero through eight. A blue box spans indices three through eight, marked as a copy of the prefix because Z of three equals six. Position i equals four sits inside the box; an arrow maps it to its mirror at index one near the front, whose Z value of one is copied to position four for free without any character comparison.</desc>
 
@@ -758,10 +758,10 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           <!-- cells -->
           <g font-family="var(--mono)" font-size="19" font-weight="700" text-anchor="middle">
             <g><rect x="120" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="153" y="112" class="dg-fill-ink">a</text></g>
-            <g><rect x="198" y="82" width="66" height="46" fill="color-mix(in oklch,var(--bau-yellow) 40%,#fff)" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="231" y="112" class="dg-fill-ink">a</text></g>
+            <g><rect x="198" y="82" width="66" height="46" fill="color-mix(in oklch,var(--bau-yellow) 40%,var(--bg-elev))" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="231" y="112" class="dg-fill-ink">a</text></g>
             <g><rect x="276" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-ink)" stroke-width="1.4"/><text x="309" y="112" class="dg-fill-ink">b</text></g>
             <g><rect x="354" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-blue)" stroke-width="2"/><text x="387" y="112" class="dg-fill-ink">a</text></g>
-            <g><rect x="432" y="82" width="66" height="46" fill="color-mix(in oklch,var(--bau-yellow) 40%,#fff)" stroke="var(--bau-blue)" stroke-width="2"/><text x="465" y="112" class="dg-fill-ink">a</text></g>
+            <g><rect x="432" y="82" width="66" height="46" fill="color-mix(in oklch,var(--bau-yellow) 40%,var(--bg-elev))" stroke="var(--bau-blue)" stroke-width="2"/><text x="465" y="112" class="dg-fill-ink">a</text></g>
             <g><rect x="510" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-blue)" stroke-width="2"/><text x="543" y="112" class="dg-fill-ink">b</text></g>
             <g><rect x="588" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-blue)" stroke-width="2"/><text x="621" y="112" class="dg-fill-ink">a</text></g>
             <g><rect x="666" y="82" width="66" height="46" class="dg-white" stroke="var(--bau-blue)" stroke-width="2"/><text x="699" y="112" class="dg-fill-ink">a</text></g>
@@ -778,9 +778,10 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
           <text x="348" y="246" text-anchor="middle" class="dg-lab" fill="var(--bau-red-ink)">i=4 inside box → mirror j = i−l = 1</text>
 
           <!-- value callouts -->
-          <text x="231" y="200" text-anchor="middle" class="dg-lab-sm" fill="var(--bau-red-ink)">Z[1]=1</text>
-          <text x="465" y="200" text-anchor="middle" class="dg-lab-sm" fill="var(--bau-blue-ink)">Z[4]=min(r−i, Z[1])=1</text>
-          <text x="470" y="276" class="dg-lab-sm">Copied for free — no character comparison. Only matches that would push past r=9 cost real work.</text>
+          <text x="231" y="200" text-anchor="middle" class="dg-lab-sm" fill="var(--on-state)">Z[1]=1</text>
+          <text x="482" y="196" class="dg-lab-sm" fill="var(--bau-blue-ink)">Z[4]=min(r−i, Z[1])=1</text>
+          <text x="120" y="276" class="dg-lab-sm">Copied for free — no character comparison.</text>
+          <text x="120" y="294" class="dg-lab-sm">Only matches that would push past r=9 cost real work.</text>
         </svg>
         <figcaption><span class="fig-num">FIG 4</span> · The box <code>[3, 9)</code> certifies that <b>aabaab</b> (from index 3) equals the prefix. For <code>i=4</code> inside it, the mirror at <code>j = i−l = 1</code> already holds <code>Z[1]=1</code>, so <code>Z[4] = min(r−i, Z[1]) = 1</code> is read off with <b>zero</b> comparisons. Work happens only when a match would extend past <code>r</code>, and each such step advances <code>r</code> — so total work is <code>O(n)</code>, the Z-algorithm's twin of the KMP potential.</figcaption>
       </figure>
@@ -859,7 +860,7 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
       </div>
 
       <figure>
-        <svg viewBox="0 0 900 320" role="img" aria-labelledby="fig5t fig5d">
+        <svg viewBox="0 0 900 340" style="--mw:774px" role="img" aria-labelledby="fig5t fig5d">
           <title id="fig5t">Figure 5 — Rabin-Karp rolling hash over the digits 313156 with base 10 mod 13</title>
           <desc id="fig5d">The six digits 3 1 3 1 5 6 are shown. The first window covering 3 1 has fingerprint 31 mod 13 equals 5. Sliding to the window 1 3 uses the rolling formula: subtract the high digit 3 times ten, multiply by ten, add the low digit 3, giving 13 mod 13 equals 0. The pattern 31 has fingerprint 5, matching windows zero and two, with a note that hash matches must be verified because 44 would also hash to 5.</desc>
 
@@ -893,8 +894,9 @@ hr.rule{border:none;border-top:2px solid var(--bau-ink);margin:40px 0;max-width:
 
           <!-- pattern fingerprint + verify note -->
           <g transform="translate(150,272)">
-            <rect x="0" y="0" width="600" height="36" rx="4" fill="color-mix(in oklch,var(--bau-yellow) 26%,#fff)" stroke="var(--bau-ink)" stroke-width="1.4"/>
-            <text x="16" y="24" class="dg-lab" fill="var(--bau-ink)">P="31" → hp=5. Hash hits windows 0 &amp; 2 — but VERIFY: "44" also ≡ 5 (mod 13). A hash match is a candidate, not a proof.</text>
+            <rect x="0" y="0" width="600" height="56" rx="4" fill="color-mix(in oklch,var(--bau-yellow) 26%,var(--bg-elev))" stroke="var(--bau-ink)" stroke-width="1.4"/>
+            <text x="16" y="23" class="dg-lab" fill="var(--bau-ink)">P="31" → hp=5. Hash hits windows 0 &amp; 2 — but VERIFY: "44" also ≡ 5 (mod 13).</text>
+            <text x="16" y="44" class="dg-lab" fill="var(--bau-ink)">A hash match is a candidate, not a proof.</text>
           </g>
         </svg>
         <figcaption><span class="fig-num">FIG 5</span> · Sliding from <b>31</b> to <b>13</b> is one subtraction, one multiply, one add, all mod 13 — independent of <code>m</code>. The pattern <b>31</b> fingerprints to 5 and flags windows 0 and 2. Because the modulus folds many strings onto each residue (here <b>44</b> also lands on 5), an equal fingerprint is only a <b>candidate</b>: confirm with a direct character check to stay exact.</figcaption>
@@ -1040,7 +1042,7 @@ Constraints: 2 ≤ len(s) ≤ 3·10<sup>4</sup> ; lowercase English letters</p>
       <div class="recap">
         <p style="margin:0;font-size:21px;line-height:1.5"><strong>Linear-time matching is precomputed self-similarity.</strong> A pattern's borders (the prefix function <code>π</code>) — or, mirrored, its Z-array — tell the matcher exactly how far it may slide on a mismatch without ever re-reading the text, and the failure-link pointer's own value is the potential that proves the whole thing runs in <code>O(n+m)</code>. Rabin–Karp makes the orthogonal bet: a string is a number, the window rolls in <code>O(1)</code>, and a quick verification keeps the answer exact.</p>
       </div>
-      <p>Notice the shape of the trick, because it recurs: when a brute-force method <em>forgets</em>, the cure is a small precomputed table of structure, and the cost of consulting it is paid by an amortized argument. That is the same melody as the doubling array and union-find from Lesson 02 — the failure-link pointer is just one more potential function.</p>
+      <p>Notice the shape of the trick, because it recurs: when a brute-force method <em>forgets</em>, the cure is a small precomputed table of structure, and the cost of consulting it is paid by an amortized argument. That is the same melody as the doubling array (Lecture 02) and union-find (Lecture 12) — the failure-link pointer is just one more potential function.</p>
 
       <a class="nextcard" href="#" onclick="return false;" aria-label="Next lecture, number 19, on tries and suffix structures">
         <div>
@@ -1075,6 +1077,6 @@ document.documentElement.classList.add('js');
   els.forEach(function(e){ io.observe(e); });
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html">← Previous study</a><a href="dsa-19-tries-and-suffix-structures.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html" rel="prev"><span>&larr; Lecture 17</span><strong>Max-flow and min-cut</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-19-tries-and-suffix-structures.html" rel="next"><span>Lecture 19 &rarr;</span><strong>Tries and suffix structures</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/36-string-matching.html">Lesson 36 &middot; String matching</a></p></nav>
 </body>
 </html>

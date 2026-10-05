@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>DSA · Lesson 19 — Algorithms on Text II: Tries and Suffix Structures</title>
+<title>Tries &amp; Suffix Structures</title>
 <meta name="description" content="Tries for prefix sets, then suffix trees and suffix arrays with LCP — turning a string into a searchable index.">
 <script>document.documentElement.className = document.documentElement.className.replace('no-js','js');</script>
 <link rel="stylesheet" href="../css/tokens.css">
@@ -156,7 +156,7 @@ section:first-of-type{border-top:none}
 .obj{display:grid; grid-template-columns:repeat(auto-fit,minmax(248px,1fr)); gap:14px; margin:18px 0}
 .obj li{list-style:none; background:var(--surface-1); border:1.5px solid var(--outline-variant);
   border-radius:var(--r-sm); padding:14px 16px; display:flex; gap:12px; align-items:flex-start}
-.obj .b{flex:0 0 auto; width:22px;height:22px; border-radius:3px; background:var(--bau-blue); color:#fff;
+.obj .b{flex:0 0 auto; width:22px;height:22px; border-radius:3px; background:var(--bau-blue); color:var(--on-state);
   font-family:var(--mono); font-size:12px; display:grid; place-items:center; font-weight:700; margin-top:2px}
 .obj.prq .b{background:var(--bau-red)}
 .obj p{margin:0; font-size:16px}
@@ -244,7 +244,7 @@ details .bd{padding:2px 16px 14px}
 .prob{counter-increment:p; background:var(--surface-1); border:1.5px solid var(--ink);
   border-radius:var(--r-md); padding:22px 24px; margin:18px 0; position:relative}
 .prob::before{content:counter(p,decimal-leading-zero); position:absolute; top:-14px; left:18px;
-  font-family:var(--display); font-weight:800; font-size:22px; color:#fff; background:var(--bau-red);
+  font-family:var(--display); font-weight:800; font-size:22px; color:var(--on-state); background:var(--bau-red);
   width:38px;height:38px; display:grid; place-items:center; border-radius:50%}
 .prob h3{margin:6px 0 .2em; padding-left:30px}
 .prob .meta{font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.08em;
@@ -255,11 +255,11 @@ details .bd{padding:2px 16px 14px}
 .ex{font-size:15px; border-left:3px solid var(--bau-blue); padding:2px 0 2px 14px; margin:10px 0; color:var(--on-surface-variant)}
 .ex b{color:var(--ink)}
 
-.gate{background:var(--ink); color:oklch(95% 0.01 90); border-radius:var(--r-md); padding:18px 22px; margin:24px 0;
+.gate{background:var(--ink); color:var(--on-state); border-radius:var(--r-md); padding:18px 22px; margin:24px 0;
   font-size:15.5px; line-height:1.55}
 .gate code{background:oklch(30% 0.03 256); color:var(--bau-yellow); padding:2px 7px; border-radius:4px;
   font-family:var(--mono); font-size:.92em; border:none}
-.gate b{color:#fff}
+.gate b{color:var(--on-state)}
 
 /* next card */
 .next{display:flex; gap:18px; align-items:center; justify-content:space-between; flex-wrap:wrap;
@@ -285,7 +285,7 @@ details .bd{padding:2px 16px 14px}
 ::selection{background:var(--bau-yellow); color:var(--ink)}
 .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 19">
@@ -323,7 +323,7 @@ details .bd{padding:2px 16px 14px}
       <p class="lead measure">Last lecture we searched a text <em>once</em>. KMP scans an <code>n</code>-character string for a pattern in <code>O(n+m)</code> and throws the work away. But real systems ask the <em>same text</em> a thousand questions: every read aligned against a genome, every query typed into a search box, every grep over a fixed corpus. Re-scanning is a confession that we never <em>understood</em> the text — we only walked it.</p>
       <div class="band accent measure reveal">
         <h4 style="margin-top:0">The number that forces the idea</h4>
-        <p style="margin-bottom:0">The human reference genome is ≈ <strong>3.1 × 10<sup>9</sup></strong> characters. Align one 30-base read by re-scanning and you pay 3 billion comparisons. A sequencing run produces <strong>hundreds of millions</strong> of reads. Re-scanning is ≈ 10<sup>18</sup> operations — <em>years</em> of compute. Build an index over the genome <em>once</em>, and each read costs ≈ 30 steps. Same data, same question, eighteen orders of magnitude apart. The difference is entirely the data structure.</p>
+        <p style="margin-bottom:0">The human reference genome is ≈ <strong>3.1 × 10<sup>9</sup></strong> characters. Align one 30-base read by re-scanning and you pay 3 billion comparisons. A sequencing run produces <strong>hundreds of millions</strong> of reads. Re-scanning is ≈ 10<sup>18</sup> operations — <em>years</em> of compute. Build an index over the genome <em>once</em>, and each read costs ≈ 30 steps. Same data, same question: about eight orders of magnitude apart per read (3&times;10<sup>9</sup> steps against 30), and nine across the whole run. The difference is entirely the data structure.</p>
       </div>
       <p class="measure">This lecture is about <strong>preprocessing the text instead of the pattern</strong> — turning a string into a structure that answers <em>any</em> substring query fast. We build three indices, each a refinement of the last: the <strong>trie</strong> (an index over a set of strings), the <strong>suffix tree</strong> (a trie over <em>all suffixes</em>, compressed), and the <strong>suffix array</strong> (the same information, sorted into a flat array) together with its <strong>LCP</strong> companion.</p>
     </section>
@@ -348,10 +348,10 @@ details .bd{padding:2px 16px 14px}
       <h2>What I assume you carry in</h2>
       <p class="measure">Each of these is a structure we will <em>reuse</em>, not merely reference. If one feels shaky, follow the link first.</p>
       <ul class="obj prq reveal">
-        <li><span class="b">1</span><p><strong>Trees</strong> — rooted trees, children, paths, depth. <a href="dsa-07-balanced-search-trees.html">Lesson 07 ↗</a></p></li>
-        <li><span class="b">2</span><p><strong>Sorting</strong> — comparison sorts and radix/counting sort; the <code>n log n</code> barrier. <a href="dsa-06-sorting-and-the-comparison-barrier.html">Lesson 06 ↗</a></p></li>
-        <li><span class="b">3</span><p><strong>Hashing</strong> — maps for child pointers and for set membership. <a href="dsa-08-hashing-and-expected-constant-access.html">Lesson 08 ↗</a></p></li>
-        <li><span class="b">4</span><p><strong>Linear-time string matching</strong> — KMP / Z; what "scan once" buys and what it doesn't. <a href="dsa-18-linear-time-exact-matching.html">Lesson 18 ↗</a></p></li>
+        <li><span class="b">1</span><p><strong>Trees</strong> — rooted trees, children, paths, depth. <a href="dsa-07-balanced-search-trees.html">Lecture 07 ↗</a></p></li>
+        <li><span class="b">2</span><p><strong>Sorting</strong> — comparison sorts and radix/counting sort; the <code>n log n</code> barrier. <a href="dsa-06-sorting-and-the-comparison-barrier.html">Lecture 06 ↗</a></p></li>
+        <li><span class="b">3</span><p><strong>Hashing</strong> — maps for child pointers and for set membership. <a href="dsa-08-hashing-and-expected-constant-access.html">Lecture 08 ↗</a></p></li>
+        <li><span class="b">4</span><p><strong>Linear-time string matching</strong> — KMP / Z; what "scan once" buys and what it doesn't. <a href="dsa-18-linear-time-exact-matching.html">Lecture 18 ↗</a></p></li>
       </ul>
     </section>
 
@@ -385,7 +385,7 @@ details .bd{padding:2px 16px 14px}
       <p class="measure">Insert in order. Each insertion walks from the root, creating an edge only when the needed child is missing, and flags the final node terminal. Trace it: <code>cat</code> lays the path c→a→t; <code>car</code> reuses c→a, adds r; <code>card</code> reuses c→a→r, adds d; <code>care</code> reuses c→a→r, adds e; <code>dog</code> starts a fresh branch d→o→g. The node for <code>car</code> is terminal <em>and</em> has children — both facts coexist.</p>
 
       <figure class="reveal">
-        <svg viewBox="0 0 760 392" role="img" aria-labelledby="t1title t1desc">
+        <svg viewBox="0 0 760 392" style="--mw:516px" role="img" aria-labelledby="t1title t1desc">
           <title id="t1title">Trie of the words cat, car, card, care, dog</title>
           <desc id="t1desc">A rooted tree. The root marked empty branches on c and d. The c branch goes c, a, then splits into t (cat) and r (car); r further splits into d (card) and e (care). The d branch goes d, o, g (dog). Terminal nodes carry a red square marking set membership.</desc>
           <!-- edges -->
@@ -402,15 +402,15 @@ details .bd{padding:2px 16px 14px}
           </g>
           <!-- edge character labels (Bauhaus chips) -->
           <g class="t-mono" font-size="14" font-weight="700">
-            <g><rect x="300" y="74" width="20" height="20" class="fill-red"/><text x="310" y="89" fill="#fff" text-anchor="middle">c</text></g>
-            <g><rect x="480" y="74" width="20" height="20" class="fill-blue"/><text x="490" y="89" fill="#fff" text-anchor="middle">d</text></g>
-            <g><rect x="240" y="142" width="20" height="20" class="fill-blue"/><text x="250" y="157" fill="#fff" text-anchor="middle">a</text></g>
-            <g><rect x="590" y="142" width="20" height="20" class="fill-red"/><text x="600" y="157" fill="#fff" text-anchor="middle">o</text></g>
-            <g><rect x="186" y="218" width="20" height="20" class="fill-blue"/><text x="196" y="233" fill="#fff" text-anchor="middle">t</text></g>
-            <g><rect x="296" y="218" width="20" height="20" class="fill-red"/><text x="306" y="233" fill="#fff" text-anchor="middle">r</text></g>
-            <g><rect x="590" y="218" width="20" height="20" class="fill-blue"/><text x="600" y="233" fill="#fff" text-anchor="middle">g</text></g>
-            <g><rect x="282" y="294" width="20" height="20" class="fill-blue"/><text x="292" y="309" fill="#fff" text-anchor="middle">d</text></g>
-            <g><rect x="370" y="294" width="20" height="20" class="fill-red"/><text x="380" y="309" fill="#fff" text-anchor="middle">e</text></g>
+            <g><rect x="300" y="74" width="20" height="20" class="fill-red"/><text x="310" y="89" fill="var(--on-state)" text-anchor="middle">c</text></g>
+            <g><rect x="480" y="74" width="20" height="20" class="fill-blue"/><text x="490" y="89" fill="var(--on-state)" text-anchor="middle">d</text></g>
+            <g><rect x="240" y="142" width="20" height="20" class="fill-blue"/><text x="250" y="157" fill="var(--on-state)" text-anchor="middle">a</text></g>
+            <g><rect x="590" y="142" width="20" height="20" class="fill-red"/><text x="600" y="157" fill="var(--on-state)" text-anchor="middle">o</text></g>
+            <g><rect x="186" y="218" width="20" height="20" class="fill-blue"/><text x="196" y="233" fill="var(--on-state)" text-anchor="middle">t</text></g>
+            <g><rect x="296" y="218" width="20" height="20" class="fill-red"/><text x="306" y="233" fill="var(--on-state)" text-anchor="middle">r</text></g>
+            <g><rect x="590" y="218" width="20" height="20" class="fill-blue"/><text x="600" y="233" fill="var(--on-state)" text-anchor="middle">g</text></g>
+            <g><rect x="282" y="294" width="20" height="20" class="fill-blue"/><text x="292" y="309" fill="var(--on-state)" text-anchor="middle">d</text></g>
+            <g><rect x="370" y="294" width="20" height="20" class="fill-red"/><text x="380" y="309" fill="var(--on-state)" text-anchor="middle">e</text></g>
           </g>
           <!-- nodes -->
           <g>
@@ -435,7 +435,7 @@ details .bd{padding:2px 16px 14px}
             <text x="398" y="368" text-anchor="middle">care</text>
           </g>
           <!-- legend -->
-          <g transform="translate(620,330)">
+          <g transform="translate(560,330)">
             <circle cx="8" cy="8" r="9" class="fill-paper dg-accent"/><rect x="3" y="3" width="10" height="10" class="fill-red"/>
             <text x="24" y="12" class="t-mut t-mono" font-size="12">= terminal (in set)</text>
           </g>
@@ -495,7 +495,7 @@ details .bd{padding:2px 16px 14px}
 
       <p class="measure">One hygiene step first. Append a unique <strong>sentinel</strong> <code>$</code> — a symbol not in <code>Σ</code>, defined to be lexicographically <em>smaller</em> than every real character. Without it, a suffix can be a <em>prefix</em> of another (<code>na</code> sits inside <code>nana</code>) and would end in the middle of a path rather than at its own node. With <code>$</code>, no suffix is a prefix of another, so the suffixes stand in <strong>bijection with the leaves</strong> — exactly one leaf per starting position.</p>
 
-      <p class="measure">The suffix trie is correct but <em>fat</em>. The suffixes of an <code>n</code>-character string have total length <code>n + (n−1) + ⋯ + 1 = n(n+1)/2 = Θ(n²)</code>, so the trie has <code>Θ(n²)</code> nodes. For a 1 MB file that is 10<sup>12</sup> nodes — unusable. The fix is pure structural economy:</p>
+      <p class="measure">The suffix trie is correct but <em>fat</em>. The suffixes of an <code>n</code>-character string have total length <code class="wrap">n + (n−1) + ⋯ + 1 = n(n+1)/2 = Θ(n²)</code>, so the trie has <code>Θ(n²)</code> nodes. For a 1 MB file that is 10<sup>12</sup> nodes — unusable. The fix is pure structural economy:</p>
 
       <div class="band accent measure reveal">
         <h4 style="margin-top:0">Path compression — the suffix tree</h4>
@@ -506,7 +506,7 @@ details .bd{padding:2px 16px 14px}
       <p class="measure">The seven suffixes are <code>banana$</code>(0), <code>anana$</code>(1), <code>nana$</code>(2), <code>ana$</code>(3), <code>na$</code>(4), <code>a$</code>(5), <code>$</code>(6). Group by first character, then recurse on where they split. Suffixes starting <code>a</code> share just <code>a</code>, then split into those continuing <code>na…</code> and the bare <code>$</code>; the <code>na…</code> pair splits again at the next <code>na$</code> vs <code>$</code>. The result has 7 leaves (one per suffix) and 3 internal branch nodes — drawn below.</p>
 
       <figure class="reveal">
-        <svg viewBox="0 0 860 452" role="img" aria-labelledby="t2title t2desc">
+        <svg viewBox="0 0 860 452" style="--mw:681px" role="img" aria-labelledby="t2title t2desc">
           <title id="t2title">Suffix tree of the string banana with sentinel dollar sign</title>
           <desc id="t2desc">A rooted tree with four edges from the root labelled dollar, a, banana-dollar, and na. The a edge and the na edge lead to internal nodes that branch further. Leaves are squares carrying the suffix start index 0 through 6. The internal node reached by a then na, spelling ana, is highlighted as the deepest branch and equals the longest repeated substring ana.</desc>
           <!-- edges -->
@@ -530,10 +530,10 @@ details .bd{padding:2px 16px 14px}
           <!-- edge labels with paper backing for legibility -->
           <g class="t-mono" font-size="14.5" font-weight="700">
             <g><rect x="244" y="86" width="20" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="254" y="101" class="t-ink" text-anchor="middle">$</text></g>
-            <g><rect x="365" y="86" width="20" height="20" class="fill-red"/><text x="375" y="101" fill="#fff" text-anchor="middle">a</text></g>
+            <g><rect x="365" y="86" width="20" height="20" class="fill-red"/><text x="375" y="101" fill="var(--on-state)" text-anchor="middle">a</text></g>
             <g><rect x="470" y="86" width="78" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="509" y="101" class="t-ink" text-anchor="middle">banana$</text></g>
-            <g><rect x="592" y="86" width="26" height="20" class="fill-blue"/><text x="605" y="101" fill="#fff" text-anchor="middle">na</text></g>
-            <g><rect x="262" y="208" width="26" height="20" class="fill-blue"/><text x="275" y="223" fill="#fff" text-anchor="middle">na</text></g>
+            <g><rect x="592" y="86" width="26" height="20" class="fill-blue"/><text x="605" y="101" fill="var(--on-state)" text-anchor="middle">na</text></g>
+            <g><rect x="262" y="208" width="26" height="20" class="fill-blue"/><text x="275" y="223" fill="var(--on-state)" text-anchor="middle">na</text></g>
             <g><rect x="356" y="208" width="20" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="366" y="223" class="t-ink" text-anchor="middle">$</text></g>
             <g><rect x="196" y="332" width="36" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="214" y="347" class="t-ink" text-anchor="middle">na$</text></g>
             <g><rect x="294" y="332" width="20" height="20" class="fill-s1" stroke="var(--outline-variant)"/><text x="304" y="347" class="t-ink" text-anchor="middle">$</text></g>
@@ -550,7 +550,7 @@ details .bd{padding:2px 16px 14px}
           <text x="748" y="146" class="t-blue t-mono" font-size="12">"na"</text>
           <text x="206" y="280" class="t-red t-mono" font-size="12" font-weight="700">"ana" ← deepest</text>
           <!-- leaves: squares with suffix index -->
-          <g class="t-mono" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">
+          <g class="t-mono" font-size="13" font-weight="700" fill="var(--on-state)" text-anchor="middle">
             <g><rect x="106" y="138" width="28" height="28" class="fill-blue"/><text x="120" y="157">6</text></g>
             <g><rect x="378" y="270" width="28" height="28" class="fill-blue"/><text x="392" y="289">5</text></g>
             <g><rect x="576" y="138" width="28" height="28" class="fill-blue"/><text x="590" y="157">0</text></g>
@@ -608,7 +608,7 @@ details .bd{padding:2px 16px 14px}
       <p class="measure"><strong>Trace <code>P = "ana"</code></strong> against <code>SA = [5,3,1,0,4,2]</code>. Binary search compares <code>P</code> to the suffix at the midpoint. <code>a</code>(rank 0) <code>&lt; ana</code>; <code>ana</code>(rank 1) <em>matches</em> as a prefix; <code>anana</code>(rank 2) also has <code>ana</code> as a prefix; <code>banana</code>(rank 3) <code>&gt; ana</code>. So the block is ranks <code>[1, 3)</code> → <code>lo=1, hi=3</code>, count <code>= 2</code>, at text positions <code>SA[1]=3</code> and <code>SA[2]=1</code>. Figure 3 shows the block.</p>
 
       <figure class="reveal">
-        <svg viewBox="0 0 760 372" role="img" aria-labelledby="t3title t3desc">
+        <svg viewBox="0 0 760 372" style="--mw:578px" role="img" aria-labelledby="t3title t3desc">
           <title id="t3title">Suffix array and LCP array of banana with the search block for ana highlighted</title>
           <desc id="t3desc">Six rows, one per suffix in sorted order. Each row shows rank i, the value SA of i, the suffix text, and the LCP value. Rows for ranks 1 and 2, the suffixes ana and anana, are highlighted in yellow as the contiguous block matching the query ana. The maximum LCP value 3 marks the longest repeated substring ana.</desc>
           <!-- header -->
@@ -838,12 +838,12 @@ details .bd{padding:2px 16px 14px}
 
       <div class="band accent measure reveal">
         <h4 style="margin-top:0">③ The accidental O(n² log n) suffix array</h4>
-        <p style="margin-bottom:0"><code>sorted(range(n), key=lambda i: s[i:])</code> looks like one line of correctness and is a performance landmine: every key <code>s[i:]</code> <em>materialises</em> an O(n) slice and every comparison scans O(n). That is <code>O(n² log n)</code> time <em>and</em> <code>O(n²)</code> transient memory. Fine for <code>n=10³</code>; it melts at <code>n=10⁶</code>. Use prefix doubling (O(n log n)) or SA-IS (O(n)). The definition "sort the suffixes" is not an implementation.</p>
+        <p style="margin-bottom:0"><code class="wrap">sorted(range(n), key=lambda i: s[i:])</code> looks like one line of correctness and is a performance landmine: every key <code>s[i:]</code> <em>materialises</em> an O(n) slice and every comparison scans O(n). That is <code>O(n² log n)</code> time <em>and</em> <code>O(n²)</code> transient memory. Fine for <code>n=10³</code>; it melts at <code>n=10⁶</code>. Use prefix doubling (O(n log n)) or SA-IS (O(n)). The definition "sort the suffixes" is not an implementation.</p>
       </div>
 
       <div class="band blue measure reveal">
         <h4 style="margin-top:0">④ Claiming O(m) for a suffix-array search</h4>
-        <p style="margin-bottom:0">Plain binary search on a suffix array is <code>O(m log n)</code>, not <code>O(m)</code> — each of the <code>log n</code> probes can re-scan up to <code>m</code> characters. <code>O(m)</code> is the suffix <em>tree</em>'s bound, or the array's only with the LCP-augmented Manber–Myers search. Quoting the tree's bound for the array's search is a classic interview slip.</p>
+        <p style="margin-bottom:0">Plain binary search on a suffix array is <code>O(m log n)</code>, not <code>O(m)</code> — each of the <code>log n</code> probes can re-scan up to <code>m</code> characters. <code>O(m)</code> is the suffix <em>tree</em>'s bound, or the array's only with an LCP-augmented search, which reaches O(m + log n). Quoting the tree's bound for the array's search is a classic interview slip.</p>
       </div>
 
       <div class="band accent measure reveal">
@@ -881,7 +881,7 @@ details .bd{padding:2px 16px 14px}
         <p>You are given a <code>dictionary</code> of root words and a <code>sentence</code> of space-separated words. If a word in the sentence has any root as a prefix, replace it with the <strong>shortest</strong> such root. If several roots are prefixes, the shortest wins; if none, leave the word unchanged. Return the rewritten sentence.</p>
         <div class="sig">def replaceWords(dictionary: List[str], sentence: str) -&gt; str</div>
         <p class="ex"><b>Constraints:</b> <code>1 ≤ |dictionary| ≤ 1000</code>, each root <code>≤ 100</code> chars; sentence has <code>≤ 1000</code> words; lowercase letters and single spaces.</p>
-        <p class="ex"><b>Example:</b> <code>dictionary = ["cat","bat","rat"]</code>, <code>sentence = "the cattle was rattled by the battery"</code> → <code>"the cat was rat by the bat"</code>.</p>
+        <p class="ex"><b>Example:</b> <code class="wrap">dictionary = ["cat","bat","rat"]</code>, <code class="wrap">sentence = "the cattle was rattled by the battery"</code> → <code>"the cat was rat by the bat"</code>.</p>
       </div>
 
       <div class="prob reveal">
@@ -916,7 +916,7 @@ details .bd{padding:2px 16px 14px}
 
       <div class="next reveal">
         <div>
-          <div class="lbl">Next in the DSA syllabus → Lesson 20</div>
+          <div class="lbl">Next in the DSA syllabus → Lecture 20</div>
           <a href="dsa-20-p-np-reductions-and-np-completeness.html">The Boundary of Efficiency: P, NP, Reductions, and NP-Completeness</a>
         </div>
         <span class="arrow" aria-hidden="true">→</span>
@@ -947,6 +947,6 @@ details .bd{padding:2px 16px 14px}
   els.forEach(function(el){ io.observe(el); });
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-18-linear-time-exact-matching.html">← Previous study</a><a href="dsa-20-p-np-reductions-and-np-completeness.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-18-linear-time-exact-matching.html" rel="prev"><span>&larr; Lecture 18</span><strong>Linear-time exact matching</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-20-p-np-reductions-and-np-completeness.html" rel="next"><span>Lecture 20 &rarr;</span><strong>P, NP, and reductions</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/22-tries.html">Lesson 22 &middot; Tries</a></p></nav>
 </body>
 </html>

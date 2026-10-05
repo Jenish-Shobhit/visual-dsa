@@ -264,8 +264,8 @@
   .cells .c{min-width:40px; height:40px; display:grid; place-items:center; border:1.5px solid var(--bau-ink); border-radius:var(--r-xs); background:var(--surface-1); position:relative}
   .cells .c.fill{background:var(--primary-container); color:var(--on-primary-container); font-weight:650}
   .cells .c .ix{position:absolute; top:-1.35em; left:0; right:0; text-align:center; font-size:10.5px; color:var(--on-surface-variant)}
-  .cells .c.h::after{content:"head"; position:absolute; bottom:-1.5em; left:50%; transform:translateX(-50%); font-size:10px; color:#fff; background:var(--bau-blue); padding:1px 4px; border-radius:3px; white-space:nowrap}
-  .cells .c.t::before{content:"tail"; position:absolute; top:-1.5em; left:50%; transform:translateX(-50%); font-size:10px; color:#fff; background:var(--bau-red); padding:1px 4px; border-radius:3px; white-space:nowrap}
+  .cells .c.h::after{content:"head"; position:absolute; bottom:-1.5em; left:50%; transform:translateX(-50%); font-size:10px; color:var(--on-state); background:var(--bau-blue); padding:1px 4px; border-radius:3px; white-space:nowrap}
+  .cells .c.t::before{content:"tail"; position:absolute; top:-1.5em; left:50%; transform:translateX(-50%); font-size:10px; color:var(--on-state); background:var(--bau-red); padding:1px 4px; border-radius:3px; white-space:nowrap}
 
   /* ===== two-up ===== */
   .two{display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--sp)*3); align-items:start}
@@ -331,7 +331,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 01">
@@ -460,10 +460,10 @@
           </math></div>
         </div>
 
-        <p>One multiplication, one addition — a fixed amount of work whatever <code class="inl">i</code> is. Reaching <code class="inl">A[5]</code> costs no more than reaching <code class="inl">A[0]</code>. <em>This</em> is what &ldquo;random access&rdquo; means and why the RAM model's <code class="inl">&#x398;(1)</code> indexing is, for arrays, a faithful description of the hardware: the array is precisely the structure the RAM model was abstracted from. With <code class="inl">base = 1000</code> and a 4-byte stride, <code class="inl">addr(A[5]) = 1000 + 5&middot;4 = 1020</code>, computed directly.</p>
+        <p>One multiplication, one addition — a fixed amount of work whatever <code class="inl">i</code> is. Reaching <code class="inl">A[5]</code> costs no more than reaching <code class="inl">A[0]</code>. <em>This</em> is what &ldquo;random access&rdquo; means and why the RAM model's <code class="inl">&#x398;(1)</code> indexing is, for arrays, a faithful description of the hardware: the array is precisely the structure the RAM model was abstracted from. With <code class="inl">base = 1000</code> and a 4-byte stride, <code class="inl wrap">addr(A[5]) = 1000 + 5&middot;4 = 1020</code>, computed directly.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 360" role="img" aria-labelledby="f1t f1d">
+          <svg viewBox="0 0 940 360" style="--mw:744px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">Two memory layouts for the same four-element sequence</title>
             <desc id="f1d">Top: an array storing values in contiguous cells whose addresses are base plus i times stride, so any index is reached by one arithmetic step. Bottom: a linked list of the same values scattered at unrelated addresses, each node pointing to the next, so reaching the i-th node requires following i pointers.</desc>
 
@@ -571,7 +571,7 @@
         <p>Contiguity is a strict promise: position <code class="inl">i</code> lives at <code class="inl">base + i&middot;s</code>, with no gaps. To <code class="inl">insert(2, X)</code> into a full-packed array you must <em>make room</em> at slot 2, which means every element from slot 2 onward slides one place to the right to keep the promise intact. Insert near the front and you move almost the whole array; on average you touch <code class="inl">n/2</code> elements, so insertion and deletion at an arbitrary position are <code class="inl">&#x398;(n)</code>.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 900 250" role="img" aria-labelledby="f2t f2d">
+          <svg viewBox="0 0 900 250" style="--mw:713px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">Inserting into the middle of an array forces a cascade of shifts</title>
             <desc id="f2d">A six-slot array holds A B C D E. Inserting X at index 2 requires D, E, C to each move one slot to the right before X can be written into the vacated slot 2. Every element from the insertion point onward is rewritten, which is order n work.</desc>
 
@@ -591,7 +591,8 @@
             <path d="M295 120 C 320 150, 360 150, 369 130" class="dg-stroke dg-red" marker-end="url(#ah3)"/>
             <path d="M369 120 C 394 150, 434 150, 443 130" class="dg-stroke dg-red" marker-end="url(#ah3)"/>
             <path d="M443 120 C 468 150, 508 150, 517 130" class="dg-stroke dg-red" marker-end="url(#ah3)"/>
-            <text x="300" y="172" class="dg-label sm dg-red-f">each element from index 2 on slides right by one &mdash; 3 writes here, n&minus;i in general</text>
+            <text x="110" y="165" class="dg-label sm dg-red-f">each element from index 2 on slides right by one</text>
+            <text x="110" y="179" class="dg-label sm dg-red-f">&mdash; 3 moves here, n&minus;i in general</text>
 
             <!-- after row -->
             <text x="24" y="220" class="dg-label sm">after</text>
@@ -712,7 +713,7 @@
         <p>Watch what this does to our two <code class="inl">&#x398;(n)</code> scans. The array's elements sit in one run; the very first access drags in a line holding the next ~16, and the prefetcher keeps the pipe full. Across a million elements you pay a small handful of misses for every sixteen reads. The linked list's nodes are scattered, so each <code class="inl">p &#8592; p.next</code> jumps to an unrelated address — a likely miss, every single step, with nothing to prefetch because the next address is not known until the current node is read. Same instruction count; one is a smooth read of memory, the other a storm of misses.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 900 270" role="img" aria-labelledby="f3t f3d">
+          <svg viewBox="0 0 900 270" style="--mw:713px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">Why two equal-Theta scans diverge: cache lines and locality</title>
             <desc id="f3d">Memory drawn as a strip of 64-byte cache lines. The array occupies two adjacent lines, so a sequential scan of all its elements causes only a couple of misses and the prefetcher loads ahead. The linked list places its nodes in six different lines, so traversal incurs a cache miss at nearly every step.</desc>
 
@@ -788,7 +789,7 @@
         </ul>
 
         <figure class="reveal">
-          <svg viewBox="0 0 900 290" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 900 290" style="--mw:713px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">Stack LIFO discipline versus queue FIFO discipline</title>
             <desc id="f4d">Left: a vertical stack where push and pop both act at the top, so the last element in is the first out. Right: a horizontal queue where enqueue adds at the back and dequeue removes at the front, so the first element in is the first out.</desc>
 
@@ -920,7 +921,7 @@
         </div>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 400" role="img" aria-labelledby="f5t f5d">
+          <svg viewBox="0 0 760 400" style="--mw:602px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">The ring buffer after the wrap, drawn as a circular array</title>
             <desc id="f5d">Eight conceptual slots are unnecessary; this buffer has four slots arranged in a ring. The front pointer head marks slot 1 holding 20, and elements proceed clockwise 20, 30, 40 then wrap to slot 0 holding 50 as the rear. The next write index, head plus size mod C, points back at slot 1, which is why a full buffer is detected by size equals capacity rather than by pointer position.</desc>
 
@@ -956,9 +957,10 @@
             <text x="600" y="150" class="dg-val dg-blue-f">head &#8594; slot 1</text>
             <path d="M598 158 C 540 180, 500 196, 462 200" class="dg-stroke dg-blue" marker-end="url(#ah6)"/>
             <!-- next-write pointer also slot 1 -->
-            <text x="600" y="250" class="dg-val dg-red-f">(head+size) mod 4 = 1</text>
-            <text x="600" y="272" class="dg-label sm dg-red-f">next write would be slot 1 &mdash;</text>
-            <text x="600" y="290" class="dg-label sm dg-red-f">but size=C, so: FULL</text>
+            <text x="600" y="246" class="dg-val dg-red-f">(head+size) mod 4</text>
+            <text x="600" y="266" class="dg-val dg-red-f">= 1</text>
+            <text x="600" y="288" class="dg-label sm dg-red-f">next write: slot 1,</text>
+            <text x="600" y="305" class="dg-label sm dg-red-f">but size = C, so FULL</text>
             <path d="M598 258 C 545 235, 505 214, 462 206" class="dg-stroke dg-red" marker-end="url(#ah6r)"/>
 
             <defs>
@@ -1039,7 +1041,7 @@
         <p>If you track <code class="inl">head</code> and <code class="inl">tail</code> indices and nothing else, then <code class="inl">head == tail</code> means the ring is empty <em>and also</em> means it is full — the two states are indistinguishable, because the pointers wrapped all the way around. Three honest fixes, each a real engineering choice: <strong>(a)</strong> store an explicit <code class="inl">size</code> (or <code class="inl">count</code>) as we did — cleanest; <strong>(b)</strong> sacrifice one slot, declaring &ldquo;full&rdquo; when <code class="inl">(tail+1) mod C == head</code>, so the two states never collide, at the cost of one unusable cell; <strong>(c)</strong> keep a boolean <code class="inl">full</code> flag. Pick one deliberately. The bug is choosing none and shipping a buffer that silently reports empty when it is jammed full.</p>
 
         <h3>2 &middot; Negative modulo on <code class="inl">insertFront</code> / decrement</h3>
-        <p>Moving a head index <em>backwards</em> — as a deque's <code class="inl">insertFront</code> must — you compute <code class="inl">head = (head &minus; 1) mod C</code>. In most languages <code class="inl">(&minus;1) mod C</code> is <code class="inl">&minus;1</code>, not <code class="inl">C&minus;1</code>, and you index out of bounds. Always wrap as <code class="inl">head = (head &minus; 1 + C) mod C</code>. This single missing <code class="inl">+ C</code> is among the most common bugs in handwritten ring code.</p>
+        <p>Moving a head index <em>backwards</em> — as a deque's <code class="inl">insertFront</code> must — you compute <code class="inl">head = (head &minus; 1) mod C</code>. In C, Java and JavaScript <code class="inl">(&minus;1) % C</code> is <code class="inl">&minus;1</code>, not <code class="inl">C&minus;1</code> (Python happens to return <code class="inl">C&minus;1</code>), and you index out of bounds. Always wrap as <code class="inl">head = (head &minus; 1 + C) mod C</code>. This single missing <code class="inl">+ C</code> is among the most common bugs in handwritten ring code.</p>
 
         <h3>3 &middot; The &ldquo;O(1) linked-list insert&rdquo; half-truth</h3>
         <p>&ldquo;Linked lists insert in <code class="inl">O(1)</code>&rdquo; is true <em>only once you already hold the node</em> at the insertion point. <code class="inl">insert(i, x)</code> from an index must first <em>find</em> position <code class="inl">i</code> — a <code class="inl">&#x398;(i)</code> walk — so the honest cost is <code class="inl">&#x398;(i)</code>, the same order as the array's shift. The <code class="inl">O(1)</code> applies to the splice, not the search. Quoting the splice cost as if it were the whole operation is how linked lists get chosen for workloads they then lose.</p>
@@ -1163,6 +1165,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-00-cost-of-a-computation.html">← Previous study</a><a href="dsa-02-amortized-cost-aggregate-accounting-potential.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-00-cost-of-a-computation.html" rel="prev"><span>&larr; Lecture 00</span><strong>The cost of a computation</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-02-amortized-cost-aggregate-accounting-potential.html" rel="next"><span>Lecture 02 &rarr;</span><strong>Amortized cost</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/07-strings-and-two-pointers.html">Lesson 7 &middot; Strings, two pointers &amp; windows</a><a href="../lessons/08-linked-lists.html">Lesson 8 &middot; Linked lists</a><a href="../lessons/09-stacks.html">Lesson 9 &middot; Stacks</a><a href="../lessons/10-queues.html">Lesson 10 &middot; Queues &amp; deques</a></p></nav>
 </body>
 </html>

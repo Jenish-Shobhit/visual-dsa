@@ -257,7 +257,7 @@
   .dg-cover{fill:var(--bau-blue); stroke:var(--bau-ink); stroke-width:2.5}
   .dg-free{fill:var(--surface); stroke:var(--bau-ink); stroke-width:2.5}
   .dg-nt{font-family:var(--font-mono); font-size:16px; font-weight:700; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
-  .dg-nt.w{fill:#fff}
+  .dg-nt.w{fill:var(--on-state)}
   /* number line */
   .dg-axis{stroke:var(--bau-ink); stroke-width:2.5}
   .dg-tick{stroke:var(--bau-ink); stroke-width:2}
@@ -342,7 +342,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 21">
@@ -471,7 +471,7 @@
           <span class="lbl">the definition (minimization, &alpha; &ge; 1)</span>
           <div class="math-scroll"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
             <mtext>ALG&#xA0;is&#xA0;an&#xA0;</mtext><mi>&#x3B1;</mi><mtext>-approximation</mtext>
-            <mspace width="0.6em"/><mo>&#x21FA;</mo><mspace width="0.6em"/>
+            <mspace width="0.6em"/><mo>&#x27FA;</mo><mspace width="0.6em"/>
             <mtext>for&#xA0;all&#xA0;</mtext><mi>I</mi><mo>:</mo><mspace width="0.4em"/>
             <mi>ALG</mi><mo stretchy="false">(</mo><mi>I</mi><mo stretchy="false">)</mo>
             <mo>&#x2264;</mo>
@@ -502,7 +502,7 @@
         <p>Read it right to left and the trick disappears into obviousness: if our answer is within a factor <code class="inl">&alpha;</code> of <em>something no larger than the optimum</em>, it is within <code class="inl">&alpha;</code> of the optimum. The craft of approximation is almost entirely the craft of <em>finding the right computable lower bound</em>. For Vertex Cover it will be the size of a matching; for Set Cover, a pigeonhole count; for metric TSP, the minimum spanning tree. Each is a structure from earlier in this course, pressed into service as a certificate.</p>
 
         <figure>
-          <svg viewBox="0 0 720 250" role="img" aria-labelledby="f1t f1d">
+          <svg viewBox="0 0 720 250" style="--mw:619px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The lower-bound sandwich</title>
             <desc id="f1d">A cost axis. A computable lower bound L sits at the left, the unknown optimum OPT lives in a bracketed region to its right, and the algorithm's output ALG sits further right, at or below alpha times L. Because L is at most OPT, ALG is at most alpha times OPT.</desc>
             <!-- axis -->
@@ -549,7 +549,7 @@
       <div class="col">
         <p>Fix the object. Given an undirected graph <code class="inl">G=(V,E)</code>, a <span class="term">vertex cover</span> is a set <code class="inl">S&sube;V</code> such that every edge has at least one endpoint in <code class="inl">S</code> &mdash; every edge is &ldquo;watched&rdquo; by a chosen vertex. The <span class="term">minimum vertex cover</span> is the smallest such <code class="inl">S</code>. Deciding whether one of size <code class="inl">&le;k</code> exists is NP-complete; finding the minimum is NP-hard. We will return a cover guaranteed to be at most twice the minimum, and we will do it in the time it takes to read the edges.</p>
 
-        <p>The algorithm is almost insultingly simple, and that simplicity is precisely where its proof lives. Recall from the <a class="inline" href="dsa-12-minimum-spanning-trees-and-union-find.html">MST lecture</a> the idea of a <span class="term">matching</span>: a set of edges no two of which share a vertex. A matching is <span class="term">maximal</span> if you cannot add another edge without a collision. Here is the whole method.</p>
+        <p>The algorithm is almost insultingly simple, and that simplicity is precisely where its proof lives. Recall from the <a class="inline" href="dsa-17-max-flow-min-cut-and-the-power-of-duality.html">max-flow lecture</a> the idea of a <span class="term">matching</span>: a set of edges no two of which share a vertex. A matching is <span class="term">maximal</span> if you cannot add another edge without a collision. Here is the whole method.</p>
 
         <pre><code><span class="tok-kw">def</span> <span class="tok-fn">vertex_cover_2approx</span>(V, E):       <span class="tok-com"># E = list of edges (u, v)</span>
     matched = <span class="tok-fn">set</span>()                   <span class="tok-com"># vertices already touched by the matching</span>
@@ -582,10 +582,10 @@
         <p>That is the sandwich of &sect;03 made concrete: <code class="inl">L=|M|</code> is computed in linear time, it provably sits below <code class="inl">OPT</code>, and our output is exactly <code class="inl">2L</code>. The factor <code class="inl">2</code> is not a hope; it is forced by disjointness. Notice we never found the minimum cover; we bounded it from below with a matching and never looked back.</p>
 
         <h3>Worked example</h3>
-        <p>Take the seven-vertex graph below. Scan edges in the order <code class="inl">a&ndash;b, c&ndash;d, e&ndash;f, b&ndash;c, d&ndash;e, d&ndash;g, f&ndash;g</code>.</p>
+        <p>Take the seven-vertex graph below. Scan edges in the order <code class="inl wrap">a&ndash;b, c&ndash;d, e&ndash;f, b&ndash;c, d&ndash;e, d&ndash;g, f&ndash;g</code>.</p>
 
         <figure>
-          <svg viewBox="0 0 720 340" role="img" aria-labelledby="f2t f2d">
+          <svg viewBox="0 0 720 340" style="--mw:619px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">Vertex Cover by maximal matching on a seven-vertex graph</title>
             <desc id="f2d">Vertices a,c,e on top and b,d,f on the bottom, with g at the right. Three vertical edges a-b, c-d, e-f form a maximal matching, drawn as thick yellow bands. All six of their endpoints are filled blue as the cover. Vertex g is unmatched and hollow; its edges to d and f are still covered. The optimum cover is b, d, f of size three.</desc>
             <!-- matching highlight (under edges) -->
@@ -682,7 +682,7 @@
           </math></div>
         </div>
 
-        <p>So greedy Set Cover is an <code class="inl">H<sub>n</sub></code>-approximation, roughly <code class="inl">ln&nbsp;n</code>. A quick trace: universe <code class="inl">{1..12}</code> with sets <code class="inl">A={1..6}, B={5..10}, C={1,2,3,11}, D={4,8,12}, E={9,10,11,12}</code>. Greedy takes <code class="inl">A</code> (6 new), then <code class="inl">B</code> (4 new: 7,8,9,10), then <code class="inl">E</code> (2 new: 11,12), then <code class="inl">D</code> covers the last one... checking, after <code class="inl">A,B,E</code> only <code class="inl">4</code> is left, and <code class="inl">D</code> covers it &mdash; four sets. The reasoning never needed the true optimum; it only compared greedy&rsquo;s coverage to whatever the optimum&rsquo;s must have been.</p>
+        <p>So greedy Set Cover is an <code class="inl">H<sub>n</sub></code>-approximation, roughly <code class="inl">ln&nbsp;n</code>. A quick trace: universe <code class="inl">{1..12}</code> with sets <code class="inl wrap">A={1..6}, B={5..10}, C={1,2,3,11}, D={4,8,12}, E={9,10,11,12}</code>. Greedy takes <code class="inl">A</code> (6 new), then <code class="inl">B</code> (4 new: 7,8,9,10), then <code class="inl">E</code> (2 new: 11,12), and all twelve elements are covered by three sets. Here greedy happens to be optimal (no two of these sets cover twelve elements), so the ratio on this instance is 1; <code class="inl">H<sub>n</sub></code> is a worst-case promise, not a typical result. The reasoning never needed the true optimum; it only compared greedy&rsquo;s coverage to whatever the optimum&rsquo;s must have been.</p>
 
         <p>And the ceiling is real. In 2014 Dinur and Steurer proved &mdash; sharpening Feige&rsquo;s 1998 result through the PCP machinery &mdash; that no polynomial algorithm approximates Set Cover to better than <code class="inl">(1&minus;o(1))ln&nbsp;n</code> unless <code class="inl">P=NP</code>. The dumb greedy is, up to lower-order terms, <strong>the best any polynomial algorithm will ever do.</strong> That is a rare and bracing thing: a one-line algorithm sitting exactly on a proven wall.</p>
 
@@ -722,7 +722,7 @@
         <p>Build the MST <code class="inl">T</code>. Double every edge of <code class="inl">T</code>: now every vertex has even degree, so the multigraph has an <span class="term">Euler tour</span> &mdash; a closed walk using each (doubled) edge once &mdash; of cost exactly <code class="inl">2&middot;MST</code>. That walk visits some vertices more than once. Walk it, and whenever it would revisit a city, <em>shortcut</em> straight to the next unvisited one. By the triangle inequality each shortcut only shortens the walk. The result is a genuine tour (each city once) of cost <code class="inl">&le;2&middot;MST&le;2&middot;OPT</code>.</p>
 
         <figure>
-          <svg viewBox="0 0 720 330" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 720 330" style="--mw:619px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">Metric TSP by MST-doubling</title>
             <desc id="f4d">Left panel: six cities with a minimum spanning tree drawn in blue. Right panel: the same cities with the doubled tree traced as a dashed Euler walk and the final shortcut Hamiltonian tour drawn in red, skipping repeated visits.</desc>
             <!-- divider -->
@@ -769,7 +769,7 @@
               </g>
             </g>
             <!-- legend -->
-            <g transform="translate(392,300)">
+            <g transform="translate(300,300)">
               <line class="dg-double" x1="0" y1="0" x2="30" y2="0"/><text class="dg-label sm" x="38" y="4">doubled tree (Euler walk)</text>
               <line class="dg-tour" x1="210" y1="0" x2="240" y2="0"/><text class="dg-label sm" x="248" y="4">shortcut tour</text>
             </g>
@@ -782,7 +782,7 @@
         <p>The patch is cheap. Walk the optimal tour and look only at the vertices of <code class="inl">O</code> in the order it visits them: shortcutting (triangle inequality) gives a closed tour on <code class="inl">O</code> of cost <code class="inl">&le;OPT</code>. Since <code class="inl">|O|</code> is even, that cycle splits into <em>two</em> perfect matchings on <code class="inl">O</code> (alternate edges); the cheaper one costs <code class="inl">&le;OPT/2</code>, and the minimum matching is no costlier still. So <code class="inl">M&le;OPT/2</code> and the tour costs <code class="inl">&le;MST+M&le;OPT+OPT/2=3/2 OPT</code>.</p>
 
         <figure>
-          <svg viewBox="0 0 720 250" role="img" aria-labelledby="f5t f5d">
+          <svg viewBox="0 0 720 250" style="--mw:619px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">Christofides: matching the odd-degree vertices of the MST</title>
             <desc id="f5d">A minimum spanning tree in blue. Four vertices of odd degree are circled in red. A minimum-weight perfect matching on just those four, drawn as red dashed edges, makes every degree even so the graph becomes Eulerian.</desc>
             <!-- MST -->
@@ -881,7 +881,7 @@
         <p>The recursion is a binary tree. Each node spends one of the <code class="inl">k</code> budget units, so the tree has depth at most <code class="inl">k</code>; with two children per node that is at most <code class="inl">2<sup>k</sup></code> leaves, and each node does <code class="inl">O(n+m)</code> work removing a vertex and its incident edges. Total: <code class="inl">O(2<sup>k</sup>&middot;(n+m))</code> &mdash; textbook FPT. The exponential is real but <em>caged</em> inside <code class="inl">2<sup>k</sup></code>; the dependence on the graph size is linear.</p>
 
         <figure>
-          <svg viewBox="0 0 720 360" role="img" aria-labelledby="f6t f6d">
+          <svg viewBox="0 0 720 360" style="--mw:619px" role="img" aria-labelledby="f6t f6d">
             <title id="f6t">The bounded search tree for Vertex Cover at most k</title>
             <desc id="f6d">A binary recursion tree. The root holds the whole graph with budget k. Each node picks an edge u-v and branches into a left child that puts u in the cover with budget k minus one, and a right child that puts v in the cover. Depth is at most k, giving at most two to the k leaves. One root-to-leaf path is highlighted as a successful cover; others are pruned when the budget reaches zero with edges remaining.</desc>
             <!-- edges of the tree -->
@@ -925,7 +925,7 @@
             <text class="dg-label sm" x="272" y="322" text-anchor="middle">leaf: k=0, edges remain &#10007;</text>
             <!-- bound annotation -->
             <text class="dg-cap" x="490" y="300" fill="var(--bau-red)">depth &#8804; k</text>
-            <text class="dg-cap" x="455" y="324" fill="var(--bau-red)">&#8804; 2&#7472; leaves</text>
+            <text class="dg-cap" x="455" y="324" fill="var(--bau-red)">&#8804; 2<tspan baseline-shift="super" font-size="75%">k</tspan> leaves</text>
           </svg>
           <figcaption><b>Figure 5 &mdash; the bounded search tree.</b> Branching on &ldquo;<code class="inl">u</code> or <code class="inl">v</code> covers edge <code class="inl">u&ndash;v</code>&rdquo; spends one budget unit per level, so the tree is at most <code class="inl">k</code> deep and has at most <code class="inl">2<sup>k</sup></code> leaves. A leaf succeeds (blue) when the graph runs out of edges within budget; it fails (red) when the budget hits zero with edges remaining. The whole exponential cost is <code class="inl">2<sup>k</sup></code>, multiplied by only linear graph work.</figcaption>
         </figure>
@@ -1043,7 +1043,7 @@
         <div>
           <h3>Vertex Cover, within twice optimal</h3>
           <p class="meta">approximation &middot; the matching lower bound &middot; constructive</p>
-          <p>You are given an undirected graph as <code class="inl">n</code> (vertices <code class="inl">0&hellip;n&minus;1</code>) and an edge list <code class="inl">edges</code>, with up to <code class="inl">10<sup>5</sup></code> edges. Return <em>any</em> vertex cover whose size is at most twice the minimum possible, in <code class="inl">O(n+m)</code> time. Your answer is accepted if it is a valid cover (every edge has a chosen endpoint) and its size is <code class="inl">&le;2&middot;OPT</code>. Example: <code class="inl">n=4, edges=[[0,1],[1,2],[2,3]] &#8594;</code> e.g. <code class="inl">[1,2]</code> (size 2; here <code class="inl">OPT=2</code>). In your write-up, state the computable lower bound that certifies the factor of 2 <em>without</em> computing <code class="inl">OPT</code>, and prove your output meets it. Then exhibit a small graph on which your algorithm actually returns <code class="inl">2&middot;OPT</code>.</p>
+          <p>You are given an undirected graph as <code class="inl">n</code> (vertices <code class="inl">0&hellip;n&minus;1</code>) and an edge list <code class="inl">edges</code>, with up to <code class="inl">10<sup>5</sup></code> edges. Return <em>any</em> vertex cover whose size is at most twice the minimum possible, in <code class="inl">O(n+m)</code> time. Your answer is accepted if it is a valid cover (every edge has a chosen endpoint) and its size is <code class="inl">&le;2&middot;OPT</code>. Example: <code class="inl wrap">n=4, edges=[[0,1],[1,2],[2,3]] &#8594;</code> e.g. <code class="inl">[1,2]</code> (size 2; here <code class="inl">OPT=2</code>). In your write-up, state the computable lower bound that certifies the factor of 2 <em>without</em> computing <code class="inl">OPT</code>, and prove your output meets it. Then exhibit a small graph on which your algorithm actually returns <code class="inl">2&middot;OPT</code>.</p>
         </div>
       </div>
 
@@ -1052,7 +1052,7 @@
         <div>
           <h3>Smallest Sufficient Team</h3>
           <p class="meta">set cover, made exact by a tiny parameter &middot; bitmask DP &middot; LeetCode 1125</p>
-          <p>Given a list of <code class="inl">req_skills</code> (at most <code class="inl">16</code>) and a list of <code class="inl">people</code> where <code class="inl">people[i]</code> is the set of skills person <code class="inl">i</code> has, return a smallest team (indices of people) that together covers every required skill. Any one valid smallest team is accepted. Constraints: <code class="inl">1&le;req_skills.length&le;16</code>, <code class="inl">1&le;people.length&le;60</code>. Example: <code class="inl">req_skills=["java","nodejs","reactjs"]</code>, <code class="inl">people=[["java"],["nodejs"],["nodejs","reactjs"]] &#8594; [0,2]</code>. This <em>is</em> Set Cover &mdash; the problem &sect;05 could only approximate by <code class="inl">ln&nbsp;n</code> greedy. So which parameter here lets you solve it <strong>exactly</strong>, and why does that make the natural exponential a <em>fixed-parameter</em> one rather than an <code class="inl">n<sup>k</sup></code> one? Make the state space precise and bound it.</p>
+          <p>Given a list of <code class="inl">req_skills</code> (at most <code class="inl">16</code>) and a list of <code class="inl">people</code> where <code class="inl">people[i]</code> is the set of skills person <code class="inl">i</code> has, return a smallest team (indices of people) that together covers every required skill. Any one valid smallest team is accepted. Constraints: <code class="inl">1&le;req_skills.length&le;16</code>, <code class="inl">1&le;people.length&le;60</code>. Example: <code class="inl wrap">req_skills=["java","nodejs","reactjs"]</code>, <code class="inl wrap">people=[["java"],["nodejs"],["nodejs","reactjs"]] &#8594; [0,2]</code>. This <em>is</em> Set Cover &mdash; the problem &sect;05 could only approximate by <code class="inl">ln&nbsp;n</code> greedy. So which parameter here lets you solve it <strong>exactly</strong>, and why does that make the natural exponential a <em>fixed-parameter</em> one rather than an <code class="inl">n<sup>k</sup></code> one? Make the state space precise and bound it.</p>
         </div>
       </div>
 
@@ -1061,7 +1061,7 @@
         <div>
           <h3>Shortest Path Visiting All Nodes</h3>
           <p class="meta">TSP-shaped, exact for small n &middot; Held&ndash;Karp bitmask DP &middot; LeetCode 847</p>
-          <p>Given an undirected, connected graph as an adjacency list <code class="inl">graph</code> with <code class="inl">n</code> nodes (<code class="inl">1&le;n&le;12</code>), return the length of the shortest walk that visits every node; you may revisit nodes and reuse edges, and may start and end anywhere. Example: <code class="inl">graph=[[1,2,3],[0],[0],[0]] &#8594; 4</code>. This is the visit-everything core of TSP. Identify the parameter that makes an <em>exact</em> exponential algorithm acceptable here, and design a state of the form &ldquo;(set of visited nodes, current node).&rdquo; State the number of states and the transition cost, and explain why the result is <code class="inl">2<sup>n</sup>&middot;poly(n)</code> &mdash; FPT in <code class="inl">n</code> &mdash; rather than the naive <code class="inl">n!</code>.</p>
+          <p>Given an undirected, connected graph as an adjacency list <code class="inl">graph</code> with <code class="inl">n</code> nodes (<code class="inl">1&le;n&le;12</code>), return the length of the shortest walk that visits every node; you may revisit nodes and reuse edges, and may start and end anywhere. Example: <code class="inl wrap">graph=[[1,2,3],[0],[0],[0]] &#8594; 4</code>. This is the visit-everything core of TSP. Identify the parameter that makes an <em>exact</em> exponential algorithm acceptable here, and design a state of the form &ldquo;(set of visited nodes, current node).&rdquo; State the number of states and the transition cost, and explain why the result is <code class="inl">2<sup>n</sup>&middot;poly(n)</code> &mdash; FPT in <code class="inl">n</code> &mdash; rather than the naive <code class="inl">n!</code>.</p>
         </div>
       </div>
 
@@ -1070,7 +1070,7 @@
         <div>
           <h3>Vertex Cover of size at most k</h3>
           <p class="meta">the FPT door on the same problem &middot; bounded search tree + kernel &middot; decision</p>
-          <p>Given a graph (<code class="inl">n</code> up to <code class="inl">10<sup>5</sup></code> vertices, <code class="inl">m</code> up to <code class="inl">10<sup>5</sup></code> edges) and an integer <code class="inl">k&le;30</code>, decide whether a vertex cover of size <code class="inl">&le;k</code> exists and return one if so &mdash; <em>exactly</em>, in <code class="inl">O(2<sup>k</sup>&middot;(n+m))</code> or better. Example: the 4-cycle <code class="inl">edges=[[0,1],[1,2],[2,3],[3,0]]</code> with <code class="inl">k=2 &#8594; true</code> (e.g. <code class="inl">[0,2]</code>); with <code class="inl">k=1 &#8594; false</code>. This is Problem&nbsp;1&rsquo;s graph met through the <em>second</em> door. Specify the branching rule and prove the <code class="inl">2<sup>k</sup></code> leaf bound; then add the two Buss reduction rules and argue your instance shrinks to a kernel of <code class="inl">O(k<sup>2</sup>)</code> edges first. Why is this fast for <code class="inl">k=30</code> and <code class="inl">n=10<sup>5</sup></code> even though Vertex Cover is NP-complete?</p>
+          <p>Given a graph (<code class="inl">n</code> up to <code class="inl">10<sup>5</sup></code> vertices, <code class="inl">m</code> up to <code class="inl">10<sup>5</sup></code> edges) and an integer <code class="inl">k&le;30</code>, decide whether a vertex cover of size <code class="inl">&le;k</code> exists and return one if so &mdash; <em>exactly</em>, in <code class="inl">O(2<sup>k</sup>&middot;(n+m))</code> or better. Example: the 4-cycle <code class="inl wrap">edges=[[0,1],[1,2],[2,3],[3,0]]</code> with <code class="inl">k=2 &#8594; true</code> (e.g. <code class="inl">[0,2]</code>); with <code class="inl">k=1 &#8594; false</code>. This is Problem&nbsp;1&rsquo;s graph met through the <em>second</em> door. Specify the branching rule and prove the <code class="inl">2<sup>k</sup></code> leaf bound; then add the two Buss reduction rules and argue your instance shrinks to a kernel of <code class="inl">O(k<sup>2</sup>)</code> edges first. Why is this fast for <code class="inl">k=30</code> and <code class="inl">n=10<sup>5</sup></code> even though Vertex Cover is NP-complete?</p>
         </div>
       </div>
     </section>
@@ -1136,6 +1136,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-20-p-np-reductions-and-np-completeness.html">← Previous study</a><a href="dsa-22-randomness-as-a-design-tool.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-20-p-np-reductions-and-np-completeness.html" rel="prev"><span>&larr; Lecture 20</span><strong>P, NP, and reductions</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-22-randomness-as-a-design-tool.html" rel="next"><span>Lecture 22 &rarr;</span><strong>Randomness as a design tool</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a></p></nav>
 </body>
 </html>

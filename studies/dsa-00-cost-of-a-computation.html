@@ -147,9 +147,9 @@
   .stat.lead{background:var(--bau-blue); border-color:transparent; color:var(--on-primary)}
   .stat .k{font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; opacity:.85}
   .stat .v{font-family:var(--font-display); font-weight:700; font-size:clamp(28px,4vw,46px); line-height:1; margin:8px 0 6px; font-variant-numeric:tabular-nums}
-  .stat.lead .v{color:#fff}
+  .stat.lead .v{color:var(--on-state)}
   .stat .s{font-size:13.5px; line-height:1.4; color:var(--on-surface-variant)}
-  .stat.lead .s{color:color-mix(in oklab,#fff 86%,var(--bau-blue))}
+  .stat.lead .s{color:color-mix(in oklab,var(--on-state) 86%,var(--bau-blue))}
 
   /* objectives / prereqs lists */
   ul.obj{list-style:none; margin:0; padding:0; display:grid; gap:10px}
@@ -277,7 +277,7 @@
     .progress{transform:scaleX(0)}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 00">
@@ -431,7 +431,7 @@
         <div class="inner prose">
           <p>For every <math><mrow><mi>n</mi><mo>≥</mo><mn>1</mn></mrow></math> we have <math><mrow><mi>n</mi><mo>≤</mo><msup><mi>n</mi><mn>2</mn></msup></mrow></math> and <math><mrow><mn>1</mn><mo>≤</mo><msup><mi>n</mi><mn>2</mn></msup></mrow></math>. Therefore</p>
           <p><div class="math-scroll"><math display="block"><mrow><mn>3</mn><msup><mi>n</mi><mn>2</mn></msup><mo>+</mo><mn>5</mn><mi>n</mi><mo>+</mo><mn>7</mn><mo>≤</mo><mn>3</mn><msup><mi>n</mi><mn>2</mn></msup><mo>+</mo><mn>5</mn><msup><mi>n</mi><mn>2</mn></msup><mo>+</mo><mn>7</mn><msup><mi>n</mi><mn>2</mn></msup><mo>=</mo><mn>15</mn><msup><mi>n</mi><mn>2</mn></msup></mrow></math></div></p>
-          <p>So the definition holds with <math><mrow><mi>c</mi><mo>=</mo><mn>15</mn></mrow></math> and <math><mrow><msub><mi>n</mi><mn>0</mn></msub><mo>=</mo><mn>1</mn></mrow></math>. The constants are not unique — <math><mrow><mi>c</mi><mo>=</mo><mn>4</mn><mo>,</mo><msub><mi>n</mi><mn>0</mn></msub><mo>=</mo><mn>6</mn></mrow></math> works too. <strong>Existence is all the definition asks for.</strong> That is the whole game: bound the small terms by the big one, collect the coefficients.</p>
+          <p>So the definition holds with <math><mrow><mi>c</mi><mo>=</mo><mn>15</mn></mrow></math> and <math><mrow><msub><mi>n</mi><mn>0</mn></msub><mo>=</mo><mn>1</mn></mrow></math>. The constants are not unique — <math><mrow><mi>c</mi><mo>=</mo><mn>4</mn><mo>,</mo><msub><mi>n</mi><mn>0</mn></msub><mo>=</mo><mn>7</mn></mrow></math> works too (at <code class="inl">n=7</code>: 3·49+35+7 = 189 ≤ 4·49 = 196). <strong>Existence is all the definition asks for.</strong> That is the whole game: bound the small terms by the big one, collect the coefficients.</p>
         </div>
       </details>
       <div class="note warn">
@@ -463,7 +463,7 @@
       </div>
 
       <figure class="fig reveal">
-        <svg viewBox="0 0 720 430" role="img" aria-labelledby="thetaT thetaD">
+        <svg viewBox="0 0 720 430" style="--mw:619px" role="img" aria-labelledby="thetaT thetaD">
           <title id="thetaT">The Theta sandwich</title>
           <desc id="thetaD">A wiggling curve f(n) is shown trapped between two straight lines c1·g(n) and c2·g(n) for all n past a marked threshold n-zero; before the threshold f lies outside the band.</desc>
           <!-- axes -->
@@ -498,9 +498,9 @@
       <div class="prose"><p>A handful of growth classes account for nearly every algorithm you will meet. Ranked from blessing to curse:</p></div>
 
       <figure class="fig reveal">
-        <svg viewBox="0 0 720 470" role="img" aria-labelledby="raceT raceD">
+        <svg viewBox="0 0 720 470" style="--mw:619px" role="img" aria-labelledby="raceT raceD">
           <title id="raceT">The order-of-growth race</title>
-          <desc id="raceD">Five curves on shared axes — log n, n, n log n, n squared, and two-to-the-n — showing how dramatically faster the higher-order functions climb as input size grows; two-to-the-n overtakes n squared at n equals four and leaves the chart, while log n hugs the floor.</desc>
+          <desc id="raceD">Five curves on shared axes — log n, n, n log n, n squared, and two-to-the-n — showing how dramatically faster the higher-order functions climb as input size grows; two-to-the-n ties n squared at n equals four and passes it afterwards and leaves the chart, while log n hugs the floor.</desc>
           <!-- grid -->
           <g class="dg-faint" stroke-width="1">
             <line x1="70" y1="340" x2="690" y2="340"/><line x1="70" y1="280" x2="690" y2="280"/>
@@ -533,9 +533,9 @@
           <text class="dg-label" x="636" y="276">n log n</text>
           <text class="dg-label" x="636" y="360">n</text>
           <text class="dg-label" x="636" y="384">log n</text>
-          <text class="dg-tick" x="200" y="358">2ⁿ overtakes n² at n=4, then erupts</text>
+          <text class="dg-tick" x="200" y="358">2ⁿ ties n² at n=4, passes it from n=5</text>
         </svg>
-        <figcaption><b>Shape is destiny.</b> <math><msup><mn>2</mn><mi>n</mi></msup></math> (red) starts below <math><msup><mi>n</mi><mn>2</mn></msup></math> (blue) but crosses at <math><mi>n</mi><mo>=</mo><mn>4</mn></math> and shoots off the chart almost immediately — that is the wall between "feasible" and "never." Meanwhile <math><mi>log</mi><mi>n</mi></math> hugs the floor so tightly it is nearly the axis. This single picture is why a logarithmic algorithm searches 8 billion records in 33 steps.</figcaption>
+        <figcaption><b>Shape is destiny.</b> <math><msup><mn>2</mn><mi>n</mi></msup></math> (red) starts below <math><msup><mi>n</mi><mn>2</mn></msup></math> (blue) but catches it at <math><mi>n</mi><mo>=</mo><mn>4</mn></math> (16 = 16), passes it from <math><mi>n</mi><mo>=</mo><mn>5</mn></math> and shoots off the chart almost immediately — that is the wall between "feasible" and "never." Meanwhile <math><mi>log</mi><mi>n</mi></math> hugs the floor so tightly it is nearly the axis. This single picture is why a logarithmic algorithm searches 8 billion records in 33 steps.</figcaption>
       </figure>
 
       <div class="tblwrap reveal">
@@ -573,7 +573,7 @@
       </div>
 
       <figure class="fig reveal">
-        <svg viewBox="0 0 720 420" role="img" aria-labelledby="axesT axesD">
+        <svg viewBox="0 0 720 420" style="--mw:570px" role="img" aria-labelledby="axesT axesD">
           <title id="axesT">The two independent axes of running-time analysis</title>
           <desc id="axesD">A horizontal axis labels which input — best, average, worst — using a blue circle, yellow triangle and red square; a vertical axis labels which bound — Omega floor, Theta tight, O ceiling. A grid of cells is filled with insertion sort's bounds, showing the two questions are independent.</desc>
           <!-- vertical axis: which bound -->
@@ -709,7 +709,7 @@
       <div class="prose"><p>So the loop runs at most <math><mrow><mo>⌊</mo><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo>⌋</mo><mo>+</mo><mn>1</mn></mrow></math> times: <strong>worst case <math><mi>Θ</mi><mo>(</mo><mi>log</mi><mi>n</mi><mo>)</mo></math></strong> (key absent), <strong>best case <math><mi>Θ</mi><mo>(</mo><mn>1</mn><mo>)</mo></math></strong> (key sits at the first <code>mid</code>). Watch the halving evaporate a galaxy of data:</p></div>
 
       <figure class="fig reveal">
-        <svg viewBox="0 0 720 300" role="img" aria-labelledby="halveT halveD">
+        <svg viewBox="0 0 720 300" style="--mw:619px" role="img" aria-labelledby="halveT halveD">
           <title id="halveT">Binary search halving the window</title>
           <desc id="halveD">Four stacked rows depict a sixteen-cell array; each row highlights the active window and a circular probe at its midpoint. The window shrinks sixteen, eight, four, two, one across the rows, reaching a single cell in four probes.</desc>
           <g font-family="var(--font-mono)">
@@ -718,31 +718,31 @@
             <text class="dg-tick" x="20" y="48">step 1 · 16</text>
             <g>
               <rect x="150" y="30" width="540" height="30" fill="var(--bau-yellow)" opacity="0.28" stroke="var(--bau-ink)" stroke-width="1.5"/>
-              <circle class="dg-fill-blue" cx="411" cy="45" r="11"/><text x="411" y="49" fill="#fff" text-anchor="middle" font-size="11">mid</text>
+              <circle class="dg-fill-blue" cx="411" cy="45" r="11"/><text x="411" y="49" fill="var(--on-state)" text-anchor="middle" font-size="11">mid</text>
             </g>
             <!-- Step 2: keep left 0..6, mid at 3 -->
             <text class="dg-tick" x="20" y="108">step 2 · 8</text>
             <g>
               <rect x="150" y="90" width="540" height="30" fill="none" stroke="var(--outline-variant)" stroke-width="1.5"/>
               <rect x="150" y="90" width="252" height="30" fill="var(--bau-yellow)" opacity="0.28" stroke="var(--bau-ink)" stroke-width="1.5"/>
-              <circle class="dg-fill-blue" cx="276" cy="105" r="11"/><text x="276" y="109" fill="#fff" text-anchor="middle" font-size="11">mid</text>
+              <circle class="dg-fill-blue" cx="276" cy="105" r="11"/><text x="276" y="109" fill="var(--on-state)" text-anchor="middle" font-size="11">mid</text>
             </g>
             <!-- Step 3: keep 4..6 -> window 4, mid -->
             <text class="dg-tick" x="20" y="168">step 3 · 4</text>
             <g>
               <rect x="150" y="150" width="540" height="30" fill="none" stroke="var(--outline-variant)" stroke-width="1.5"/>
               <rect x="276" y="150" width="126" height="30" fill="var(--bau-yellow)" opacity="0.28" stroke="var(--bau-ink)" stroke-width="1.5"/>
-              <circle class="dg-fill-blue" cx="339" cy="165" r="11"/><text x="339" y="169" fill="#fff" text-anchor="middle" font-size="11">mid</text>
+              <circle class="dg-fill-blue" cx="339" cy="165" r="11"/><text x="339" y="169" fill="var(--on-state)" text-anchor="middle" font-size="11">mid</text>
             </g>
             <!-- Step 4: single cell -->
-            <text class="dg-tick" x="20" y="228">step 4 · 1</text>
+            <text class="dg-tick" x="20" y="228">step 4 · 2</text>
             <g>
               <rect x="150" y="210" width="540" height="30" fill="none" stroke="var(--outline-variant)" stroke-width="1.5"/>
               <rect x="339" y="210" width="63" height="30" fill="var(--bau-red)" opacity="0.30" stroke="var(--bau-ink)" stroke-width="1.5"/>
-              <circle class="dg-fill-red" cx="370" cy="225" r="11"/><text x="370" y="229" fill="#fff" text-anchor="middle" font-size="11">hit</text>
+              <circle class="dg-fill-red" cx="370" cy="225" r="11"/><text x="370" y="229" fill="var(--on-state)" text-anchor="middle" font-size="11">hit</text>
             </g>
           </g>
-          <text class="dg-strong" x="150" y="278">16 → 8 → 4 → 2 → 1&nbsp;&nbsp;&nbsp;⌈log₂16⌉ = 4 probes find any element among 16</text>
+          <text class="dg-strong" x="150" y="278">16 → 8 → 4 → 2 → 1&nbsp;&nbsp;&nbsp;worst case ⌊log₂16⌋ + 1 = 5 probes among 16</text>
         </svg>
         <figcaption><b>Logarithm, made visible.</b> Each probe deletes half the candidates, so the number of probes is the number of times you can halve <math><mi>n</mi></math> before reaching 1 — by definition, <math><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi></math>. Doubling the data from 8 to 16 billion adds a single probe. This is why logarithmic algorithms feel like cheating.</figcaption>
       </figure>
@@ -933,6 +933,6 @@
     upd();
   })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="../lessons/05-big-o.html">← Lesson 5: Big-O</a><a href="dsa-01-linear-layouts-and-access-disciplines.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="../index.html"><span>&larr; The course</span><strong>Back to the lessons</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-01-linear-layouts-and-access-disciplines.html" rel="next"><span>Lecture 01 &rarr;</span><strong>Linear layouts and access disciplines</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/02-bits-and-memory.html">Lesson 2 &middot; Bits, bytes &amp; memory</a><a href="../lessons/05-big-o.html">Lesson 5 &middot; Complexity &amp; Big-O</a></p></nav>
 </body>
 </html>

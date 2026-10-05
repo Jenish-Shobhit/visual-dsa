@@ -283,7 +283,7 @@
     background:var(--surface-1); border:1px solid var(--outline-variant); border-radius:var(--r-md)}
   ol.recipe li::before{content:counter(step); position:absolute; left:12px; top:12px;
     width:32px; height:32px; display:grid; place-items:center; border-radius:50%;
-    background:var(--bau-blue); color:#fff; font-family:var(--font-display); font-weight:700; font-size:1rem}
+    background:var(--bau-blue); color:var(--on-state); font-family:var(--font-display); font-weight:700; font-size:1rem}
   ol.recipe li:nth-child(3n+2)::before{background:var(--bau-red)}
   ol.recipe li:nth-child(3n)::before{background:var(--bau-yellow); color:var(--bau-ink); border:1.5px solid var(--bau-ink)}
 
@@ -347,7 +347,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 20">
@@ -533,7 +533,7 @@
         <p>The stakes are not academic. If <code class="inl">P = NP</code> and the algorithm were practical, most modern cryptography would dissolve overnight (breaking a code is verifying a key, which would become as easy as finding one), while optimal logistics, automated theorem-proving, and protein design would become routine. If <code class="inl">P &ne; NP</code>, we gain a permanent licence to <em>stop searching</em> for fast exact algorithms on a vast catalogue of problems &mdash; and to spend our effort instead on approximation and heuristics, the subject of the next lecture.</p>
 
         <figure>
-          <svg viewBox="0 0 760 360" role="img" aria-labelledby="f1t f1d">
+          <svg viewBox="0 0 760 360" style="--mw:654px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The complexity landscape under the two hypotheses</title>
             <desc id="f1d">Left: if P is not equal to NP, then inside NP the regions P and NP-complete are disjoint, with a gap between them, and NP-hard reaches beyond NP. Right: if P equals NP, then P, NP, and NP-complete all collapse into a single region, while NP-hard still extends beyond.</desc>
             <!-- ===== LEFT: P != NP ===== -->
@@ -601,7 +601,7 @@
         <p>What does it buy you? A solver for B becomes a solver for A: given <code class="inl">x</code>, compute <code class="inl">f(x)</code>, run B's solver, return its answer. Since <code class="inl">f</code> is polynomial and (by closure) a polynomial fed into a polynomial stays polynomial, <strong>if <code class="inl">B &isin; P</code> then <code class="inl">A &isin; P</code></strong>. Contrapositively &mdash; the way we always use it &mdash; <strong>if A is hard, then B is hard.</strong> The reduction <em>transports difficulty from A to B</em>.</p>
 
         <figure>
-          <svg viewBox="0 0 760 300" role="img" aria-labelledby="f2t f2d">
+          <svg viewBox="0 0 760 310" style="--mw:654px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">A reduction as a machine</title>
             <desc id="f2d">An instance x of problem A passes through a polynomial-time transformer f, producing an instance f of x of problem B, which is fed to a solver for B; the solver's yes-or-no answer is returned unchanged as the answer for x. Yes-instances map to yes-instances and no-instances to no-instances.</desc>
             <!-- pipeline -->
@@ -635,7 +635,7 @@
             <text class="dg-cap" x="24" y="270">truth-preserving:</text>
             <text class="dg-label sm" x="190" y="270" fill="var(--bau-blue)">x &#8712; A &#8658; f(x) &#8712; B</text>
             <text class="dg-label sm" x="360" y="270" fill="var(--bau-red)">x &#8713; A &#8658; f(x) &#8713; B</text>
-            <text class="dg-label sm" x="560" y="270">(the biconditional &#8212; both arrows)</text>
+            <text class="dg-label sm" x="24" y="292">(the biconditional &#8212; both arrows hold)</text>
 
             <defs>
               <marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L9 5 L0 10 z" fill="var(--bau-ink)"/></marker>
@@ -697,7 +697,7 @@
         <p>Take any <code class="inl">L &isin; NP</code>. By definition some nondeterministic machine <code class="inl">M</code> decides it: on input <code class="inl">x</code> of length <code class="inl">n</code>, <code class="inl">M</code> guesses a certificate and checks it within <code class="inl">T = p(n)</code> steps for some polynomial <code class="inl">p</code>. We capture an entire run as a <span class="term">tableau</span>: a <code class="inl">T &times; T</code> grid whose row <code class="inl">i</code> is the machine's full configuration (tape contents, head position, internal state) at time <code class="inl">i</code>. Introduce one Boolean variable for each possible &ldquo;cell&nbsp;(i,j) holds symbol&nbsp;s&rdquo; &mdash; polynomially many in all. Now constrain those variables with four families of clauses, every one of polynomial size:</p>
 
         <figure>
-          <svg viewBox="0 0 760 340" role="img" aria-labelledby="f3t f3d">
+          <svg viewBox="0 0 760 340" style="--mw:654px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">The Cook–Levin computation tableau</title>
             <desc id="f3d">A grid of T rows by T columns. The top row is shaded as the start configuration encoding the input. A two-row by three-column window is highlighted in the middle to show local consistency checking. The bottom row is shaded as an accepting configuration. Each cell is a Boolean variable for which symbol it holds.</desc>
             <!-- column header -->
@@ -715,7 +715,8 @@
                 <rect class="dg-cell-start" x="324" y="48" width="44" height="34"/>
                 <rect class="dg-cell-start" x="368" y="48" width="44" height="34"/>
               </g>
-              <text class="dg-label sm" x="540" y="70">row 0 = start config (writes x &amp; the guess)</text>
+              <text class="dg-label sm" x="540" y="66">row 0 = start config</text>
+              <text class="dg-label sm" x="540" y="82">(writes x &amp; the guess)</text>
               <text class="dg-nt" x="82" y="65" font-size="13">q&#8320;</text>
               <text class="dg-nt" x="126" y="65" font-size="13">1</text>
               <text class="dg-nt" x="170" y="65" font-size="13">0</text>
@@ -824,7 +825,7 @@
         <p>Three clauses, so <code class="inl">k = 3</code>. The construction yields three triangles wired together by the conflict edges <code class="inl">x<sub>1</sub>&ndash;&not;x<sub>1</sub></code>, <code class="inl">x<sub>2</sub>&ndash;&not;x<sub>2</sub></code>, <code class="inl">x<sub>3</sub>&ndash;&not;x<sub>3</sub></code>:</p>
 
         <figure>
-          <svg viewBox="0 0 760 400" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 760 400" style="--mw:654px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">The graph built from the 3-SAT instance</title>
             <desc id="f4d">Three triangles, one per clause. Triangle C1 has vertices x1, x2, not-x3; C2 has not-x1, x2, x3; C3 has x1, not-x2, not-x3. Dashed red conflict edges join each variable to its negation across triangles. A chosen independent set of size three is highlighted: x1 in C1, x2 in C2, and x1 in C3.</desc>
 
@@ -913,7 +914,7 @@
         <p>Because reductions compose, every problem you reduce 3-SAT to becomes a new launchpad. In 1972 &mdash; one year after Cook&ndash;Levin &mdash; Richard Karp published <strong>21 problems</strong>, each proven NP-complete by a short chain of reductions from SAT. Today the catalogue runs into the thousands, spanning logistics, scheduling, biology, circuit layout, and games. They form a single connected genealogy: prove <em>any</em> one of them is in P and the whole tree collapses into P with it.</p>
 
         <figure>
-          <svg viewBox="0 0 760 360" role="img" aria-labelledby="f5t f5d">
+          <svg viewBox="0 0 760 360" style="--mw:654px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">A genealogy of NP-complete problems</title>
             <desc id="f5d">SAT at the top reduces to 3-SAT, which fans out by polynomial reductions into a graph family (Independent Set, Clique, Vertex Cover), a coloring problem, a number family (Subset Sum, Partition, Knapsack), and a tour family (Hamiltonian Cycle, then Traveling Salesman). Arrows are labelled with the polynomial reduction symbol.</desc>
 
@@ -1040,7 +1041,7 @@
         <div>
           <h3>Shortest Path Visiting All Nodes</h3>
           <p class="meta">cope with hardness &middot; bitmask DP &middot; LeetCode 847</p>
-          <p>You are given an undirected connected graph of <code class="inl">n</code> nodes labelled <code class="inl">0&hellip;n&minus;1</code> as an adjacency list <code class="inl">graph</code>, where <code class="inl">graph[i]</code> lists <code class="inl">i</code>'s neighbours. Return the length of the <em>shortest walk</em> that visits every node; you may start and end anywhere and may revisit nodes and edges. Constraints: <code class="inl">1 &le; n &le; 12</code>, the graph is connected. Example: <code class="inl">graph=[[1,2,3],[0],[0],[0]] &#8594; 4</code> (e.g. 1&ndash;0&ndash;2&ndash;0&ndash;3). This is a cousin of the NP-hard Hamiltonian/TSP family &mdash; so do not seek a polynomial algorithm. Instead, let the tiny <code class="inl">n</code> license an exponential one: identify the right <em>state</em> to track and the exponential factor the bound <code class="inl">n&le;12</code> is quietly permitting, and say why a plain BFS over nodes alone fails.</p>
+          <p>You are given an undirected connected graph of <code class="inl">n</code> nodes labelled <code class="inl">0&hellip;n&minus;1</code> as an adjacency list <code class="inl">graph</code>, where <code class="inl">graph[i]</code> lists <code class="inl">i</code>'s neighbours. Return the length of the <em>shortest walk</em> that visits every node; you may start and end anywhere and may revisit nodes and edges. Constraints: <code class="inl">1 &le; n &le; 12</code>, the graph is connected. Example: <code class="inl wrap">graph=[[1,2,3],[0],[0],[0]] &#8594; 4</code> (e.g. 1&ndash;0&ndash;2&ndash;0&ndash;3). This is a cousin of the NP-hard Hamiltonian/TSP family &mdash; so do not seek a polynomial algorithm. Instead, let the tiny <code class="inl">n</code> license an exponential one: identify the right <em>state</em> to track and the exponential factor the bound <code class="inl">n&le;12</code> is quietly permitting, and say why a plain BFS over nodes alone fails.</p>
         </div>
       </div>
 
@@ -1124,6 +1125,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-19-tries-and-suffix-structures.html">← Previous study</a><a href="dsa-21-living-with-hardness-approximation-and-parameterized-algorithms.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-19-tries-and-suffix-structures.html" rel="prev"><span>&larr; Lecture 19</span><strong>Tries and suffix structures</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-21-living-with-hardness-approximation-and-parameterized-algorithms.html" rel="next"><span>Lecture 21 &rarr;</span><strong>Living with hardness</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/37-p-vs-np.html">Lesson 37 &middot; P, NP &amp; hard problems</a></p></nav>
 </body>
 </html>

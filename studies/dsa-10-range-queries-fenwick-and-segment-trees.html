@@ -336,7 +336,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 10">
@@ -411,20 +411,20 @@
       <div class="col">
         <p>I always begin by asking what an operation is <em>permitted to touch</em>, because the permissions fix the price. Here the workload is two operations on an array <code class="inl">a[0&hellip;n&minus;1]</code>, arriving interleaved and online &mdash; you cannot see them all in advance and pre-plan:</p>
         <ul>
-          <li><strong>Update</strong> &mdash; <code class="inl">a[i] &larr; x</code>, or <code class="inl">a[i] &mathbin{+}= &delta;</code>. Change one cell.</li>
-          <li><strong>Range query</strong> &mdash; aggregate <code class="inl">a[l] &oplus; a[l{+}1] &oplus; &hellip; &oplus; a[r{-}1]</code> for some associative <code class="inl">&oplus;</code> (sum, min, max, gcd, &hellip;).</li>
+          <li><strong>Update</strong> &mdash; <code class="inl">a[i] &larr; x</code>, or <code class="inl">a[i] += &delta;</code>. Change one cell.</li>
+          <li><strong>Range query</strong> &mdash; aggregate <code class="inl">a[l] &oplus; a[l+1] &oplus; &hellip; &oplus; a[r&minus;1]</code> for some associative <code class="inl">&oplus;</code> (sum, min, max, gcd, &hellip;).</li>
         </ul>
         <p>Two obvious data structures each solve <em>one</em> side perfectly and collapse on the other. This is not bad luck; it is the shape of the problem, and seeing it clearly is half the lecture:</p>
 
         <div class="two">
           <div class="band">
-            <div class="eyebrow" style="margin-bottom:.5em"><span class="n" style="background:var(--bau-blue);color:#fff;border-color:var(--bau-blue)">A</span> the raw array</div>
+            <div class="eyebrow" style="margin-bottom:.5em"><span class="n" style="background:var(--bau-blue);color:var(--on-state);border-color:var(--bau-blue)">A</span> the raw array</div>
             <p style="margin-bottom:.4em"><strong>Update:</strong> write one cell &mdash; <code class="inl">O(1)</code>. Perfect.</p>
             <p style="margin-bottom:0"><strong>Range sum:</strong> add up <code class="inl">r&minus;l</code> cells &mdash; <code class="inl">O(n)</code>. A query over the whole array reads everything, every time.</p>
           </div>
           <div class="band">
-            <div class="eyebrow" style="margin-bottom:.5em"><span class="n" style="background:var(--bau-red);color:#fff;border-color:var(--bau-red)">B</span> the prefix-sum table</div>
-            <p style="margin-bottom:.4em"><strong>Range sum:</strong> precompute <code class="inl">P[k]=a[0]+&hellip;+a[k{-}1]</code>; any range is <code class="inl">P[r]&minus;P[l]</code> &mdash; <code class="inl">O(1)</code>. Perfect.</p>
+            <div class="eyebrow" style="margin-bottom:.5em"><span class="n" style="background:var(--bau-red);color:var(--on-state);border-color:var(--bau-red)">B</span> the prefix-sum table</div>
+            <p style="margin-bottom:.4em"><strong>Range sum:</strong> precompute <code class="inl">P[k]=a[0]+&hellip;+a[k&minus;1]</code>; any range is <code class="inl">P[r]&minus;P[l]</code> &mdash; <code class="inl">O(1)</code>. Perfect.</p>
             <p style="margin-bottom:0"><strong>Update:</strong> changing <code class="inl">a[i]</code> shifts every <code class="inl">P[k]</code> with <code class="inl">k&gt;i</code> &mdash; <code class="inl">O(n)</code> to repair the tail.</p>
           </div>
         </div>
@@ -457,7 +457,7 @@
           <span class="chip">complete binary tree &mdash; implicit array layout</span>
           <a class="chip" href="dsa-00-cost-of-a-computation.html">asymptotics &mdash; O / &Theta; / &Omega;</a>
         </div>
-        <p style="margin-top:1em">One fact about the <strong>implicit binary tree</strong> you must hold firmly: a complete binary tree can live in a plain array with <em>no pointers</em>. Put the root at index <code class="inl">1</code>; then node <code class="inl">k</code>'s children are <code class="inl">2k</code> and <code class="inl">2k{+}1</code> and its parent is <code class="inl">&lfloor;k/2&rfloor;</code> &mdash; a bit-shift away. The segment tree is exactly this layout carrying aggregates; the Fenwick goes further and discards even the array-of-nodes, encoding the tree in the indices themselves.</p>
+        <p style="margin-top:1em">One fact about the <strong>implicit binary tree</strong> you must hold firmly: a complete binary tree can live in a plain array with <em>no pointers</em>. Put the root at index <code class="inl">1</code>; then node <code class="inl">k</code>'s children are <code class="inl">2k</code> and <code class="inl">2k+1</code> and its parent is <code class="inl">&lfloor;k/2&rfloor;</code> &mdash; a bit-shift away. The segment tree is exactly this layout carrying aggregates; the Fenwick goes further and discards even the array-of-nodes, encoding the tree in the indices themselves.</p>
       </div>
     </section>
 
@@ -544,7 +544,7 @@
         <p>Picture those responsibility ranges drawn over the data. An odd index covers just itself (length 1); index <code class="inl">2</code> covers <code class="inl">a[1..2]</code>; index <code class="inl">4</code> covers <code class="inl">a[1..4]</code>; index <code class="inl">8</code> covers all eight. The lengths are exactly the powers of two reading off the lowest set bit &mdash; a staircase of blocks:</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 470" role="img" aria-labelledby="f1t f1d">
+          <svg viewBox="0 0 940 470" style="--mw:744px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">Fenwick responsibility ranges over eight elements</title>
             <desc id="f1d">Eight array cells indexed one to eight hold values five, three, seven, nine, six, four, eight, two. Above them, eight horizontal bars show what each tree cell aggregates: tree one covers cell one, tree two covers cells one to two, tree three covers cell three, tree four covers cells one to four, tree five covers cell five, tree six covers cells five to six, tree seven covers cell seven, and tree eight covers all cells one to eight. Bar lengths equal the lowest set bit of the index: one, two, one, four, one, two, one, eight.</desc>
 
@@ -601,7 +601,7 @@
         </figure>
 
         <h3>Prefix query: peel the set bits off</h3>
-        <p>To get <code class="inl">prefix(i) = a[1]+&hellip;+a[i]</code>, stand at <code class="inl">i</code>, add <code class="inl">tree[i]</code> (the block ending at <code class="inl">i</code>), then jump to the index just left of that block: <code class="inl">i &larr; i &minus; lowbit(i)</code>. Each jump clears the lowest set bit, so you take exactly <code class="inl">popcount(i)</code> steps &mdash; at most <code class="inl">&lfloor;log&#8322;n&rfloor;{+}1</code>. To get an arbitrary range, subtract two prefixes (this is the step that demands invertibility):</p>
+        <p>To get <code class="inl">prefix(i) = a[1]+&hellip;+a[i]</code>, stand at <code class="inl">i</code>, add <code class="inl">tree[i]</code> (the block ending at <code class="inl">i</code>), then jump to the index just left of that block: <code class="inl">i &larr; i &minus; lowbit(i)</code>. Each jump clears the lowest set bit, so you take exactly <code class="inl">popcount(i)</code> steps &mdash; at most <code class="inl">&lfloor;log&#8322;n&rfloor;+1</code>. To get an arbitrary range, subtract two prefixes (this is the step that demands invertibility):</p>
 
         <pre><code><span class="tok-kw">def</span> <span class="tok-fn">lowbit</span>(i): <span class="tok-kw">return</span> i <span class="tok-op">&amp;</span> (<span class="tok-op">-</span>i)              <span class="tok-com"># least significant set bit</span>
 
@@ -616,7 +616,7 @@
     <span class="tok-kw">return</span> <span class="tok-fn">prefix</span>(r) <span class="tok-op">-</span> <span class="tok-fn">prefix</span>(l <span class="tok-op">-</span> <span class="tok-num">1</span>)   <span class="tok-com"># needs an inverse: a GROUP</span></code></pre>
 
         <h3>Point update: climb the indices that cover you</h3>
-        <p>Symmetrically, to do <code class="inl">a[i] &mathbin{+}= &delta;</code> you must repair every <code class="inl">tree[k]</code> whose responsibility range <em>contains</em> <code class="inl">i</code>. Those are reached by <em>adding</em> the lowest set bit: <code class="inl">i &larr; i + lowbit(i)</code>, climbing until you pass <code class="inl">n</code>. Again <code class="inl">O(log&nbsp;n)</code> steps &mdash; the two walks are mirror images, one stripping bits, one carrying them.</p>
+        <p>Symmetrically, to do <code class="inl">a[i] += &delta;</code> you must repair every <code class="inl">tree[k]</code> whose responsibility range <em>contains</em> <code class="inl">i</code>. Those are reached by <em>adding</em> the lowest set bit: <code class="inl">i &larr; i + lowbit(i)</code>, climbing until you pass <code class="inl">n</code>. Again <code class="inl">O(log&nbsp;n)</code> steps &mdash; the two walks are mirror images, one stripping bits, one carrying them.</p>
 
         <pre><code><span class="tok-kw">def</span> <span class="tok-fn">add</span>(i, delta):            <span class="tok-com"># a[i] += delta,  O(log n)</span>
     <span class="tok-kw">while</span> i <span class="tok-op">&lt;=</span> n:
@@ -649,7 +649,7 @@
         <div class="cells" aria-hidden="true">
           <span class="c"><span class="ix">t1</span>5</span><span class="c"><span class="ix">t2</span>8</span><span class="c"><span class="ix">t3</span>7</span><span class="c"><span class="ix">t4</span>24</span><span class="c"><span class="ix">t5</span>6</span><span class="c"><span class="ix">t6</span>10</span><span class="c"><span class="ix">t7</span>8</span><span class="c"><span class="ix">t8</span>44</span>
         </div>
-        <p style="font-size:15px;color:var(--on-surface-variant)"><code class="inl">t4 = a1{+}a2{+}a3{+}a4 = 24</code>; &nbsp;<code class="inl">t6 = a5{+}a6 = 10</code>; &nbsp;<code class="inl">t8 = </code> everything <code class="inl"> = 44</code>. Odd indices just copy their own cell.</p>
+        <p style="font-size:15px;color:var(--on-surface-variant)"><code class="inl">t4 = a1+a2+a3+a4 = 24</code>; &nbsp;<code class="inl">t6 = a5+a6 = 10</code>; &nbsp;<code class="inl">t8 = </code> everything <code class="inl"> = 44</code>. Odd indices just copy their own cell.</p>
 
         <h3>Step 2 &mdash; query <code class="inl">prefix(7)</code></h3>
         <p>Walk <code class="inl">7 &rarr; 6 &rarr; 4 &rarr; 0</code>, peeling the lowest set bit each time. The visited cells (highlighted) are exactly a tiling of <code class="inl">a[1..7]</code> by blocks of length 1, 2, 4:</p>
@@ -668,14 +668,14 @@
             </mrow>
           </math></div>
         </div>
-        <p>Check against the data: <code class="inl">5{+}3{+}7{+}9{+}6{+}4{+}8 = 42</code>. &nbsp;A range sum follows by subtraction: <code class="inl">range_sum(3,7) = prefix(7) &minus; prefix(2) = 42 &minus; 8 = 34</code> (and indeed <code class="inl">7{+}9{+}6{+}4{+}8 = 34</code>). Note the indices <code class="inl">7,6,4</code> are precisely the prefixes of <code class="inl">7 = 111&#8322;</code> with one more low bit cleared at each step &mdash; the algorithm <em>is</em> the binary expansion.</p>
+        <p>Check against the data: <code class="inl">5+3+7+9+6+4+8 = 42</code>. &nbsp;A range sum follows by subtraction: <code class="inl wrap">range_sum(3,7) = prefix(7) &minus; prefix(2) = 42 &minus; 8 = 34</code> (and indeed <code class="inl">7+9+6+4+8 = 34</code>). Note the indices <code class="inl">7,6,4</code> are precisely the prefixes of <code class="inl">7 = 111&#8322;</code> with one more low bit cleared at each step &mdash; the algorithm <em>is</em> the binary expansion.</p>
 
-        <h3>Step 3 &mdash; update <code class="inl">a[5] &mathbin{+}= 3</code></h3>
+        <h3>Step 3 &mdash; update <code class="inl">a[5] += 3</code></h3>
         <p>Walk <code class="inl">5 &rarr; 6 &rarr; 8 &rarr; (16, stop)</code>, <em>adding</em> the lowest set bit. Exactly the cells whose blocks cover position 5 get repaired:</p>
         <div class="cells" aria-hidden="true">
           <span class="c"><span class="ix">t1</span>5</span><span class="c"><span class="ix">t2</span>8</span><span class="c"><span class="ix">t3</span>7</span><span class="c"><span class="ix">t4</span>24</span><span class="c touch"><span class="ix">t5</span>9</span><span class="c touch"><span class="ix">t6</span>13</span><span class="c"><span class="ix">t7</span>8</span><span class="c touch"><span class="ix">t8</span>47</span>
         </div>
-        <p>Now re-run <code class="inl">prefix(7) = tree[7]{+}tree[6]{+}tree[4] = 8{+}13{+}24 = 45</code> &mdash; exactly <code class="inl">3</code> more than before, as it must be, since <code class="inl">a[5]</code> lies inside <code class="inl">[1,7]</code>. Two walks, each three steps, each touching three cells. <strong>That is the whole Fenwick tree.</strong></p>
+        <p>Now re-run <code class="inl wrap">prefix(7) = tree[7]+tree[6]+tree[4] = 8+13+24 = 45</code> &mdash; exactly <code class="inl">3</code> more than before, as it must be, since <code class="inl">a[5]</code> lies inside <code class="inl">[1,7]</code>. Two walks, each three steps, each touching three cells. <strong>That is the whole Fenwick tree.</strong></p>
         <div class="legend" aria-hidden="true"><span><i class="touch"></i>cells the walk touches</span><span><i class="fill"></i>responsibility block</span></div>
       </div>
     </section>
@@ -687,10 +687,10 @@
       <div class="col">
         <p>When the aggregate is not invertible &mdash; min, max, gcd &mdash; the prefix-subtraction trick dies, and we need a structure that combines stored sub-blocks <em>directly</em>, never undoing one. That is the <span class="term">segment tree</span>: a complete binary tree whose leaves are the array and whose every internal node stores <code class="inl">&oplus;</code> over the contiguous range its subtree spans. The root spans everything; its two children split the range in half; and so on down to single-element leaves.</p>
 
-        <p>Lay it in an array <code class="inl">t[1&hellip;2n]</code> with the implicit layout: leaves at <code class="inl">t[n&hellip;2n{-}1]</code>, and each internal node <code class="inl">t[k] = t[2k] &oplus; t[2k{+}1]</code>. A query for <code class="inl">[l,r)</code> walks up from the two ends, harvesting any node that sits <em>entirely</em> inside the range and never descending into it again. Those harvested nodes are the canonical decomposition &mdash; <code class="inl">O(log&nbsp;n)</code> of them.</p>
+        <p>Lay it in an array <code class="inl">t[1&hellip;2n]</code> with the implicit layout: leaves at <code class="inl">t[n&hellip;2n&minus;1]</code>, and each internal node <code class="inl">t[k] = t[2k] &oplus; t[2k+1]</code>. A query for <code class="inl">[l,r)</code> walks up from the two ends, harvesting any node that sits <em>entirely</em> inside the range and never descending into it again. Those harvested nodes are the canonical decomposition &mdash; <code class="inl">O(log&nbsp;n)</code> of them.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 482" role="img" aria-labelledby="f3t f3d">
+          <svg viewBox="0 0 960 482" style="--mw:760px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">A segment tree over eight elements with a range query decomposition</title>
             <desc id="f3d">A binary segment tree over array five three seven nine six four eight two. The root spans index zero to eight with sum forty-four. Its children span zero to four with sum twenty-four and four to eight with sum twenty. The leaves hold the eight values. The query for the half-open range two to seven is covered by three highlighted canonical nodes: the node spanning two to four with sum sixteen, the node spanning four to six with sum ten, and the leaf at index six with value eight. Their sum is thirty-four.</desc>
 
@@ -769,7 +769,7 @@
               <text x="540" y="444" text-anchor="middle" class="dg-val" fill="var(--bau-red)">query range [2,7)  &#8594;  sum = 34</text>
             </g>
           </svg>
-          <figcaption><b>Figure 2 &mdash; the segment tree &amp; a query decomposition.</b> Same data as Figure&nbsp;1, here 0-indexed. The range <code class="inl">[2,7)</code> is covered by three <span style="color:var(--bau-red);font-weight:650">canonical nodes</span> &mdash; <code class="inl">[2,4){=}16</code>, <code class="inl">[4,6){=}10</code>, leaf <code class="inl">[6,7){=}8</code> &mdash; summing to <code class="inl">34</code>, agreeing with the Fenwick. A range of five leaves needs three reads; in general at most <code class="inl">2&lfloor;log&#8322;n&rfloor;</code>.</figcaption>
+          <figcaption><b>Figure 2 &mdash; the segment tree &amp; a query decomposition.</b> Same data as Figure&nbsp;1, here 0-indexed. The range <code class="inl">[2,7)</code> is covered by three <span style="color:var(--bau-red);font-weight:650">canonical nodes</span> &mdash; <code class="inl">[2,4)=16</code>, <code class="inl">[4,6)=10</code>, leaf <code class="inl">[6,7)=8</code> &mdash; summing to <code class="inl">34</code>, agreeing with the Fenwick. A range of five leaves needs three reads; in general at most <code class="inl">2&lfloor;log&#8322;n&rfloor;</code>.</figcaption>
         </figure>
 
         <p>The iterative form is wonderfully short. Leaves live at <code class="inl">t[n+i]</code>; the query climbs from both ends, absorbing a node whenever it is the <em>right</em> child of a left boundary or the <em>left</em> child of a right boundary, then halving both indices:</p>
@@ -794,7 +794,7 @@
     <span class="tok-kw">return</span> resL <span class="tok-op">+</span> resR</code></pre>
 
         <p>For <code class="inl">sum</code>, <code class="inl">min</code>, <code class="inl">max</code> the operation is commutative, so a single accumulator suffices; I keep <code class="inl">resL</code> and <code class="inl">resR</code> to make the point that for a non-commutative monoid (matrix product, string concatenation) the left-harvested pieces and right-harvested pieces must be combined in array order &mdash; collapsing them carelessly is a silent bug. Swap the three <code class="inl">+</code>s for <code class="inl">min</code> and the identity for <code class="inl">+&infin;</code>, and the same skeleton answers range-minimum.</p>
-        <p>Tracing <code class="inl">query(2,7)</code> on our data: with <code class="inl">n{=}8</code>, <code class="inl">l{=}10, r{=}15</code>. Step 1: <code class="inl">r</code> odd &rarr; take <code class="inl">t[14]{=}8</code>, <code class="inl">r{=}14</code>; halve to <code class="inl">l{=}5,r{=}7</code>. Step 2: <code class="inl">l</code> odd &rarr; take <code class="inl">t[5]{=}16</code>; <code class="inl">r</code> odd &rarr; take <code class="inl">t[6]{=}10</code>, <code class="inl">r{=}6</code>; halve to <code class="inl">l{=}3,r{=}3</code> &rarr; stop. Total <code class="inl">8{+}16{+}10 = 34</code> &mdash; the same three canonical nodes the figure highlights.</p>
+        <p>Tracing <code class="inl">query(2,7)</code> on our data: with <code class="inl">n=8</code>, <code class="inl">l=10, r=15</code>. Step 1: <code class="inl">r</code> odd &rarr; take <code class="inl">t[14]=8</code>, <code class="inl">r=14</code>; halve to <code class="inl">l=5,r=7</code>. Step 2: <code class="inl">l</code> odd &rarr; take <code class="inl">t[5]=16</code>; <code class="inl">r</code> odd &rarr; take <code class="inl">t[6]=10</code>, <code class="inl">r=6</code>; halve to <code class="inl">l=3,r=3</code> &rarr; stop. Total <code class="inl">8+16+10 = 34</code> &mdash; the same three canonical nodes the figure highlights.</p>
       </div>
     </section>
 
@@ -805,10 +805,10 @@
       <div class="col">
         <p>Point update we can do. But suppose the update itself is a range: <em>add <code class="inl">&delta;</code> to every element of <code class="inl">[l,r)</code></em>, then keep answering range sums. Touching every leaf in the range is <code class="inl">O(range)</code> &mdash; back to linear. The fix is the same canonical-decomposition idea applied to <em>updates</em>: when a range-add fully covers a node, record the obligation <em>on that node</em> and stop, instead of pushing it down to its leaves. The node's own aggregate is corrected immediately; the promise to its children is stored in a <span class="term">lazy tag</span> and only honored (&ldquo;pushed down&rdquo;) if a later operation actually needs to descend through it.</p>
 
-        <p>For range-add / range-sum the bookkeeping is exact. A node covering <code class="inl">len</code> elements, told to add <code class="inl">&delta;</code> to all of them, updates <code class="inl">sum &mathbin{+}= &delta; &middot; len</code> and remembers <code class="inl">lazy &mathbin{+}= &delta;</code>. Before <em>ever</em> recursing into its children, it first flushes that pending <code class="inl">lazy</code> to both of them. That single discipline &mdash; <strong>push down before you descend</strong> &mdash; keeps every node's stored sum correct-as-seen and the children correct-when-visited.</p>
+        <p>For range-add / range-sum the bookkeeping is exact. A node covering <code class="inl">len</code> elements, told to add <code class="inl">&delta;</code> to all of them, updates <code class="inl">sum += &delta; &middot; len</code> and remembers <code class="inl">lazy += &delta;</code>. Before <em>ever</em> recursing into its children, it first flushes that pending <code class="inl">lazy</code> to both of them. That single discipline &mdash; <strong>push down before you descend</strong> &mdash; keeps every node's stored sum correct-as-seen and the children correct-when-visited.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 860 332" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 860 332" style="--mw:681px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">Lazy propagation push-down</title>
             <desc id="f4d">A parent node spanning index zero to four has an updated sum of thirty-six and a pending lazy tag of plus three covering four elements. Before the algorithm descends, it pushes the tag to both children: the left child spanning zero to two has its sum raised from eight to fourteen and inherits lazy plus three, and the right child spanning two to four has its sum raised from sixteen to twenty-two and inherits lazy plus three. The parent then clears its own lazy tag to zero.</desc>
 
@@ -873,9 +873,9 @@
     mid <span class="tok-op">=</span> (lo <span class="tok-op">+</span> hi) <span class="tok-op">//</span> <span class="tok-num">2</span>
     <span class="tok-kw">return</span> <span class="tok-fn">range_sum</span>(<span class="tok-num">2</span><span class="tok-op">*</span>k, lo, mid, l, r) <span class="tok-op">+</span> <span class="tok-fn">range_sum</span>(<span class="tok-num">2</span><span class="tok-op">*</span>k<span class="tok-op">+</span><span class="tok-num">1</span>, mid, hi, l, r)</code></pre>
 
-        <p>A small trace, on the same data: <code class="inl">range_add([0,4), +3)</code> lands on the single covered node <code class="inl">[0,4)</code> &mdash; it sets <code class="inl">sum: 24&rarr;36</code>, <code class="inl">lazy:+3</code>, and stops; no leaf is touched. Now <code class="inl">range_sum([2,3))</code> must descend through <code class="inl">[0,4)</code>, so it first pushes the <code class="inl">+3</code> down: child <code class="inl">[0,2)</code> becomes <code class="inl">sum 8&rarr;14</code>, child <code class="inl">[2,4)</code> becomes <code class="inl">sum 16&rarr;22</code> (Figure&nbsp;3), then continues to the leaf and reads <code class="inl">a[2] = 7{+}3 = 10</code> &mdash; correct. The update cost one node; the query cost one root-to-leaf path. Both <code class="inl">O(log&nbsp;n)</code>.</p>
+        <p>A small trace, on the same data: <code class="inl">range_add([0,4), +3)</code> lands on the single covered node <code class="inl">[0,4)</code> &mdash; it sets <code class="inl">sum: 24&rarr;36</code>, <code class="inl">lazy:+3</code>, and stops; no leaf is touched. Now <code class="inl">range_sum([2,3))</code> must descend through <code class="inl">[0,4)</code>, so it first pushes the <code class="inl">+3</code> down: child <code class="inl">[0,2)</code> becomes <code class="inl">sum 8&rarr;14</code>, child <code class="inl">[2,4)</code> becomes <code class="inl">sum 16&rarr;22</code> (Figure&nbsp;3), then continues to the leaf and reads <code class="inl">a[2] = 7+3 = 10</code> &mdash; correct. The update cost one node; the query cost one root-to-leaf path. Both <code class="inl">O(log&nbsp;n)</code>.</p>
 
-        <div class="note"><span class="tag" style="color:var(--bau-blue)">tag algebra</span>Lazy propagation only works when pending tags <em>compose</em>: two queued range-adds combine by <code class="inl">+</code> (<code class="inl">lazy &mathbin{+}= d</code>). The moment you mix update kinds &mdash; range-assign (<code class="inl">a[i] &larr; v</code>) <em>and</em> range-add &mdash; you must define how an assign absorbs a pending add and vice versa, and apply them in the right order. A wrong composition law is the subtlest segment-tree bug there is; &sect;10 returns to it.</div>
+        <div class="note"><span class="tag" style="color:var(--bau-blue)">tag algebra</span>Lazy propagation only works when pending tags <em>compose</em>: two queued range-adds combine by <code class="inl">+</code> (<code class="inl">lazy += d</code>). The moment you mix update kinds &mdash; range-assign (<code class="inl">a[i] &larr; v</code>) <em>and</em> range-add &mdash; you must define how an assign absorbs a pending add and vice versa, and apply them in the right order. A wrong composition law is the subtlest segment-tree bug there is; &sect;10 returns to it.</div>
       </div>
     </section>
 
@@ -986,11 +986,11 @@
       <div class="col">
         <p>These structures are short, which makes their bugs <em>silent</em> &mdash; they return a number, just the wrong one. Here is the catalogue I have watched trip up everyone, including me.</p>
 
-        <div class="note warn"><span class="tag">1 &middot; the 1-indexing trap (Fenwick)</span>A Fenwick <em>must</em> be 1-indexed. At <code class="inl">i=0</code>, <code class="inl">lowbit(0)=0</code>, so the update walk <code class="inl">i &mathbin{+}= lowbit(i)</code> never advances &mdash; an infinite loop &mdash; and the query walk reads <code class="inl">tree[0]</code>, which holds nothing. If your data is 0-indexed, add 1 on the way into the BIT and the off-by-one disappears. This single mistake accounts for most &ldquo;my BIT returns garbage&rdquo; reports.</div>
+        <div class="note warn"><span class="tag">1 &middot; the 1-indexing trap (Fenwick)</span>A Fenwick <em>must</em> be 1-indexed. At <code class="inl">i=0</code>, <code class="inl">lowbit(0)=0</code>, so the update walk <code class="inl">i += lowbit(i)</code> never advances &mdash; an infinite loop &mdash; and the query walk reads <code class="inl">tree[0]</code>, which holds nothing. If your data is 0-indexed, add 1 on the way into the BIT and the off-by-one disappears. This single mistake accounts for most &ldquo;my BIT returns garbage&rdquo; reports.</div>
 
-        <div class="note warn"><span class="tag">2 &middot; asking a Fenwick for a minimum</span>Writing <code class="inl">range_min(l,r) = something(prefix_min(r), prefix_min(l-1))</code> is meaningless: <code class="inl">min</code> has no inverse, so you cannot remove the left part's contribution. A Fenwick can maintain a <em>prefix</em>-min that only ever shrinks under updates, but not a general range-min. For range-min / max / gcd, use a segment tree. Invertibility is not a detail; it is the membership card for the Fenwick.</div>
+        <div class="note warn"><span class="tag">2 &middot; asking a Fenwick for a minimum</span>Writing <code class="inl wrap">range_min(l,r) = something(prefix_min(r), prefix_min(l-1))</code> is meaningless: <code class="inl">min</code> has no inverse, so you cannot remove the left part's contribution. A Fenwick can maintain a <em>prefix</em>-min that only ever shrinks under updates, but not a general range-min. For range-min / max / gcd, use a segment tree. Invertibility is not a detail; it is the membership card for the Fenwick.</div>
 
-        <div class="note warn"><span class="tag">3 &middot; sizing a recursive segment tree at 2n or 3n</span>The clean <em>iterative</em> tree fits in <code class="inl">2n</code>. The <em>recursive</em> tree, indexing children as <code class="inl">2k, 2k{+}1</code> from node 1, can reach indices up to nearly <code class="inl">4n</code> when <code class="inl">n</code> is not a power of two, because the implicit tree is padded to the next power of two and the array is addressed by node id, not by leaf count. Allocate <code class="inl">4n</code>. Under-allocating gives out-of-bounds writes that corrupt neighbouring nodes &mdash; again, silently.</div>
+        <div class="note warn"><span class="tag">3 &middot; sizing a recursive segment tree at 2n or 3n</span>The clean <em>iterative</em> tree fits in <code class="inl">2n</code>. The <em>recursive</em> tree, indexing children as <code class="inl">2k, 2k+1</code> from node 1, can reach indices up to nearly <code class="inl">4n</code> when <code class="inl">n</code> is not a power of two, because the implicit tree is padded to the next power of two and the array is addressed by node id, not by leaf count. Allocate <code class="inl">4n</code>. Under-allocating gives out-of-bounds writes that corrupt neighbouring nodes &mdash; again, silently.</div>
 
         <div class="note warn"><span class="tag">4 &middot; reading a child before pushing down</span>In a lazy tree, any code path that descends into children must call <code class="inl">push_down</code> first &mdash; in <em>both</em> <code class="inl">range_add</code> and <code class="inl">range_sum</code>. Skip it and a child returns a sum that ignores a pending parent tag. Equally, after recursing in an update you must <em>pull up</em> (<code class="inl">sum[k] = sum[2k]+sum[2k+1]</code>), or the parent goes stale. Push down on the way in, pull up on the way out &mdash; every time.</div>
 
@@ -1000,7 +1000,7 @@
 
         <div class="note warn"><span class="tag">7 &middot; forgetting coordinate compression</span>Inversion counting and order statistics build a Fenwick over <em>value</em> space. With raw values up to <code class="inl">10&#8313;</code> that is a billion-cell array &mdash; an instant out-of-memory. Compress to ranks <code class="inl">1..m</code> first; only the relative order matters. And mind ties: decide whether equal values share a rank (for strict inversions they should) before you compress.</div>
 
-        <div class="note warn"><span class="tag">8 &middot; half-open vs closed intervals</span>Fix one convention and never drift. This page uses inclusive <code class="inl">[l,r]</code> for the Fenwick (so <code class="inl">range_sum(l,r)=prefix(r)-prefix(l-1)</code>) and half-open <code class="inl">[l,r)</code> for the segment tree (so a leaf is <code class="inl">[i,i{+}1)</code>). Mixing the two within one solution is a reliable source of off-by-one range bugs.</div>
+        <div class="note warn"><span class="tag">8 &middot; half-open vs closed intervals</span>Fix one convention and never drift. This page uses inclusive <code class="inl">[l,r]</code> for the Fenwick (so <code class="inl wrap">range_sum(l,r)=prefix(r)-prefix(l-1)</code>) and half-open <code class="inl">[l,r)</code> for the segment tree (so a leaf is <code class="inl">[i,i+1)</code>). Mixing the two within one solution is a reliable source of off-by-one range bugs.</div>
       </div>
     </section>
 
@@ -1016,7 +1016,7 @@
         <div>
           <h3>Range Sum Query &mdash; Mutable</h3>
           <p>Design a structure over an integer array <code class="inl">nums</code> supporting two interleaved operations, each in <code class="inl">O(log&nbsp;n)</code>: <code class="inl">update(i, val)</code> sets <code class="inl">nums[i] = val</code>, and <code class="inl">sumRange(l, r)</code> returns <code class="inl">nums[l] + &hellip; + nums[r]</code> inclusive.</p>
-          <p class="meta">Signature: <code class="inl">class NumArray { NumArray(int[] nums); void update(int i, int val); long sumRange(int l, int r); }</code></p>
+          <p class="meta">Signature: <code class="inl wrap">class NumArray { NumArray(int[] nums); void update(int i, int val); long sumRange(int l, int r); }</code></p>
           <p class="meta">Constraints: <code class="inl">1 &le; n &le; 3&times;10&#8308;</code>; up to <code class="inl">3&times;10&#8308;</code> calls; <code class="inl">&minus;100 &le; val &le; 100</code>. Example: <code class="inl">nums=[1,3,5]</code>; <code class="inl">sumRange(0,2)=9</code>; <code class="inl">update(1,2)</code>; <code class="inl">sumRange(0,2)=8</code>.</p>
           <p class="meta">Hint lens: point update + prefix query &rarr; Fenwick. Watch the assign-vs-add distinction (you must store old values to convert an assignment into a delta).</p>
         </div>
@@ -1027,7 +1027,7 @@
         <div>
           <h3>Count of Smaller Numbers After Self</h3>
           <p>Given an integer array <code class="inl">nums</code>, return an array <code class="inl">counts</code> where <code class="inl">counts[i]</code> is the number of indices <code class="inl">j &gt; i</code> with <code class="inl">nums[j] &lt; nums[i]</code>. Target <code class="inl">O(n&nbsp;log&nbsp;n)</code>.</p>
-          <p class="meta">Signature: <code class="inl">int[] countSmaller(int[] nums)</code></p>
+          <p class="meta">Signature: <code class="inl wrap">int[] countSmaller(int[] nums)</code></p>
           <p class="meta">Constraints: <code class="inl">1 &le; n &le; 10&#8309;</code>; <code class="inl">&minus;10&#8308; &le; nums[i] &le; 10&#8308;</code>. Example: <code class="inl">nums=[5,2,6,1] &rarr; [2,1,1,0]</code>.</p>
           <p class="meta">Hint lens: a Fenwick over compressed ranks, swept right&rarr;left, querying how many smaller values you have already seen. Cousin of inversion counting (&sect;08).</p>
         </div>
@@ -1038,8 +1038,8 @@
         <div>
           <h3>Range Add &amp; Range Sum</h3>
           <p>Support two operations on an array of length <code class="inl">n</code>, each in <code class="inl">O(log&nbsp;n)</code>: <code class="inl">rangeAdd(l, r, delta)</code> adds <code class="inl">delta</code> to every element of <code class="inl">[l, r]</code>, and <code class="inl">rangeSum(l, r)</code> returns the sum over <code class="inl">[l, r]</code>. Give <em>two</em> designs: a lazy segment tree, and a Fenwick-only solution using the difference-array / two-BIT identity.</p>
-          <p class="meta">Signature: <code class="inl">class RangeArray { RangeArray(int n); void rangeAdd(int l, int r, long delta); long rangeSum(int l, int r); }</code></p>
-          <p class="meta">Constraints: <code class="inl">1 &le; n, q &le; 2&times;10&#8309;</code>; <code class="inl">|delta| &le; 10&#8313;</code> (use 64-bit). Example: start all zeros, <code class="inl">rangeAdd(1,3,2)</code>, <code class="inl">rangeAdd(2,4,3)</code>; then <code class="inl">rangeSum(0,4)=2{+}5{+}5{+}3{=}15</code>.</p>
+          <p class="meta">Signature: <code class="inl wrap">class RangeArray { RangeArray(int n); void rangeAdd(int l, int r, long delta); long rangeSum(int l, int r); }</code></p>
+          <p class="meta">Constraints: <code class="inl">1 &le; n, q &le; 2&times;10&#8309;</code>; <code class="inl">|delta| &le; 10&#8313;</code> (use 64-bit). Example: start all zeros, <code class="inl">rangeAdd(1,3,2)</code>, <code class="inl">rangeAdd(2,4,3)</code>; then <code class="inl">rangeSum(0,4)=2+5+5+3=15</code>.</p>
           <p class="meta">Hint lens: for the two-BIT trick, derive <code class="inl">&#x2211;<sub>k=0</sub><sup>r</sup> a[k]</code> as a linear function of difference-array prefix sums; maintain one BIT for the constant part and one for the <code class="inl">k</code>-weighted part.</p>
         </div>
       </div>
@@ -1049,7 +1049,7 @@
         <div>
           <h3>Reverse Pairs</h3>
           <p>Given an integer array <code class="inl">nums</code>, count the pairs <code class="inl">(i, j)</code> with <code class="inl">i &lt; j</code> and <code class="inl">nums[i] &gt; 2 &middot; nums[j]</code>. Target <code class="inl">O(n&nbsp;log&nbsp;n)</code>.</p>
-          <p class="meta">Signature: <code class="inl">long reversePairs(int[] nums)</code></p>
+          <p class="meta">Signature: <code class="inl wrap">long reversePairs(int[] nums)</code></p>
           <p class="meta">Constraints: <code class="inl">1 &le; n &le; 5&times;10&#8308;</code>; <code class="inl">&minus;2&#xB3;&#xB9; &le; nums[i] &lt; 2&#xB3;&#xB9;</code>. Example: <code class="inl">nums=[1,3,2,3,1] &rarr; 2</code>; &nbsp;<code class="inl">nums=[2,4,3,5,1] &rarr; 3</code>.</p>
           <p class="meta">Hint lens: like inversions, but the threshold is <code class="inl">2&middot;nums[j]</code>, not <code class="inl">nums[j]</code> &mdash; so compress the union of <code class="inl">nums[i]</code> and <code class="inl">2&middot;nums[j]</code> values, and be careful querying a strict <code class="inl">&gt;</code> with possible overflow in <code class="inl">2&middot;nums[j]</code>.</p>
         </div>
@@ -1118,6 +1118,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-09-partial-order-is-enough-heaps-and-priority-queues.html">← Previous study</a><a href="dsa-11-graphs-and-their-traversals.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-09-partial-order-is-enough-heaps-and-priority-queues.html" rel="prev"><span>&larr; Lecture 09</span><strong>Heaps and priority queues</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-11-graphs-and-their-traversals.html" rel="next"><span>Lecture 11 &rarr;</span><strong>Graphs and their traversals</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/23-segment-and-fenwick-trees.html">Lesson 23 &middot; Segment &amp; Fenwick trees</a></p></nav>
 </body>
 </html>

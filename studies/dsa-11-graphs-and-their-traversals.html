@@ -266,7 +266,7 @@
   .dg-node-r{fill:var(--bau-red); stroke:var(--bau-ink); stroke-width:2.5}
   .dg-node-bl{fill:var(--bau-blue); stroke:var(--bau-ink); stroke-width:2.5}
   .dg-nt{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
-  .dg-nt.w{fill:#fff}
+  .dg-nt.w{fill:var(--on-state)}
   /* traversal-specific edge inks */
   .dg-back{stroke:var(--bau-red); stroke-width:2.4; fill:none}
   .dg-fwd{stroke:var(--bau-blue); stroke-width:2; fill:none; stroke-dasharray:7 5}
@@ -349,7 +349,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 11">
@@ -380,7 +380,7 @@
     <div class="col" style="margin-top:1.6em">
       <div class="band flush">
         <div class="accentbar" aria-hidden="true"></div>
-        <p style="margin-bottom:.5em"><strong>A number to set the stakes.</strong> Take a graph with a <strong>million</strong> vertices and <strong>ten million</strong> edges &mdash; a small social network, a medium codebase. Stored as an <em>adjacency list</em> it occupies about ten million links, and a single full traversal touches each once: roughly <strong>11 million</strong> steps, a few milliseconds. Store the <em>same</em> graph as an adjacency <em>matrix</em> and you need a million-by-a-million grid &mdash; <strong>10<sup>12</sup></strong> cells, a terabyte &mdash; of which <strong>99.999%</strong> are zero.</p>
+        <p style="margin-bottom:.5em"><strong>A number to set the stakes.</strong> Take a graph with a <strong>million</strong> vertices and <strong>ten million</strong> edges &mdash; a small social network, a medium codebase. Stored as an <em>adjacency list</em> it occupies about ten million links, and a single full traversal touches each once: roughly <strong>11 million</strong> steps, a few tens of milliseconds. Store the <em>same</em> graph as an adjacency <em>matrix</em> and you need a million-by-a-million grid &mdash; <strong>10<sup>12</sup></strong> cells, a terabyte &mdash; of which <strong>99.999%</strong> are zero.</p>
         <p style="margin-bottom:0">Same graph. A <strong>100,000&times;</strong> gap in space, opened by nothing but the <em>representation</em>. And once the representation is right, the astonishing part is that breadth-first and depth-first search each run in <code class="inl">O(V+E)</code> &mdash; time <em>linear</em> in the graph &mdash; yet between them they answer distance, ordering, cyclicity, connectivity, and cut-points. Two linear walks; the entire skeleton of the structure, laid bare.</p>
       </div>
     </div>
@@ -491,7 +491,7 @@
         <p>The <span class="term">adjacency list</span> keeps, for each vertex <code class="inl">u</code>, a list of just its actual neighbours. Total space is <code class="inl">&#920;(n+m)</code> &mdash; you pay only for edges that exist &mdash; and enumerating <code class="inl">u</code>'s neighbours costs <code class="inl">&#920;(deg u)</code>, optimal. The price is that testing one specific edge <code class="inl">u&rarr;v</code> means scanning <code class="inl">u</code>'s list, <code class="inl">O(deg u)</code>. For the overwhelming majority of real graphs &mdash; which are sparse &mdash; the list wins decisively, and it is the representation every traversal below assumes.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 360" role="img" aria-labelledby="f1t f1d">
+          <svg viewBox="0 0 960 360" style="--mw:760px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">One directed graph stored two ways: as an adjacency matrix and as an adjacency list</title>
             <desc id="f1d">A four-vertex directed graph with edges 0 to 1, 0 to 2, 1 to 3, 2 to 3, and 3 to 0 is shown three ways. On the left is the node-and-arrow drawing. In the middle is a four-by-four adjacency matrix whose ones sit exactly at those five edges and whose other eleven cells are zero. On the right is the adjacency list: vertex 0 points to a chain of 1 and 2, vertex 1 to 3, vertex 2 to 3, and vertex 3 to 0.</desc>
             <defs>
@@ -568,7 +568,8 @@
               <rect x="0" y="138" width="34" height="30" class="dg-node"/><text x="17" y="153" class="dg-nt">3</text>
               <line x1="34" y1="153" x2="62" y2="153" class="dg-edge" marker-end="url(#ar-f1)"/>
               <rect x="64" y="138" width="34" height="30" class="dg-cell"/><text x="81" y="153" class="dg-nt">0</text>
-              <text x="0" y="200" class="dg-label sm">each row = one vertex&#8217;s out-neighbours</text>
+              <text x="0" y="198" class="dg-label sm">each row = one vertex&#8217;s</text>
+              <text x="0" y="214" class="dg-label sm">out-neighbours</text>
             </g>
           </svg>
           <figcaption><b>Figure 1 &mdash; the same five edges, two layouts.</b> The matrix spends sixteen cells to store five edges (eleven zeros); the list spends five links. On a million-vertex sparse graph that ratio is the terabyte-vs-megabyte gap of the hook. Read the matrix as &ldquo;row <code class="inl">u</code>, column <code class="inl">v</code>&rdquo; &mdash; a directed edge is one filled cell, not two.</figcaption>
@@ -647,12 +648,14 @@
         <details>
           <summary>Prove it: dist[v] from BFS equals the true shortest-path distance &#948;(s,v)</summary>
           <div class="body">
-            <p>Let <code class="inl">&#948;(s,v)</code> be the true minimum edge-count. Two halves. <em>(Upper bound, dist &#8804; &#948; is automatic:</em> any discovery path the tree records is <em>a</em> path, so <code class="inl">dist[v] &#8805; &#948;(s,v)</code> can't be beaten downward without a real path.) The substance is the <em>key invariant</em>: <strong>BFS dequeues vertices in non-decreasing order of <code class="inl">dist</code>, and the queue ever holds only two adjacent layer-values <code class="inl">i</code> and <code class="inl">i+1</code>.</strong> Prove by induction on dequeue order. It holds initially (just <code class="inl">s</code>, <code class="inl">dist=0</code>). When we dequeue <code class="inl">u</code> with <code class="inl">dist[u]=i</code>, every white neighbour <code class="inl">v</code> gets <code class="inl">dist[v]=i+1</code> and is enqueued behind the existing tail, preserving monotonicity. Now suppose for contradiction some <code class="inl">v</code> got <code class="inl">dist[v] &gt; &#948;(s,v)</code>. Take the true shortest path <code class="inl">s &#8230; w &#8594; v</code> with <code class="inl">&#948;(s,w)=&#948;(s,v)-1</code>. By induction <code class="inl">w</code> was assigned <code class="inl">dist[w]=&#948;(s,w)</code> and was dequeued; at that moment <code class="inl">v</code> was either still white (so it received <code class="inl">dist[w]+1=&#948;(s,v)</code>, contradiction) or already discovered with a value <code class="inl">&#8804; dist[w]+1</code> by monotonicity (also a contradiction). Hence <code class="inl">dist[v]=&#948;(s,v)</code> for all <code class="inl">v</code>. &#9633;</p>
+            <p>Let <code class="inl">&#948;(s,v)</code> be the true minimum edge-count. The proof has two halves.</p>
+            <p><strong>Lower bound (automatic).</strong> <code class="inl">dist[v]</code> is the length of the tree path from <code class="inl">s</code> to <code class="inl">v</code>, which is a real path, so <code class="inl">dist[v] &#8805; &#948;(s,v)</code>.</p>
+            <p><strong>Upper bound (the substance).</strong> First the <em>key invariant</em>: <strong>BFS dequeues vertices in non-decreasing order of <code class="inl">dist</code>, and the queue only ever holds two adjacent values <code class="inl">i</code> and <code class="inl">i+1</code>.</strong> Induction on the dequeue order: it holds at the start (just <code class="inl">s</code>, <code class="inl">dist=0</code>). When we dequeue <code class="inl">u</code> with <code class="inl">dist[u]=i</code>, every white neighbour gets <code class="inl">i+1</code> and goes behind the current tail, which already holds only values <code class="inl">i</code> and <code class="inl">i+1</code>, so the order is preserved. Now suppose some vertex has <code class="inl">dist[v] &gt; &#948;(s,v)</code>, and take such a <code class="inl">v</code> with the <em>smallest</em> <code class="inl">&#948;(s,v)</code>. Let <code class="inl">w</code> be the vertex before <code class="inl">v</code> on a true shortest path, so <code class="inl">&#948;(s,w)=&#948;(s,v)&minus;1</code>. By minimality <code class="inl">dist[w]=&#948;(s,w)</code>. When <code class="inl">w</code> was dequeued, <code class="inl">v</code> was either still white, so it received <code class="inl">dist[w]+1=&#948;(s,v)</code> (contradiction), or already discovered by some vertex dequeued no later than <code class="inl">w</code>, whose <code class="inl">dist</code> is at most <code class="inl">dist[w]</code> by monotonicity, so <code class="inl">dist[v] &#8804; dist[w]+1=&#948;(s,v)</code> (also a contradiction). Hence <code class="inl">dist[v]=&#948;(s,v)</code> for every <code class="inl">v</code>. &#9633;</p>
           </div>
         </details>
 
         <figure class="reveal">
-          <svg viewBox="0 0 780 330" role="img" aria-labelledby="f2t f2d">
+          <svg viewBox="0 0 780 330" style="--mw:618px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">Breadth-first search of an undirected graph drawn as distance layers from the source</title>
             <desc id="f2d">The undirected graph on vertices 0 through 6 is laid out in five vertical bands by distance from source 0. Band distance 0 holds vertex 0; band 1 holds 1 and 2; band 2 holds 3; band 3 holds 4 and 5; band 4 holds 6. Solid edges are the BFS tree: 0 to 1, 0 to 2, 2 to 3, 3 to 4, 3 to 5, 5 to 6. Two dashed non-tree edges, 1 to 2 and 4 to 5, join vertices within the same band. Each vertex is labelled with its distance.</desc>
             <!-- layer bands -->
@@ -692,7 +695,7 @@
             <line x1="50" y1="22" x2="86" y2="22" class="dg-edge"/><text x="92" y="22" class="dg-label sm" dominant-baseline="central">tree edge (discovery)</text>
             <line x1="300" y1="22" x2="336" y2="22" class="dg-cross"/><text x="342" y="22" class="dg-label sm" dominant-baseline="central">non-tree edge (same / adjacent layer)</text>
           </svg>
-          <figcaption><b>Figure 2 &mdash; BFS as a wavefront.</b> Distances from <code class="inl">0</code> are <code class="inl">[0,1,1,2,3,3,4]</code>. The solid <em>tree</em> edges are where discovery happened; the dashed edges <code class="inl">{1,2}</code> and <code class="inl">{4,5}</code> connect vertices in the <em>same</em> layer. A signature fact: in an undirected BFS <strong>no edge ever jumps more than one layer</strong> &mdash; if it did, the deeper endpoint would have been discovered a layer sooner. (An odd-layer-jump edge is also how you 2-colour to test bipartiteness.)</figcaption>
+          <figcaption><b>Figure 2 &mdash; BFS as a wavefront.</b> Distances from <code class="inl">0</code> are <code class="inl">[0,1,1,2,3,3,4]</code>. The solid <em>tree</em> edges are where discovery happened; the dashed edges <code class="inl">{1,2}</code> and <code class="inl">{4,5}</code> connect vertices in the <em>same</em> layer. A signature fact: in an undirected BFS <strong>no edge ever jumps more than one layer</strong> &mdash; if it did, the deeper endpoint would have been discovered a layer sooner. (An edge that joins two vertices in the <em>same</em> layer, like {1,2} here, closes an odd cycle; that is exactly how BFS tests bipartiteness.)</figcaption>
         </figure>
 
         <h3>Worked trace &mdash; BFS from vertex 0</h3>
@@ -750,7 +753,7 @@
         <p>In an <em>undirected</em> graph the menu shrinks to two &mdash; only tree and back edges occur &mdash; which is exactly what makes the bridge test of &sect;10 so clean.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 600 530" role="img" aria-labelledby="f3t f3d">
+          <svg viewBox="0 0 600 530" style="--mw:475px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">Depth-first search of a directed graph, drawn as its DFS tree with discovery and finish times and classified non-tree edges</title>
             <desc id="f3d">A directed graph on vertices 0 through 7 explored from 0. Solid tree edges form the spine 0 to 1, 1 to 2, 1 to 3, 3 to 4, 4 to 5, 5 to 7, 7 to 6. Three red back edges 2 to 0, 5 to 3, and 6 to 7 each close a cycle. One blue dashed forward edge runs 4 to 6. Each vertex carries its discovery slash finish times: 0 is 1/16, 1 is 2/15, 2 is 3/4, 3 is 5/14, 4 is 6/13, 5 is 7/12, 7 is 8/11, 6 is 9/10.</desc>
             <defs>
@@ -794,10 +797,10 @@
               <text x="0" y="112" class="dg-label sm">(discovery / finish)</text>
             </g>
           </svg>
-          <figcaption><b>Figure 3 &mdash; the DFS forest, timestamped.</b> Three back edges <code class="inl">2&#8594;0</code>, <code class="inl">5&#8594;3</code>, <code class="inl">6&#8594;7</code> each point to a grey ancestor &mdash; each is a cycle, so this digraph is <em>not</em> a DAG. The forward edge <code class="inl">4&#8594;6</code> points to an already-finished descendant. The parenthesis string is <code class="inl">(0 (1 (2 )<sub>2</sub> (3 (4 (5 (7 (6 )<sub>6</sub> )<sub>7</sub> )<sub>5</sub> )<sub>4</sub> )<sub>3</sub> )<sub>1</sub> )<sub>0</sub></code> &mdash; perfectly nested, mirroring the tree.</figcaption>
+          <figcaption><b>Figure 3 &mdash; the DFS forest, timestamped.</b> Three back edges <code class="inl">2&#8594;0</code>, <code class="inl">5&#8594;3</code>, <code class="inl">6&#8594;7</code> each point to a grey ancestor &mdash; each is a cycle, so this digraph is <em>not</em> a DAG. The forward edge <code class="inl">4&#8594;6</code> points to an already-finished descendant. The parenthesis string is <code class="inl wrap">(0 (1 (2 )<sub>2</sub> (3 (4 (5 (7 (6 )<sub>6</sub> )<sub>7</sub> )<sub>5</sub> )<sub>4</sub> )<sub>3</sub> )<sub>1</sub> )<sub>0</sub></code> &mdash; perfectly nested, mirroring the tree.</figcaption>
         </figure>
 
-        <p>Read the figure's times against the four classes to cement the rule. For a back edge like <code class="inl">5&#8594;3</code>, the target encloses the source: <code class="inl">d[3]=5 &lt; d[5]=7 &lt; f[5]=12 &lt; f[3]=14</code> &mdash; <code class="inl">5</code> is inside <code class="inl">3</code>, and the arrow points <em>up</em> to a living ancestor. For the forward edge <code class="inl">4&#8594;6</code>: <code class="inl">d[4]=6 &lt; d[6]=9 &lt; f[6]=10 &lt; f[4]=13</code> &mdash; nested again, but pointing <em>down</em> to a finished descendant. The timestamps don't just describe the walk; they <em>are</em> the classifier.</p>
+        <p>Read the figure's times against the four classes to cement the rule. For a back edge like <code class="inl">5&#8594;3</code>, the target encloses the source: <code class="inl wrap">d[3]=5 &lt; d[5]=7 &lt; f[5]=12 &lt; f[3]=14</code> &mdash; <code class="inl">5</code> is inside <code class="inl">3</code>, and the arrow points <em>up</em> to a living ancestor. For the forward edge <code class="inl">4&#8594;6</code>: <code class="inl wrap">d[4]=6 &lt; d[6]=9 &lt; f[6]=10 &lt; f[4]=13</code> &mdash; nested again, but pointing <em>down</em> to a finished descendant. The timestamps don't just describe the walk; they <em>are</em> the classifier.</p>
       </div>
     </section>
 
@@ -824,7 +827,7 @@
   <span class="tok-kw">else</span>: <span class="tok-kw">return</span> order</code></pre>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 360" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 760 360" style="--mw:602px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">A course-prerequisite DAG and one valid topological order produced by Kahn's algorithm</title>
             <desc id="f4d">A directed acyclic graph of six courses. Intro (0) points to Data Structures (1) and Discrete Math (2). Data Structures points to Algorithms (3) and Operating Systems (4). Discrete Math points to Algorithms. Algorithms and Operating Systems both point to Databases (5). Below, a strip shows the emitted order 0, 1, 2, 4, 3, 5 with forward arrows, captioned as a valid topological order.</desc>
             <defs>
@@ -864,7 +867,8 @@
                   <line x1="397" y1="2" x2="433" y2="2"/>
                   <line x1="467" y1="2" x2="503" y2="2"/>
                 </g>
-                <text x="560" y="2" class="dg-label sm" dominant-baseline="central">every arrow above points forward here</text>
+                <text x="552" y="-6" class="dg-label sm" dominant-baseline="central">every arrow above</text>
+                <text x="552" y="12" class="dg-label sm" dominant-baseline="central">points forward here</text>
               </g>
             </g>
           </svg>
@@ -903,10 +907,10 @@
         <p>The cleaner one to <em>understand</em>:</p>
         <ol>
           <li>Run DFS on <code class="inl">G</code>, pushing vertices on a stack as they <em>finish</em> (decreasing finish time).</li>
-          <li>Build <code class="inl">G&#7488;</code>, the <span class="term">transpose</span> &mdash; every edge reversed.</li>
-          <li>Pop vertices off the stack; from each unvisited one, run DFS on <code class="inl">G&#7488;</code>. Each tree this grows is exactly one SCC.</li>
+          <li>Build <code class="inl">G<sup>T</sup></code>, the <span class="term">transpose</span> &mdash; every edge reversed.</li>
+          <li>Pop vertices off the stack; from each unvisited one, run DFS on <code class="inl">G<sup>T</sup></code>. Each tree this grows is exactly one SCC.</li>
         </ol>
-        <p>Why it works in one line: reversing edges leaves SCCs unchanged (mutual reachability is symmetric), but the finish-time order ensures you start each second-pass DFS in a &ldquo;sink&rdquo; SCC of the condensation, so it cannot leak into another component. Two DFS passes &rArr; <code class="inl">O(V+E)</code>.</p>
+        <p>Why it works in one line: reversing edges leaves SCCs unchanged (mutual reachability is symmetric), but the finish-time order ensures you start each second-pass DFS in a &ldquo;sink&rdquo; SCC of the condensation of <code class="inl">G<sup>T</sup></code>, so it cannot leak into another component. Two DFS passes &rArr; <code class="inl">O(V+E)</code>.</p>
 
         <h3>Tarjan &mdash; one pass, one stack, the low-link</h3>
         <p>Tarjan finds the same components in a <em>single</em> DFS by tracking, for each vertex, the oldest vertex its subtree can reach via at most one non-tree hop to a vertex still &ldquo;in progress.&rdquo; Maintain <code class="inl">disc[u]</code> (discovery index) and</p>
@@ -938,7 +942,7 @@
     start new component; <span class="tok-kw">repeat</span> w <span class="tok-op">&#8592;</span> <span class="tok-fn">pop</span>(S); onStack[w] <span class="tok-op">&#8592;</span> false; add w <span class="tok-kw">until</span> w = u</code></pre>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 330" role="img" aria-labelledby="f5t f5d">
+          <svg viewBox="0 0 760 330" style="--mw:481px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">A directed graph with three strongly connected components and its condensation DAG</title>
             <desc id="f5d">A directed graph splits into three strongly connected components: SCC one is the 3-cycle on vertices 0, 1, 2; SCC two is the 3-cycle on 3, 4, 5; SCC three is the 2-cycle on 6, 7. Cross edges 1 to 3, 4 to 6, and 5 to 7 run only forward between components. Below, the condensation contracts each component to one node, giving a simple chain SCC1 to SCC2 to SCC3, which is acyclic.</desc>
             <defs>
@@ -1048,7 +1052,7 @@
         <p>The single dangerous detail (&sect;12.4): when scanning <code class="inl">u</code>'s neighbours, skip the edge back to <code class="inl">u</code>'s parent <em>once</em> &mdash; but any <em>other</em> edge to an already-seen vertex is a genuine back edge that must update <code class="inl">low</code> via <code class="inl">disc</code>.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 470 590" role="img" aria-labelledby="f6t f6d">
+          <svg viewBox="0 0 470 590" style="--mw:404px" role="img" aria-labelledby="f6t f6d">
             <title id="f6t">The undirected graph's DFS tree with discovery and low values, marking two bridges and three articulation points</title>
             <desc id="f6d">Depth-first search of the undirected graph from vertex 0 yields the path 0-1-2-3-4-5-6 as tree edges, with two red back edges: 2 up to 0, and 5 up to 3. Discovery slash low values are 0 is 0/0, 1 is 1/0, 2 is 2/0, 3 is 3/3, 4 is 4/3, 5 is 5/3, 6 is 6/6. The tree edge from 2 to 3 and the tree edge from 5 to 6 are drawn thick red as bridges, because low of the child exceeds disc of the parent. Vertices 2, 3, and 5 are ringed yellow as articulation points.</desc>
             <defs>
@@ -1112,7 +1116,7 @@
               <tr><td class="mono">(4,5)</td><td class="mono">4</td><td class="mono">3</td><td class="mono">3&gt;4 no</td><td class="mono">3&#8805;4 no</td></tr>
               <tr><td class="mono">(5,6)</td><td class="mono">5</td><td class="mono">6</td><td class="mono good">6&gt;5 BRIDGE</td><td class="mono good">6&#8805;5 &rarr; 5 is AP</td></tr>
             </tbody>
-            <tfoot><tr><td colspan="5">Bridges <code class="inl">{(2,3),(5,6)}</code>; articulation points <code class="inl">{2,3,5}</code>. Every bridge endpoint that is not a leaf or root is an articulation point &mdash; but the converse fails: a cut vertex can sit inside a cycle with no bridge (vertex <code class="inl">3</code> here is an AP whose incident tree edge <code class="inl">(3,4)</code> is <em>not</em> a bridge).</td></tr></tfoot>
+            <tfoot><tr><td colspan="5">Bridges <code class="inl">{(2,3),(5,6)}</code>; articulation points <code class="inl">{2,3,5}</code>. Every bridge endpoint that is not a leaf or root is an articulation point &mdash; but the converse fails: two triangles that share one vertex have a cut vertex and no bridge at all. (Vertex <code class="inl">3</code> here is an AP only because of its child <code class="inl">4</code>, through the tree edge <code class="inl">(3,4)</code>, which is <em>not</em> a bridge.)</td></tr></tfoot>
           </table>
         </div>
       </div>
@@ -1175,7 +1179,7 @@
         <p>For an undirected edge <code class="inl">{u,v}</code> you must push <code class="inl">v</code> into <code class="inl">adj[u]</code> <em>and</em> <code class="inl">u</code> into <code class="inl">adj[v]</code>; for a directed edge only the first. Add both directions to a directed problem and you fabricate reachability, merge SCCs, and destroy any topological order; add only one to an undirected problem and you sever half the graph. Decide the model first, build the list to match.</p>
 
         <h3>7 &middot; Tarjan's <code class="inl">low</code> update: <code class="inl">disc[w]</code>, and only if on the stack</h3>
-        <p>Two bugs in one line. Updating <code class="inl">low[u]</code> with <code class="inl">low[w]</code> instead of <code class="inl">disc[w]</code> on a non-tree edge can wrongly merge distinct SCCs; and updating from a vertex <code class="inl">w</code> that has already been popped (no longer on the stack, i.e. its component is closed) is also wrong &mdash; that edge crosses <em>into a finished component</em> and must be ignored. The guard is precisely <code class="inl">elif onStack[v]: low[u] = min(low[u], disc[v])</code>.</p>
+        <p>Two bugs in one line. Updating <code class="inl">low[u]</code> with <code class="inl">low[w]</code> instead of <code class="inl">disc[w]</code> on a non-tree edge can wrongly merge distinct SCCs; and updating from a vertex <code class="inl">w</code> that has already been popped (no longer on the stack, i.e. its component is closed) is also wrong &mdash; that edge crosses <em>into a finished component</em> and must be ignored. The guard is precisely <code class="inl wrap">elif onStack[v]: low[u] = min(low[u], disc[v])</code>.</p>
       </div>
     </section>
 
@@ -1191,7 +1195,7 @@
         <div>
           <h3>Shortest reach in an unweighted graph</h3>
           <p class="meta">bfs distances &middot; mark-on-discovery &middot; single-source</p>
-          <p>Given <code class="inl">n</code> vertices labelled <code class="inl">0&hellip;n&minus;1</code>, a list of directed edges, and a source <code class="inl">s</code>, return an array <code class="inl">dist</code> where <code class="inl">dist[v]</code> is the minimum number of edges on a path <code class="inl">s&#8594;v</code>, or <code class="inl">&minus;1</code> if <code class="inl">v</code> is unreachable. Constraints: <code class="inl">1 &#8804; n &#8804; 10&#8309;</code>, up to <code class="inl">2&#215;10&#8309;</code> edges, no weights. Example: <code class="inl">n=6</code>, edges <code class="inl">[[0,1],[0,2],[1,3],[2,3],[3,4]]</code>, <code class="inl">s=0 &#8594; [0,1,1,2,3,&minus;1]</code> (vertex 5 isolated). Prove that the value written when a vertex is <em>first</em> dequeued is final and minimal, and give the <code class="inl">O(V+E)</code> bound.</p>
+          <p>Given <code class="inl">n</code> vertices labelled <code class="inl">0&hellip;n&minus;1</code>, a list of directed edges, and a source <code class="inl">s</code>, return an array <code class="inl">dist</code> where <code class="inl">dist[v]</code> is the minimum number of edges on a path <code class="inl">s&#8594;v</code>, or <code class="inl">&minus;1</code> if <code class="inl">v</code> is unreachable. Constraints: <code class="inl">1 &#8804; n &#8804; 10&#8309;</code>, up to <code class="inl">2&#215;10&#8309;</code> edges, no weights. Example: <code class="inl">n=6</code>, edges <code class="inl wrap">[[0,1],[0,2],[1,3],[2,3],[3,4]]</code>, <code class="inl">s=0 &#8594; [0,1,1,2,3,&minus;1]</code> (vertex 5 isolated). Prove that the value written when a vertex is <em>first</em> dequeued is final and minimal, and give the <code class="inl">O(V+E)</code> bound.</p>
         </div>
       </div>
 
@@ -1200,7 +1204,7 @@
         <div>
           <h3>Course Schedule II &mdash; return a build order</h3>
           <p class="meta">topological sort &middot; cycle = impossible &middot; LeetCode 210</p>
-          <p>There are <code class="inl">numCourses</code> courses <code class="inl">0&hellip;numCourses&minus;1</code>; <code class="inl">prerequisites[i]=[a,b]</code> means <code class="inl">b</code> must be taken before <code class="inl">a</code>. Return <em>any</em> valid ordering of all courses, or the empty array <code class="inl">[]</code> if it is impossible. Constraints: up to <code class="inl">2000</code> courses and <code class="inl">&#8776;n&#178;</code> distinct prerequisite pairs. Examples: <code class="inl">numCourses=4, prereqs=[[1,0],[2,0],[3,1],[3,2]] &#8594; [0,1,2,3]</code> (or <code class="inl">[0,2,1,3]</code>); <code class="inl">[[1,0],[0,1]] &#8594; []</code>. Solve with Kahn's in-degree peeling <em>and</em> describe the DFS-finish-time alternative; state exactly how each detects the cyclic (impossible) case.</p>
+          <p>There are <code class="inl">numCourses</code> courses <code class="inl">0&hellip;numCourses&minus;1</code>; <code class="inl">prerequisites[i]=[a,b]</code> means <code class="inl">b</code> must be taken before <code class="inl">a</code>. Return <em>any</em> valid ordering of all courses, or the empty array <code class="inl">[]</code> if it is impossible. Constraints: up to <code class="inl">2000</code> courses and <code class="inl">&#8776;n&#178;</code> distinct prerequisite pairs. Examples: <code class="inl wrap">numCourses=4, prereqs=[[1,0],[2,0],[3,1],[3,2]] &#8594; [0,1,2,3]</code> (or <code class="inl">[0,2,1,3]</code>); <code class="inl">[[1,0],[0,1]] &#8594; []</code>. Solve with Kahn's in-degree peeling <em>and</em> describe the DFS-finish-time alternative; state exactly how each detects the cyclic (impossible) case.</p>
         </div>
       </div>
 
@@ -1209,7 +1213,7 @@
         <div>
           <h3>Critical Connections &mdash; find every bridge</h3>
           <p class="meta">undirected low-link &middot; low[c] &gt; disc[u] &middot; LeetCode 1192</p>
-          <p>A network of <code class="inl">n</code> servers <code class="inl">0&hellip;n&minus;1</code> is connected by undirected <code class="inl">connections[i]=[u,v]</code>. A <em>critical connection</em> is an edge whose removal disconnects some servers. Return all of them, in any order. Constraints: <code class="inl">1 &#8804; n &#8804; 10&#8309;</code>, the graph is connected, no duplicate edges. Example: <code class="inl">n=4</code>, <code class="inl">[[0,1],[1,2],[2,0],[1,3]] &#8594; [[1,3]]</code> (the triangle <code class="inl">0-1-2</code> has no bridge; the spur to <code class="inl">3</code> is the only lifeline). Implement the single-DFS <code class="inl">disc</code>/<code class="inl">low</code> solution, apply the bridge test, and explain why no back edge can &ldquo;save&rdquo; a bridge.</p>
+          <p>A network of <code class="inl">n</code> servers <code class="inl">0&hellip;n&minus;1</code> is connected by undirected <code class="inl">connections[i]=[u,v]</code>. A <em>critical connection</em> is an edge whose removal disconnects some servers. Return all of them, in any order. Constraints: <code class="inl">1 &#8804; n &#8804; 10&#8309;</code>, the graph is connected, no duplicate edges. Example: <code class="inl">n=4</code>, <code class="inl wrap">[[0,1],[1,2],[2,0],[1,3]] &#8594; [[1,3]]</code> (the triangle <code class="inl">0-1-2</code> has no bridge; the spur to <code class="inl">3</code> is the only lifeline). Implement the single-DFS <code class="inl">disc</code>/<code class="inl">low</code> solution, apply the bridge test, and explain why no back edge can &ldquo;save&rdquo; a bridge.</p>
         </div>
       </div>
 
@@ -1218,7 +1222,7 @@
         <div>
           <h3>Count the strongly connected components</h3>
           <p class="meta">tarjan / kosaraju &middot; the condensation &middot; build problem</p>
-          <p>Given a directed graph on <code class="inl">n</code> vertices and a list of directed edges, return the number of strongly connected components. Constraints: <code class="inl">1 &#8804; n &#8804; 10&#8309;</code>, up to <code class="inl">2&#215;10&#8309;</code> edges; the graph may be disconnected (loop over all vertices as roots). Example: the Figure&nbsp;5 graph &mdash; edges <code class="inl">0&#8594;1,1&#8594;2,2&#8594;0,1&#8594;3,3&#8594;4,4&#8594;5,5&#8594;3,4&#8594;6,6&#8594;7,7&#8594;6,5&#8594;7</code> &mdash; has <strong>3</strong> SCCs: <code class="inl">{0,1,2},{3,4,5},{6,7}</code>. Give a one-pass Tarjan solution (count the roots where <code class="inl">low=disc</code>) and sketch the Kosaraju alternative; state why the components, once contracted, form a DAG.</p>
+          <p>Given a directed graph on <code class="inl">n</code> vertices and a list of directed edges, return the number of strongly connected components. Constraints: <code class="inl">1 &#8804; n &#8804; 10&#8309;</code>, up to <code class="inl">2&#215;10&#8309;</code> edges; the graph may be disconnected (loop over all vertices as roots). Example: the Figure&nbsp;5 graph &mdash; edges <code class="inl wrap">0&#8594;1,1&#8594;2,2&#8594;0,1&#8594;3,3&#8594;4,4&#8594;5,5&#8594;3,4&#8594;6,6&#8594;7,7&#8594;6,5&#8594;7</code> &mdash; has <strong>3</strong> SCCs: <code class="inl">{0,1,2},{3,4,5},{6,7}</code>. Give a one-pass Tarjan solution (count the roots where <code class="inl">low=disc</code>) and sketch the Kosaraju alternative; state why the components, once contracted, form a DAG.</p>
         </div>
       </div>
     </section>
@@ -1284,6 +1288,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-10-range-queries-fenwick-and-segment-trees.html">← Previous study</a><a href="dsa-12-minimum-spanning-trees-and-union-find.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-10-range-queries-fenwick-and-segment-trees.html" rel="prev"><span>&larr; Lecture 10</span><strong>Fenwick and segment trees</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-12-minimum-spanning-trees-and-union-find.html" rel="next"><span>Lecture 12 &rarr;</span><strong>Minimum spanning trees and union-find</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/25-graphs.html">Lesson 25 &middot; Graphs &amp; representations</a><a href="../lessons/26-bfs-and-dfs.html">Lesson 26 &middot; BFS &amp; DFS</a><a href="../lessons/27-topological-sort.html">Lesson 27 &middot; Topological sort &amp; cycles</a></p></nav>
 </body>
 </html>

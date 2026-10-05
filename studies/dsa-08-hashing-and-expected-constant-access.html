@@ -331,7 +331,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 08">
@@ -353,7 +353,7 @@
     <!-- the function arrow + a key disc above -->
     <circle cx="150" cy="116" r="22" class="dg-blue-f"/>
     <path d="M150 96 a20 20 0 0 1 0 40" fill="none" stroke="var(--bau-ink)" stroke-width="2"/>
-    <text x="150" y="122" text-anchor="middle" font-family="var(--font-mono)" font-size="15" font-weight="700" fill="#fff">h(k)</text>
+    <text x="150" y="122" text-anchor="middle" font-family="var(--font-mono)" font-size="15" font-weight="700" fill="var(--on-state)">h(k)</text>
   </svg>
   <div class="wrap">
     <div class="eyebrow"><span class="n">Lecture 08</span> trading order &amp; worst-case for an expected miracle</div>
@@ -456,7 +456,7 @@
         <p>Now extract the skeleton of the difficulty. We have a <em>huge</em> address space we cannot afford and a <em>tiny</em> occupancy we actually need. The fix writes itself: choose a table size <code class="inl">m</code> proportional to <code class="inl">n</code>, not to <code class="inl">|U|</code>, and install a function that <em>folds</em> the universe down onto those <code class="inl">m</code> slots. That folding function is the <span class="term">hash function</span> <code class="inl">h : U &rarr; {0, 1, &hellip;, m&minus;1}</code>, and the array of <code class="inl">m</code> slots it feeds is the <span class="term">hash table</span>. Key <code class="inl">k</code> now lives near slot <code class="inl">h(k)</code> instead of at slot <code class="inl">k</code>.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 380" role="img" aria-labelledby="f1t f1d">
+          <svg viewBox="0 0 940 380" style="--mw:808px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">Direct addressing versus hashing: folding a huge universe onto m slots</title>
             <desc id="f1d">On the left, a large rounded rectangle labelled universe U of size two to the sixty-four contains a few scattered key dots and maps directly to an enormous mostly-empty array — wasteful. On the right, the same universe is folded by a hash function h onto a small array of eight slots; three keys are shown being hashed, and two of them, k two and k three, land in the same slot four, illustrating a collision that the pigeonhole principle makes unavoidable whenever the universe is larger than the table.</desc>
 
@@ -491,13 +491,13 @@
             <text x="470" y="66" class="dg-label sm dg-blue-f">hashing — &#x398;(m) space, m &#8776; n</text>
             <rect x="470" y="78" width="120" height="250" rx="14" fill="var(--surface-2)" stroke="var(--bau-ink)" stroke-width="2"/>
             <text x="530" y="100" text-anchor="middle" class="dg-label sm">universe U</text>
-            <circle cx="510" cy="140" r="7" class="dg-blue-f"/><text x="510" y="145" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="#fff">k&#8321;</text>
-            <circle cx="552" cy="200" r="7" class="dg-red-f"/><text x="552" y="205" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="#fff">k&#8322;</text>
-            <circle cx="505" cy="262" r="7" class="dg-red-f"/><text x="505" y="267" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="#fff">k&#8323;</text>
+            <circle cx="510" cy="140" r="7" class="dg-blue-f"/><text x="510" y="145" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--on-state)">k&#8321;</text>
+            <circle cx="552" cy="200" r="7" class="dg-red-f"/><text x="552" y="205" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--on-state)">k&#8322;</text>
+            <circle cx="505" cy="262" r="7" class="dg-red-f"/><text x="505" y="267" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--on-state)">k&#8323;</text>
 
             <!-- the function disc -->
             <circle cx="680" cy="200" r="34" class="dg-blue-f"/>
-            <text x="680" y="206" text-anchor="middle" font-family="var(--font-mono)" font-size="17" font-weight="700" fill="#fff">h</text>
+            <text x="680" y="206" text-anchor="middle" font-family="var(--font-mono)" font-size="17" font-weight="700" fill="var(--on-state)">h</text>
 
             <!-- small array of 8 slots -->
             <g font-family="var(--font-mono)">
@@ -541,10 +541,10 @@
         <p>Two classic constructions, both assuming the key has already been turned into a non-negative integer:</p>
 
         <h3>The division method</h3>
-        <p><code class="inl">h(k) = k mod m</code>. One instruction, very fast. The catch is the choice of <code class="inl">m</code>. If <code class="inl">m = 2&#x1D56;</code>, then <code class="inl">k mod m</code> is just the low <code class="inl">p</code> bits of <code class="inl">k</code> — the high bits are thrown away, so any structure in the upper bits is invisible to the table and patterned keys collide en masse. The standard remedy is to pick <code class="inl">m</code> to be a <strong>prime</strong> not close to a power of two, so the remainder mixes all the bits of the key.</p>
+        <p><code class="inl">h(k) = k mod m</code>. One instruction, very fast. The catch is the choice of <code class="inl">m</code>. If <code class="inl">m = 2<sup>p</sup></code>, then <code class="inl">k mod m</code> is just the low <code class="inl">p</code> bits of <code class="inl">k</code> — the high bits are thrown away, so any structure in the upper bits is invisible to the table and patterned keys collide en masse. The standard remedy is to pick <code class="inl">m</code> to be a <strong>prime</strong> not close to a power of two, so the remainder mixes all the bits of the key.</p>
 
         <h3>The multiplication method</h3>
-        <p><code class="inl">h(k) = &#8970; m &middot; (k&middot;A mod 1) &#8971;</code> for an irrational-flavoured constant <code class="inl">0 &lt; A &lt; 1</code> (Knuth suggests <code class="inl">A &#8776; 0.618</code>, the golden ratio's fractional part). Multiply, take the fractional part, scale to <code class="inl">m</code>. It is insensitive to the choice of <code class="inl">m</code>, so <code class="inl">m = 2&#x1D56;</code> becomes convenient again, and it mixes the bits far better than raw division.</p>
+        <p><code class="inl">h(k) = &#8970; m &middot; (k&middot;A mod 1) &#8971;</code> for an irrational-flavoured constant <code class="inl">0 &lt; A &lt; 1</code> (Knuth suggests <code class="inl">A &#8776; 0.618</code>, the golden ratio's fractional part). Multiply, take the fractional part, scale to <code class="inl">m</code>. It is insensitive to the choice of <code class="inl">m</code>, so <code class="inl">m = 2<sup>p</sup></code> becomes convenient again, and it mixes the bits far better than raw division.</p>
 
         <div class="note warn"><span class="tag">a hash function is not a checksum, nor a cipher</span>Three different goals get confused. A <em>hash-table</em> function optimises uniform spread and speed; it need not be secure. A <em>cryptographic</em> hash (SHA-256) optimises irreversibility and collision-resistance against an adversary, and is far too slow for a table's hot path. A <em>checksum</em> (CRC) optimises error detection. Using the wrong one is a real bug — a cryptographic hash in an inner loop is needless cost; a fast table hash exposed to untrusted input is a denial-of-service hole (&sect;12).</div>
 
@@ -588,7 +588,7 @@
         <p>Insert is unconditionally <code class="inl">O(1)</code>. The cost of search and delete is the <em>length of the chain</em> we land on. So the entire question is: <strong>how long is a chain?</strong> This is where the probability earns its place.</p>
 
         <h3>Unsuccessful search</h3>
-        <p>Search for a key <code class="inl">k</code> that is <em>not</em> in the table. We compute <code class="inl">h(k)</code>, land on some slot, and scan its whole chain to the end before concluding &ldquo;absent.&rdquo; The work is the length of that chain. Under SUHA each of the <code class="inl">n</code> stored keys landed in slot <code class="inl">h(k)</code> with probability <code class="inl">1/m</code> independently, so let <code class="inl">X&#7522;</code> indicate that stored key <code class="inl">i</code> is in that slot:</p>
+        <p>Search for a key <code class="inl">k</code> that is <em>not</em> in the table. We compute <code class="inl">h(k)</code>, land on some slot, and scan its whole chain to the end before concluding &ldquo;absent.&rdquo; The work is the length of that chain. Under SUHA each of the <code class="inl">n</code> stored keys landed in slot <code class="inl">h(k)</code> with probability <code class="inl">1/m</code> independently, so let <code class="inl">X<sub>i</sub></code> indicate that stored key <code class="inl">i</code> is in that slot:</p>
 
         <div class="eq">
           <span class="lbl">expected chain length = expected work of an unsuccessful search</span>
@@ -630,7 +630,7 @@
         <details>
           <summary>derive the successful-search bound, term by term</summary>
           <div class="body">
-            <p>Number the keys <code class="inl">k&#8321;, &hellip;, k&#x2099;</code> in the order they were inserted, and insert at the head of each chain. The number of elements examined when searching for <code class="inl">k&#7522;</code> equals <code class="inl">1</code> (for <code class="inl">k&#7522;</code> itself) plus the number of keys that were inserted <em>after</em> <code class="inl">k&#7522;</code> into the same chain — because head-insertion puts later arrivals in front of <code class="inl">k&#7522;</code>. Let <code class="inl">X&#7522;&#11388;</code> indicate <code class="inl">h(k&#7522;)=h(k&#11388;)</code>, with <code class="inl">E[X&#7522;&#11388;]=1/m</code> under SUHA. Then the cost of searching for <code class="inl">k&#7522;</code> is <code class="inl">1 + &#x3A3;&#11388;&#62;&#7522; X&#7522;&#11388;</code>, with expectation <code class="inl">1 + (n&minus;i)/m</code>. Average over <code class="inl">i = 1 &hellip; n</code>:</p>
+            <p>Number the keys <code class="inl">k&#8321;, &hellip;, k&#x2099;</code> in the order they were inserted, and insert at the head of each chain. The number of elements examined when searching for <code class="inl">k<sub>i</sub></code> equals <code class="inl">1</code> (for <code class="inl">k<sub>i</sub></code> itself) plus the number of keys that were inserted <em>after</em> <code class="inl">k<sub>i</sub></code> into the same chain — because head-insertion puts later arrivals in front of <code class="inl">k<sub>i</sub></code>. Let <code class="inl">X<sub>i</sub><sub>j</sub></code> indicate <code class="inl">h(k<sub>i</sub>)=h(k<sub>j</sub>)</code>, with <code class="inl">E[X<sub>i</sub><sub>j</sub>]=1/m</code> under SUHA. Then the cost of searching for <code class="inl">k<sub>i</sub></code> is <code class="inl">1 + &#x3A3;<sub>j</sub>&#62;<sub>i</sub> X<sub>i</sub><sub>j</sub></code>, with expectation <code class="inl">1 + (n&minus;i)/m</code>. Average over <code class="inl">i = 1 &hellip; n</code>:</p>
             <div class="eq" style="background:var(--surface-2)">
               <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
                 <mfrac><mn>1</mn><mi>n</mi></mfrac>
@@ -675,7 +675,7 @@
         <p>Compute each hash: <code class="inl">21 mod 8 = 5</code>, <code class="inl">9 mod 8 = 1</code>, <code class="inl">14 mod 8 = 6</code>, <code class="inl">17 mod 8 = 1</code> (collides with 9), <code class="inl">28 mod 8 = 4</code>, <code class="inl">33 mod 8 = 1</code> (collides again), <code class="inl">5 mod 8 = 5</code> (collides with 21). With <code class="inl">n = 7</code> keys in <code class="inl">m = 8</code> slots the load factor is <code class="inl">&alpha; = 7/8 = 0.875</code>. Here is the resulting table — slot&nbsp;1 carries a chain of three (head-inserted, so newest first), slot&nbsp;5 a chain of two:</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 400" role="img" aria-labelledby="f2t f2d">
+          <svg viewBox="0 0 940 400" style="--mw:744px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">A chained hash table of eight slots after inserting seven keys</title>
             <desc id="f2d">An array of eight slots indexed zero to seven. Slot one holds a chain of three nodes in head-insertion order: thirty-three, then seventeen, then nine. Slot four holds twenty-eight. Slot five holds a chain of two: five then twenty-one. Slot six holds fourteen. Slots zero, two, three, and seven are empty. An unsuccessful search for twenty-five hashes to slot one and walks all three nodes; a successful search for seventeen hashes to slot one and stops at the second node after two comparisons.</desc>
 
@@ -788,7 +788,7 @@
         <p>Let me run it on the <em>same seven keys</em> as &sect;06, so you can compare the two strategies on identical input. With <code class="inl">h(k) = k mod 8</code> and linear probing: 21&rarr;5, 9&rarr;1, 14&rarr;6, 17 wants 1 (taken) &rarr; probes to 2, 28&rarr;4, 33 wants 1 (taken), 2 (taken) &rarr; probes to 3, 5 wants 5 (taken), 6 (taken) &rarr; probes to 7.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 300" role="img" aria-labelledby="f3t f3d">
+          <svg viewBox="0 0 940 300" style="--mw:744px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">The same seven keys placed by linear probing, forming one long cluster</title>
             <desc id="f3d">A single array of eight slots. Slot zero is empty. Slots one through seven are all occupied in this order: nine, seventeen, thirty-three, twenty-eight, twenty-one, fourteen, five. Keys seventeen, thirty-three, and five were displaced from their home slots by linear probing, and the occupied run from slot one to slot seven is a single primary cluster. Inserting thirty-three took three probes and inserting five took three probes because each had to step across the growing cluster.</desc>
 
@@ -865,8 +865,8 @@
 
         <p>Read the formula as a warning. At <code class="inl">&alpha; = 0.5</code> an unsuccessful search costs <code class="inl">&#8804; 2</code> probes; at <code class="inl">&alpha; = 0.9</code> it costs <code class="inl">&#8804; 10</code>; at <code class="inl">&alpha; = 0.99</code> it costs <code class="inl">&#8804; 100</code>. The curve is a wall at <code class="inl">&alpha; = 1</code>, where the table is exactly full and a search may probe every slot. So open-addressed tables must be <strong>resized before they fill</strong> — typically kept below <code class="inl">&alpha; &#8776; 0.7</code>. Linear probing is worse than this idealised bound because real probe sequences are <em>not</em> independent permutations — clustering correlates them. The cures are better probe sequences:</p>
         <ul>
-          <li><strong>Quadratic probing:</strong> <code class="inl">h(k,i) = (h'(k) + c&#8321;i + c&#8322;i&#xB2;) mod m</code>. The jumps grow, so displaced keys do not pile into one contiguous run — this kills <em>primary</em> clustering. But two keys with the same home slot still share an entire probe sequence (<em>secondary</em> clustering).</li>
-          <li><strong>Double hashing:</strong> <code class="inl">h(k,i) = (h&#8321;(k) + i&middot;h&#8322;(k)) mod m</code>, where a <em>second</em> hash function sets the step size. Now even keys with the same home slot probe differently, because <code class="inl">h&#8322;</code> distinguishes them. This is the closest practical approach to the uniform-hashing ideal.</li>
+          <li><strong>Quadratic probing:</strong> <code class="inl wrap">h(k,i) = (h'(k) + c&#8321;i + c&#8322;i&#xB2;) mod m</code>. The jumps grow, so displaced keys do not pile into one contiguous run — this kills <em>primary</em> clustering. But two keys with the same home slot still share an entire probe sequence (<em>secondary</em> clustering).</li>
+          <li><strong>Double hashing:</strong> <code class="inl wrap">h(k,i) = (h&#8321;(k) + i&middot;h&#8322;(k)) mod m</code>, where a <em>second</em> hash function sets the step size. Now even keys with the same home slot probe differently, because <code class="inl">h&#8322;</code> distinguishes them. This is the closest practical approach to the uniform-hashing ideal.</li>
         </ul>
 
         <div class="note warn"><span class="tag">the tombstone — open addressing's sharpest edge</span>You cannot delete by simply emptying a slot. In &sect;06's probed table, <code class="inl">33</code> sits at slot&nbsp;3 only because it walked <em>through</em> slots&nbsp;1 and&nbsp;2. If you delete <code class="inl">17</code> at slot&nbsp;2 by marking it EMPTY, a later search for <code class="inl">33</code> probes slot&nbsp;1 (miss), slot&nbsp;2 (EMPTY &rarr; <em>stop, wrongly conclude absent</em>) and never reaches slot&nbsp;3. The fix is a <span class="term">tombstone</span>: a special DELETED marker that search treats as &ldquo;keep going&rdquo; but insert treats as &ldquo;reusable.&rdquo; Tombstones accumulate and slowly degrade performance, which is a second reason open-addressed tables need periodic rebuilds.</div>
@@ -904,7 +904,7 @@
         <div class="band flush" style="margin:1.4em 0">
           <div class="accentbar" aria-hidden="true"></div>
           <p style="margin-bottom:.4em"><strong>Theorem (universal hashing gives expected <code class="inl">&#x398;(1+&alpha;)</code> for any input).</strong> Fix any set of <code class="inl">n</code> keys and any key <code class="inl">x</code>. Draw <code class="inl">h</code> from a universal family <code class="inl">H</code> into <code class="inl">m</code> slots. Then the expected number of keys colliding with <code class="inl">x</code> is at most <code class="inl">&alpha; = n/m</code>.</p>
-          <p style="margin-bottom:0"><strong>Proof.</strong> For each stored key <code class="inl">y &#8800; x</code> let <code class="inl">C&#11388; = 1</code> if <code class="inl">h(y) = h(x)</code>. By universality <code class="inl">E[C&#11388;] = Pr[h(y)=h(x)] &#8804; 1/m</code>. By linearity, the expected slot population around <code class="inl">x</code> is <code class="inl">E[&#x3A3;&#11388; C&#11388;] = &#x3A3;&#11388; E[C&#11388;] &#8804; n/m = &alpha;</code>. There is no SUHA here and no assumption about the keys — the only randomness is our own choice of <code class="inl">h</code>. <span style="color:var(--bau-red)">&#9632;</span></p>
+          <p style="margin-bottom:0"><strong>Proof.</strong> For each stored key <code class="inl">y &#8800; x</code> let <code class="inl">C<sub>j</sub> = 1</code> if <code class="inl">h(y) = h(x)</code>. By universality <code class="inl">E[C<sub>j</sub>] = Pr[h(y)=h(x)] &#8804; 1/m</code>. By linearity, the expected slot population around <code class="inl">x</code> is <code class="inl wrap">E[&#x3A3;<sub>j</sub> C<sub>j</sub>] = &#x3A3;<sub>j</sub> E[C<sub>j</sub>] &#8804; n/m = &alpha;</code>. There is no SUHA here and no assumption about the keys — the only randomness is our own choice of <code class="inl">h</code>. <span style="color:var(--bau-red)">&#9632;</span></p>
         </div>
 
         <p>That is the whole game. The same <code class="inl">1+&alpha;</code> bound as &sect;05, but now it holds <em>against an adversary who picked the worst possible keys</em>, because they could not see our coin. A concrete universal family — Carter and Wegman's, 1979 — costs only a multiply and two mods:</p>
@@ -937,33 +937,33 @@
         <p>A perfect hash function for a set has <em>no collisions at all</em> on that set. The trouble is that a single collision-free table needs to be large: hashing <code class="inl">n</code> keys with no collision into one table generally requires size <code class="inl">&#8776; n&#xB2;</code> (the birthday bound, below) — far too much space. FKS gets the best of both: a first level of size <code class="inl">n</code> to keep space linear, and a <em>second</em> level of tiny squared tables to kill collisions exactly.</p>
 
         <ol>
-          <li><strong>Level 1.</strong> Hash all <code class="inl">n</code> keys into a table of size <code class="inl">m = n</code> with a universal <code class="inl">h</code>. Collisions happen; let <code class="inl">n&#11388;</code> be the number of keys landing in slot <code class="inl">j</code>.</li>
-          <li><strong>Level 2.</strong> For each slot <code class="inl">j</code>, build a <em>secondary</em> hash table of size <code class="inl">n&#11388;&#xB2;</code> with its own universal hash <code class="inl">h&#11388;</code>, chosen so it is collision-free on those <code class="inl">n&#11388;</code> keys.</li>
+          <li><strong>Level 1.</strong> Hash all <code class="inl">n</code> keys into a table of size <code class="inl">m = n</code> with a universal <code class="inl">h</code>. Collisions happen; let <code class="inl">n<sub>j</sub></code> be the number of keys landing in slot <code class="inl">j</code>.</li>
+          <li><strong>Level 2.</strong> For each slot <code class="inl">j</code>, build a <em>secondary</em> hash table of size <code class="inl">n<sub>j</sub>&#xB2;</code> with its own universal hash <code class="inl">h<sub>j</sub></code>, chosen so it is collision-free on those <code class="inl">n<sub>j</sub></code> keys.</li>
         </ol>
 
-        <p>A lookup is now exactly two hash evaluations — slot <code class="inl">j = h(k)</code>, then position <code class="inl">h&#11388;(k)</code> inside the collision-free secondary table — and at most one key comparison. <strong>Two probes, worst case, always.</strong></p>
+        <p>A lookup is now exactly two hash evaluations — slot <code class="inl">j = h(k)</code>, then position <code class="inl">h<sub>j</sub>(k)</code> inside the collision-free secondary table — and at most one key comparison. <strong>Two probes, worst case, always.</strong></p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 380" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 940 380" style="--mw:744px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">The FKS two-level perfect hash structure</title>
             <desc id="f4d">A first-level table of size n with universal hash h. Slot two contains three keys and points to a second-level table of size three squared equals nine, in which the three keys occupy distinct cells with no collisions. Slot five contains two keys and points to a second-level table of size two squared equals four. Empty first-level slots store nothing. A lookup evaluates h to pick the slot, then the slot's own hash to pick a collision-free cell — two probes in the worst case.</desc>
 
-            <text x="24" y="32" class="dg-cap">FKS: level-1 size n, level-2 size n&#11388;&#xB2; and collision-free</text>
+            <text x="24" y="32" class="dg-cap">FKS: level-1 size n, level-2 size n<tspan baseline-shift="sub" font-size="75%">j</tspan>&#xB2; and collision-free</text>
 
             <!-- level 1 -->
             <text x="60" y="64" class="dg-label sm">level 1 — size m = n, universal h</text>
             <g font-family="var(--font-mono)">
               <rect x="60" y="76"  width="120" height="34" class="dg-cell"/><text x="120" y="98"  text-anchor="middle" class="dg-label sm">0 &middot; &#8709;</text>
               <rect x="60" y="110" width="120" height="34" class="dg-cell"/><text x="120" y="132" text-anchor="middle" class="dg-label sm">1 &middot; &#8709;</text>
-              <rect x="60" y="144" width="120" height="34" class="dg-fill" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="120" y="166" text-anchor="middle" class="dg-val">2 &middot; n&#11388;=3</text>
+              <rect x="60" y="144" width="120" height="34" class="dg-fill" stroke="var(--bau-blue)" stroke-width="2.5"/><text x="120" y="166" text-anchor="middle" class="dg-val">2 &middot; n<tspan baseline-shift="sub" font-size="75%">j</tspan>=3</text>
               <rect x="60" y="178" width="120" height="34" class="dg-cell"/><text x="120" y="200" text-anchor="middle" class="dg-label sm">3 &middot; &#8709;</text>
               <rect x="60" y="212" width="120" height="34" class="dg-cell"/><text x="120" y="234" text-anchor="middle" class="dg-label sm">4 &middot; &#8709;</text>
-              <rect x="60" y="246" width="120" height="34" class="dg-fill" stroke="var(--bau-red)" stroke-width="2.5"/><text x="120" y="268" text-anchor="middle" class="dg-val">5 &middot; n&#11388;=2</text>
+              <rect x="60" y="246" width="120" height="34" class="dg-fill" stroke="var(--bau-red)" stroke-width="2.5"/><text x="120" y="268" text-anchor="middle" class="dg-val">5 &middot; n<tspan baseline-shift="sub" font-size="75%">j</tspan>=2</text>
               <rect x="60" y="280" width="120" height="34" class="dg-cell"/><text x="120" y="302" text-anchor="middle" class="dg-label sm">6 &middot; &#8709;</text>
             </g>
 
             <!-- level 2 table for slot 2: size 9 -->
-            <text x="430" y="98" class="dg-label sm dg-blue-f">slot 2 &rarr; size n&#11388;&#xB2; = 9, no collisions</text>
+            <text x="430" y="98" class="dg-label sm dg-blue-f">slot 2 &rarr; size n<tspan baseline-shift="sub" font-size="75%">j</tspan>&#xB2; = 9, no collisions</text>
             <g font-family="var(--font-mono)">
               <rect x="430" y="110" width="46" height="34" class="dg-cell"/><text x="453" y="132" text-anchor="middle" class="dg-label sm">&#8709;</text>
               <rect x="476" y="110" width="46" height="34" class="dg-fill"/><text x="499" y="132" text-anchor="middle" class="dg-val">a</text>
@@ -978,7 +978,7 @@
             <path d="M180 161 L424 130" class="dg-stroke dg-blue" marker-end="url(#af)"/>
 
             <!-- level 2 table for slot 5: size 4 -->
-            <text x="430" y="248" class="dg-label sm dg-red-f">slot 5 &rarr; size n&#11388;&#xB2; = 4, no collisions</text>
+            <text x="430" y="248" class="dg-label sm dg-red-f">slot 5 &rarr; size n<tspan baseline-shift="sub" font-size="75%">j</tspan>&#xB2; = 4, no collisions</text>
             <g font-family="var(--font-mono)">
               <rect x="430" y="260" width="56" height="34" class="dg-fill"/><text x="458" y="282" text-anchor="middle" class="dg-val">d</text>
               <rect x="486" y="260" width="56" height="34" class="dg-cell"/><text x="514" y="282" text-anchor="middle" class="dg-label sm">&#8709;</text>
@@ -987,7 +987,7 @@
             </g>
             <path d="M180 263 L424 278" class="dg-stroke dg-red" marker-end="url(#af2)"/>
 
-            <text x="60" y="348" class="dg-label sm">lookup k:  j = h(k)  &rarr;  position h&#11388;(k) in the collision-free level-2 table.  <tspan class="dg-blue-f">Two probes, worst case.</tspan></text>
+            <text x="60" y="348" class="dg-label sm">lookup k:  j = h(k)  &rarr;  position h<tspan baseline-shift="sub" font-size="75%">j</tspan>(k) in the collision-free level-2 table.  <tspan class="dg-blue-f">Two probes, worst case.</tspan></text>
 
             <defs>
               <marker id="af"  markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-blue)"/></marker>
@@ -1000,10 +1000,10 @@
         <p>Two facts make this work, and both are pure probability:</p>
 
         <h3>Why a squared table has no collisions (the birthday bound)</h3>
-        <p>Hash <code class="inl">n&#11388;</code> keys into a table of size <code class="inl">n&#11388;&#xB2;</code> with a universal function. The expected number of colliding pairs is <code class="inl">&#8729;C(n&#11388;,2)&middot;(1/n&#11388;&#xB2;) &lt; n&#11388;&#xB2;/2 &middot; 1/n&#11388;&#xB2; = 1/2</code>. By Markov's inequality, the probability of <em>any</em> collision is below <code class="inl">1/2</code> — so a randomly drawn <code class="inl">h&#11388;</code> is collision-free with probability over a half. Draw, test, redraw if needed: in expectation fewer than two tries find a perfect <code class="inl">h&#11388;</code>.</p>
+        <p>Hash <code class="inl">n<sub>j</sub></code> keys into a table of size <code class="inl">n<sub>j</sub>&#xB2;</code> with a universal function. The expected number of colliding pairs is <code class="inl wrap">&#8729;C(n<sub>j</sub>,2)&middot;(1/n<sub>j</sub>&#xB2;) &lt; n<sub>j</sub>&#xB2;/2 &middot; 1/n<sub>j</sub>&#xB2; = 1/2</code>. By Markov's inequality, the probability of <em>any</em> collision is below <code class="inl">1/2</code> — so a randomly drawn <code class="inl">h<sub>j</sub></code> is collision-free with probability over a half. Draw, test, redraw if needed: in expectation fewer than two tries find a perfect <code class="inl">h<sub>j</sub></code>.</p>
 
         <h3>Why the total space is still <code class="inl">O(n)</code></h3>
-        <p>The space is dominated by the second level, <code class="inl">&#x3A3;&#11388; n&#11388;&#xB2;</code>. The identity <code class="inl">&#x3A3;&#11388; n&#11388;&#xB2; = n + 2&middot;(number of colliding pairs at level 1)</code> turns this into an expectation we already know how to take:</p>
+        <p>The space is dominated by the second level, <code class="inl">&#x3A3;<sub>j</sub> n<sub>j</sub>&#xB2;</code>. The identity <code class="inl wrap">&#x3A3;<sub>j</sub> n<sub>j</sub>&#xB2; = n + 2&middot;(number of colliding pairs at level 1)</code> turns this into an expectation we already know how to take:</p>
 
         <div class="eq">
           <span class="lbl">expected second-level space, level-1 table of size m = n</span>
@@ -1023,7 +1023,7 @@
           </math></div>
         </div>
 
-        <p>So the expected total table space is <code class="inl">O(n)</code>; pick a level-1 <code class="inl">h</code> whose <code class="inl">&#x3A3; n&#11388;&#xB2;</code> is below <code class="inl">4n</code> (Markov again: since the expectation is below <code class="inl">2n</code>, at most half of the draws can reach <code class="inl">4n</code>, so at least half qualify) and the bound becomes a guarantee. The result is the striking combination the section promised: <strong><code class="inl">O(n)</code> space and <code class="inl">O(1)</code> worst-case lookup</strong>, with all the probability spent once, at build time, never at query time. Modern variants (cuckoo hashing, and the minimal-perfect-hash generators behind compilers and search indexes) descend directly from this idea.</p>
+        <p>So the expected total table space is <code class="inl">O(n)</code>; pick a level-1 <code class="inl">h</code> whose <code class="inl">&#x3A3; n<sub>j</sub>&#xB2;</code> is below <code class="inl">4n</code> (Markov again: since the expectation is below <code class="inl">2n</code>, at most half of the draws can reach <code class="inl">4n</code>, so at least half qualify) and the bound becomes a guarantee. The result is the striking combination the section promised: <strong><code class="inl">O(n)</code> space and <code class="inl">O(1)</code> worst-case lookup</strong>, with all the probability spent once, at build time, never at query time. Modern variants (cuckoo hashing, and the minimal-perfect-hash generators behind compilers and search indexes) descend directly from this idea.</p>
       </div>
     </section>
 
@@ -1036,7 +1036,7 @@
 
         <div class="band flush" style="margin:1.4em 0">
           <div class="accentbar" aria-hidden="true"></div>
-          <p style="margin-bottom:0"><strong>Maximum load.</strong> When <code class="inl">n</code> keys are hashed uniformly into <code class="inl">n</code> slots, the expected length of the longest chain is <code class="inl">&#x398;&#8202;(log n / log log n)</code> with high probability — even though the <em>average</em> chain has length <code class="inl">1</code>. So although <em>typical</em> access is constant, the <em>worst</em> single access in a table of a million keys is around a dozen, not one. The gap between <code class="inl">1</code> and <code class="inl">log n / log log n</code> is the tail the title warns about.</p>
+          <p style="margin-bottom:0"><strong>Maximum load.</strong> When <code class="inl">n</code> keys are hashed uniformly into <code class="inl">n</code> slots, the expected length of the longest chain is <code class="inl">&#x398;&#8202;(log n / log log n)</code> with high probability — even though the <em>average</em> chain has length <code class="inl">1</code>. So although <em>typical</em> access is constant, the <em>worst</em> single access in a table of a million keys is typically eight to ten (a handful of keys on the unluckiest chain), not one. The gap between <code class="inl">1</code> and <code class="inl">log n / log log n</code> is the tail the title warns about.</p>
         </div>
 
         <p>Two consequences worth carrying:</p>
@@ -1096,7 +1096,7 @@
         <p>A <em>fixed</em> hash function exposed to untrusted keys is a denial-of-service vulnerability. An attacker computes keys that all collide, collapses every operation to <code class="inl">&#x398;(n)</code>, and a single crafted request burns minutes of CPU. This is not theoretical — it hit PHP, Java, Python, Ruby, and ASP.NET web stacks in 2011&ndash;2012, and the fix shipped industry-wide was exactly &sect;08: a <strong>randomly seeded universal (or keyed, like SipHash) hash chosen at process start</strong>. If keys can come from outside your program, a deterministic hash is a bug, not a performance choice.</p>
 
         <h3>2 &middot; A bad hash function silently destroys the guarantee</h3>
-        <p>Every bound on this page assumes good spreading. Ship <code class="inl">h(k) = k mod 2&#x1D56;</code> and you key on the low bits only; feed it pointers or aligned addresses (all ending in <code class="inl">000</code>) and most slots are dead while a few overflow. Worse, a hash that ignores part of a composite key — hashing only the first field of a struct — turns whole classes of distinct keys into collisions. Test your hash's <em>distribution</em>, not just its correctness; a hash that compiles and &ldquo;works&rdquo; can still be quietly quadratic.</p>
+        <p>Every bound on this page assumes good spreading. Ship <code class="inl">h(k) = k mod 2<sup>p</sup></code> and you key on the low bits only; feed it pointers or aligned addresses (all ending in <code class="inl">000</code>) and most slots are dead while a few overflow. Worse, a hash that ignores part of a composite key — hashing only the first field of a struct — turns whole classes of distinct keys into collisions. Test your hash's <em>distribution</em>, not just its correctness; a hash that compiles and &ldquo;works&rdquo; can still be quietly quadratic.</p>
 
         <h3>3 &middot; The open-addressing deletion bug (deleting to EMPTY)</h3>
         <p>The single most common hash-table bug: in an open-addressed table, deleting a key by marking its slot EMPTY severs the probe chains that ran through it, so later searches for displaced keys stop early and report <em>false absences</em> — silent data loss. You must use a <span class="term">tombstone</span> (&sect;07). And because tombstones accumulate and lengthen probe sequences over time, a long-lived table needs periodic full rebuilds to flush them.</p>
@@ -1111,7 +1111,7 @@
         <p>&ldquo;Hash tables are <code class="inl">O(1)</code>&rdquo; is shorthand, not a theorem about every operation. The bound is <em>expected</em>, the worst case is <code class="inl">&#x398;(n)</code>, and the worst <em>single</em> access in a large table is <code class="inl">&#x398;(log n / log log n)</code> even in the average case (&sect;10). In a hard-real-time or worst-case-latency-bounded setting (avionics, high-frequency trading, an SLA on the 99.99th percentile), an <em>expected</em> constant may be unacceptable — reach for a balanced tree's worst-case <code class="inl">O(log n)</code> or a static perfect hash. Always ask which promise the caller actually needs.</p>
 
         <h3>7 &middot; Integer overflow and sign in hash computation</h3>
-        <p>A polynomial string hash <code class="inl">&#x3A3; s&#7522;&middot;B&#x2071;</code> overflows machine integers fast. That is fine — overflow is just arithmetic mod <code class="inl">2&#x2076;&#x2074;</code> — <em>provided</em> you account for it (and never index with a negative result in languages where <code class="inl">%</code> can return a negative). Forgetting the sign of the modulo, or mixing signed and unsigned, produces out-of-bounds indices or skewed distributions. Reduce to <code class="inl">[0, m)</code> deliberately, not by accident.</p>
+        <p>A polynomial string hash <code class="inl">&#x3A3; s<sub>i</sub>&middot;B&#x2071;</code> overflows machine integers fast. That is fine — overflow is just arithmetic mod <code class="inl">2&#x2076;&#x2074;</code> — <em>provided</em> you account for it (and never index with a negative result in languages where <code class="inl">%</code> can return a negative). Forgetting the sign of the modulo, or mixing signed and unsigned, produces out-of-bounds indices or skewed distributions. Reduce to <code class="inl">[0, m)</code> deliberately, not by accident.</p>
 
         <h3>8 &middot; Reaching for a hash table when you needed order</h3>
         <p>The meta-mistake. A hash table answers membership and point lookup and nothing else. The moment you need sorted iteration, range queries, nearest-key, successor/predecessor, or min/max, the scattering that made hashing fast is now your enemy, and you are sorting the keys on every query. That is the signal you wanted the <em>ordered</em> dictionary of Lecture&nbsp;7, not this one. Choose the structure by the queries, never by the headline speed.</p>
@@ -1130,7 +1130,7 @@
         <div>
           <h3>Subarray sum equals K</h3>
           <p class="meta">hash map as a prefix-sum counter &middot; O(n) &middot; LeetCode 560</p>
-          <p>Given an integer array <code class="inl">nums</code> and an integer <code class="inl">k</code>, return the total number of <em>contiguous</em> subarrays whose elements sum to exactly <code class="inl">k</code>. The brute force is <code class="inl">&#x398;(n&#xB2;)</code>; reach <code class="inl">O(n)</code> with one pass. Define the prefix sum <code class="inl">P[i] = nums[0] + &hellip; + nums[i&minus;1]</code>; a subarray <code class="inl">(i, j]</code> sums to <code class="inl">k</code> exactly when <code class="inl">P[j] &minus; P[i] = k</code>, i.e. <code class="inl">P[i] = P[j] &minus; k</code>. Sweep left to right keeping a <strong>hash map from prefix-sum value to how many times it has occurred</strong>, and at each <code class="inl">j</code> add the count of <code class="inl">P[j] &minus; k</code> seen so far. State why a hash map (not a sorted structure) is the right tool here, and handle the empty-prefix and negative-number cases. Note that <code class="inl">nums</code> may contain zeros and negatives, so two-pointer/sliding-window does <em>not</em> apply.</p>
+          <p>Given an integer array <code class="inl">nums</code> and an integer <code class="inl">k</code>, return the total number of <em>contiguous</em> subarrays whose elements sum to exactly <code class="inl">k</code>. The brute force is <code class="inl">&#x398;(n&#xB2;)</code>; reach <code class="inl">O(n)</code> with one pass. Define the prefix sum <code class="inl wrap">P[i] = nums[0] + &hellip; + nums[i&minus;1]</code>; a subarray <code class="inl">(i, j]</code> sums to <code class="inl">k</code> exactly when <code class="inl">P[j] &minus; P[i] = k</code>, i.e. <code class="inl">P[i] = P[j] &minus; k</code>. Sweep left to right keeping a <strong>hash map from prefix-sum value to how many times it has occurred</strong>, and at each <code class="inl">j</code> add the count of <code class="inl">P[j] &minus; k</code> seen so far. State why a hash map (not a sorted structure) is the right tool here, and handle the empty-prefix and negative-number cases. Note that <code class="inl">nums</code> may contain zeros and negatives, so two-pointer/sliding-window does <em>not</em> apply.</p>
           <pre><code><span class="tok-fn">subarraySum</span>(nums, k) <span class="tok-op">-&gt;</span> int    <span class="tok-com"># 1 &le; n &le; 2e4;  -1e3 &le; nums[i] &le; 1e3</span></code></pre>
         </div>
       </div>
@@ -1227,6 +1227,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-07-balanced-search-trees.html">← Previous study</a><a href="dsa-09-partial-order-is-enough-heaps-and-priority-queues.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-07-balanced-search-trees.html" rel="prev"><span>&larr; Lecture 07</span><strong>Balanced search trees</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-09-partial-order-is-enough-heaps-and-priority-queues.html" rel="next"><span>Lecture 09 &rarr;</span><strong>Heaps and priority queues</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/11-hash-tables.html">Lesson 11 &middot; Hash tables</a></p></nav>
 </body>
 </html>

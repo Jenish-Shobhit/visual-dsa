@@ -323,7 +323,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 04">
@@ -467,7 +467,7 @@
       <div class="col">
         <p>Here is the lever. A polynomial of degree <code class="inl">&lt;n</code> can be pinned down in two utterly different ways, and they carry exactly the same information.</p>
         <p><strong>Face one &mdash; coefficients.</strong> The list <code class="inl">(a&#8320;,a&#8321;,&#8230;,a<sub>n&minus;1</sub>)</code>. This is what we have been using.</p>
-        <p><strong>Face two &mdash; point&#8209;values.</strong> Pick any <code class="inl">n</code> <em>distinct</em> input points <code class="inl">x&#8320;,&#8230;,x<sub>n&minus;1</sub></code> and list what the polynomial evaluates to at each: <code class="inl">{(x&#8320;,A(x&#8320;)),&#8230;,(x<sub>n&minus;1</sub>,A(x<sub>n&minus;1</sub>))}</code>. The deep fact that makes this a faithful representation is the <span class="term">uniqueness of interpolation</span>: through <code class="inl">n</code> points with distinct <code class="inl">x</code>-coordinates there passes <em>exactly one</em> polynomial of degree <code class="inl">&lt;n</code>. (Two such agreeing at <code class="inl">n</code> points would differ by a degree-<code class="inl">&lt;n</code> polynomial with <code class="inl">n</code> roots &mdash; impossible unless it is zero.) So the <code class="inl">n</code> values, like the <code class="inl">n</code> coefficients, name the polynomial without ambiguity.</p>
+        <p><strong>Face two &mdash; point&#8209;values.</strong> Pick any <code class="inl">n</code> <em>distinct</em> input points <code class="inl">x&#8320;,&#8230;,x<sub>n&minus;1</sub></code> and list what the polynomial evaluates to at each: <code class="inl wrap">{(x&#8320;,A(x&#8320;)),&#8230;,(x<sub>n&minus;1</sub>,A(x<sub>n&minus;1</sub>))}</code>. The deep fact that makes this a faithful representation is the <span class="term">uniqueness of interpolation</span>: through <code class="inl">n</code> points with distinct <code class="inl">x</code>-coordinates there passes <em>exactly one</em> polynomial of degree <code class="inl">&lt;n</code>. (Two such agreeing at <code class="inl">n</code> points would differ by a degree-<code class="inl">&lt;n</code> polynomial with <code class="inl">n</code> roots &mdash; impossible unless it is zero.) So the <code class="inl">n</code> values, like the <code class="inl">n</code> coefficients, name the polynomial without ambiguity.</p>
         <p>Now watch what multiplication costs in each language. In coefficients it is the <code class="inl">&#x398;(n&#178;)</code> convolution. In point&#8209;values, if we have <code class="inl">A</code> and <code class="inl">B</code> evaluated <em>at the same points</em>, the product's value at each point is just the product of the two values:</p>
         <div class="eq">
           <span class="lbl">multiplication in point-value form is pointwise</span>
@@ -484,7 +484,7 @@
         <p>One multiplication per point. <code class="inl">&#x398;(n)</code> for the whole product, against <code class="inl">&#x398;(n&#178;)</code> for the same answer in the other language. The catch &mdash; and it is the only catch &mdash; is that <code class="inl">C</code> has degree <code class="inl">2n&minus;2</code>, so it needs <code class="inl">2n&minus;1</code> point&#8209;values to be determined. We must therefore evaluate <code class="inl">A</code> and <code class="inl">B</code> at <strong>at least <code class="inl">2n&minus;1</code> points</strong> (we will pad up to the next power of two), treating each as a degree-<code class="inl">&lt;2n</code> polynomial with high coefficients zero.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 430" role="img" aria-labelledby="f1t f1d">
+          <svg viewBox="0 0 960 430" style="--mw:760px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The two roads from coefficients of A and B to coefficients of their product</title>
             <desc id="f1d">A commutative diagram. Top-left: A and B as coefficient vectors. Top-right: C as a coefficient vector. The direct top road is schoolbook convolution costing Theta of n squared. The lower road descends by the forward FFT to point-value form in Theta n log n, crosses by pointwise multiplication in Theta n, then climbs back by the inverse FFT in Theta n log n. The detour is asymptotically faster than the direct road.</desc>
 
@@ -611,7 +611,7 @@
         <p>They sit equally spaced around the unit circle. Now square one: <code class="inl">(&#969;<sub>n</sub><sup>k</sup>)&#178; = &#969;<sub>n</sub><sup>2k</sup> = &#969;<sub>n/2</sub><sup>k</sup></code> &mdash; squaring an <code class="inl">n</code>-th root yields an <code class="inl">(n/2)</code>-th root. And it is exactly two-to-one: the points <code class="inl">&#969;<sub>n</sub><sup>k</sup></code> and <code class="inl">&#969;<sub>n</sub><sup>k+n/2</sup></code> &mdash; diametrically opposite, since <code class="inl">&#969;<sub>n</sub><sup>n/2</sup>=e<sup>i&#960;</sup>=&minus;1</code> makes them negatives of one another &mdash; square to the <em>same</em> value. So the <code class="inl">n</code> roots, squared, give precisely <code class="inl">n/2</code> distinct points, which are themselves the <code class="inl">(n/2)</code>-th roots of unity: <strong>the structure we demanded, delivered exactly, and self-similar at every level.</strong></p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 470" role="img" aria-labelledby="f2t f2d">
+          <svg viewBox="0 0 960 470" style="--mw:760px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">The eight 8th-roots of unity on the unit circle and how squaring collapses them to four</title>
             <desc id="f2d">Left: the unit circle with eight equally spaced 8th-roots of unity marked at multiples of 45 degrees, omega-8 to the 0 equals 1 at the right, omega-8 to the 2 equals i at the top, omega-8 to the 4 equals minus 1 at the left, omega-8 to the 6 equals minus i at the bottom. Dashed diameters join each antipodal pair k and k plus 4, which are negatives of each other and square to the same point. Right: a smaller circle showing the four 4th-roots of unity, the squared images, with an arrow labelled z maps to z squared from the large circle to the small one.</desc>
 
@@ -620,7 +620,7 @@
             <line x1="55" y1="235" x2="445" y2="235" class="dg-dash"/>
             <line x1="250" y1="40" x2="250" y2="430" class="dg-dash"/>
             <text x="455" y="252" class="dg-label sm">Re</text>
-            <text x="258" y="36" class="dg-label sm">Im</text>
+            <text x="258" y="110" class="dg-label sm">Im</text>
 
             <!-- antipodal diameters (dashed, colour-paired) -->
             <line x1="435" y1="235" x2="65" y2="235" stroke="var(--bau-red)" stroke-width="1.5" stroke-dasharray="4 5" opacity=".55"/>
@@ -728,7 +728,7 @@
         <p>This is the merge-sort recurrence exactly. Two halves, linear glue, logarithmically many levels &mdash; the same shape Lecture&nbsp;03 taught you to recognise on sight. The map from coefficients to values at the roots of unity is the <span class="term">Discrete Fourier Transform</span> (DFT); this recursive way of computing it in <code class="inl">&#x398;(n&#160;log&#160;n)</code> instead of the definition's <code class="inl">&#x398;(n&#178;)</code> is the <span class="term">Fast Fourier Transform</span>.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 380" role="img" aria-labelledby="f3t f3d">
+          <svg viewBox="0 0 960 380" style="--mw:760px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">The FFT recursion tree for eight coefficients, splitting by index parity</title>
             <desc id="f3d">A three-level recursion tree. The root holds all eight coefficients a0 through a7. It splits into an even child a0 a2 a4 a6 and an odd child a1 a3 a5 a7. Each splits again into pairs, and those into single coefficients at the leaves. The right margin notes that each of the log base 2 of 8 equals 3 levels does Theta of n combine work across the level, for a total of Theta of n log n.</desc>
 
@@ -784,12 +784,11 @@
 
             <!-- level accounting -->
             <g>
-              <line x1="30" y1="44"  x2="30" y2="290" class="dg-dash"/>
-              <text x="922" y="48"  text-anchor="end" class="dg-label sm">level 0 &middot; combine &#x398;(n)</text>
-              <text x="922" y="134" text-anchor="end" class="dg-label sm">level 1 &middot; combine &#x398;(n)</text>
-              <text x="922" y="216" text-anchor="end" class="dg-label sm">level 2 &middot; combine &#x398;(n)</text>
-              <text x="922" y="292" text-anchor="end" class="dg-label sm">leaves &middot; 1-point DFTs</text>
-              <text x="48" y="338" class="dg-cap">log&#8322; n = 3 levels &times; &#x398;(n) each = &#x398;(n log n)</text>
+              <text x="8" y="44"  class="dg-label sm">level 0</text><text x="8" y="58"  class="dg-label sm">&#x398;(n)</text>
+              <text x="8" y="130" class="dg-label sm">level 1</text><text x="8" y="144" class="dg-label sm">&#x398;(n)</text>
+              <text x="8" y="212" class="dg-label sm">level 2</text><text x="8" y="226" class="dg-label sm">&#x398;(n)</text>
+              <text x="8" y="288" class="dg-label sm">leaves</text><text x="8" y="302" class="dg-label sm">1-pt DFT</text>
+              <text x="48" y="338" class="dg-cap">log&#8322; n = 3 levels of combining, &#x398;(n) each = &#x398;(n log n)</text>
             </g>
           </svg>
           <figcaption><b>Figure 3 &mdash; the divide structure.</b> Splitting by index parity halves the coefficient count each level, bottoming out at single coefficients (a 1-point DFT is the value itself). There are <code class="inl">log&#8322;&#160;n</code> levels; each spends <code class="inl">&#x398;(n)</code> on its butterflies. The product is the bound &mdash; the very recursion tree from Lecture&nbsp;03, now drawn for the transform.</figcaption>
@@ -824,7 +823,7 @@
         <p>An <code class="inl">E</code> shared, an <code class="inl">O</code> twiddled once, an add and a subtract. Cross two lines, fork two outputs &mdash; the wings give it its name. A full FFT level is just <code class="inl">n/2</code> of these butterflies side by side; the whole transform is <code class="inl">log&#160;n</code> stacked levels of them. Below, the network for <code class="inl">n=4</code> &mdash; the exact size of the worked example in &sect;10.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 400" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 960 400" style="--mw:760px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">A single butterfly close-up and the full four-point FFT butterfly network</title>
             <desc id="f4d">Left: one butterfly takes inputs E on top and O on the bottom, multiplies O by the twiddle t equals omega-n to the k, and outputs E plus t on top and E minus t on the bottom. Right: the four-point FFT network. Inputs a0, a2, a1, a3 in bit-reversed order enter on the left. Stage one pairs a0 with a2 and a1 with a3 using twiddle 1. Stage two combines across with twiddles omega-4 to the 0 equals 1 and omega-4 to the 1 equals i, producing outputs A-hat 0, A-hat 1, A-hat 2, A-hat 3.</desc>
 
@@ -951,11 +950,11 @@
             </mrow>
           </math></div>
         </div>
-        <p>Compare it to the forward transform: identical, but with <code class="inl">&#969;<sub>n</sub></code> replaced by its conjugate <code class="inl">&#969;<sub>n</sub><sup>&minus;1</sup></code> (run the circle backwards) and a final divide by <code class="inl">n</code>. <strong>So the inverse FFT is the forward FFT with two edits</strong> &mdash; you reuse the very same butterfly code. A clean way to say it in one line: <code class="inl">IFFT(y)=&#8203;conj(FFT(conj(y)))/n</code>. The road home costs exactly what the road out did.</p>
+        <p>Compare it to the forward transform: identical, but with <code class="inl">&#969;<sub>n</sub></code> replaced by its conjugate <code class="inl">&#969;<sub>n</sub><sup>&minus;1</sup></code> (run the circle backwards) and a final divide by <code class="inl">n</code>. <strong>So the inverse FFT is the forward FFT with two edits</strong> &mdash; you reuse the very same butterfly code. A clean way to say it in one line: <code class="inl wrap">IFFT(y)=&#8203;conj(FFT(conj(y)))/n</code>. The road home costs exactly what the road out did.</p>
         <details>
           <summary>show the one-line proof that V&#183;conj(V) = nI</summary>
           <div class="body">
-            <p>The <code class="inl">(j,l)</code> entry of <code class="inl">V&#183;conj(V)</code> is <code class="inl">&#8721;<sub>k</sub> V<sub>jk</sub>&#160;conj(V<sub>kl</sub>) = &#8721;<sub>k</sub> &#969;<sub>n</sub><sup>jk</sup>&#969;<sub>n</sub><sup>&minus;kl</sup> = &#8721;<sub>k</sub> &#969;<sub>n</sub><sup>k(j&minus;l)</sup></code>. By the summation lemma that is <code class="inl">n</code> when <code class="inl">j=l</code> and <code class="inl">0</code> otherwise &mdash; i.e. <code class="inl">n&#160;I</code>. Hence <code class="inl">V<sup>&minus;1</sup> = (1/n)&#160;conj(V)</code>, whose <code class="inl">(j,k)</code> entry is <code class="inl">(1/n)&#969;<sub>n</sub><sup>&minus;jk</sup></code>. That is the inverse formula above. The whole interpolation problem is dispatched by one geometric-series cancellation.</p>
+            <p>The <code class="inl">(j,l)</code> entry of <code class="inl">V&#183;conj(V)</code> is <code class="inl wrap">&#8721;<sub>k</sub> V<sub>jk</sub>&#160;conj(V<sub>kl</sub>) = &#8721;<sub>k</sub> &#969;<sub>n</sub><sup>jk</sup>&#969;<sub>n</sub><sup>&minus;kl</sup> = &#8721;<sub>k</sub> &#969;<sub>n</sub><sup>k(j&minus;l)</sup></code>. By the summation lemma that is <code class="inl">n</code> when <code class="inl">j=l</code> and <code class="inl">0</code> otherwise &mdash; i.e. <code class="inl">n&#160;I</code>. Hence <code class="inl">V<sup>&minus;1</sup> = (1/n)&#160;conj(V)</code>, whose <code class="inl">(j,k)</code> entry is <code class="inl">(1/n)&#969;<sub>n</sub><sup>&minus;jk</sup></code>. That is the inverse formula above. The whole interpolation problem is dispatched by one geometric-series cancellation.</p>
           </div>
         </details>
       </div>
@@ -1028,7 +1027,7 @@
         <details>
           <summary>show the j = 1 sum in full (where the conjugate roots earn their keep)</summary>
           <div class="body">
-            <p>For <code class="inl">j=1</code> the multipliers are <code class="inl">&#969;<sub>4</sub><sup>&minus;k</sup>=[1,&minus;i,&minus;1,i]</code>. So the sum is <code class="inl">21&middot;1 + (&minus;5+10i)(&minus;i) + 1&middot;(&minus;1) + (&minus;5&minus;10i)(i)</code>. Compute the middles: <code class="inl">(&minus;5+10i)(&minus;i)=5i&minus;10i&#178;=10+5i</code> and <code class="inl">(&minus;5&minus;10i)(i)=&minus;5i&minus;10i&#178;=10&minus;5i</code>. Total: <code class="inl">21+10+5i&minus;1+10&minus;5i=40</code>. Divide by <code class="inl">4</code>: <code class="inl">c<sub>1</sub>=10</code>. The imaginary parts <code class="inl">+5i</code> and <code class="inl">&minus;5i</code> annihilate &mdash; the conjugate symmetry of a real signal's transform, doing its job.</p>
+            <p>For <code class="inl">j=1</code> the multipliers are <code class="inl">&#969;<sub>4</sub><sup>&minus;k</sup>=[1,&minus;i,&minus;1,i]</code>. So the sum is <code class="inl wrap">21&middot;1 + (&minus;5+10i)(&minus;i) + 1&middot;(&minus;1) + (&minus;5&minus;10i)(i)</code>. Compute the middles: <code class="inl">(&minus;5+10i)(&minus;i)=5i&minus;10i&#178;=10+5i</code> and <code class="inl">(&minus;5&minus;10i)(i)=&minus;5i&minus;10i&#178;=10&minus;5i</code>. Total: <code class="inl">21+10+5i&minus;1+10&minus;5i=40</code>. Divide by <code class="inl">4</code>: <code class="inl">c<sub>1</sub>=10</code>. The imaginary parts <code class="inl">+5i</code> and <code class="inl">&minus;5i</code> annihilate &mdash; the conjugate symmetry of a real signal's transform, doing its job.</p>
           </div>
         </details>
       </div>
@@ -1048,8 +1047,8 @@
   y <span class="tok-op">&#8592;</span> array(n);  w <span class="tok-op">&#8592;</span> <span class="tok-num">1</span>;  wn <span class="tok-op">&#8592;</span> exp(<span class="tok-num">2</span>&#960;i / n)
   <span class="tok-kw">for</span> k <span class="tok-kw">in</span> <span class="tok-num">0</span> .. n/<span class="tok-num">2</span> &#8722; <span class="tok-num">1</span>:
     t <span class="tok-op">&#8592;</span> w <span class="tok-op">*</span> O[k]                 <span class="tok-com"># the twiddle, computed ONCE</span>
-    y[k]        <span class="tok-op">&#8592;</span> E[k] <span class="tok-op">+</span> t        <span class="tok-com"># A(&#969;&#8345;&#7503;)</span>
-    y[k <span class="tok-op">+</span> n/<span class="tok-num">2</span>]  <span class="tok-op">&#8592;</span> E[k] <span class="tok-op">&#8722;</span> t        <span class="tok-com"># A(&#8722;&#969;&#8345;&#7503;), the antipode</span>
+    y[k]        <span class="tok-op">&#8592;</span> E[k] <span class="tok-op">+</span> t        <span class="tok-com"># A(&omega;_n^k)</span>
+    y[k <span class="tok-op">+</span> n/<span class="tok-num">2</span>]  <span class="tok-op">&#8592;</span> E[k] <span class="tok-op">&#8722;</span> t        <span class="tok-com"># A(&#8722;&omega;_n^k), the antipode</span>
     w <span class="tok-op">&#8592;</span> w <span class="tok-op">*</span> wn                   <span class="tok-com"># advance to the next root</span>
   <span class="tok-kw">return</span> y
 
@@ -1127,7 +1126,7 @@
         <div>
           <h3>Multiply two big integers given as strings</h3>
           <p class="meta">convolution + carry &middot; schoolbook vs FFT crossover</p>
-          <p>Given non-negative integers <code class="inl">num1</code>, <code class="inl">num2</code> as digit strings (no leading zeros except <code class="inl">"0"</code> itself), return their product as a string, without any big-integer library. Model each number as a polynomial in base <code class="inl">10</code>: convolve the digit vectors, then propagate carries. Signature <code class="inl">multiply(num1: str, num2: str) -&gt; str</code>; example <code class="inl">"123"&times;"45"="5535"</code>. State the schoolbook complexity in the lengths, identify exactly which step is the convolution, and say at what input size you would switch to an FFT/NTT convolution and why.</p>
+          <p>Given non-negative integers <code class="inl">num1</code>, <code class="inl">num2</code> as digit strings (no leading zeros except <code class="inl">"0"</code> itself), return their product as a string, without any big-integer library. Model each number as a polynomial in base <code class="inl">10</code>: convolve the digit vectors, then propagate carries. Signature <code class="inl wrap">multiply(num1: str, num2: str) -&gt; str</code>; example <code class="inl">"123"&times;"45"="5535"</code>. State the schoolbook complexity in the lengths, identify exactly which step is the convolution, and say at what input size you would switch to an FFT/NTT convolution and why.</p>
         </div>
       </div>
 
@@ -1145,7 +1144,7 @@
         <div>
           <h3>Wildcard string matching in O(n log n)</h3>
           <p class="meta">three convolutions &middot; the sum-of-cubes trick</p>
-          <p>Given text <code class="inl">T</code> (length <code class="inl">n</code>) and pattern <code class="inl">P</code> (length <code class="inl">m</code>) over a small alphabet, where <code class="inl">P</code> may contain the wildcard <code class="inl">'?'</code> matching any character, return every start index <code class="inl">s</code> (<code class="inl">0&#8804;s&#8804;n&minus;m</code>) at which <code class="inl">P</code> matches <code class="inl">T[s..s+m&minus;1]</code>. Map characters to positive integers and the wildcard to <code class="inl">0</code>. Show that the mismatch score <code class="inl">M(s)=&#8721;<sub>j</sub> P[j]&middot;T[s+j]&middot;(P[j]&minus;T[s+j])&#178;</code> is non-negative and equals <code class="inl">0</code> exactly at a match, then expand it into three correlations &mdash; each an FFT convolution after reversing <code class="inl">P</code> &mdash; for an <code class="inl">O((n+m)&#160;log(n+m))</code> algorithm. Identify why the wildcard must map to <code class="inl">0</code>, and the precision hazard the cubes introduce.</p>
+          <p>Given text <code class="inl">T</code> (length <code class="inl">n</code>) and pattern <code class="inl">P</code> (length <code class="inl">m</code>) over a small alphabet, where <code class="inl">P</code> may contain the wildcard <code class="inl">'?'</code> matching any character, return every start index <code class="inl">s</code> (<code class="inl">0&#8804;s&#8804;n&minus;m</code>) at which <code class="inl">P</code> matches <code class="inl">T[s..s+m&minus;1]</code>. Map characters to positive integers and the wildcard to <code class="inl">0</code>. Show that the mismatch score <code class="inl wrap">M(s)=&#8721;<sub>j</sub> P[j]&middot;T[s+j]&middot;(P[j]&minus;T[s+j])&#178;</code> is non-negative and equals <code class="inl">0</code> exactly at a match, then expand it into three correlations &mdash; each an FFT convolution after reversing <code class="inl">P</code> &mdash; for an <code class="inl">O((n+m)&#160;log(n+m))</code> algorithm. Identify why the wildcard must map to <code class="inl">0</code>, and the precision hazard the cubes introduce.</p>
         </div>
       </div>
 
@@ -1220,6 +1219,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-03-divide-solve-combine.html">← Previous study</a><a href="dsa-05-probability-for-algorithms.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-03-divide-solve-combine.html" rel="prev"><span>&larr; Lecture 03</span><strong>Divide, solve, combine</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-05-probability-for-algorithms.html" rel="next"><span>Lecture 05 &rarr;</span><strong>Probability for algorithms</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a></p></nav>
 </body>
 </html>

@@ -265,7 +265,7 @@
   .cells{display:flex; gap:5px; flex-wrap:wrap; margin:.5em 0 1em; font-family:var(--font-mono); font-size:14px; align-items:flex-end}
   .cells .c{min-width:40px; height:40px; display:grid; place-items:center; border:1.5px solid var(--bau-ink); border-radius:var(--r-xs); background:var(--surface-1); position:relative}
   .cells .c.fill{background:var(--primary-container); color:var(--on-primary-container); font-weight:650}
-  .cells .c.one{background:var(--bau-blue); color:#fff; font-weight:650}
+  .cells .c.one{background:var(--bau-blue); color:var(--on-state); font-weight:650}
   .cells .c .ix{position:absolute; top:-1.35em; left:0; right:0; text-align:center; font-size:10.5px; color:var(--on-surface-variant)}
 
   /* ===== two-up ===== */
@@ -332,7 +332,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 05">
@@ -436,7 +436,7 @@
           <span class="chip">harmonic &amp; geometric sums</span>
           <span class="chip">asymptotic notation (Big-O / &#x398; / &#x3A9;)</span>
         </div>
-        <p style="margin-top:1em">If <code class="inl">&#x398;</code>, <code class="inl">O</code>, and <code class="inl">&#x3A9;</code> are not yet reflexes, revisit <a class="inline" href="dsa-00-cost-of-a-computation.html">Lecture 00 &mdash; The Cost of a Computation</a>; the harmonic number <code class="inl">H&#8345; = 1 + &#189; + &#8531; + &#8943; + 1/n &#8776; ln n</code> will appear in &sect;07 and is the one summation worth memorizing. No prior probability is assumed &mdash; we build it.</p>
+        <p style="margin-top:1em">If <code class="inl">&#x398;</code>, <code class="inl">O</code>, and <code class="inl">&#x3A9;</code> are not yet reflexes, revisit <a class="inline" href="dsa-00-cost-of-a-computation.html">Lecture 00 &mdash; The Cost of a Computation</a>; the harmonic number <code class="inl wrap">H&#8345; = 1 + &#189; + &#8531; + &#8943; + 1/n &#8776; ln n</code> will appear in &sect;07 and is the one summation worth memorizing. No prior probability is assumed &mdash; we build it.</p>
       </div>
     </section>
 
@@ -586,13 +586,13 @@
         <ol style="font-size:1.04rem; line-height:1.6">
           <li><strong>Decompose.</strong> Write the count you want as a sum of indicators, one per &ldquo;thing that might happen&rdquo;: <code class="inl">X = &#120793;&#8321; + &#120793;&#8322; + &#8943; + &#120793;&#8345;</code>.</li>
           <li><strong>Linearize.</strong> Apply linearity &mdash; no independence needed &mdash; so <code class="inl">E[X] = E[&#120793;&#8321;] + &#8943; + E[&#120793;&#8345;]</code>.</li>
-          <li><strong>Probabilize.</strong> Replace each <code class="inl">E[&#120793;&#7522;]</code> with <code class="inl">P(A&#7522;)</code> and sum the probabilities: <code class="inl">E[X] = &#8721;&#7522; P(A&#7522;)</code>.</li>
+          <li><strong>Probabilize.</strong> Replace each <code class="inl">E[&#120793;<sub>i</sub>]</code> with <code class="inl">P(A<sub>i</sub>)</code> and sum the probabilities: <code class="inl">E[X] = &#8721;<sub>i</sub> P(A<sub>i</sub>)</code>.</li>
         </ol>
 
-        <p>A warm-up to feel the magic. Flip <code class="inl">n</code> fair coins; how many heads, in expectation? Let <code class="inl">&#120793;&#7522; = 1</code> if flip <code class="inl">i</code> is heads. Then <code class="inl">X = &#8721;&#120793;&#7522;</code> and <code class="inl">E[X] = &#8721; P(flip i is heads) = n &#8226; &#189; = n/2</code>. Trivial here &mdash; the flips happen to be independent &mdash; but watch what we did <em>not</em> use: independence. The same three lines work when the events are gnarled together.</p>
+        <p>A warm-up to feel the magic. Flip <code class="inl">n</code> fair coins; how many heads, in expectation? Let <code class="inl">&#120793;<sub>i</sub> = 1</code> if flip <code class="inl">i</code> is heads. Then <code class="inl">X = &#8721;&#120793;<sub>i</sub></code> and <code class="inl wrap">E[X] = &#8721; P(flip i is heads) = n &#8226; &#189; = n/2</code>. Trivial here &mdash; the flips happen to be independent &mdash; but watch what we did <em>not</em> use: independence. The same three lines work when the events are gnarled together.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 900 250" role="img" aria-labelledby="f0t f0d">
+          <svg viewBox="0 0 900 250" style="--mw:713px" role="img" aria-labelledby="f0t f0d">
             <title id="f0t">A count rewritten as a row of indicator bits whose expectations add</title>
             <desc id="f0d">Eight cells each holding a zero or one indicator for whether a coin came up heads. The count X is their sum, here four. Linearity says the expected count equals the sum of the eight individual head-probabilities, each one half, giving n over two regardless of any dependence among the flips.</desc>
             <text x="24" y="40" class="dg-cap">X = &#120793;&#8321; + &#120793;&#8322; + &#120793;&#8323; + &#8943; + &#120793;&#8328;&#8195;&mdash;&#8195;a count is a sum of 0/1 levers</text>
@@ -693,12 +693,12 @@
           </math></div>
         </div>
 
-        <p><strong>Step 2 &mdash; the key probability.</strong> Fix <code class="inl">i &lt; j</code> and consider the block of values between them inclusive, <code class="inl">{z&#7522;, z&#7522;&#8330;&#8321;, &#8943;, z&#11388;}</code> &mdash; there are <code class="inl">j &#8722; i + 1</code> of them. Track the <em>first</em> of these that is chosen as a pivot (one of them must be, eventually, since pivots keep being drawn until each value has been one). Two cases, and only two:</p>
+        <p><strong>Step 2 &mdash; the key probability.</strong> Fix <code class="inl">i &lt; j</code> and consider the block of values between them inclusive, <code class="inl">{z<sub>i</sub>, z<sub>i</sub>&#8330;&#8321;, &#8943;, z<sub>j</sub>}</code> &mdash; there are <code class="inl">j &#8722; i + 1</code> of them. Track the <em>first</em> of these that is chosen as a pivot (one of them must be, eventually, since pivots keep being drawn until each value has been one). Two cases, and only two:</p>
         <ul class="obj" style="margin:1.1em 0">
-          <li>If that first-chosen pivot is an <strong>interior</strong> value <code class="inl">z&#8344;</code> with <code class="inl">i &lt; m &lt; j</code>, it splits <code class="inl">z&#7522;</code> and <code class="inl">z&#11388;</code> into different partitions. They land on opposite sides and are <strong>never compared</strong>.</li>
-          <li>If that first-chosen pivot is an <strong>endpoint</strong> &mdash; <code class="inl">z&#7522;</code> or <code class="inl">z&#11388;</code> itself &mdash; then at that moment the other endpoint is still in the same block and <em>is compared to it</em>. They <strong>are compared</strong>.</li>
+          <li>If that first-chosen pivot is an <strong>interior</strong> value <code class="inl">z&#8344;</code> with <code class="inl">i &lt; m &lt; j</code>, it splits <code class="inl">z<sub>i</sub></code> and <code class="inl">z<sub>j</sub></code> into different partitions. They land on opposite sides and are <strong>never compared</strong>.</li>
+          <li>If that first-chosen pivot is an <strong>endpoint</strong> &mdash; <code class="inl">z<sub>i</sub></code> or <code class="inl">z<sub>j</sub></code> itself &mdash; then at that moment the other endpoint is still in the same block and <em>is compared to it</em>. They <strong>are compared</strong>.</li>
         </ul>
-        <p>So <code class="inl">z&#7522;</code> and <code class="inl">z&#11388;</code> are compared exactly when the first pivot drawn from their block of <code class="inl">j &#8722; i + 1</code> values is one of the two endpoints. Because pivots are uniform, every value in the block is equally likely to be the first one chosen, so the two favourable cases out of <code class="inl">j &#8722; i + 1</code> give</p>
+        <p>So <code class="inl">z<sub>i</sub></code> and <code class="inl">z<sub>j</sub></code> are compared exactly when the first pivot drawn from their block of <code class="inl">j &#8722; i + 1</code> values is one of the two endpoints. Because pivots are uniform, every value in the block is equally likely to be the first one chosen, so the two favourable cases out of <code class="inl">j &#8722; i + 1</code> give</p>
         <div class="eq red">
           <span class="lbl">the heart of the analysis</span>
           <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -714,7 +714,7 @@
         <p>Read it: <em>adjacent ranks</em> (<code class="inl">j = i+1</code>) are compared with probability <code class="inl">2/2 = 1</code> &mdash; they must be, no value sits between to separate them &mdash; while <em>far-apart ranks</em> are compared rarely, probability <code class="inl">&#8776; 2/(j-i)</code>. Figure 2 draws this.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 920 430" role="img" aria-labelledby="f2t f2d">
+          <svg viewBox="0 0 920 430" style="--mw:728px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">Why two values are compared with probability two over the block size, and the resulting triangular table of pair-probabilities</title>
             <desc id="f2d">Left: nine values in sorted order with a bracket over the block from z three to z seven; the two endpoints are highlighted and the label states the pair is compared exactly when the first pivot from the five-element block is an endpoint, probability two fifths. Right: an upper-triangular grid indexed by i and j, each cell shaded by two over j minus i plus one, darkest on the diagonal where adjacent ranks are always compared and fading away from it.</desc>
 
@@ -762,8 +762,12 @@
             <text x="560" y="40" class="dg-cap">P(compared) = 2 / (j&#8722;i+1)</text>
             <g transform="translate(540,60)" font-family="var(--font-mono)">
               <!-- column headers j=2..7 -->
-              <text x="46"  y="14" text-anchor="middle" class="dg-label sm">j=2</text>
-              <text x="46"  y="14" text-anchor="middle" class="dg-label sm">2</text>
+              <text x="44"  y="14" text-anchor="middle" class="dg-label sm">j=2</text>
+              <text x="90"  y="14" text-anchor="middle" class="dg-label sm">3</text>
+              <text x="136" y="14" text-anchor="middle" class="dg-label sm">4</text>
+              <text x="182" y="14" text-anchor="middle" class="dg-label sm">5</text>
+              <text x="228" y="14" text-anchor="middle" class="dg-label sm">6</text>
+              <text x="274" y="14" text-anchor="middle" class="dg-label sm">7</text>
               <!-- we draw a 6x6 upper triangle; cell intensity ~ 2/(gap+1) -->
               <!-- row i=1 -->
               <rect x="22"  y="24" width="44" height="44" fill="var(--bau-blue)" fill-opacity="1.00" stroke="#fff"/>
@@ -793,9 +797,9 @@
               <!-- row i=6 -->
               <rect x="252" y="254" width="44" height="44" fill="var(--bau-blue)" fill-opacity="1.00" stroke="#fff"/>
               <!-- diagonal arrow note -->
-              <text x="44"  y="52" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">1</text>
-              <text x="90"  y="98" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">1</text>
-              <text x="136" y="144" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">1</text>
+              <text x="44"  y="52" text-anchor="middle" fill="var(--on-state)" font-size="12" font-weight="700">1</text>
+              <text x="90"  y="98" text-anchor="middle" fill="var(--on-state)" font-size="12" font-weight="700">1</text>
+              <text x="136" y="144" text-anchor="middle" fill="var(--on-state)" font-size="12" font-weight="700">1</text>
             </g>
             <text x="560" y="372" class="dg-label sm">diagonal (adjacent ranks): always compared, P=1</text>
             <text x="560" y="392" class="dg-label sm">far from diagonal: faint &mdash; rarely compared</text>
@@ -852,7 +856,7 @@
 
         <div class="note info">
           <span class="tag">what we just bought</span>
-          We never assumed the input was random &mdash; <code class="inl">z&#8321; &lt; &#8943; &lt; z&#8345;</code> is <em>any</em> input, sorted only in our heads for bookkeeping. The expectation is over the pivots, which we own. That is the difference between average-case (a hope about inputs) and randomized (a guarantee you carry with you). And notice we never needed the <code class="inl">X&#7522;&#11388;</code> to be independent &mdash; they are riddled with dependence &mdash; because linearity did not ask.
+          We never assumed the input was random &mdash; <code class="inl">z&#8321; &lt; &#8943; &lt; z&#8345;</code> is <em>any</em> input, sorted only in our heads for bookkeeping. The expectation is over the pivots, which we own. That is the difference between average-case (a hope about inputs) and randomized (a guarantee you carry with you). And notice we never needed the <code class="inl">X<sub>i</sub><sub>j</sub></code> to be independent &mdash; they are riddled with dependence &mdash; because linearity did not ask.
         </div>
       </div>
     </section>
@@ -904,7 +908,7 @@
         <p>Here the independence hypothesis you escaped in &sect;05 returns and must be honoured. For an indicator, <code class="inl">Var[&#120793;<sub>i</sub>] = p(1-p)</code>. So for <code class="inl">X</code> = heads in <code class="inl">n</code> fair flips, <code class="inl">Var[X] = n &#8226; &#188; = n/4</code> &mdash; the variance grows like <code class="inl">n</code>, the standard deviation like <code class="inl">&#8730;n</code>. That sublinear spread &mdash; the deviation <code class="inl">&#8730;n</code> being vanishingly small next to the mean <code class="inl">n/2</code> &mdash; is the first whisper of <em>concentration</em>: big sums of independent pieces huddle tightly around their mean.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 900 320" role="img" aria-labelledby="f3t f3d">
+          <svg viewBox="0 0 900 320" style="--mw:713px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">Two distributions with the same mean but different variance</title>
             <desc id="f3d">Two histograms share an identical mean marked by a dashed vertical line. The upper distribution is narrow with small standard deviation and is a reliable algorithm; the lower is broad with large standard deviation and is a volatile one. Expectation cannot tell them apart; variance is exactly what distinguishes them.</desc>
             <!-- shared mean line -->
@@ -1008,7 +1012,7 @@
             </mrow>
           </math></div>
         </div>
-        <p>Its cousin <span class="term">Hoeffding's inequality</span> handles independent variables bounded in any <code class="inl">[a&#7522;, b&#7522;]</code> (not just <code class="inl">0/1</code>): <code class="inl">P(|S - E[S]| &#8805; t) &#8804; 2&#8201;exp(&#8722;2t&sup2; / &#8721;(b&#7522;-a&#7522;)&sup2;)</code>. The mechanism behind both is the <em>moment generating function</em>: apply Markov not to <code class="inl">X</code> but to <code class="inl">e<sup>tX</sup></code>, exploit independence to factor the expectation into a product, then optimise over <code class="inl">t</code>. Independence is what licenses the factoring &mdash; remove it and the exponential is gone.</p>
+        <p>Its cousin <span class="term">Hoeffding's inequality</span> handles independent variables bounded in any <code class="inl">[a<sub>i</sub>, b<sub>i</sub>]</code> (not just <code class="inl">0/1</code>): <code class="inl wrap">P(|S - E[S]| &#8805; t) &#8804; 2&#8201;exp(&#8722;2t&sup2; / &#8721;(b<sub>i</sub>-a<sub>i</sub>)&sup2;)</code>. The mechanism behind both is the <em>moment generating function</em>: apply Markov not to <code class="inl">X</code> but to <code class="inl">e<sup>tX</sup></code>, exploit independence to factor the expectation into a product, then optimise over <code class="inl">t</code>. Independence is what licenses the factoring &mdash; remove it and the exponential is gone.</p>
 
         <details>
           <summary>The MGF trick in four lines &mdash; where the exponential comes from</summary>
@@ -1035,7 +1039,7 @@
         </div>
 
         <figure class="reveal">
-          <svg viewBox="0 0 900 400" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 900 400" style="--mw:713px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">One tail capped three ways, showing Markov above Chebyshev above Chernoff</title>
             <desc id="f4d">Axes plot the bound on the probability of deviating at least t from the mean, against the deviation t. Markov is a high nearly flat curve decaying like one over t. Chebyshev is a lower hyperbola decaying like one over t squared. Chernoff is a steep exponential cliff that plunges far below both. The true tail probability hugs the bottom, beneath all three caps, which nest in that order.</desc>
 
@@ -1077,11 +1081,11 @@
       <div class="col">
         <p>Numbers make the ladder vivid. Flip <code class="inl">n</code> fair coins; let <code class="inl">X</code> be the number of heads, so <code class="inl">&#956; = n/2</code> and (independence) <code class="inl">Var[X] = n/4</code>. We ask the same question of all three bounds: <strong>how likely is <code class="inl">X &#8805; 3n/4</code></strong> &mdash; a full quarter of <code class="inl">n</code> above the mean?</p>
 
-        <p><strong>Markov.</strong> Non-negativity and the mean only: <code class="inl">P(X &#8805; 3n/4) &#8804; E[X] / (3n/4) = (n/2)/(3n/4) = 2/3</code>. A cap of <code class="inl">0.667</code> &mdash; almost worthless, and it never improves with <code class="inl">n</code>.</p>
+        <p><strong>Markov.</strong> Non-negativity and the mean only: <code class="inl wrap">P(X &#8805; 3n/4) &#8804; E[X] / (3n/4) = (n/2)/(3n/4) = 2/3</code>. A cap of <code class="inl">0.667</code> &mdash; almost worthless, and it never improves with <code class="inl">n</code>.</p>
 
-        <p><strong>Chebyshev.</strong> The deviation is <code class="inl">k = 3n/4 - n/2 = n/4</code>. Then <code class="inl">P(X &#8805; 3n/4) &#8804; P(|X-&#956;| &#8805; n/4) &#8804; Var/k&sup2; = (n/4)/(n/4)&sup2; = 4/n</code>. Now it <em>decays</em> &mdash; but only as <code class="inl">1/n</code>.</p>
+        <p><strong>Chebyshev.</strong> The deviation is <code class="inl">k = 3n/4 - n/2 = n/4</code>. Then <code class="inl wrap">P(X &#8805; 3n/4) &#8804; P(|X-&#956;| &#8805; n/4) &#8804; Var/k&sup2; = (n/4)/(n/4)&sup2; = 4/n</code>. Now it <em>decays</em> &mdash; but only as <code class="inl">1/n</code>.</p>
 
-        <p><strong>Chernoff.</strong> Write <code class="inl">3n/4 = (1+&#948;)&#956;</code> with <code class="inl">&#956; = n/2</code>, so <code class="inl">1+&#948; = 3/2</code>, <code class="inl">&#948; = &#189;</code>. Then <code class="inl">P(X &#8805; 3n/4) &#8804; e<sup>&#8722;&#948;&sup2;&#956;/3</sup> = e<sup>&#8722;(&#188;)(n/2)/3</sup> = e<sup>&#8722;n/24</sup></code>. Exponential collapse.</p>
+        <p><strong>Chernoff.</strong> Write <code class="inl">3n/4 = (1+&#948;)&#956;</code> with <code class="inl">&#956; = n/2</code>, so <code class="inl">1+&#948; = 3/2</code>, <code class="inl">&#948; = &#189;</code>. Then <code class="inl wrap">P(X &#8805; 3n/4) &#8804; e<sup>&#8722;&#948;&sup2;&#956;/3</sup> = e<sup>&#8722;(&#188;)(n/2)/3</sup> = e<sup>&#8722;n/24</sup></code>. Exponential collapse.</p>
 
         <div class="tbl-wrap">
           <table>
@@ -1115,7 +1119,7 @@
         <p>Formal elegance blinds. Here is where I have seen this toolkit misfire &mdash; each a boundary I urge you to keep bright.</p>
 
         <h3>1 &middot; Using independence where linearity needed none &mdash; and vice versa</h3>
-        <p>The signature error of the subject, in both directions. People <em>add a hypothesis they do not need</em> &mdash; agonising over whether the <code class="inl">X&#7522;&#11388;</code> in quicksort are independent (they are not, and it does not matter; linearity is unconditional). And people <em>drop a hypothesis they do need</em> &mdash; writing <code class="inl">E[XY] = E[X]E[Y]</code> or <code class="inl">Var[X+Y] = Var[X]+Var[Y]</code> for dependent variables, which is simply false. The rule: <strong>sums of expectations are always free; products of expectations and sums of variances require independence.</strong></p>
+        <p>The signature error of the subject, in both directions. People <em>add a hypothesis they do not need</em> &mdash; agonising over whether the <code class="inl">X<sub>i</sub><sub>j</sub></code> in quicksort are independent (they are not, and it does not matter; linearity is unconditional). And people <em>drop a hypothesis they do need</em> &mdash; writing <code class="inl">E[XY] = E[X]E[Y]</code> or <code class="inl">Var[X+Y] = Var[X]+Var[Y]</code> for dependent variables, which is simply false. The rule: <strong>sums of expectations are always free; products of expectations and sums of variances require independence.</strong></p>
 
         <h3>2 &middot; Pointing Markov at a signed variable</h3>
         <p>Markov requires <code class="inl">X &#8805; 0</code>. Apply it to something that can go negative &mdash; a centred quantity, a profit-or-loss &mdash; and you get nonsense (even &ldquo;probabilities&rdquo; above 1). When you want a two-sided statement, do what Chebyshev does: feed Markov the non-negative <em>square</em> <code class="inl">(X-&#956;)&sup2;</code>, never the raw deviation.</p>
@@ -1130,7 +1134,7 @@
         <p>The whole power of &sect;07 is that the input is arbitrary. If instead you <em>assume</em> the input array is uniformly random, you have proved an average-case bound that a sorted file or an adversary instantly violates. Put the randomness in the pivot, where you control it &mdash; not in a hope about the world.</p>
 
         <h3>6 &middot; Chernoff on dependent variables; the mean of a maximum</h3>
-        <p>Chernoff's exponential <em>requires independence</em> to factor the MGF; apply it to correlated indicators and the bound is unjustified (use Chebyshev, which only needs the variance, or a martingale bound). And <code class="inl">E[max&#7522; X&#7522;] &#8800; max&#7522; E[X&#7522;]</code>: the expected <em>longest</em> hash chain is not the expected length of one chain. The maximum of many variables is governed by a <strong>union bound over tail events</strong> &mdash; <code class="inl">P(some bin &#8805; t) &#8804; &#8721; P(bin&#7522; &#8805; t)</code> &mdash; fed by Chernoff, which is exactly Practice Problem 3.</p>
+        <p>Chernoff's exponential <em>requires independence</em> to factor the MGF; apply it to correlated indicators and the bound is unjustified (use Chebyshev, which only needs the variance, or a martingale bound). And <code class="inl">E[max<sub>i</sub> X<sub>i</sub>] &#8800; max<sub>i</sub> E[X<sub>i</sub>]</code>: the expected <em>longest</em> hash chain is not the expected length of one chain. The maximum of many variables is governed by a <strong>union bound over tail events</strong> &mdash; <code class="inl wrap">P(some bin &#8805; t) &#8804; &#8721; P(bin<sub>i</sub> &#8805; t)</code> &mdash; fed by Chernoff, which is exactly Practice Problem 3.</p>
 
         <div class="note warn">
           <span class="tag">the meta-mistake</span>
@@ -1244,6 +1248,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-04-fast-fourier-transform.html">← Previous study</a><a href="dsa-06-sorting-and-the-comparison-barrier.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-04-fast-fourier-transform.html" rel="prev"><span>&larr; Lecture 04</span><strong>The fast Fourier transform</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-06-sorting-and-the-comparison-barrier.html" rel="next"><span>Lecture 06 &rarr;</span><strong>Sorting and the comparison barrier</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a></p></nav>
 </body>
 </html>

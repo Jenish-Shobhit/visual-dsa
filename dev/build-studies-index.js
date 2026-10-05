@@ -8,6 +8,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const C = require(path.join(root, 'js', 'curriculum.js'));
 const esc = s => s.replace(/&(?![a-z#0-9]+;)/gi, '&amp;');
+const ASSET_V = 'vdsa4';   // cache-buster for studies.css / studies.js; link-studies.js stamps the same value on every study
 const GROUPS = [
  {
   "title": "Models and foundations",
@@ -202,11 +203,25 @@ const lessonChips = file => {
   }).join('');
 };
 const total = GROUPS.reduce((n, g) => n + g.items.length, 0);
+
+/* Reading time: words of running text (code, figures, styles and scripts removed) at 170 words per minute (technical prose with maths is read slowly). */
+const readingMinutes = file => {
+  const html = fs.readFileSync(path.join(root, 'studies', file), 'utf8');
+  const body = html.slice(html.indexOf('<body'))
+    .replace(/<(script|style|svg|pre|nav)[\s\S]*?<\/\1>/g, ' ')
+    .replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ');
+  const words = (body.match(/[A-Za-z0-9\u00C0-\u024F]+/g) || []).length;
+  return Math.max(5, Math.round(words / 170 / 5) * 5);
+};
+const minutes = {};
+GROUPS.forEach(g => g.items.forEach(it => { minutes[it.file] = readingMinutes(it.file); }));
+const totalMinutes = Object.values(minutes).reduce((a, b) => a + b, 0);
+const totalHours = Math.round(totalMinutes / 60);
 const search = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
 const groups = GROUPS.map((g, i) => {
   const n = String(i + 1).padStart(2, '0');
   const cards = g.items.map(it => `<li class="lib-card">
-<span class="lib-card__no">Study ${it.no}</span>
+<p class="lib-card__top"><span class="lib-card__no">Lecture ${it.no}</span><span class="lib-card__time">&asymp; ${minutes[it.file]} min read</span></p>
 <h3 class="lib-card__title"><a href="${it.file}">${esc(it.title)}</a></h3>
 <p class="lib-card__note">${esc(it.note)}</p>
 <div class="lib-card__lessons" aria-label="Related lessons">${lessonChips(it.file)}</div>
@@ -233,8 +248,9 @@ const html = `<!doctype html>
 <script src="../js/vdsa/core.js"></script>
 <script src="../js/curriculum.js" defer></script>
 <script src="../js/vdsa/shell.js" defer></script>
-<link rel="stylesheet" href="studies.css?v=vdsa1">
-<script src="studies.js?v=vdsa1" defer></script>
+<link rel="stylesheet" href="studies.css?v=${ASSET_V}">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<script src="studies.js?v=${ASSET_V}" defer></script>
 </head>
 <body class="lib" data-page="study" data-crumb="Deep studies">
 <main id="main">
@@ -242,6 +258,12 @@ const html = `<!doctype html>
 <p class="kicker">Further reading</p>
 <h1>Deep studies</h1>
 <p class="lead">${total} long-form lectures that start from a concrete problem, derive the structure or algorithm, and end with exercises. Start with a <a href="../index.html">lesson</a> to see it move, then come here for the proofs and the edge cases.</p>
+<ul class="lib-facts" aria-label="At a glance">
+<li><strong>${total}</strong> lectures</li>
+<li><strong>${GROUPS.length}</strong> themes</li>
+<li><strong>&asymp; ${totalHours} h</strong> of careful reading</li>
+<li><strong>Every lecture</strong> ends with problems</li>
+</ul>
 </header>
 <div class="lib-tools" role="search">
 <label for="study-search">${search}<span class="sr-only">Find a deep study</span><input id="study-search" type="search" placeholder="Search: graphs, hashing, proofs…" autocomplete="off"></label>
@@ -255,5 +277,8 @@ ${groups}
 </body>
 </html>
 `;
-fs.writeFileSync(path.join(root, 'studies', 'index.html'), html);
-console.log('wrote studies/index.html with ' + total + ' studies');
+if (require.main === module) {
+  fs.writeFileSync(path.join(root, 'studies', 'index.html'), html);
+  console.log('wrote studies/index.html with ' + total + ' studies (about ' + totalHours + ' h of reading)');
+}
+module.exports = { GROUPS, ASSET_V };

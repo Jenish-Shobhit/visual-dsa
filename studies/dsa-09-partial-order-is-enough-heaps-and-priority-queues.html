@@ -334,7 +334,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 09">
@@ -406,7 +406,7 @@
       <h2>You don't need the whole order</h2>
       <div class="col">
         <p>I think first about what an algorithm is actually <em>asked</em>, because the question fixes the cheapest honest answer. Survey the great repeat-offenders &mdash; Dijkstra, Prim, Huffman coding, discrete-event simulation, the <em>k</em> largest items of a billion-row stream, an operating-system scheduler choosing the next task &mdash; and a single pattern surfaces. None of them ever needs the data fully sorted. Each one runs a loop that does exactly two things: <strong>pull out the current extremum</strong>, and <strong>add some new elements</strong>. Over and over.</p>
-        <p>If that is the whole demand, then sorting is a waste. Sorting establishes a <em>total order</em> &mdash; it pins the rank of every pair of elements &mdash; and we proved last lecture that doing so by comparisons costs <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> up front and gives you a brittle arrangement that any insertion shoves out of place at <code class="inl">O(n)</code> cost. We are paying for knowledge of <em>every</em> rank and using only the <em>top</em> one.</p>
+        <p>If that is the whole demand, then sorting is a waste. Sorting establishes a <em>total order</em> &mdash; it pins the rank of every pair of elements &mdash; and we proved in Lecture 06 that doing so by comparisons costs <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> up front and gives you a brittle arrangement that any insertion shoves out of place at <code class="inl">O(n)</code> cost. We are paying for knowledge of <em>every</em> rank and using only the <em>top</em> one.</p>
         <p>So strip the requirement to its skeleton. We want a container that supports a tiny contract &mdash; add an element, look at the extremum, remove the extremum &mdash; and supports all three <em>cheaply while the set keeps changing</em>. That object is the <span class="term">priority queue</span>, and its canonical implementation is the <span class="term">binary heap</span>. The whole lecture is the unfolding of one idea: <strong>maintain only as much order as the question requires.</strong></p>
         <div class="note info"><span class="tag">the formal lens</span>A data structure is the materialisation of an <em>invariant</em> &mdash; a property you promise to keep true after every operation, traded against the cost of keeping it. A sorted array keeps the strongest invariant (total order) at the highest maintenance price. The heap keeps a deliberately <em>weaker</em> invariant, and the weakness is the whole point: less to maintain means cheaper to maintain. Choosing the minimal sufficient invariant is the central act of data-structure design.</div>
       </div>
@@ -527,7 +527,7 @@
         <p>So &ldquo;go to my left child&rdquo; is a multiply-and-add, not a dereference. The structure is <em>implicit</em>: there is no tree object anywhere in memory, only an array and these three formulas. We have stored the shape in our arithmetic and spent zero bytes on it. (This same implicit complete-tree layout returns next lecture for Fenwick and segment trees &mdash; learn it once here.) A worked instance, on the max-heap <code class="inl">[9,&nbsp;8,&nbsp;5,&nbsp;1,&nbsp;3,&nbsp;2]</code>:</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 470" role="img" aria-labelledby="f1t f1d">
+          <svg viewBox="0 0 940 500" style="--mw:744px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The duality between a heap drawn as a tree and stored as an array</title>
             <desc id="f1d">A max-heap with six nodes is drawn twice. As a tree: the root index zero holds nine, its children index one holds eight and index two holds five, then index three holds one and index four holds three below the eight, and index five holds two below the five. As an array: the same values nine eight five one three two sit in cells indexed zero to five in level order. Arrows on the array show that the cell at index one points to its children at indices three and two i plus one and two i plus two, namely indices three and four, and up to its parent at index zero. The two pictures are the same object: the tree edges are exactly the index formulas.</desc>
 
@@ -542,7 +542,7 @@
             <line x1="280" y1="190" x2="238" y2="262" class="dg-stroke"/>
             <!-- nodes: cx,cy r24 -->
             <g>
-              <circle cx="200" cy="68"  r="24" class="dg-red-f"/><text x="200" y="74" text-anchor="middle" class="dg-val" fill="#fff">9</text>
+              <circle cx="200" cy="68"  r="24" class="dg-red-f"/><text x="200" y="74" text-anchor="middle" class="dg-val" fill="var(--on-state)">9</text>
               <circle cx="120" cy="168" r="24" class="dg-fill"/><text x="120" y="174" text-anchor="middle" class="dg-val">8</text>
               <circle cx="280" cy="168" r="24" class="dg-fill"/><text x="280" y="174" text-anchor="middle" class="dg-val">5</text>
               <circle cx="78"  cy="262" r="24" class="dg-cell"/><text x="78"  y="268" text-anchor="middle" class="dg-val">1</text>
@@ -577,10 +577,10 @@
 
             <!-- arithmetic arrows from cell i=1 (x=290) to children (490,590) and parent (190) -->
             <path d="M275 372 C 250 348, 205 348, 190 366" class="dg-thin dg-red" fill="none" marker-end="url(#h1r)"/>
-            <text x="214" y="344" class="dg-label sm dg-red-f">parent &#8970;(1&minus;1)/2&#8971;=0</text>
+            <text x="272" y="352" class="dg-label sm dg-red-f">parent &#8970;(1&minus;1)/2&#8971;=0</text>
             <path d="M300 428 C 340 462, 455 462, 490 432" class="dg-thin dg-blue" fill="none" marker-end="url(#h1b)"/>
             <path d="M300 428 C 360 478, 545 478, 590 432" class="dg-thin dg-blue" fill="none" marker-end="url(#h1b)"/>
-            <text x="470" y="476" text-anchor="middle" class="dg-label sm dg-blue-f">children 2&#183;1+1=3, 2&#183;1+2=4</text>
+            <text x="470" y="494" text-anchor="middle" class="dg-label sm dg-blue-f">children 2&#183;1+1=3, 2&#183;1+2=4</text>
 
             <defs>
               <marker id="h1r" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--bau-red)"/></marker>
@@ -638,7 +638,7 @@
         <p>The asymmetry is worth dwelling on. <code class="inl">siftUp</code> compares against <strong>one</strong> node (the unique parent); <code class="inl">siftDown</code> must compare against <strong>two</strong> (both children) and choose the larger, because swapping with the smaller child would leave that smaller child lording over its larger sibling &mdash; an instant violation. Forgetting this is the single most common heap bug, and it is failure mode&nbsp;2 in &sect;10.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 430" role="img" aria-labelledby="f2t f2d">
+          <svg viewBox="0 0 940 430" style="--mw:744px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">A sift-down cascade restoring the heap property</title>
             <desc id="f2d">Left panel, during: a root holding three violates the max-heap property; its children are nine and five. The algorithm compares with both children, picks the larger nine, and swaps three with nine. The three, now one level down, has children one and four; it compares, picks the larger four, and swaps again. The three is now a leaf and stops. Right panel, after: the tree reads nine at the root, four and five as its children, one and three and two as leaves — a valid max-heap.</desc>
 
@@ -678,7 +678,7 @@
             <line x1="620" y1="192" x2="670" y2="262" class="dg-stroke"/>
             <line x1="800" y1="192" x2="758" y2="262" class="dg-stroke"/>
             <!-- nodes -->
-            <circle cx="700" cy="74"  r="22" class="dg-red-f"/><text x="700" y="80" text-anchor="middle" class="dg-val" fill="#fff">9</text>
+            <circle cx="700" cy="74"  r="22" class="dg-red-f"/><text x="700" y="80" text-anchor="middle" class="dg-val" fill="var(--on-state)">9</text>
             <circle cx="620" cy="170" r="22" class="dg-fill"/><text x="620" y="176" text-anchor="middle" class="dg-val">4</text>
             <circle cx="800" cy="170" r="22" class="dg-fill"/><text x="800" y="176" text-anchor="middle" class="dg-val">5</text>
             <circle cx="578" cy="262" r="22" class="dg-cell"/><text x="578" y="268" text-anchor="middle" class="dg-val">1</text>
@@ -756,7 +756,7 @@
         <p>The series <code class="inl">&#x2211;<sub>h&ge;0</sub> h/2&#x2B0;</code> converges to a <em>constant</em>, <code class="inl">2</code>, and a constant times <code class="inl">n</code> is <code class="inl">&#x398;(n)</code>. The intuition behind the algebra is the picture below: the expensive nodes (high up, big <code class="inl">h</code>) are <em>rare</em>, and the cheap nodes (the leaves, <code class="inl">h = 0</code>) are <em>half of everything</em>. Insertion-order build pays <code class="inl">log n</code> for every element because it processes them in the wrong direction &mdash; cheap ones first; the bottom-up build pays <code class="inl">log n</code> only for the lonely root.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 400" role="img" aria-labelledby="f3t f3d">
+          <svg viewBox="0 0 940 400" style="--mw:744px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">Why building a heap bottom-up is linear: cost weighted by height</title>
             <desc id="f3d">A heap of fifteen nodes drawn as four levels. The bottom level has eight leaf nodes at height zero, each costing zero work. The next level up has four nodes at height one, each costing at most one. Above that, two nodes at height two cost at most two. The single root at height three costs at most three. A ledger sums node-count times height: eight times zero plus four times one plus two times two plus one times three equals eleven, which is below the value n equal to fifteen, and far below n log n equal to sixty. Many cheap nodes, few expensive ones.</desc>
 
@@ -838,7 +838,7 @@
         <p>Heapsort's move: swap the root (the max) with the <em>last</em> element of the current heap, then shrink the heap by one so that maximum is now frozen in its final sorted position, and sift the new root down over the smaller heap. The array splits into a shrinking <strong>heap region</strong> (left) and a growing <strong>sorted region</strong> (right). Repeat until the heap holds one element.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 470" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 940 470" style="--mw:744px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">Heapsort in place: the boundary between heap and sorted regions marches left</title>
             <desc id="f4d">Six rows show the array during heapsort. Row zero is the built max-heap nine four five one three two, entirely a heap region. Each later row swaps the root with the last heap element, freezing that maximum into the sorted region on the right shown in yellow, then sifts the new root down. Row one freezes nine; row two freezes five; row three freezes four; row four freezes three; row five freezes two; leaving one alone. The final array reads one two three four five nine, sorted ascending, with the heap region consumed entirely.</desc>
 
@@ -979,7 +979,7 @@
         <p>Running <code class="inl">siftDown</code> from the <em>root</em> toward the leaves is wrong twice over: it violates <code class="inl">siftDown</code>'s precondition (children must already be heaps), so it can produce a non-heap; and even the insert-one-at-a-time alternative costs <code class="inl">O(n&nbsp;log&nbsp;n)</code>. Build from index <code class="inl">&#8970;n/2&#8971;&minus;1</code> <em>downward to</em> <code class="inl">0</code> &mdash; deepest internal node first &mdash; for both correctness and the <code class="inl">&#x398;(n)</code> bound.</p>
 
         <h3>5 &middot; Expecting a heap to be sorted</h3>
-        <p>A heap guarantees the root, and nothing else, about array order. <code class="inl">A[1]</code> and <code class="inl">A[2]</code> have no defined relationship; the second-smallest of a max-heap could be either child of the root, never deeper, but the array does not sort itself. If you need the elements in order you must <code class="inl">extract</code> them one by one (that is heapsort) &mdash; reading the backing array is meaningless. Likewise, do not binary-search a heap.</p>
+        <p>A heap guarantees the root, and nothing else, about array order. <code class="inl">A[1]</code> and <code class="inl">A[2]</code> have no defined relationship; the <em>second-largest</em> of a max-heap is one of the root&rsquo;s two children (never deeper), but even that is not visible from the array order alone, and the heap tells you nothing about the smallest elements. If you need the elements in order you must <code class="inl">extract</code> them one by one (that is heapsort) &mdash; reading the backing array is meaningless. Likewise, do not binary-search a heap.</p>
 
         <h3>6 &middot; <code class="inl">decrease-key</code> without an index map</h3>
         <p>Re-prioritising an element already in the heap is <code class="inl">O(log n)</code> &mdash; <em>but only if you can find it in <code class="inl">O(1)</code></em>. A bare heap has no such lookup, so the find degrades to an <code class="inl">O(n)</code> scan, demolishing the bound Dijkstra and Prim rely on. The fix is an auxiliary hash map from element to current index, meticulously updated inside every swap in both <code class="inl">siftUp</code> and <code class="inl">siftDown</code>. The most common Dijkstra performance bug is omitting that bookkeeping (or its lazy-deletion alternative: push duplicates and skip stale pops).</p>
@@ -1101,6 +1101,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-08-hashing-and-expected-constant-access.html">← Previous study</a><a href="dsa-10-range-queries-fenwick-and-segment-trees.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-08-hashing-and-expected-constant-access.html" rel="prev"><span>&larr; Lecture 08</span><strong>Hashing and expected constant access</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-10-range-queries-fenwick-and-segment-trees.html" rel="next"><span>Lecture 10 &rarr;</span><strong>Fenwick and segment trees</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/21-heaps.html">Lesson 21 &middot; Heaps &amp; priority queues</a></p></nav>
 </body>
 </html>

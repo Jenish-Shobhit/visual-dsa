@@ -265,7 +265,7 @@
   .dg-node-b{fill:var(--bau-ink); stroke:var(--bau-ink); stroke-width:2.5}
   .dg-node-r{fill:var(--bau-red); stroke:var(--bau-ink); stroke-width:2.5}
   .dg-nt{font-family:var(--font-mono); font-size:15px; font-weight:600; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
-  .dg-nt.w{fill:#fff}
+  .dg-nt.w{fill:var(--on-state)}
   .dg-tri{fill:var(--primary-container); stroke:var(--bau-ink); stroke-width:2}
   .dg-bf{font-family:var(--font-mono); font-size:11px; font-weight:700; fill:var(--bau-red)}
 
@@ -338,7 +338,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 07">
@@ -421,7 +421,7 @@
           <li><strong>Execute</strong> a left and a right <span class="term">rotation</span> by hand and argue, from the in-order traversal, that a rotation changes a tree's shape while leaving its meaning &mdash; the ordering &mdash; untouched.</li>
           <li><strong>Maintain</strong> the AVL height-balance invariant through an insertion, choosing correctly among the four rotation cases (LL, RR, LR, RL), and prove via the Fibonacci recurrence that AVL height is at most <code class="inl">&asymp;1.44&middot;log&#8322;n</code>.</li>
           <li><strong>Contrast</strong> red-black trees with AVL &mdash; the looser invariant, the <code class="inl">2&middot;log&#8322;n</code> height bound, and why fewer restructurings make them the standard library's choice.</li>
-          <li><strong>Explain</strong> why databases and filesystems abandon binary trees for <span class="term">B-trees</span>: how counting block transfers instead of comparisons turns <code class="inl">log&#8322;n</code> into <code class="inl">log&#7355;n</code> and finds one record among a billion in three disk reads.</li>
+          <li><strong>Explain</strong> why databases and filesystems abandon binary trees for <span class="term">B-trees</span>: how counting block transfers instead of comparisons turns <code class="inl">log&#8322;n</code> into <code class="inl">log<sub>B</sub>n</code> and finds one record among a billion in three disk reads.</li>
         </ul>
 
         <h3>Prerequisites</h3>
@@ -506,7 +506,7 @@
             </mrow>
           </math></div>
         </div>
-        <p>So the entire performance of a search tree collapses to a single question: <em>how tall is it?</em> And a binary tree's height is bounded on both sides by how many nodes it must spread across its levels. Level <code class="inl">0</code> holds at most <code class="inl">1</code> node, level <code class="inl">1</code> at most <code class="inl">2</code>, level <code class="inl">d</code> at most <code class="inl">2&#7496;</code>. A tree of height <code class="inl">h</code> therefore holds at most <code class="inl">2<sup>h+1</sup>&minus;1</code> nodes, and to <em>hold</em> <code class="inl">n</code> of them it needs height at least <code class="inl">log&#8322;(n+1)&minus;1</code>. At the other extreme, nothing forbids a tree from being a single drooping path, one node per level, height <code class="inl">n&minus;1</code>. So:</p>
+        <p>So the entire performance of a search tree collapses to a single question: <em>how tall is it?</em> And a binary tree's height is bounded on both sides by how many nodes it must spread across its levels. Level <code class="inl">0</code> holds at most <code class="inl">1</code> node, level <code class="inl">1</code> at most <code class="inl">2</code>, level <code class="inl">d</code> at most <code class="inl">2<sup>d</sup></code>. A tree of height <code class="inl">h</code> therefore holds at most <code class="inl">2<sup>h+1</sup>&minus;1</code> nodes, and to <em>hold</em> <code class="inl">n</code> of them it needs height at least <code class="inl">log&#8322;(n+1)&minus;1</code>. At the other extreme, nothing forbids a tree from being a single drooping path, one node per level, height <code class="inl">n&minus;1</code>. So:</p>
         <div class="eq">
           <span class="lbl">height is pinned between a logarithm and a line</span>
           <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -520,7 +520,7 @@
         <p>The gap between those two ends is the whole drama. At the floor, <code class="inl">h&asymp;log&#8322;n</code>, and a million keys cost twenty steps &mdash; the logarithmic ideal. At the ceiling, <code class="inl">h=n&minus;1</code>, and the tree <em>is</em> a linked list: the same <code class="inl">&#x398;(h)</code> law now reads <code class="inl">&#x398;(n)</code>, and we have built an elaborate pointer structure that performs strictly worse than the array we were trying to beat. A plain BST gives you no say in which end you land at &mdash; the <em>order of insertion</em> decides. Figure 1 shows both fates for the same seven keys.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 470" role="img" aria-labelledby="f1t f1d">
+          <svg viewBox="0 0 960 470" style="--mw:608px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The same seven keys as a balanced tree and as a degenerate path</title>
             <desc id="f1d">On the left, the keys one through seven inserted in the order four, two, six, one, three, five, seven form a balanced tree of height two; any search takes at most three comparisons. On the right, the same keys inserted in sorted order one through seven form a single right-leaning path of height six; a search for seven takes seven comparisons. Both are valid binary search trees; only the insertion order differs.</desc>
 
@@ -550,7 +550,7 @@
             <g transform="translate(70,300)">
               <rect x="0" y="0" width="320" height="56" rx="8" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
               <text x="16" y="25" class="dg-label">height = 2</text>
-              <text x="16" y="46" class="dg-val dg-blue-f">search &#8804; 3 comparisons &mdash; the ideal</text>
+              <text x="16" y="46" class="dg-val dg-blue-f">search &#8804; 3 &mdash; the ideal</text>
             </g>
 
             <!-- RIGHT: degenerate -->
@@ -575,7 +575,7 @@
             <g transform="translate(520,300)">
               <rect x="0" y="0" width="220" height="56" rx="8" fill="var(--surface-2)" stroke="var(--bau-red)" stroke-width="2"/>
               <text x="16" y="25" class="dg-label">height = 6</text>
-              <text x="16" y="46" class="dg-val dg-red-f">search &#8804; 7 &mdash; a list in disguise</text>
+              <text x="16" y="46" class="dg-val dg-red-f">search &#8804; 7: a list</text>
             </g>
           </svg>
           <figcaption><b>Figure 1 &mdash; two fates, one set of keys.</b> Both are legal binary search trees over <code class="inl">{1&hellip;7}</code>; their in-order traversals are identical. Only the order of insertion differs, yet one is height <code class="inl">2</code> and the other height <code class="inl">6</code>. The structure does nothing to defend itself &mdash; balance is something we must <em>impose</em>.</figcaption>
@@ -616,7 +616,7 @@
         <p>Why is the ordering safe? Read off the in-order sequence before and after. Before the rotation the order is <code class="inl">A</code>, <code class="inl">x</code>, <code class="inl">B</code>, <code class="inl">y</code>, <code class="inl">C</code>. After it the order is&hellip; <code class="inl">A</code>, <code class="inl">x</code>, <code class="inl">B</code>, <code class="inl">y</code>, <code class="inl">C</code> &mdash; identical. The constraints <code class="inl">A &lt; x &lt; B &lt; y &lt; C</code> hold in both shapes; the rotation merely re-hangs <code class="inl">B</code> from <code class="inl">y</code> to <code class="inl">x</code>, the one subtree that sits, in value, <em>between</em> them and so is legal under either parent. A <strong>right rotation</strong> is the exact mirror, lifting a left child. Because in-order is preserved, a rotation is invisible to <code class="inl">search</code> &mdash; it changes only the heights, which is exactly what we want to adjust.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 390" role="img" aria-labelledby="f2t f2d">
+          <svg viewBox="0 0 960 390" style="--mw:760px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">A left rotation at x pivots x and its right child y</title>
             <desc id="f2d">Before: x is the root with left subtree A and right child y; y has left subtree B and right subtree C. After a left rotation at x, y becomes the root with x as its left child and C as its right subtree; x keeps A on its left and receives B on its right. The in-order sequence A, x, B, y, C is identical before and after, so the binary-search-tree ordering is preserved while the heights change.</desc>
 
@@ -680,7 +680,7 @@
         <p>The first self-balancing tree, due to Adelson-Velsky and Landis in 1962, enforces the most direct invariant imaginable. Define a node's <span class="term">balance factor</span> as the height of its right subtree minus that of its left. The <span class="term">AVL invariant</span> demands:</p>
         <div class="eq">
           <span class="lbl">the avl height-balance invariant</span>
-          <p style="margin:0; font-size:15.5px">At <strong>every</strong> node, <code class="inl">balanceFactor = height(right) &minus; height(left) &#8712; {&minus;1, 0, +1}</code> &mdash; the two subtrees may differ in height by at most one.</p>
+          <p style="margin:0; font-size:15.5px">At <strong>every</strong> node, <code class="inl wrap">balanceFactor = height(right) &minus; height(left) &#8712; {&minus;1, 0, +1}</code> &mdash; the two subtrees may differ in height by at most one.</p>
         </div>
         <p>This is a local law &mdash; checked one node at a time &mdash; yet it forces a global guarantee: the tree can never be tall. The argument is one of my favourites in all of data structures, because it answers &ldquo;how bad can a <em>barely</em>-balanced tree get?&rdquo; by building the <em>worst legal one</em> and counting it.</p>
 
@@ -703,7 +703,7 @@
                 </mrow>
               </math></div>
             </div>
-            <p>This is the Fibonacci numbers in disguise: <code class="inl">N(h) = F(h+3) &minus; 1</code>. Checking: <code class="inl">N(0)=1, N(1)=2, N(2)=4, N(3)=7, N(4)=12</code> &mdash; each the sum of the previous two plus one. Since Fibonacci grows like <code class="inl">&phi;<sup>h</sup></code> with <code class="inl">&#966;=(1+&#8730;5)/2&asymp;1.618</code>, the minimum node count grows <em>exponentially</em> in the height. Invert it: a tree with <code class="inl">n</code> nodes satisfies <code class="inl">n &#8805; N(h) &#8776; &phi;<sup>h</sup></code>, hence</p>
+            <p>This is the Fibonacci numbers in disguise: <code class="inl">N(h) = F(h+3) &minus; 1</code>. Checking: <code class="inl wrap">N(0)=1, N(1)=2, N(2)=4, N(3)=7, N(4)=12</code> &mdash; each the sum of the previous two plus one. Since Fibonacci grows like <code class="inl">&phi;<sup>h</sup></code> with <code class="inl">&#966;=(1+&#8730;5)/2&asymp;1.618</code>, the minimum node count grows <em>exponentially</em> in the height. Invert it: a tree with <code class="inl">n</code> nodes satisfies <code class="inl">n &#8805; N(h) &#8776; &phi;<sup>h</sup></code>, hence</p>
             <div class="eq">
               <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
                 <mrow>
@@ -722,7 +722,7 @@
         <p>Maintaining the invariant is the art. After an <code class="inl">INSERT</code>, walk back up from the new leaf updating heights; the first node whose balance factor reaches <code class="inl">&#177;2</code> is the lowest point of damage. Exactly one of four configurations holds there, named for the two steps of the path from that node down toward the new leaf, and each is repaired by one or two rotations:</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 960 360" role="img" aria-labelledby="f3t f3d">
+          <svg viewBox="0 0 960 360" style="--mw:608px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">The four AVL imbalance cases and their rotations</title>
             <desc id="f3d">Four small diagrams. Left-Left: the heavy path goes left then left from the unbalanced node z, fixed by a single right rotation at z. Right-Right: heavy path right then right, fixed by a single left rotation at z. Left-Right: heavy path left then right, fixed by a left rotation at the child y followed by a right rotation at z. Right-Left: heavy path right then left, fixed by a right rotation at y followed by a left rotation at z.</desc>
 
@@ -803,7 +803,7 @@
         <p>The last row is the instructive one. After inserting <code class="inl">25</code>, node <code class="inl">20</code> is right-heavy (<code class="inl">+2</code>) but its right child <code class="inl">40</code> is left-heavy (<code class="inl">&minus;1</code>) &mdash; opposite leans, the <strong>RL</strong> zig-zag. A single left rotation at <code class="inl">20</code> would merely tip the imbalance the other way; we must first <em>straighten</em> by rotating <code class="inl">40</code> right, then rotate <code class="inl">20</code> left. Figure 4 freezes all three states.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 980 330" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 980 330" style="--mw:843px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">The right-left double rotation that rebalances after inserting 25</title>
             <desc id="f4d">Panel one: after inserting 25, node 20 is unbalanced with balance factor plus two; its right child is 40 with left child 30 with left child 25. Panel two: a right rotation at 40 lifts 30, producing the chain 20, 30, with 25 left of 30 and 40 right of 30, and 50 right of 40. Panel three: a left rotation at 20 lifts 30 to the root, giving 30 with left child 20 (children 10 and 25) and right child 40 (right child 50), a balanced tree of height two.</desc>
 
@@ -872,8 +872,8 @@
       <div class="eyebrow"><span class="n">10</span> the looser policy</div>
       <h2>Red-black trees: balance you can afford to maintain</h2>
       <div class="col">
-        <p>AVL keeps trees beautifully short, but its rigidity has a price: a delete can cascade rotations all the way up. For workloads heavy on updates, a looser invariant that does <em>less</em> restructuring can win overall, even at the cost of a slightly taller tree. The <span class="term">red-black tree</span> is that bargain, and it is the one your standard library actually ships &mdash; C++ <code class="inl">std::map</code> and <code class="inl">std::set</code>, Java's <code class="inl">TreeMap</code> and <code class="inl">TreeSet</code>, and the Linux kernel's scheduler and virtual-memory areas are all red-black trees.</p>
-        <p>Colour every node red or black and impose five rules. Together they let the longest root-to-leaf path be <em>at most twice</em> the shortest, which is all you need for <code class="inl">O(log n)</code>:</p>
+        <p>AVL keeps trees beautifully short, but its rigidity has a price: a delete can cascade rotations all the way up. For workloads heavy on updates, a looser invariant that does <em>less</em> restructuring can win overall, even at the cost of a slightly taller tree. The <span class="term">red-black tree</span> is that bargain, and it is the one your standard library actually ships &mdash; C++ <code class="inl">std::map</code> and <code class="inl">std::set</code>, Java's <code class="inl">TreeMap</code> and <code class="inl">TreeSet</code>, and the Linux kernel's process scheduler all keep red-black trees.</p>
+        <p>Colour every node red or black and impose four rules. Together they let the longest root-to-leaf path be <em>at most twice</em> the shortest, which is all you need for <code class="inl">O(log n)</code>:</p>
         <ul>
           <li>Every node is <strong>red</strong> or <strong>black</strong>.</li>
           <li>The <strong>root is black</strong>; every <code class="inl">nil</code> leaf is black.</li>
@@ -885,12 +885,12 @@
         <details>
           <summary>Derive the red-black height bound (h &#8804; 2&middot;log&#8322;(n+1))</summary>
           <div class="body">
-            <p>Claim: a subtree rooted at <code class="inl">x</code> contains at least <code class="inl">2<sup>bh(x)</sup>&minus;1</code> internal nodes, where <code class="inl">bh(x)</code> is its black-height. Prove it by induction on the subtree's height. <em>Base:</em> a <code class="inl">nil</code> leaf has <code class="inl">bh=0</code> and <code class="inl">2&#8304;&minus;1=0</code> nodes. <em>Step:</em> each child of <code class="inl">x</code> has black-height at least <code class="inl">bh(x)&minus;1</code>, so by hypothesis each child's subtree holds at least <code class="inl">2<sup>bh(x)&minus;1</sup>&minus;1</code> nodes; the subtree at <code class="inl">x</code> therefore holds at least <code class="inl">(2<sup>bh(x)&minus;1</sup>&minus;1)+(2<sup>bh(x)&minus;1</sup>&minus;1)+1 = 2<sup>bh(x)</sup>&minus;1</code>. Now, by the no-two-reds rule at least half the nodes on any root-to-leaf path are black, so <code class="inl">bh(root) &#8805; h/2</code>. Combining: <code class="inl">n &#8805; 2<sup>h/2</sup>&minus;1</code>, hence <code class="inl">h &#8804; 2&middot;log&#8322;(n+1)</code>.</p>
+            <p>Claim: a subtree rooted at <code class="inl">x</code> contains at least <code class="inl">2<sup>bh(x)</sup>&minus;1</code> internal nodes, where <code class="inl">bh(x)</code> is its black-height. Prove it by induction on the subtree's height. <em>Base:</em> a <code class="inl">nil</code> leaf has <code class="inl">bh=0</code> and <code class="inl">2&#8304;&minus;1=0</code> nodes. <em>Step:</em> each child of <code class="inl">x</code> has black-height at least <code class="inl">bh(x)&minus;1</code>, so by hypothesis each child's subtree holds at least <code class="inl">2<sup>bh(x)&minus;1</sup>&minus;1</code> nodes; the subtree at <code class="inl">x</code> therefore holds at least <code class="inl wrap">(2<sup>bh(x)&minus;1</sup>&minus;1)+(2<sup>bh(x)&minus;1</sup>&minus;1)+1 = 2<sup>bh(x)</sup>&minus;1</code>. Now, by the no-two-reds rule at least half the nodes on any root-to-leaf path are black, so <code class="inl">bh(root) &#8805; h/2</code>. Combining: <code class="inl">n &#8805; 2<sup>h/2</sup>&minus;1</code>, hence <code class="inl">h &#8804; 2&middot;log&#8322;(n+1)</code>.</p>
           </div>
         </details>
 
         <figure class="reveal">
-          <svg viewBox="0 0 720 300" role="img" aria-labelledby="f5t f5d">
+          <svg viewBox="0 0 720 300" style="--mw:570px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">A valid red-black tree with black-height two</title>
             <desc id="f5d">A red-black tree: black root 4 with two red children 2 and 6; each red node has two black children, namely 1 and 3 under 2, and 5 and 7 under 6. No red node has a red child, and every path from the root to a leaf crosses the same number of black nodes, giving a black-height of two.</desc>
             <g class="dg-edge">
@@ -912,7 +912,7 @@
             <circle cx="40" cy="266" r="9" class="dg-node-b"/><text x="58" y="266" class="dg-label sm" dominant-baseline="central">black: counts toward black-height</text>
             <circle cx="360" cy="266" r="9" class="dg-node-r"/><text x="378" y="266" class="dg-label sm" dominant-baseline="central">red: never has a red child</text>
           </svg>
-          <figcaption><b>Figure 5 &mdash; colours as a budget.</b> Every root-to-leaf path here meets exactly two black nodes (the leaf's <code class="inl">nil</code> child included), so black-height is <code class="inl">2</code>. The reds are &ldquo;free&rdquo; nodes that may be inserted without lengthening the black budget &mdash; but never two in a row, which caps the total height at twice the black-height.</figcaption>
+          <figcaption><b>Figure 5 &mdash; colours as a budget.</b> Below the root, every root-to-leaf path here meets exactly two black nodes (a black leaf, then its black <code class="inl">nil</code> child), so the root's black-height is <code class="inl">2</code>. The reds are &ldquo;free&rdquo; nodes that may be inserted without lengthening the black budget &mdash; but never two in a row, which caps the total height at twice the black-height.</figcaption>
         </figure>
 
         <p>The pay-off is in the update cost. A red-black <em>insert</em> finishes with at most <strong>2</strong> rotations; a <em>delete</em> with at most <strong>3</strong> &mdash; both constant, whereas an AVL delete may rotate <code class="inl">O(log n)</code> times. (Recolourings can still ripple up the tree, but recolouring is cheap and rotation-free.) The trade is now stateable in one line, and it is a genuine engineering choice, not a verdict:</p>
@@ -927,7 +927,7 @@
       <div class="col">
         <p>Everything so far has assumed Lecture 00's RAM model, where every memory access costs the same <code class="inl">1</code>. Lecture 01 already showed that promise fraying against the cache. Push the data onto a disk or SSD and it shatters completely: a random read does not fetch a byte, it fetches a whole <span class="term">block</span> &mdash; thousands of bytes &mdash; and that single transfer costs as much as millions of arithmetic operations. The honest cost model is no longer &ldquo;count comparisons&rdquo; but the <span class="term">external-memory model</span>: <strong>count block transfers (I/Os)</strong>, each moving <code class="inl">B</code> items at once.</p>
         <p>Under that model a balanced <em>binary</em> tree is a disaster. Its <code class="inl">log&#8322;n &#8776; 30</code> levels for a billion keys become up to thirty <em>separate</em> block reads, each a random seek, because consecutive nodes on the path live in unrelated blocks. The structure is right; the branching factor is wrong. The fix, due to Bayer and McCreight in 1970, is to <em>match the node to the block</em>: let each node hold not one key but as many as fill a block &mdash; hundreds or thousands &mdash; with one more child pointer than it has keys. This is the <span class="term">B-tree</span>.</p>
-        <p>A B-tree of <span class="term">minimum degree</span> <code class="inl">t</code> keeps every node (bar the root) between <code class="inl">t&minus;1</code> and <code class="inl">2t&minus;1</code> keys, holds all leaves at the <em>same</em> depth, and keeps each node's keys sorted so that its children interleave as separators. With branching factor up to <code class="inl">2t</code>, its height is <code class="inl">O(log&#7359;n)</code> &mdash; a logarithm in base <em>thousands</em>, not base two:</p>
+        <p>A B-tree of <span class="term">minimum degree</span> <code class="inl">t</code> keeps every node (bar the root) between <code class="inl">t&minus;1</code> and <code class="inl">2t&minus;1</code> keys, holds all leaves at the <em>same</em> depth, and keeps each node's keys sorted so that its children interleave as separators. With branching factor up to <code class="inl">2t</code>, its height is <code class="inl">O(log<sub>B</sub>n)</code> &mdash; a logarithm in base <em>thousands</em>, not base two:</p>
         <div class="eq">
           <span class="lbl">the external-memory pay-off</span>
           <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -943,7 +943,7 @@
         </div>
 
         <figure class="reveal">
-          <svg viewBox="0 0 980 320" role="img" aria-labelledby="f6t f6d">
+          <svg viewBox="0 0 980 320" style="--mw:776px" role="img" aria-labelledby="f6t f6d">
             <title id="f6t">A B-tree node is a whole disk block, giving high fan-out and few levels</title>
             <desc id="f6d">A B-tree root block holds two separator keys, 17 and 35, with three child pointers. Each child is itself a block holding several sorted keys. Each block read is one disk I/O. A side panel notes that with fan-out about one thousand, a billion keys fit in a tree of height three, so any record is found in three I/Os, versus about thirty random seeks for a binary tree.</desc>
 
@@ -1004,7 +1004,7 @@
           <figcaption><b>Figure 6 &mdash; fat nodes, flat tree.</b> By making each node a block, the B-tree trades many shallow comparisons inside a node (cheap, in cache) for very few block transfers between nodes (expensive). The <code class="inl">B&#8314;</code>-tree variant keeps all values in the leaves and links them, so a range scan walks a sorted linked list of blocks &mdash; which is why it backs essentially every relational database index and filesystem.</figcaption>
         </figure>
         <p>This is the same lesson as Lecture 01's array-versus-list timing, escalated: the abstract <code class="inl">&#x398;(log n)</code> was never the whole story; the <em>base</em> of the logarithm, set by how much useful work one memory transfer buys, is where the real performance lives. Change the cost model and the optimal tree changes with it. The binary search tree is the right answer in RAM; the B-tree is the right answer on disk; both are the same idea &mdash; a balanced, ordered, logarithmic-height search structure &mdash; tuned to a different machine.</p>
-        <div class="note info"><span class="tag">cross-link</span>This is the structure under <em>DBMS &middot; indexes</em>: a SQL <code class="inl">CREATE INDEX</code> builds a B&#8314;-tree, and the query planner's love of it is exactly the <code class="inl">log&#7355;n</code> I/O bound made concrete.</div>
+        <div class="note info"><span class="tag">cross-link</span>This is the structure under <em>DBMS &middot; indexes</em>: a SQL <code class="inl">CREATE INDEX</code> builds a B&#8314;-tree, and the query planner's love of it is exactly the <code class="inl">log<sub>B</sub>n</code> I/O bound made concrete.</div>
       </div>
     </section>
 
@@ -1028,11 +1028,11 @@
               </tr>
             </thead>
             <tbody>
-              <tr><th scope="row">search</th><td class="mid">O(log n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log&#7355;n)</td><td class="good">O(1) exp.</td></tr>
-              <tr><th scope="row">insert</th><td class="bad">&#x398;(n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log&#7355;n)</td><td class="good">O(1) exp.</td></tr>
-              <tr><th scope="row">delete</th><td class="bad">&#x398;(n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log&#7355;n)</td><td class="good">O(1) exp.</td></tr>
-              <tr><th scope="row">min / max</th><td class="good">O(1)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log&#7355;n)</td><td class="bad">&#x398;(n)</td></tr>
-              <tr><th scope="row">predecessor / successor</th><td class="mid">O(log n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log&#7355;n)</td><td class="bad">&#x398;(n)</td></tr>
+              <tr><th scope="row">search</th><td class="mid">O(log n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log<sub>B</sub>n)</td><td class="good">O(1) exp.</td></tr>
+              <tr><th scope="row">insert</th><td class="bad">&#x398;(n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log<sub>B</sub>n)</td><td class="good">O(1) exp.</td></tr>
+              <tr><th scope="row">delete</th><td class="bad">&#x398;(n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log<sub>B</sub>n)</td><td class="good">O(1) exp.</td></tr>
+              <tr><th scope="row">min / max</th><td class="good">O(1)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log<sub>B</sub>n)</td><td class="bad">&#x398;(n)</td></tr>
+              <tr><th scope="row">predecessor / successor</th><td class="mid">O(log n)</td><td class="bad">&#x398;(n)</td><td class="good">O(log n)</td><td class="good">O(log<sub>B</sub>n)</td><td class="bad">&#x398;(n)</td></tr>
               <tr class="wrap-row"><th scope="row">in-order / sorted scan</th><td class="good">O(n)</td><td class="mid">O(n)</td><td class="good">O(n)</td><td class="good">O(n)</td><td class="bad">O(n log n)</td></tr>
             </tbody>
             <tfoot><tr><td colspan="6">Green = the structure's strength; red = its failure. The balanced-BST column is the only one with no red &mdash; <em>that</em> is the logarithmic ideal, made worst-case. The hash table wins the top three but cannot answer the bottom three: it forgot the order.</td></tr></tfoot>
@@ -1049,7 +1049,7 @@
         <p>Keep the gap between the clean invariant and the running machine in view. Here is where search trees bite &mdash; the seductive-but-wrong checks, the input that detonates the average, the operation everyone implements halfway.</p>
 
         <h3>1 &middot; Validating a BST by checking only children</h3>
-        <p>The most common BST bug in existence: testing <code class="inl">left.key &lt; node.key &lt; right.key</code> at each node and calling it valid. The invariant is about whole <em>subtrees</em>, not immediate children. The tree with root <code class="inl">5</code>, right child <code class="inl">7</code>, and <code class="inl">7</code>'s <em>left</em> child <code class="inl">3</code> passes every local check yet is not a BST &mdash; <code class="inl">3</code> sits in <code class="inl">5</code>'s right subtree but is smaller than <code class="inl">5</code>. Validate with a descending <code class="inl">(low, high)</code> bound or by confirming the in-order traversal is strictly increasing (Practice 1).</p>
+        <p>The most common BST bug in existence: testing <code class="inl wrap">left.key &lt; node.key &lt; right.key</code> at each node and calling it valid. The invariant is about whole <em>subtrees</em>, not immediate children. The tree with root <code class="inl">5</code>, right child <code class="inl">7</code>, and <code class="inl">7</code>'s <em>left</em> child <code class="inl">3</code> passes every local check yet is not a BST &mdash; <code class="inl">3</code> sits in <code class="inl">5</code>'s right subtree but is smaller than <code class="inl">5</code>. Validate with a descending <code class="inl">(low, high)</code> bound or by confirming the in-order traversal is strictly increasing (Practice 1).</p>
 
         <h3>2 &middot; Trusting &ldquo;average&rdquo; balance against real input</h3>
         <p>A plain BST is <code class="inl">O(log n)</code> only in expectation over random insertion orders &mdash; and real data is the opposite of random. Sorted timestamps, auto-increment keys, or the output of a prior sort drive it straight to the <code class="inl">&#x398;(n)</code> stick of &sect;06. If you cannot guarantee random insertion order &mdash; and you almost never can &mdash; you must use a self-balancing tree or a randomized one (treap, Lecture 22). &ldquo;It tested fine on shuffled data&rdquo; is how this ships and then melts in production on the first bulk import.</p>
@@ -1101,7 +1101,7 @@
         <div>
           <h3>Lowest common ancestor in a BST</h3>
           <p class="meta">exploit the ordering &middot; O(h) not O(n) &middot; LeetCode 235</p>
-          <p>Given the <code class="inl">root</code> of a BST and two existing nodes <code class="inl">p</code>, <code class="inl">q</code>, return their lowest common ancestor. Use the ordering, not a general-tree search: from the root, if both keys are smaller go left, if both larger go right, otherwise the current node is the split point. Examples on the BST <code class="inl">[6,2,8,0,4,7,9,null,null,3,5]</code>: <code class="inl">LCA(2,8)=6</code>; <code class="inl">LCA(2,4)=2</code> (a node may be its own ancestor). Achieve <code class="inl">O(h)</code> time and <code class="inl">O(1)</code> extra space, and explain in one line why a general binary tree would force <code class="inl">O(n)</code> &mdash; i.e. what the BST property buys you.</p>
+          <p>Given the <code class="inl">root</code> of a BST and two existing nodes <code class="inl">p</code>, <code class="inl">q</code>, return their lowest common ancestor. Use the ordering, not a general-tree search: from the root, if both keys are smaller go left, if both larger go right, otherwise the current node is the split point. Examples on the BST <code class="inl wrap">[6,2,8,0,4,7,9,null,null,3,5]</code>: <code class="inl">LCA(2,8)=6</code>; <code class="inl">LCA(2,4)=2</code> (a node may be its own ancestor). Achieve <code class="inl">O(h)</code> time and <code class="inl">O(1)</code> extra space, and explain in one line why a general binary tree would force <code class="inl">O(n)</code> &mdash; i.e. what the BST property buys you.</p>
         </div>
       </div>
 
@@ -1176,6 +1176,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-06-sorting-and-the-comparison-barrier.html">← Previous study</a><a href="dsa-08-hashing-and-expected-constant-access.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-06-sorting-and-the-comparison-barrier.html" rel="prev"><span>&larr; Lecture 06</span><strong>Sorting and the comparison barrier</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-08-hashing-and-expected-constant-access.html" rel="next"><span>Lecture 08 &rarr;</span><strong>Hashing and expected constant access</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/18-trees.html">Lesson 18 &middot; Trees &amp; traversals</a><a href="../lessons/19-binary-search-trees.html">Lesson 19 &middot; Binary search trees</a><a href="../lessons/20-balanced-trees.html">Lesson 20 &middot; Balanced trees: AVL &amp; red-black</a></p></nav>
 </body>
 </html>

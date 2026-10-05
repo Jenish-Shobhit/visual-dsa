@@ -264,7 +264,7 @@
   .dg-cap-b{fill:var(--surface); stroke:var(--bau-ink); stroke-width:1.4}
   .dg-cap-b.sat{fill:var(--bau-blue); stroke:var(--bau-ink)}
   .dg-cap-n{font-family:var(--font-mono); font-size:12.5px; font-weight:700; fill:var(--bau-ink); text-anchor:middle; dominant-baseline:central}
-  .dg-cap-n.w{fill:#fff}
+  .dg-cap-n.w{fill:var(--on-state)}
   .dg-cutline{stroke:var(--bau-red); stroke-width:2.5; stroke-dasharray:10 7; fill:none}
   .dg-region{fill:color-mix(in oklab,var(--bau-blue) 9%,transparent); stroke:var(--bau-blue); stroke-width:1.5; stroke-dasharray:4 5}
 
@@ -332,7 +332,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 17">
@@ -477,7 +477,7 @@
         <p>That is the entire specification: maximize <code class="inl">|f|</code> over all functions <code class="inl">f</code> obeying the two laws. Here is the concrete network we will solve in full, by Edmonds&ndash;Karp, in &sect;08. Read each edge as <em>capacity</em>.</p>
 
         <figure>
-          <svg viewBox="0 0 840 440" role="img" aria-labelledby="g1t g1d">
+          <svg viewBox="0 0 840 440" style="--mw:638px" role="img" aria-labelledby="g1t g1d">
             <title id="g1t">A flow network on six vertices</title>
             <desc id="g1d">Source s on the left, sink t on the right, with middle vertices a and b in a left column and c and d in a right column. Eight directed edges carry capacities: s to a 12, s to b 12, a to c 5, a to d 3, b to c 3, b to d 6, c to t 12, d to t 12.</desc>
             <defs>
@@ -539,7 +539,7 @@
         <p>The backward edge is the entire trick, so let us watch it earn its keep on the smallest network where greed goes wrong. Capacities are large on the outside, and a single fat diagonal <code class="inl">u&rarr;v</code> tempts the first path into a commitment it must later partly undo.</p>
 
         <figure>
-          <svg viewBox="0 0 900 320" role="img" aria-labelledby="g2t g2d">
+          <svg viewBox="0 0 900 320" style="--mw:774px" role="img" aria-labelledby="g2t g2d">
             <title id="g2t">A residual augmentation that uses a backward edge</title>
             <desc id="g2d">Left panel: a greedy first path s to u to v to t carries 20 units and then no forward path remains, so flow is stuck at 20. Right panel: in the residual graph an augmenting path s to v to u to t uses the backward edge v to u, cancelling 10 units on u-v and raising the flow to 30.</desc>
             <defs>
@@ -640,7 +640,7 @@
           <p style="margin:0; color:var(--on-surface-variant); font-size:15px">So there are <code class="inl">O(VE)</code> augmentations, each a BFS of cost <code class="inl">O(E)</code>: total <strong><code class="inl">O(VE&sup2;)</code></strong> &mdash; polynomial in the graph, with <em>no dependence on the capacities</em>.</p>
         </div>
 
-        <p>Two refinements you should know by name. <span class="term">Dinic&rsquo;s algorithm</span> (1970) groups the BFS into a layered &ldquo;level graph&rdquo; and pushes a whole <em>blocking flow</em> per phase, reaching <code class="inl">O(V&sup2;E)</code> in general and a remarkable <code class="inl">O(E&radic;V)</code> when every capacity is 1 &mdash; the regime of matching. That unit-capacity bound is exactly the <span class="term">Hopcroft&ndash;Karp</span> matching algorithm in disguise, which we meet in &sect;09. Both are still augmenting-path algorithms; both still rest entirely on the residual graph of &sect;04.</p>
+        <p>Two refinements you should know by name. <span class="term">Dinic&rsquo;s algorithm</span> (1970) groups the BFS into a layered &ldquo;level graph&rdquo; and pushes a whole <em>blocking flow</em> per phase, reaching <code class="inl">O(V&sup2;E)</code> in general and a remarkable <code class="inl">O(E&radic;V)</code> on the unit-capacity networks that matching produces (every vertex has a single entering or a single leaving unit edge). That bound is exactly the <span class="term">Hopcroft&ndash;Karp</span> matching algorithm in disguise, which we meet in &sect;09. Both are still augmenting-path algorithms; both still rest entirely on the residual graph of &sect;04.</p>
       </div>
     </section>
 
@@ -724,7 +724,7 @@
           <li>For an original edge <code class="inl">(u,v)</code> with <code class="inl">u&isin;S, v&isin;T</code>: it must be <strong>saturated</strong>, <code class="inl">f(u,v)=c(u,v)</code>. Were there slack, the forward residual edge <code class="inl">u&rarr;v</code> would exist and <code class="inl">v</code> would be reachable &mdash; contradicting <code class="inl">v&isin;T</code>.</li>
           <li>For an original edge <code class="inl">(v,u)</code> with <code class="inl">u&isin;S, v&isin;T</code> (i.e. running from <code class="inl">T</code> back into <code class="inl">S</code>): it must carry <strong>zero</strong> flow, <code class="inl">f(v,u)=0</code>. Any positive flow would create the backward residual edge <code class="inl">u&rarr;v</code>, again making <code class="inl">v</code> reachable.</li>
         </ul>
-        <p>Substitute into the cut lemma of &sect;06: the forward crossing flow equals capacity and the backward crossing flow is zero, so <code class="inl">|f| = f(S,T) = c(S,T) &minus; 0 = c(S,T)</code>. The flow exactly saturates this cut.</p>
+        <p>Substitute into the cut lemma of &sect;06: the forward crossing flow equals capacity and the backward crossing flow is zero, so <code class="inl wrap">|f| = f(S,T) = c(S,T) &minus; 0 = c(S,T)</code>. The flow exactly saturates this cut.</p>
         <p><strong>(3)&rArr;(1).</strong> Immediate from weak duality. If <code class="inl">|f|=c(S,T)</code> for some cut, then for any other flow <code class="inl">f&prime;</code> we have <code class="inl">|f&prime;| &le; c(S,T) = |f|</code>, so <code class="inl">f</code> is maximum. <strong>&#9633;</strong></p>
 
         <p>Read the cycle once more and notice what it buys. The implication (2)&rArr;(3) does not merely <em>assert</em> a min cut exists &mdash; it <em>builds</em> one, for free, as the residual-reachable set of <code class="inl">s</code>. After Edmonds&ndash;Karp stops, one final BFS from <code class="inl">s</code> in <code class="inl">G<sub>f</sub></code> hands you the minimum cut. The algorithm that finds the flow also prints its own proof of optimality.</p>
@@ -767,7 +767,7 @@
         <p>Watch the fourth row carefully. By round 4, edge <code class="inl">s&rarr;a</code> has only <code class="inl">12&minus;8=4</code> residual left and <code class="inl">a</code>&rsquo;s out-edges <code class="inl">a&rarr;c, a&rarr;d</code> are both saturated &mdash; so <code class="inl">a</code> is a dead end in the residual graph. The only way forward from <code class="inl">s</code> is through <code class="inl">b</code>, and after <code class="inl">b&rarr;d</code> fills, <code class="inl">b</code> is a dead end too. The residual frontier collapses to <code class="inl">{s,a,b}</code>. By the theorem&rsquo;s (2)&rArr;(3) step, <em>that reachable set is a minimum cut</em>.</p>
 
         <figure>
-          <svg viewBox="0 0 840 460" role="img" aria-labelledby="g3t g3d">
+          <svg viewBox="0 0 840 460" style="--mw:638px" role="img" aria-labelledby="g3t g3d">
             <title id="g3t">The maximum flow and the minimum cut of Figure 1</title>
             <desc id="g3d">The same network with flow over capacity labelled on each edge. The four middle edges a-c, a-d, b-c, b-d are saturated and drawn bold blue. A dashed red cut line separates the source side {s, a, b} from the sink side {c, d, t}; the four edges it severs total capacity seventeen, equal to the maximum flow.</desc>
             <defs>
@@ -839,7 +839,7 @@
         <p>You have a set <code class="inl">L</code> of workers and a set <code class="inl">R</code> of jobs, with an edge wherever a worker can do a job. A <span class="term">matching</span> is a set of worker&ndash;job pairs using each worker and each job at most once; you want the largest. Build a network: a super-source <code class="inl">s</code> with a capacity-1 edge to every worker, the original worker&rarr;job edges (capacity 1), and a capacity-1 edge from every job to a super-sink <code class="inl">t</code>.</p>
 
         <figure>
-          <svg viewBox="0 0 720 360" role="img" aria-labelledby="g4t g4d">
+          <svg viewBox="0 0 720 360" style="--mw:619px" role="img" aria-labelledby="g4t g4d">
             <title id="g4t">Bipartite matching as a flow network</title>
             <desc id="g4d">A super source s connects to three workers x1 x2 x3 with unit edges; workers connect to jobs y1 y2 y3 by the allowed assignments; jobs connect to a super sink t with unit edges. A maximum matching of size three is highlighted: x1-y1, x2-y2, x3-y3.</desc>
             <defs>
@@ -903,7 +903,7 @@
             <mtext>min&#x2011;cut</mtext>
           </math></div>
         </div>
-        <p>The same min-cut partition is the engine behind image segmentation (foreground vs. background), the densest-subgraph and stable-marriage variants, and the &ldquo;baseball elimination&rdquo; classic. Practice problem 4 is project selection in full. The lesson generalizes: <strong>a maximization that decomposes into independent route choices is a max-flow; a clean two-way partition with a weighted objective is a min-cut.</strong></p>
+        <p>The same min-cut partition is the engine behind image segmentation (foreground vs. background), the densest-subgraph problem, and the &ldquo;baseball elimination&rdquo; classic. Practice problem 4 is project selection in full. The lesson generalizes: <strong>a maximization that decomposes into independent route choices is a max-flow; a clean two-way partition with a weighted objective is a min-cut.</strong></p>
 
         <div class="note info"><span class="tag">the reduction checklist</span>To model a problem as flow, answer four questions: <em>What is one unit of flow?</em> (a matched pair, a path, a chosen project) <em>What are the capacities?</em> (the &ldquo;at most once / at most this much&rdquo; limits) <em>Where is the source and sink?</em> <em>Does integrality give me back a combinatorial object?</em> If all four have clean answers, the flow toolbox &mdash; and a free optimality certificate &mdash; is yours.</div>
       </div>
@@ -946,7 +946,7 @@
         <p>For decades, max-flow was a showcase of <em>combinatorial</em> algorithms &mdash; augmenting paths, blocking flows, scaling &mdash; and progress stalled around <code class="inl">O(VE)</code>. The breakthrough came from a different continent of mathematics. Beginning with M&#x105;dry&rsquo;s electrical-flow methods (2013) and the interior-point revolution of Lee&ndash;Sidford and others, researchers reframed max-flow as a <em>continuous</em> optimization &mdash; an objective minimized by gliding through the interior of the polytope of feasible flows, taking Newton-like steps. Each step is itself a graph problem (a min-ratio cycle, or an undirected min-cost flow) solved approximately by a dynamic data structure that maintains low-stretch trees and sparsifiers on a slowly changing graph.</p>
 
         <figure>
-          <svg viewBox="0 0 880 300" role="img" aria-labelledby="g5t g5d">
+          <svg viewBox="0 0 880 300" style="--mw:757px" role="img" aria-labelledby="g5t g5d">
             <title id="g5t">The running-time exponent for max-flow, 1956 to 2022</title>
             <desc id="g5d">A timeline showing milestones whose dependence on graph size falls from capacity-dependent and high-polynomial bounds in the mid twentieth century toward an almost-linear m to the one plus little-o of one bound in 2022.</desc>
             <!-- baseline -->
@@ -1036,7 +1036,7 @@
         <div>
           <h3>Maximum Number of Accepted Invitations</h3>
           <p class="meta">bipartite matching &middot; the core gadget &middot; LeetCode 1820</p>
-          <p>There are <code class="inl">m</code> boys and <code class="inl">n</code> girls. You are given an <code class="inl">m&times;n</code> binary matrix <code class="inl">grid</code> where <code class="inl">grid[i][j]==1</code> means boy <code class="inl">i</code> can invite girl <code class="inl">j</code>. Each boy invites at most one girl and each girl accepts at most one invitation. Return the maximum number of invitations that can be accepted. Constraints: <code class="inl">1 &le; m, n &le; 200</code>. Example: <code class="inl">grid=[[1,1,1],[1,0,1],[0,0,1]] &#8594; 3</code>; <code class="inl">grid=[[1,0,1,0],[1,0,0,0],[0,0,1,0]] &#8594; 2</code>. This is maximum bipartite matching exactly: build the <code class="inl">s&rarr;</code>boy<code class="inl">&rarr;</code>girl<code class="inl">&rarr;t</code> network of &sect;09 and find the max flow &mdash; or run the equivalent augmenting-path matching (Kuhn&rsquo;s) directly. State your capacities and justify why the integrality theorem makes the flow a matching.</p>
+          <p>There are <code class="inl">m</code> boys and <code class="inl">n</code> girls. You are given an <code class="inl">m&times;n</code> binary matrix <code class="inl">grid</code> where <code class="inl">grid[i][j]==1</code> means boy <code class="inl">i</code> can invite girl <code class="inl">j</code>. Each boy invites at most one girl and each girl accepts at most one invitation. Return the maximum number of invitations that can be accepted. Constraints: <code class="inl">1 &le; m, n &le; 200</code>. Example: <code class="inl wrap">grid=[[1,1,1],[1,0,1],[0,0,1]] &#8594; 3</code>; <code class="inl wrap">grid=[[1,0,1,0],[1,0,0,0],[0,0,1,0]] &#8594; 2</code>. This is maximum bipartite matching exactly: build the <code class="inl">s&rarr;</code>boy<code class="inl">&rarr;</code>girl<code class="inl">&rarr;t</code> network of &sect;09 and find the max flow &mdash; or run the equivalent augmenting-path matching (Kuhn&rsquo;s) directly. State your capacities and justify why the integrality theorem makes the flow a matching.</p>
         </div>
       </div>
 
@@ -1045,7 +1045,7 @@
         <div>
           <h3>Minimum Lines to Cover All Ones (K&ouml;nig&rsquo;s theorem)</h3>
           <p class="meta">matching = cover duality &middot; min-cut in disguise &middot; classic</p>
-          <p>Given a binary matrix <code class="inl">mat</code> (<code class="inl">R&times;C</code>), a <em>line</em> is an entire row or an entire column; placing a line &ldquo;covers&rdquo; every cell on it. Return the minimum number of lines needed so that every <code class="inl">1</code> in the matrix lies on at least one chosen line. Constraints: <code class="inl">1 &le; R, C &le; 200</code>. Example: <code class="inl">mat=[[1,0,1],[1,0,0],[0,0,1]] &#8594; 2</code> (column&nbsp;0 and column&nbsp;2 cover all four ones). Model the ones as edges of a bipartite graph between rows and columns. Which classical theorem equates the minimum cover with the maximum matching &mdash; and why is that theorem an instance of max-flow min-cut? Your code is the same matcher as problem&nbsp;1, but the <em>answer you return</em> is different. Explain the connection precisely.</p>
+          <p>Given a binary matrix <code class="inl">mat</code> (<code class="inl">R&times;C</code>), a <em>line</em> is an entire row or an entire column; placing a line &ldquo;covers&rdquo; every cell on it. Return the minimum number of lines needed so that every <code class="inl">1</code> in the matrix lies on at least one chosen line. Constraints: <code class="inl">1 &le; R, C &le; 200</code>. Example: <code class="inl wrap">mat=[[1,0,1],[1,0,0],[0,0,1]] &#8594; 2</code> (column&nbsp;0 and column&nbsp;2 cover all four ones). Model the ones as edges of a bipartite graph between rows and columns. Which classical theorem equates the minimum cover with the maximum matching &mdash; and why is that theorem an instance of max-flow min-cut? Your code is the same matcher as problem&nbsp;1, but the <em>answer you return</em> is different. Explain the connection precisely.</p>
         </div>
       </div>
 
@@ -1063,7 +1063,7 @@
         <div>
           <h3>Maximum-Profit Project Selection</h3>
           <p class="meta">maximum-weight closure &middot; weighted min-cut &middot; capstone</p>
-          <p>You may undertake any subset of <code class="inl">P</code> projects. Project <code class="inl">i</code> yields <code class="inl">revenue[i] &ge; 0</code>. There are <code class="inl">M</code> machines; machine <code class="inl">j</code> costs <code class="inl">cost[j] &ge; 0</code> to buy (once), and undertaking project <code class="inl">i</code> requires owning every machine in <code class="inl">requires[i]</code> (a list of machine indices); a bought machine serves all projects that need it. Maximize <code class="inl">(&Sigma;&nbsp;revenue&nbsp;of&nbsp;chosen&nbsp;projects) &minus; (&Sigma;&nbsp;cost&nbsp;of&nbsp;machines&nbsp;you&nbsp;must&nbsp;buy)</code>; the empty selection (profit&nbsp;0) is allowed. Constraints: <code class="inl">P, M &le; 200</code>. Example: <code class="inl">revenue=[10,7], cost=[6,4], requires=[[0],[0,1]] &#8594; 7</code> (take only project&nbsp;0: <code class="inl">10&minus;6=4</code>; take both: <code class="inl">17&minus;10=7</code>; both wins). Build the closure network of &sect;09 with <code class="inl">&infin;</code> on the requirement edges, and return <code class="inl">total&nbsp;revenue &minus; min&#8209;cut</code>. Prove why the infinite edges force the min cut to correspond to a <em>valid</em> selection.</p>
+          <p>You may undertake any subset of <code class="inl">P</code> projects. Project <code class="inl">i</code> yields <code class="inl">revenue[i] &ge; 0</code>. There are <code class="inl">M</code> machines; machine <code class="inl">j</code> costs <code class="inl">cost[j] &ge; 0</code> to buy (once), and undertaking project <code class="inl">i</code> requires owning every machine in <code class="inl">requires[i]</code> (a list of machine indices); a bought machine serves all projects that need it. Maximize <code class="inl wrap">(&Sigma;&nbsp;revenue&nbsp;of&nbsp;chosen&nbsp;projects) &minus; (&Sigma;&nbsp;cost&nbsp;of&nbsp;machines&nbsp;you&nbsp;must&nbsp;buy)</code>; the empty selection (profit&nbsp;0) is allowed. Constraints: <code class="inl">P, M &le; 200</code>. Example: <code class="inl wrap">revenue=[10,7], cost=[6,4], requires=[[0],[0,1]] &#8594; 7</code> (take only project&nbsp;0: <code class="inl">10&minus;6=4</code>; take both: <code class="inl">17&minus;10=7</code>; both wins). Build the closure network of &sect;09 with <code class="inl">&infin;</code> on the requirement edges, and return <code class="inl">total&nbsp;revenue &minus; min&#8209;cut</code>. Prove why the infinite edges force the min cut to correspond to a <em>valid</em> selection.</p>
         </div>
       </div>
     </section>
@@ -1129,6 +1129,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-16-when-is-greedy-optimal-exchange-arguments-and-matroids.html">← Previous study</a><a href="dsa-18-linear-time-exact-matching.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-16-when-is-greedy-optimal-exchange-arguments-and-matroids.html" rel="prev"><span>&larr; Lecture 16</span><strong>When greedy is optimal</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-18-linear-time-exact-matching.html" rel="next"><span>Lecture 18 &rarr;</span><strong>Linear-time exact matching</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/31-network-flow.html">Lesson 31 &middot; Max flow &amp; min cut</a></p></nav>
 </body>
 </html>

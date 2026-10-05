@@ -332,7 +332,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 06">
@@ -441,7 +441,7 @@
       <div class="eyebrow"><span class="n">03</span> strip the problem to its skeleton</div>
       <h2>The comparison model, made precise</h2>
       <div class="col">
-        <p>Before any algorithm, fix what the algorithm is <em>allowed to know</em>. In the <span class="term">comparison model</span> the input is a sequence of <code class="inl">n</code> elements from some totally ordered universe, and the algorithm may inspect them in exactly one way: pick two, <code class="inl">a&#7522;</code> and <code class="inl">a&#11388;</code>, and learn which of <code class="inl">a&#7522; &lt; a&#11388;</code>, <code class="inl">a&#7522; = a&#11388;</code>, <code class="inl">a&#7522; &gt; a&#11388;</code> holds. It may move elements about freely, but it may not look inside them — not their bits, not their magnitude, only their order relative to one another.</p>
+        <p>Before any algorithm, fix what the algorithm is <em>allowed to know</em>. In the <span class="term">comparison model</span> the input is a sequence of <code class="inl">n</code> elements from some totally ordered universe, and the algorithm may inspect them in exactly one way: pick two, <code class="inl">a<sub>i</sub></code> and <code class="inl">a<sub>j</sub></code>, and learn which of <code class="inl">a<sub>i</sub> &lt; a<sub>j</sub></code>, <code class="inl">a<sub>i</sub> = a<sub>j</sub></code>, <code class="inl">a<sub>i</sub> &gt; a<sub>j</sub></code> holds. It may move elements about freely, but it may not look inside them — not their bits, not their magnitude, only their order relative to one another.</p>
         <p>Now extract the computational skeleton. The actual <em>values</em> are irrelevant; only their relative order matters. So sorting an input of distinct elements is exactly the task of <strong>identifying which of the <code class="inl">n!</code> permutations</strong> arranges the input into increasing order. The algorithm starts knowing nothing — any of the <code class="inl">n!</code> orderings is possible — and each comparison is a single yes/no question that splits the still-possible orderings into two groups. The algorithm is done only when one ordering remains. <em>That</em> reframing — sorting as a question-asking game against an unknown permutation — is the whole reason a lower bound exists, and we cash it in &sect;07.</p>
         <p>This is also why the model matters so much. A comparison costs <code class="inl">&#x398;(1)</code>, but it also <em>yields</em> only one bit. An operation that reads a key and uses it as an array index yields <code class="inl">log k</code> bits in one step and lives in a <em>different</em> model — the model counting and radix sort inhabit. Keep the two straight and nothing on this page will ever seem paradoxical.</p>
         <div class="pull">A comparison sort plays twenty questions against a hidden permutation. <span>With n! suspects, you cannot always win in fewer than log&#8322;(n!) questions.</span></div>
@@ -479,7 +479,7 @@
         <div class="note info"><span class="tag">partition invariant</span>At the top of each iteration of the scan, the array is split into four contiguous zones: <code class="inl">A[lo..i]</code> are all <code class="inl">&le; pivot</code>; <code class="inl">A[i+1..j&minus;1]</code> are all <code class="inl">&gt; pivot</code>; <code class="inl">A[j..hi&minus;1]</code> are not yet examined; and <code class="inl">A[hi]</code> is the pivot. Each step restores it. When <code class="inl">j</code> reaches <code class="inl">hi</code>, the final swap drops the pivot exactly between the &le; and &gt; zones — its sorted home.</div>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 320" role="img" aria-labelledby="f1t f1d">
+          <svg viewBox="0 0 940 320" style="--mw:744px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">A snapshot of Lomuto partition mid-scan, showing the four invariant zones</title>
             <desc id="f1d">A nine-cell array being partitioned around pivot value six parked at the last index. Indices zero to two hold two, one, four and form the less-than-or-equal zone ending at pointer i. Indices three to five hold seven, nine, eleven and form the greater-than zone. Indices six and seven hold three and ten and are unexamined, with the scan pointer j at index six. The next step compares three to six, finds it smaller, advances i and swaps it across the boundary.</desc>
 
@@ -527,8 +527,9 @@
 
             <!-- next-step callout -->
             <g transform="translate(40,256)">
-              <rect x="0" y="0" width="844" height="48" rx="8" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
-              <text x="16" y="30" class="dg-label">next step:  A[j]=3 &le; 6  &rarr;  i becomes 3, swap A[3]&harr;A[6]  &rArr;  the value 3 crosses into the &le; zone, 7 moves out to index 6.</text>
+              <rect x="0" y="0" width="844" height="60" rx="8" fill="var(--surface-2)" stroke="var(--bau-blue)" stroke-width="2"/>
+              <text x="16" y="25" class="dg-label">next step:  A[j]=3 &le; 6  &rarr;  i becomes 3, swap A[3]&harr;A[6]</text>
+              <text x="16" y="46" class="dg-label">&rArr;  the value 3 crosses into the &le; zone, and 7 moves out to index 6.</text>
             </g>
 
             <defs>
@@ -587,13 +588,13 @@
           </math></div>
         </div>
 
-        <p>The implication is <strong>linearity of expectation</strong>, and it asks for nothing — the <code class="inl">X&#7522;&#11388;</code> are wildly dependent, and we simply do not care. We have traded one hard question (the distribution of a sum) for <code class="inl">&#x398;(n&#xB2;)</code> easy ones (a single probability). Now the only thing left is that probability.</p>
+        <p>The implication is <strong>linearity of expectation</strong>, and it asks for nothing — the <code class="inl">X<sub>i</sub><sub>j</sub></code> are wildly dependent, and we simply do not care. We have traded one hard question (the distribution of a sum) for <code class="inl">&#x398;(n&#xB2;)</code> easy ones (a single probability). Now the only thing left is that probability.</p>
 
-        <h3>The key lemma: <code class="inl">Pr[z&#7522;, z&#11388; compared] = 2/(j &minus; i + 1)</code></h3>
-        <p>Consider the contiguous band of order statistics <code class="inl">Z&#7522;&#11388; = {z&#7522;, z&#7522;&#8330;&#8321;, &hellip;, z&#11388;}</code> — there are <code class="inl">j &minus; i + 1</code> of them. Track which element of this band is chosen as a pivot <em>first</em> (somewhere in the recursion, some member of the band must be picked before the others, because pivots are removed one at a time). Everything turns on that first pick:</p>
+        <h3>The key lemma: <code class="inl wrap">Pr[z<sub>i</sub>, z<sub>j</sub> compared] = 2/(j &minus; i + 1)</code></h3>
+        <p>Consider the contiguous band of order statistics <code class="inl">Z<sub>i</sub><sub>j</sub> = {z<sub>i</sub>, z<sub>i</sub>&#8330;&#8321;, &hellip;, z<sub>j</sub>}</code> — there are <code class="inl">j &minus; i + 1</code> of them. Track which element of this band is chosen as a pivot <em>first</em> (somewhere in the recursion, some member of the band must be picked before the others, because pivots are removed one at a time). Everything turns on that first pick:</p>
         <ul>
-          <li>If the first pivot drawn from the band is an <strong>interior</strong> element <code class="inl">z&#x2096;</code> with <code class="inl">i &lt; k &lt; j</code>, then <code class="inl">z&#7522;</code> and <code class="inl">z&#11388;</code> land on <em>opposite</em> sides of that partition (one below <code class="inl">z&#x2096;</code>, one above) and are separated forever — they can never be compared.</li>
-          <li>If the first pivot drawn from the band is an <strong>endpoint</strong> — <code class="inl">z&#7522;</code> itself or <code class="inl">z&#11388;</code> itself — then at that moment the whole band is still together in one subarray (nobody from the band has been a pivot yet), so the pivot is compared against every other band member, including the other endpoint. They <em>are</em> compared.</li>
+          <li>If the first pivot drawn from the band is an <strong>interior</strong> element <code class="inl">z<sub>k</sub></code> with <code class="inl">i &lt; k &lt; j</code>, then <code class="inl">z<sub>i</sub></code> and <code class="inl">z<sub>j</sub></code> land on <em>opposite</em> sides of that partition (one below <code class="inl">z<sub>k</sub></code>, one above) and are separated forever — they can never be compared.</li>
+          <li>If the first pivot drawn from the band is an <strong>endpoint</strong> — <code class="inl">z<sub>i</sub></code> itself or <code class="inl">z<sub>j</sub></code> itself — then at that moment the whole band is still together in one subarray (nobody from the band has been a pivot yet), so the pivot is compared against every other band member, including the other endpoint. They <em>are</em> compared.</li>
         </ul>
         <p>So the pair is compared if and only if the first-chosen pivot of the band is one of its two endpoints. Because every pivot is chosen uniformly at random, each of the <code class="inl">j &minus; i + 1</code> band members is equally likely to be the first one picked. Two of them are favourable. Hence:</p>
 
@@ -660,7 +661,7 @@
         <details>
           <summary>Why &ldquo;at most once&rdquo; is the load-bearing fact — a one-line guard</summary>
           <div class="body">
-            <p style="margin:.6em 0 0">If a pair could be compared twice, the sum <code class="inl">X = &#x2211; X&#7522;&#11388;</code> would <em>undercount</em> and the analysis would be wrong. It holds because comparisons happen only against the current pivot, and the pivot is pulled out of the recursion before either of its subarrays is processed. So once <code class="inl">z&#7522;</code> and <code class="inl">z&#11388;</code> are compared, one of them was the pivot and is gone; they never share a subarray again. This is exactly why Lomuto/Hoare partitions never compare two non-pivot elements with each other — only pivot-versus-rest. Break that property (e.g. a partition that re-scans) and you must redo the count.</p>
+            <p style="margin:.6em 0 0">If a pair could be compared twice, the sum <code class="inl">X = &#x2211; X<sub>i</sub><sub>j</sub></code> would <em>undercount</em> and the analysis would be wrong. It holds because comparisons happen only against the current pivot, and the pivot is pulled out of the recursion before either of its subarrays is processed. So once <code class="inl">z<sub>i</sub></code> and <code class="inl">z<sub>j</sub></code> are compared, one of them was the pivot and is gone; they never share a subarray again. This is exactly why Lomuto/Hoare partitions never compare two non-pivot elements with each other — only pivot-versus-rest. Break that property (e.g. a partition that re-scans) and you must redo the count.</p>
           </div>
         </details>
       </div>
@@ -674,7 +675,7 @@
         <p>Two halves. First we run randomized quicksort on a concrete array and watch the recursion tree form. Then we compute <code class="inl">E[X]</code> exactly for a small <code class="inl">n</code>, so the abstract sum of &sect;05 becomes a number you can check on your fingers.</p>
 
         <h3>Part A — trace on <code class="inl">A = [5, 2, 8, 1, 9, 3]</code></h3>
-        <p>Suppose the coin picks the pivots shown. Partitioning is Lomuto (&sect;04); equal-or-less goes left. I show each call as <em>block &rarr; (pivot) &rarr; left&nbsp;|&nbsp;right</em>, with the comparison count = block size &minus; 1.</p>
+        <p>Suppose the coin picks the pivots shown. Partitioning is Lomuto (&sect;04); equal-or-less goes left. (Lomuto&rsquo;s swaps may shuffle the order <em>inside</em> a side; I list each side in its original order, which changes no comparison count.) I show each call as <em>block &rarr; (pivot) &rarr; left&nbsp;|&nbsp;right</em>, with the comparison count = block size &minus; 1.</p>
 
         <div class="cells" aria-hidden="true">
           <span class="c fill">5</span><span class="c fill">2</span><span class="c fill">8</span><span class="c fill">1</span><span class="c fill">9</span><span class="c piv">3</span>
@@ -689,7 +690,7 @@
         <p>Final array <code class="inl">[1,2,3,5,8,9]</code>. Total comparisons on this run: <code class="inl">5 + 1 + 2 = 8</code>. The recursion tree — the actual object whose total node-work <em>is</em> the running time — looks like this:</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 360" role="img" aria-labelledby="f2t f2d">
+          <svg viewBox="0 0 940 360" style="--mw:744px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">The quicksort recursion tree for the worked array</title>
             <desc id="f2d">A tree of partition calls. The root partitions the six-element array around pivot three, doing five comparisons, splitting into a left block of two and a right block of three. The left block partitions around pivot one for one comparison, the right block around pivot eight for two comparisons, each producing singleton leaves. Summing comparisons over all internal nodes gives eight, and the sum of block sizes per level is at most n, illustrating why depth times n bounds the work.</desc>
 
@@ -775,14 +776,14 @@
       <div class="col">
         <p>Now the result that makes quicksort's <code class="inl">1.39&nbsp;n&nbsp;log&#8322;n</code> look not lucky but nearly optimal. We prove that <em>every</em> comparison sort — including ones not yet invented — must, on some input, make <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code> comparisons. The argument is one of the most elegant in computer science, and it is pure counting.</p>
 
-        <p>Model any comparison sort as a <span class="term">decision tree</span>. Each internal node is a single comparison <code class="inl">a&#7522; : a&#11388;</code>; its two children correspond to the two answers (<code class="inl">&le;</code> goes one way, <code class="inl">&gt;</code> the other). The algorithm starts at the root and walks down, one comparison per node, until it reaches a leaf — at which point it must output a definite permutation. A particular input drives a particular root-to-leaf path; the <em>length</em> of that path is the number of comparisons that input costs. So the <strong>worst-case comparison count is the height of the tree</strong>, and the average-case count is the average leaf depth.</p>
+        <p>Model any comparison sort as a <span class="term">decision tree</span>. Each internal node is a single comparison <code class="inl">a<sub>i</sub> : a<sub>j</sub></code>; its two children correspond to the two answers (<code class="inl">&le;</code> goes one way, <code class="inl">&gt;</code> the other). The algorithm starts at the root and walks down, one comparison per node, until it reaches a leaf — at which point it must output a definite permutation. A particular input drives a particular root-to-leaf path; the <em>length</em> of that path is the number of comparisons that input costs. So the <strong>worst-case comparison count is the height of the tree</strong>, and the average-case count is the average leaf depth.</p>
 
         <p>Here is the crux, in two short claims:</p>
         <ul>
           <li><strong>The tree needs at least <code class="inl">n!</code> leaves.</strong> Each of the <code class="inl">n!</code> distinct input orderings requires a <em>different</em> output permutation to sort it. Two different orderings cannot end at the same leaf, because a leaf emits one fixed permutation, which would mis-sort at least one of them. So there are <code class="inl">&ge; n!</code> reachable leaves.</li>
           <li><strong>A binary tree of height <code class="inl">h</code> has at most <code class="inl">2&#x2B0;</code> leaves.</strong> Trivial induction: doubling per level.</li>
         </ul>
-        <p>Combine them and take logarithms, then apply Stirling's approximation <code class="inl">ln(n!) = n&nbsp;ln&nbsp;n &minus; n + O(log n)</code>:</p>
+        <p>Combine them and take logarithms, then apply Stirling's approximation <code class="inl wrap">ln(n!) = n&nbsp;ln&nbsp;n &minus; n + O(log n)</code>:</p>
 
         <div class="eq">
           <span class="lbl">the floor, in one line</span>
@@ -806,7 +807,7 @@
         <p>That is the wall. With <code class="inl">log&#8322;e &#8776; 1.443</code>, the floor is about <code class="inl">n&nbsp;log&#8322;n &minus; 1.44&nbsp;n</code> comparisons — for the 52-card deck, <code class="inl">log&#8322;(52!) &#8776; 225.6</code>, i.e. <strong>226</strong>, the number from the hook. And it is not only a worst-case statement: the <em>average</em> leaf depth of any binary tree with <code class="inl">L</code> leaves is at least <code class="inl">log&#8322;L</code>, so even the average-case comparison count of any comparison sort is <code class="inl">&#x3A9;(n&nbsp;log&nbsp;n)</code>. Merge sort and heapsort hit the floor in the worst case; randomized quicksort hits it in expectation. No comparison method does better, ever.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 380" role="img" aria-labelledby="f3t f3d">
+          <svg viewBox="0 0 940 380" style="--mw:744px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">A comparison-sort decision tree for three elements</title>
             <desc id="f3d">A binary decision tree sorting three elements a, b, c. The root compares a versus b. Each internal node is a comparison with two outcomes, less-or-equal to the left and greater to the right. The leaves are the six possible sorted orderings, equal to three factorial. The tree has height three, and three is the ceiling of log base two of six, showing the height must be at least log of the number of leaves.</desc>
 
@@ -896,7 +897,7 @@
         <p>Two loops over <code class="inl">n</code> elements and one over <code class="inl">k</code> values give <code class="inl">&#x398;(n + k)</code> time and <code class="inl">&#x398;(n + k)</code> space. When <code class="inl">k = O(n)</code> — keys in a range proportional to the count — this is <strong><code class="inl">&#x398;(n)</code>, linear</strong>. And the right-to-left placement makes it <span class="term">stable</span>: equal keys keep their original relative order, which is the property that lets us bolt counting sort into radix sort next.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 360" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 940 360" style="--mw:744px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">Counting sort as a three-stage pipeline</title>
             <desc id="f4d">Counting sort of the array two, five, two, zero, one, two with keys in range zero to five. Stage one builds a histogram counting one zero, one one, three twos, no threes or fours, one five. Stage two takes a prefix sum so each entry holds the number of keys less than or equal to that value: one, two, five, five, five, six. Stage three places each element by decrementing its cumulative count, landing the sorted output zero, one, two, two, two, five.</desc>
 
@@ -979,7 +980,7 @@
         A = <span class="tok-fn">stable_counting_sort_by_digit</span>(A, p, b)
     <span class="tok-kw">return</span> A                          <span class="tok-com"># each pass keeps the previous order on ties</span></code></pre>
 
-        <p>Each of the <code class="inl">d</code> passes is a counting sort over base-<code class="inl">b</code> digits, costing <code class="inl">&#x398;(n + b)</code>, so the total is <code class="inl">&#x398;(d(n + b))</code>. The art is choosing <code class="inl">b</code>. To sort <code class="inl">n</code> integers in the range <code class="inl">0 &hellip; n&#x1D9C;&minus;1</code> for a constant <code class="inl">c</code>, write them in base <code class="inl">b = n</code>: then each number has only <code class="inl">d = c</code> digits, and the cost is <code class="inl">&#x398;(c&#x2219;(n + n)) = &#x398;(n)</code>. <strong>Linear sorting of integers in any polynomial range.</strong></p>
+        <p>Each of the <code class="inl">d</code> passes is a counting sort over base-<code class="inl">b</code> digits, costing <code class="inl">&#x398;(n + b)</code>, so the total is <code class="inl">&#x398;(d(n + b))</code>. The art is choosing <code class="inl">b</code>. To sort <code class="inl">n</code> integers in the range <code class="inl">0 &hellip; n<sup>c</sup>&minus;1</code> for a constant <code class="inl">c</code>, write them in base <code class="inl">b = n</code>: then each number has only <code class="inl">d = c</code> digits, and the cost is <code class="inl">&#x398;(c&#x2219;(n + n)) = &#x398;(n)</code>. <strong>Linear sorting of integers in any polynomial range.</strong></p>
 
         <div class="eq">
           <span class="lbl">why base = n makes it linear</span>
@@ -1001,7 +1002,7 @@
         </div>
 
         <figure class="reveal">
-          <svg viewBox="0 0 940 330" role="img" aria-labelledby="f5t f5d">
+          <svg viewBox="0 0 940 330" style="--mw:744px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">LSD radix sort over two-digit numbers in two stable passes</title>
             <desc id="f5d">Six two-digit numbers thirty-two, ten, fifty-two, thirteen, eleven, thirty-one are sorted in two passes. Pass one sorts by the ones digit, giving ten, thirty-one, eleven, thirty-two, fifty-two, thirteen. Pass two sorts by the tens digit, and because the sort is stable the ones-digit order is preserved within each tens group, giving the fully sorted ten, eleven, thirteen, thirty-one, thirty-two, fifty-two.</desc>
 
@@ -1025,8 +1026,8 @@
             <!-- pass 1 column: sorted by ones digit; underline the ones digit (red) -->
             <g font-family="var(--font-mono)">
               <rect x="390" y="86"  width="80" height="34" class="dg-cell"/><text x="430" y="110" text-anchor="middle" class="dg-val">1<tspan class="dg-red-f">0</tspan></text>
-              <rect x="390" y="124" width="80" height="34" class="dg-cell"/><text x="430" y="148" text-anchor="middle" class="dg-val">3<tspan class="dg-red-f">1</tspan></text>
-              <rect x="390" y="162" width="80" height="34" class="dg-cell"/><text x="430" y="186" text-anchor="middle" class="dg-val">1<tspan class="dg-red-f">1</tspan></text>
+              <rect x="390" y="124" width="80" height="34" class="dg-cell"/><text x="430" y="148" text-anchor="middle" class="dg-val">1<tspan class="dg-red-f">1</tspan></text>
+              <rect x="390" y="162" width="80" height="34" class="dg-cell"/><text x="430" y="186" text-anchor="middle" class="dg-val">3<tspan class="dg-red-f">1</tspan></text>
               <rect x="390" y="200" width="80" height="34" class="dg-cell"/><text x="430" y="224" text-anchor="middle" class="dg-val">3<tspan class="dg-red-f">2</tspan></text>
               <rect x="390" y="238" width="80" height="34" class="dg-cell"/><text x="430" y="262" text-anchor="middle" class="dg-val">5<tspan class="dg-red-f">2</tspan></text>
               <rect x="390" y="276" width="80" height="34" class="dg-cell"/><text x="430" y="300" text-anchor="middle" class="dg-val">1<tspan class="dg-red-f">3</tspan></text>
@@ -1239,6 +1240,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-05-probability-for-algorithms.html">← Previous study</a><a href="dsa-07-balanced-search-trees.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-05-probability-for-algorithms.html" rel="prev"><span>&larr; Lecture 05</span><strong>Probability for algorithms</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-07-balanced-search-trees.html" rel="next"><span>Lecture 07 &rarr;</span><strong>Balanced search trees</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/14-elementary-sorts.html">Lesson 14 &middot; Bubble, selection &amp; insertion sort</a><a href="../lessons/16-quick-sort.html">Lesson 16 &middot; Quick sort &amp; quickselect</a><a href="../lessons/17-linear-time-sorts.html">Lesson 17 &middot; Counting, radix &amp; the n log n barrier</a></p></nav>
 </body>
 </html>

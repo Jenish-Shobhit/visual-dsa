@@ -266,7 +266,7 @@
   .dg-node-done{fill:var(--bau-yellow); stroke:var(--bau-ink); stroke-width:2.5}
   .dg-node-src{fill:var(--bau-blue); stroke:var(--bau-ink); stroke-width:2.5}
   .dg-nt{font-family:var(--font-mono); font-size:16px; font-weight:700; fill:var(--on-surface); text-anchor:middle; dominant-baseline:central}
-  .dg-nt.w{fill:#fff}
+  .dg-nt.w{fill:var(--on-state)}
   .dg-wt{font-family:var(--font-mono); font-size:13.5px; font-weight:600; fill:var(--on-surface)}
   .dg-wt.neg{fill:var(--bau-red); font-weight:700}
   .dg-badge{font-family:var(--font-mono); font-size:13px; font-weight:700; fill:var(--bau-blue)}
@@ -355,7 +355,7 @@
     .reveal{opacity:1; transform:none}
   }
 </style>
-<link rel="stylesheet" href="studies.css?v=vdsa2">
+<link rel="stylesheet" href="studies.css?v=vdsa4">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 </head>
 <body class="study-page" data-page="study" data-crumb="Deep study 13">
@@ -496,7 +496,7 @@
         <p><strong>Upper-bound property.</strong> At all times <code class="inl">d[v] &#8805; &#948;(s,v)</code>, and once <code class="inl">d[v]</code> reaches <code class="inl">&#948;(s,v)</code> it never changes again. <em>Why:</em> every finite <code class="inl">d[v]</code> is the length of <em>some</em> real path <code class="inl">s &#8594; &middot;&middot;&middot; &#8594; v</code> (the one traced by <code class="inl">&#960;</code>), so it cannot dip below the minimum over all such paths; and relaxation only assigns smaller values, so it cannot rise. The estimate is a true distance squeezed downward toward the optimum &mdash; never past it.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 320" role="img" aria-labelledby="f1t f1d">
+          <svg viewBox="0 0 760 320" style="--mw:602px" role="img" aria-labelledby="f1t f1d">
             <title id="f1t">The relaxation atom and the triangle inequality it enforces</title>
             <desc id="f1d">Left panel: an edge from u to v of weight 2. Vertex u holds tentative distance 3; vertex v holds 7. Because 3 plus 2 equals 5, which is less than 7, relaxation lowers v's estimate from 7 to 5 and sets v's predecessor to u. Right panel: a triangle with apex s and base vertices u and v. The edge s to u has length delta s u, the edge u to v has weight w u v, and the dashed direct edge s to v has length delta s v. The inequality delta s v is at most delta s u plus w u v is annotated beneath: the best route to v is never worse than the best route to u extended by one edge.</desc>
             <defs>
@@ -558,8 +558,8 @@
           </math></div>
         </div>
 
-        <p><strong>The path-relaxation lemma.</strong> Let <code class="inl">p = &#10216;v&#8320;, v&#8321;, &hellip;, v&#8342;&#10217;</code> be a shortest path from <code class="inl">s = v&#8320;</code> to <code class="inl">v = v&#8342;</code>. Suppose that, in the course of the algorithm, the edges of <code class="inl">p</code> are relaxed <em>in the order</em> <code class="inl">(v&#8320;,v&#8321;), (v&#8321;,v&#8322;), &hellip;, (v&#8342;&#8331;&#8321;,v&#8342;)</code> &mdash; possibly with other relaxations interleaved between them. Then afterward <code class="inl">d[v&#8342;] = &#948;(s,v&#8342;)</code>.</p>
-        <p><em>Proof, by induction on the index <code class="inl">i</code>.</em> Claim: after edge <code class="inl">(v&#7522;&#8331;&#8321;, v&#7522;)</code> is relaxed, <code class="inl">d[v&#7522;] = &#948;(s, v&#7522;)</code>. Base: <code class="inl">d[v&#8320;] = d[s] = 0 = &#948;(s,s)</code> from initialisation. Step: assume <code class="inl">d[v&#7522;&#8331;&#8321;] = &#948;(s, v&#7522;&#8331;&#8321;)</code> holds when we relax <code class="inl">(v&#7522;&#8331;&#8321;, v&#7522;)</code> (it does, by the inductive hypothesis, and once exact it stays exact by the upper-bound property). The relaxation sets <code class="inl">d[v&#7522;] &#8804; &#948;(s,v&#7522;&#8331;&#8321;) + w(v&#7522;&#8331;&#8321;, v&#7522;)</code>, which equals <code class="inl">&#948;(s,v&#7522;)</code> because <code class="inl">p</code> is a shortest path and its prefix to <code class="inl">v&#7522;</code> is too (optimal substructure). Combined with the upper bound <code class="inl">d[v&#7522;] &#8805; &#948;(s,v&#7522;)</code>, equality follows. <span class="mono">&#9633;</span></p>
+        <p><strong>The path-relaxation lemma.</strong> Let <code class="inl">p = &#10216;v&#8320;, v&#8321;, &hellip;, v<sub>k</sub>&#10217;</code> be a shortest path from <code class="inl">s = v&#8320;</code> to <code class="inl">v = v<sub>k</sub></code>. Suppose that, in the course of the algorithm, the edges of <code class="inl">p</code> are relaxed <em>in the order</em> <code class="inl wrap">(v&#8320;,v&#8321;), (v&#8321;,v&#8322;), &hellip;, (v<sub>k</sub>&#8331;&#8321;,v<sub>k</sub>)</code> &mdash; possibly with other relaxations interleaved between them. Then afterward <code class="inl">d[v<sub>k</sub>] = &#948;(s,v<sub>k</sub>)</code>.</p>
+        <p><em>Proof, by induction on the index <code class="inl">i</code>.</em> Claim: after edge <code class="inl">(v<sub>i</sub>&#8331;&#8321;, v<sub>i</sub>)</code> is relaxed, <code class="inl">d[v<sub>i</sub>] = &#948;(s, v<sub>i</sub>)</code>. Base: <code class="inl">d[v&#8320;] = d[s] = 0 = &#948;(s,s)</code> from initialisation. Step: assume <code class="inl">d[v<sub>i</sub>&#8331;&#8321;] = &#948;(s, v<sub>i</sub>&#8331;&#8321;)</code> holds when we relax <code class="inl">(v<sub>i</sub>&#8331;&#8321;, v<sub>i</sub>)</code> (it does, by the inductive hypothesis, and once exact it stays exact by the upper-bound property). The relaxation sets <code class="inl wrap">d[v<sub>i</sub>] &#8804; &#948;(s,v<sub>i</sub>&#8331;&#8321;) + w(v<sub>i</sub>&#8331;&#8321;, v<sub>i</sub>)</code>, which equals <code class="inl">&#948;(s,v<sub>i</sub>)</code> because <code class="inl">p</code> is a shortest path and its prefix to <code class="inl">v<sub>i</sub></code> is too (optimal substructure). Combined with the upper bound <code class="inl">d[v<sub>i</sub>] &#8805; &#948;(s,v<sub>i</sub>)</code>, equality follows. <span class="mono">&#9633;</span></p>
         <p>This lemma is the engine of every proof below. To show an algorithm correct, you need only show that, for each vertex, it relaxes the edges of <em>some</em> shortest path to that vertex in order. The three algorithms are precisely three guarantees that this happens &mdash; achieved by three different scheduling disciplines.</p>
 
         <div class="pull">Every shortest-path algorithm is the same atom, <span>relax an edge,</span> performed in a different order. The order is the algorithm.</div>
@@ -572,7 +572,7 @@
       <h2>Dijkstra &mdash; closest-first, when weights are non-negative</h2>
       <div class="col">
         <p>Suppose every weight satisfies <code class="inl">w(u,v) &#8805; 0</code>. Then a beautiful greedy fact holds: <strong>among all vertices whose distance is not yet final, the one with the smallest estimate <code class="inl">d</code> already has <code class="inl">d = &#948;</code>.</strong> Its estimate cannot improve, so we may &ldquo;finalise&rdquo; it and never look back.</p>
-        <p><em>Why non-negativity is the whole reason.</em> Let <code class="inl">u</code> be the unfinished vertex of minimum <code class="inl">d[u]</code>, and suppose for contradiction its true shortest path is cheaper. That path leaves the finalised set somewhere, crossing into the unfinished region at some first vertex <code class="inl">y</code>. By the convergence of the finalised frontier, <code class="inl">d[y] = &#948;(s,y) &#8804; &#948;(s,u) &lt; d[u]</code> &mdash; because the remaining edges from <code class="inl">y</code> to <code class="inl">u</code> add only non-negative weight. But then <code class="inl">y</code>, not <code class="inl">u</code>, was the unfinished vertex of minimum estimate. Contradiction. Flip even one edge negative and the step &ldquo;remaining edges add only non-negative weight&rdquo; collapses &mdash; and with it Dijkstra's correctness.</p>
+        <p><em>Why non-negativity is the whole reason.</em> Let <code class="inl">u</code> be the unfinished vertex of minimum <code class="inl">d[u]</code>, and suppose for contradiction its true shortest path is cheaper. That path leaves the finalised set somewhere, crossing into the unfinished region at some first vertex <code class="inl">y</code>. By the convergence of the finalised frontier, <code class="inl wrap">d[y] = &#948;(s,y) &#8804; &#948;(s,u) &lt; d[u]</code> &mdash; because the remaining edges from <code class="inl">y</code> to <code class="inl">u</code> add only non-negative weight. But then <code class="inl">y</code>, not <code class="inl">u</code>, was the unfinished vertex of minimum estimate. Contradiction. Flip even one edge negative and the step &ldquo;remaining edges add only non-negative weight&rdquo; collapses &mdash; and with it Dijkstra's correctness.</p>
 
         <p>The schedule writes itself. Keep a <span class="term">min-priority queue</span> of vertices keyed by <code class="inl">d</code>. Repeatedly extract the minimum (finalise it), then relax its outgoing edges, which may <em>decrease-key</em> its neighbours. Each vertex is extracted once; each edge is relaxed once.</p>
 
@@ -617,7 +617,7 @@
         </ul>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 380" role="img" aria-labelledby="f2t f2d">
+          <svg viewBox="0 0 760 380" style="--mw:602px" role="img" aria-labelledby="f2t f2d">
             <title id="f2t">The Dijkstra example graph with its shortest-path tree highlighted</title>
             <desc id="f2d">Six vertices S, A, B, C, D, E with nine directed weighted edges. Source S is at the left. The final shortest distances are S equals 0, B equals 2, A equals 3, D equals 6, C equals 8, E equals 9. The shortest-path tree, drawn with thick edges, is S to B weight 2, B to A weight 1, A to C weight 5, B to D weight 4, and D to E weight 3. The remaining edges S to A weight 4, B to C weight 8, C to D weight 2, and C to E weight 6 are thin because no shortest path uses them. Vertices are shaded to mark them finalised in the extraction order S, B, A, D, C, E, whose distances 0, 2, 3, 6, 8, 9 increase monotonically.</desc>
             <defs>
@@ -774,7 +774,7 @@
         <p>To distil the failure to its essence, here is the minimal counterexample &mdash; four vertices, one negative edge &mdash; and a destination whose error is undeniable.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 300" role="img" aria-labelledby="f3t f3d">
+          <svg viewBox="0 0 760 300" style="--mw:602px" role="img" aria-labelledby="f3t f3d">
             <title id="f3t">Minimal graph where Dijkstra returns a wrong distance because of a negative edge</title>
             <desc id="f3d">Four vertices s, a, b, c. Edges s to a weight 1, s to b weight 2, b to a weight minus 2 drawn in red, and a to c weight 1. The true shortest distance to a is 0 by the route s to b to a, costing 2 minus 2; so the true distance to c is 1. Dijkstra extracts s at 0, then extracts and finalises a at 1, and relaxes a to c giving c equals 2 using the wrong value 1 for a. Only afterward does it discover via b that a equals 0, too late to repair c. Dijkstra therefore reports c equals 2 when the truth is 1.</desc>
             <defs>
@@ -824,7 +824,7 @@
         <p>A negative <em>edge</em> is survivable; a negative <em>cycle</em> is not. If some cycle reachable from <code class="inl">s</code> has total weight below zero, then for any vertex <code class="inl">v</code> on or after it, there is no shortest path at all: each extra lap around the cycle lowers the cost without bound, so <code class="inl">&#948;(s,v) = &minus;&#8734;</code>. The question &ldquo;what is the cheapest <em>simple</em> path?&rdquo; remains meaningful, but it is NP-hard &mdash; it contains the longest-path and Hamiltonian-path problems. So we do not ask it. We instead <em>detect</em> the negative cycle and report that distances are undefined.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 300" role="img" aria-labelledby="f4t f4d">
+          <svg viewBox="0 0 760 300" style="--mw:535px" role="img" aria-labelledby="f4t f4d">
             <title id="f4t">A reachable negative cycle drives distances to negative infinity</title>
             <desc id="f4d">Source s with edge s to a of weight 4. Vertices a and b form a cycle: a to b of weight 1, and a red back-edge b to a of weight minus 3. The cycle a to b to a has total weight 1 plus minus 3 equals minus 2, which is negative. Each full Bellman-Ford pass lowers d of a by 2: the sequence of estimates for a is infinity, then 2, then 0, then minus 2, then minus 4, tending to minus infinity. Because an edge can still be relaxed after V minus 1 passes, the V-th pass detects the negative cycle.</desc>
             <defs>
@@ -853,11 +853,12 @@
             <!-- d[a] sequence -->
             <text x="60" y="270" class="dg-label">d[a]:</text>
             <text x="118" y="270" class="dg-wt">&#8734;</text>
-            <text x="156" y="270" class="dg-wt">&#8594; 2</text>
-            <text x="208" y="270" class="dg-wt">&#8594; 0</text>
-            <text x="260" y="270" class="dg-wt neg">&#8594; &minus;2</text>
-            <text x="324" y="270" class="dg-wt neg">&#8594; &minus;4</text>
-            <text x="388" y="270" class="dg-wt neg">&#8594; &middot;&middot;&middot; &#8594; &minus;&#8734;</text>
+            <text x="156" y="270" class="dg-wt">&#8594; 4</text>
+            <text x="208" y="270" class="dg-wt">&#8594; 2</text>
+            <text x="260" y="270" class="dg-wt">&#8594; 0</text>
+            <text x="312" y="270" class="dg-wt neg">&#8594; &minus;2</text>
+            <text x="376" y="270" class="dg-wt neg">&#8594; &minus;4</text>
+            <text x="440" y="270" class="dg-wt neg">&#8594; &middot;&middot;&middot; &#8594; &minus;&#8734;</text>
           </svg>
           <figcaption><b>Figure 4 &mdash; the bottom falls out.</b> With a reachable negative cycle the estimates never reach a fixed point. That is exactly the signal we exploit: a method that <em>should</em> have converged in <code class="inl">V&minus;1</code> passes but still improves on the next pass has proven a negative cycle exists.</figcaption>
         </figure>
@@ -887,7 +888,7 @@
         <p>No priority queue, no repeated passes &mdash; one sweep. The cost is <code class="inl">&#x398;(V+E)</code>, dominated by the topological sort and the single relaxation of every edge. Each edge is relaxed exactly once, in an order that is provably correct by the path-relaxation lemma: a shortest path's edges appear left-to-right in the topological order, so they are relaxed in order automatically.</p>
 
         <figure class="reveal">
-          <svg viewBox="0 0 760 300" role="img" aria-labelledby="f5t f5d">
+          <svg viewBox="0 0 760 300" style="--mw:555px" role="img" aria-labelledby="f5t f5d">
             <title id="f5t">Shortest paths in a DAG by relaxing vertices in topological order</title>
             <desc id="f5d">Five vertices arranged left to right in topological order: s, a, b, c, t. Edges all point forward: s to a weight 2, s to b weight 6, a to b weight minus 4 shown in red, a to c weight 1, b to c weight 3, and c to t weight 2. Processing in the order s, a, b, c, t, each vertex is finalised on first visit. The resulting distances are s equals 0, a equals 2, b equals minus 2 (because s to a to b costs 2 minus 4, beating the direct 6), c equals 1, and t equals 3. The negative edge causes no trouble because the graph is acyclic.</desc>
             <defs>
@@ -1017,7 +1018,7 @@
         <div>
           <h3>Cheapest flights within K stops</h3>
           <p class="meta">bounded Bellman&ndash;Ford &middot; state = (node, hops) &middot; LeetCode 787</p>
-          <p>Given <code class="inl">n</code> cities and flights <code class="inl">(u, v, price)</code>, find the cheapest fare from <code class="inl">src</code> to <code class="inl">dst</code> using <strong>at most <code class="inl">K</code> stops</strong> (so at most <code class="inl">K+1</code> edges), or <code class="inl">&minus;1</code>. The hop limit breaks Dijkstra's greedy optimality &mdash; a pricier path with fewer hops can beat a cheaper one that uses too many. Use Bellman&ndash;Ford relaxed exactly <code class="inl">K+1</code> times. The subtle, decisive detail: each round must relax against a <em>snapshot</em> of the previous round's distances (copy the array), or a single round will chain several new hops and silently exceed the limit. Examples: <code class="inl">n=3</code>, <code class="inl">flights=[[0,1,100],[1,2,100],[0,2,500]]</code>, <code class="inl">src=0</code>, <code class="inl">dst=2</code>; <code class="inl">K=1&#8594;200</code>, <code class="inl">K=0&#8594;500</code>. Give the <code class="inl">O(K&middot;E)</code> algorithm and explain the copy.</p>
+          <p>Given <code class="inl">n</code> cities and flights <code class="inl">(u, v, price)</code>, find the cheapest fare from <code class="inl">src</code> to <code class="inl">dst</code> using <strong>at most <code class="inl">K</code> stops</strong> (so at most <code class="inl">K+1</code> edges), or <code class="inl">&minus;1</code>. The hop limit breaks Dijkstra's greedy optimality &mdash; a pricier path with fewer hops can beat a cheaper one that uses too many. Use Bellman&ndash;Ford relaxed exactly <code class="inl">K+1</code> times. The subtle, decisive detail: each round must relax against a <em>snapshot</em> of the previous round's distances (copy the array), or a single round will chain several new hops and silently exceed the limit. Examples: <code class="inl">n=3</code>, <code class="inl wrap">flights=[[0,1,100],[1,2,100],[0,2,500]]</code>, <code class="inl">src=0</code>, <code class="inl">dst=2</code>; <code class="inl">K=1&#8594;200</code>, <code class="inl">K=0&#8594;500</code>. Give the <code class="inl">O(K&middot;E)</code> algorithm and explain the copy.</p>
         </div>
       </div>
 
@@ -1035,7 +1036,7 @@
         <div>
           <h3>Parallel courses III &mdash; the critical path</h3>
           <p class="meta">DAG longest path in topological order &middot; LeetCode 2050</p>
-          <p>You have <code class="inl">n</code> courses (a DAG of prerequisite relations <code class="inl">(prev, next)</code>), where course <code class="inl">i</code> takes <code class="inl">time[i]</code> months. A course may begin only after <em>all</em> its prerequisites finish, and independent courses run in parallel. Return the minimum number of months to complete all courses. Recognise this as the <strong>longest</strong> path in a DAG (the critical path): <code class="inl">finish[v] = time[v] + max over prereqs u of finish[u]</code>. Process vertices in topological order (Kahn's indegree sweep) so every prerequisite is final before <code class="inl">v</code>; the answer is <code class="inl">max_v finish[v]</code>. Explain why the longest path is well-defined here but would be ill-posed (and NP-hard) on a general graph, and give the <code class="inl">O(V+E)</code> bound.</p>
+          <p>You have <code class="inl">n</code> courses (a DAG of prerequisite relations <code class="inl">(prev, next)</code>), where course <code class="inl">i</code> takes <code class="inl">time[i]</code> months. A course may begin only after <em>all</em> its prerequisites finish, and independent courses run in parallel. Return the minimum number of months to complete all courses. Recognise this as the <strong>longest</strong> path in a DAG (the critical path): <code class="inl wrap">finish[v] = time[v] + max over prereqs u of finish[u]</code>. Process vertices in topological order (Kahn's indegree sweep) so every prerequisite is final before <code class="inl">v</code>; the answer is <code class="inl">max_v finish[v]</code>. Explain why the longest path is well-defined here but would be ill-posed (and NP-hard) on a general graph, and give the <code class="inl">O(V+E)</code> bound.</p>
         </div>
       </div>
     </section>
@@ -1101,6 +1102,6 @@
   }
 })();
 </script>
-<nav class="study-bottom" aria-label="Continue learning"><a href="index.html">All deep studies</a><a href="dsa-12-minimum-spanning-trees-and-union-find.html">← Previous study</a><a href="dsa-14-all-pairs-shortest-paths-floyd-warshall-johnson.html">Next study →</a></nav>
+<nav class="study-bottom" aria-label="Continue learning"><a class="study-bottom__card study-bottom__prev" href="dsa-12-minimum-spanning-trees-and-union-find.html" rel="prev"><span>&larr; Lecture 12</span><strong>Minimum spanning trees and union-find</strong></a><a class="study-bottom__card study-bottom__next" href="dsa-14-all-pairs-shortest-paths-floyd-warshall-johnson.html" rel="next"><span>Lecture 14 &rarr;</span><strong>All-pairs shortest paths</strong></a><p class="study-bottom__more"><a href="index.html">All deep studies</a><span>Practise it:</span><a href="../lessons/28-dijkstra-and-a-star.html">Lesson 28 &middot; Dijkstra &amp; A*</a></p></nav>
 </body>
 </html>

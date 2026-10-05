@@ -156,7 +156,7 @@
     var n = 40;
     function show(dur) {
       chart.render({
-        x: { label: 'words inserted', min: 0, max: N }, y: { label: 'letter nodes (root not counted)', min: 0, max: gd.letters[N] },
+        x: { label: 'words', min: 0, max: N }, y: { label: 'letter nodes (root not counted)', min: 0, max: gd.letters[N] },
         series: series,
         highlight: [{ series: 'dict', x: n, label: gd.nodes[n] + '' }, { series: 'letters', x: n, label: gd.letters[n] + '' }]
       }, { duration: dur });
@@ -319,17 +319,17 @@
   /* ================================================================== decision diagram */
   var DECISION = {
     nodes: [
-      { id: 'q1', type: 'decision', text: 'Prefix queries?', col: 2, row: 0, maxWidth: 70 },
+      { id: 'q1', type: 'decision', text: 'Prefix queries?', col: 1.5, row: 0, maxWidth: 70 },
+      { id: 'sortedA', type: 'end', text: 'Sorted array + binary search', col: 0, row: 1, maxWidth: 70 },
       { id: 'q2', type: 'decision', text: 'Set never changes?', col: 1, row: 1, maxWidth: 70 },
-      { id: 'q4', type: 'decision', text: 'Need order or ranges?', col: 3, row: 1, maxWidth: 70 },
-      { id: 'sortedA', type: 'end', text: 'Sorted array + binary search', col: 0, row: 2, maxWidth: 70 },
-      { id: 'q3', type: 'decision', text: 'Memory tight?', col: 2, row: 2, maxWidth: 70 },
-      { id: 'radix', type: 'end', text: 'Radix tree', col: 1, row: 3, maxWidth: 70 },
-      { id: 'trie', type: 'end', text: 'Plain trie', col: 2, row: 3, maxWidth: 70 },
-      { id: 'q5', type: 'decision', text: 'Data changes a lot?', col: 3, row: 2, maxWidth: 70 },
-      { id: 'hash', type: 'end', text: 'Hash map / set', col: 4, row: 2, maxWidth: 70 },
-      { id: 'bst', type: 'end', text: 'Balanced tree', col: 3, row: 3, maxWidth: 70 },
-      { id: 'sortedB', type: 'end', text: 'Sorted array', col: 4, row: 3, maxWidth: 70 }
+      { id: 'q4', type: 'decision', text: 'Need order or ranges?', col: 2, row: 1, maxWidth: 70 },
+      { id: 'hash', type: 'end', text: 'Hash map / set', col: 3, row: 1, maxWidth: 70 },
+      { id: 'q3', type: 'decision', text: 'Memory tight?', col: 1, row: 2, maxWidth: 70 },
+      { id: 'q5', type: 'decision', text: 'Data changes a lot?', col: 2, row: 2, maxWidth: 70 },
+      { id: 'radix', type: 'end', text: 'Radix tree', col: 0.5, row: 3, maxWidth: 70 },
+      { id: 'trie', type: 'end', text: 'Plain trie', col: 1.5, row: 3, maxWidth: 70 },
+      { id: 'bst', type: 'end', text: 'Balanced tree', col: 3.5, row: 3, maxWidth: 70 },
+      { id: 'sortedB', type: 'end', text: 'Sorted array', col: 2.5, row: 3, maxWidth: 70 }
     ],
     edges: [
       { from: 'q1', to: 'q2', label: 'yes' }, { from: 'q1', to: 'q4', label: 'no' },

@@ -35,9 +35,9 @@
   var FLOWS = {
     query: {
       nodes: [
-        { id: 'start', type: 'start', text: 'query(node, lo, hi, l, r)', col: 1, row: 0 },
-        { id: 'decide', type: 'decision', text: 'how does [lo, hi]\nrelate to [l, r] ?', col: 1, row: 1 },
-        { id: 'outside', type: 'process', text: 'share no cell:\nreturn identity', col: 0, row: 2 },
+        { id: 'start', type: 'start', text: 'query(node, lo, hi, l, r)', col: 1, row: 0, narrow: { text: 'query(node, lo,\nhi, l, r)' } },
+        { id: 'decide', type: 'decision', text: 'how does [lo, hi]\nrelate to [l, r] ?', col: 1, row: 1, narrow: { text: '[lo, hi]\nvs [l, r] ?' } },
+        { id: 'outside', type: 'process', text: 'share no cell:\nreturn identity', col: 0, row: 2, narrow: { text: 'no overlap:\nidentity' } },
         { id: 'inside', type: 'process', text: 'all inside:\nreturn tree[node]', col: 1, row: 2 },
         { id: 'split', type: 'process', text: 'partly inside:\nask left child,\nthen right child', col: 2, row: 2, narrow: { col: 1, row: 3 } },
         { id: 'combine', type: 'process', text: 'combine both\nanswers, return', col: 2, row: 3, narrow: { col: 1, row: 4 } },
@@ -521,10 +521,10 @@
         { id: 'q1', type: 'decision', text: 'Does the array\nchange?', col: 1, row: 0, narrow: { col: 0, row: 0 } },
         { id: 'prefix', type: 'end', text: 'Prefix sums', col: 0, row: 1, narrow: { col: 1, row: 1 } },
         { id: 'q2', type: 'decision', text: 'Sum, xor\nor count?', col: 2, row: 1, narrow: { col: 0, row: 1 } },
-        { id: 'seg', type: 'end', text: 'Segment tree\n(min, max, gcd,\nlazy updates)', col: 1, row: 2, narrow: { col: 1, row: 2 } },
+        { id: 'seg', type: 'end', text: 'Segment tree', col: 1, row: 2, narrow: { col: 1, row: 2 } },
         { id: 'q3', type: 'decision', text: 'Range updates\ntoo?', col: 3, row: 2, narrow: { col: 0, row: 2 } },
         { id: 'fen', type: 'end', text: 'Fenwick tree', col: 2, row: 3, narrow: { col: 0, row: 3 } },
-        { id: 'both', type: 'end', text: 'Lazy segment tree\nor two Fenwick trees', col: 3, row: 3, narrow: { col: 1, row: 3 } }
+        { id: 'both', type: 'end', text: 'Lazy segment\ntree', col: 3, row: 3, narrow: { col: 1, row: 3 } }
       ],
       edges: [
         { from: 'q1', to: 'prefix', label: 'no' }, { from: 'q1', to: 'q2', label: 'yes' },

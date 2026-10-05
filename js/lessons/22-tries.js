@@ -33,7 +33,8 @@
       var g = s('g', { class: 'tr-node is-' + st + (n.end ? ' is-end' : '') + (n.prefix ? '' : ' is-root'), transform: 'translate(' + p.x + ' ' + p.y + ')' });
       if (o.ids && n.prefix) { g.setAttribute('data-id', n.prefix); g.setAttribute('data-label', 'node ' + n.prefix); }
       g.appendChild(s('circle', { class: 'tr-ring', r: o.r + 4 }));
-      g.appendChild(s('circle', { class: 'tr-c', r: n.prefix ? o.r : o.r - 3 }));
+      if (n.prefix) g.appendChild(s('circle', { class: 'tr-c', r: o.r }));
+      else g.appendChild(s('rect', { class: 'tr-c', x: -(o.r + 6), y: -(o.r - 3), width: 2 * (o.r + 6), height: 2 * (o.r - 3), rx: o.r - 3 }));
       g.appendChild(s('text', { class: 'tr-t' + (n.prefix ? '' : ' tr-t--root') }, n.prefix ? n.ch : 'root'));
       if (o.badge) {
         var b = o.badge(n.prefix, n);
@@ -402,7 +403,7 @@
       svg.appendChild(s('text', { class: 'tr-t tr-t--pill', x: 117, y: 20 }, 'ana'));
       return svg;
     }
-    var mo = { dx: 34, dy: 34, r: 12 };
+    var mo = { dx: 36, dy: 31, r: 12 };
     var tiles = [
       { svg: L.miniTrie(['to', 'tea'], Object.assign({ states: { t: 'path', te: 'path', tea: 'found' } }, mo)), label: 'One hop per letter', text: 'Search, insert and delete walk the letters of the query: O(L), whatever n is.' },
       { svg: L.miniTrie(['car', 'card', 'care'], Object.assign({}, mo)), label: 'Shared prefixes share nodes', text: 'Each word costs only the letters that are new.' },

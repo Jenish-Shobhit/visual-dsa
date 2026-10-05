@@ -77,7 +77,7 @@
   /* ================================================================== hero teaser */
   function teaser() {
     var stage = V.$('#teaser');
-    var mf = FN.memFig(stage, { label: 'Stack and heap' });
+    var mf = FN.memFig(stage, { label: 'Stack and heap', frameWidth: window.innerWidth > 900 ? 340 : undefined });
     var steps = A.teaser(3, 4);
     mf.prepare(steps);
     V.teaser(stage, { steps: steps, render: function (step, ctx) { mf.render(step, ctx); }, stepMs: 1150, holdMs: 1800 });
@@ -266,25 +266,36 @@
   };
   var CALL_FLOW = {
     nodes: [
-      { id: 'call', type: 'start', text: 'A call is reached: f(a, b)', col: 0, row: 0, narrow: { col: 0, row: 0 } },
-      { id: 'eval', type: 'process', text: '1 · Evaluate the arguments', col: 1, row: 0, narrow: { col: 0, row: 1 } },
-      { id: 'push', type: 'process', text: '2 · Push a frame and note where to return', col: 2, row: 0, narrow: { col: 0, row: 2 } },
-      { id: 'bind', type: 'process', text: '3 · Copy the arguments into the parameters', col: 3, row: 0, narrow: { col: 0, row: 3 } },
-      { id: 'run', type: 'process', text: '4 · Run the body, line by line', col: 3, row: 1, narrow: { col: 0, row: 4 } },
-      { id: 'nested', type: 'decision', text: 'Next line is another call?', col: 2, row: 1, narrow: { col: 0, row: 5 } },
-      { id: 'ret', type: 'process', text: '5 · Reach return: the value is ready', col: 1, row: 1, narrow: { col: 1, row: 5 } },
-      { id: 'pop', type: 'process', text: '6 · Pop the frame: its locals vanish', col: 1, row: 2, narrow: { col: 1, row: 6 } },
-      { id: 'resume', type: 'end', text: '7 · Resume the caller: the value replaces the call', col: 2, row: 2, narrow: { col: 0, row: 6 } }
+      { id: 'call', type: 'start', text: 'A call is reached: f(a, b)', col: 0, row: 0 },
+      { id: 'eval', type: 'process', text: '1 · Evaluate the arguments', col: 0, row: 1 },
+      { id: 'push', type: 'process', text: '2 · Push a frame and note where to return', col: 0, row: 2 },
+      { id: 'bind', type: 'process', text: '3 · Copy the arguments into the parameters', col: 0, row: 3 },
+      { id: 'run', type: 'process', text: '4 · Run the body, line by line', col: 0, row: 4 },
+      { id: 'nested', type: 'decision', text: 'Next line is another call?', col: 0, row: 5 },
+      { id: 'ret', type: 'process', text: '5 · Reach return: the value is ready', col: 1, row: 5 },
+      { id: 'pop', type: 'process', text: '6 · Pop the frame: its locals vanish', col: 1, row: 6 },
+      { id: 'resume', type: 'end', text: '7 · Resume the caller: the value replaces the call', col: 0, row: 6 }
     ],
     edges: [
       { from: 'call', to: 'eval' }, { from: 'eval', to: 'push' }, { from: 'push', to: 'bind' }, { from: 'bind', to: 'run', via: { fromSide: 'bottom', toSide: 'top' } },
       { from: 'run', to: 'nested' },
-      { from: 'nested', to: 'eval', label: 'yes: a new call', via: { fromSide: 'top', toSide: 'bottom' } },
+      { from: 'nested', to: 'eval', label: 'yes: a new call', via: { fromSide: 'left', toSide: 'left' } },
       { from: 'nested', to: 'ret', label: 'no: return' },
       { from: 'ret', to: 'pop', via: { fromSide: 'bottom', toSide: 'top' } },
       { from: 'pop', to: 'resume' },
-      { from: 'resume', to: 'nested', label: 'caller carries on', via: { fromSide: 'right', toSide: 'right' } }
+      { from: 'resume', to: 'nested', label: 'caller carries on', via: { fromSide: 'top', toSide: 'bottom' } }
     ]
+  };
+
+  /* Phones: one column, so the boxes keep their full text size. */
+  var CALL_FLOW_NARROW = {
+    nodes: CALL_FLOW.nodes.map(function (n) {
+      var row = { call: 0, eval: 1, push: 2, bind: 3, run: 4, nested: 5, ret: 6, pop: 7, resume: 8 }[n.id];
+      return Object.assign({}, n, { col: 0, row: row });
+    }),
+    edges: CALL_FLOW.edges.map(function (e) {
+      return e.from === 'resume' ? Object.assign({}, e, { via: { fromSide: 'right', toSide: 'right' } }) : e;
+    })
   };
 
   function lab() {
@@ -300,7 +311,7 @@
     // the flowchart, lit by this player
     var flowFig = V.$('#fig-flow');
     legend(flowFig.querySelector('[data-legend]'), [{ state: 'active', label: 'Step running in the lab' }, { state: 'visited', label: 'Already used' }]);
-    var flowView = V.views.flowchart(flowFig.querySelector('[data-stage]'), CALL_FLOW, { label: 'What happens on a function call' });
+    var flowView = V.views.flowchart(flowFig.querySelector('[data-stage]'), window.innerWidth < 640 ? CALL_FLOW_NARROW : CALL_FLOW, { label: 'What happens on a function call' });
     var flow = {
       highlight: function (id, ctx) {
         var seen = [];

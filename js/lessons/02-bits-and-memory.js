@@ -98,32 +98,33 @@
 
   /* ================================================================== hero teaser: eight bulbs count */
   function bulbsView(stage) {
-    var W = 400, H = 320, P = 44, X0 = (W - 7 * P) / 2, BY = 168;
+    var NARROW = window.innerWidth < 700, W = NARROW ? 400 : 640, H = NARROW ? 320 : 300, P = NARROW ? 44 : 68, X0 = (W - 7 * P) / 2, BY = 168, K = NARROW ? 1 : 1.3;
+    var TY = NARROW ? 74 : 92, LY = NARROW ? 34 : 40, SIDE = NARROW ? 28 : X0 - 22, BINY = NARROW ? 290 : 288;
     var el = svg(W, H, 'b2-bulbs', 'Eight bulbs counting in binary');
     el.setAttribute('aria-hidden', 'true');
     el.style.maxWidth = 'none';
-    var dec = txt(28, 74, '0', 'b2-bulbs__dec'), decL = txt(30, 34, 'decimal', 'b2-bulbs__lab');
-    var hexT = txt(W - 28, 74, '0x00', 'b2-bulbs__hex', { 'text-anchor': 'end' }), hexL = txt(W - 28, 34, 'hex', 'b2-bulbs__lab', { 'text-anchor': 'end' });
-    var binT = txt(W / 2, 290, '0000 0000', 'b2-bulbs__bin', { 'text-anchor': 'middle' });
+    var dec = txt(SIDE, TY, '0', 'b2-bulbs__dec'), decL = txt(SIDE + 2, LY, 'decimal', 'b2-bulbs__lab');
+    var hexT = txt(W - SIDE, TY, '0x00', 'b2-bulbs__hex', { 'text-anchor': 'end' }), hexL = txt(W - SIDE, LY, 'hex', 'b2-bulbs__lab', { 'text-anchor': 'end' });
+    var binT = txt(W / 2, BINY, '0000 0000', 'b2-bulbs__bin', { 'text-anchor': 'middle' });
     [dec, decL, hexT, hexL, binT].forEach(function (t) { el.appendChild(t); });
-    var wire = s('path', { class: 'b2-bulbs__wire', d: 'M' + (X0 - 16) + ' ' + (BY - 30) + 'H' + (X0 + 7 * P + 16) });
+    var wire = s('path', { class: 'b2-bulbs__wire', d: 'M' + (X0 - 22) + ' ' + (BY - 30 * K) + 'H' + (X0 + 7 * P + 22) });
     el.appendChild(wire);
     var bulbs = [];
     for (var i = 0; i < 8; i++) {
       var x = X0 + i * P, pos = 7 - i;
-      var g = s('g', { class: 'b2-bulb', transform: 'translate(' + x + ' ' + BY + ')' },
+      var g = s('g', { class: 'b2-bulb', transform: 'translate(' + x + ' ' + BY + ')' }, s('g', { transform: 'scale(' + K + ')' },
         s('line', { class: 'b2-bulb__stem', x1: 0, x2: 0, y1: -30, y2: -16 }),
         s('circle', { class: 'b2-bulb__glow', r: 23 }),
         s('circle', { class: 'b2-bulb__glass', r: 15 }),
         s('path', { class: 'b2-bulb__fil', d: 'M-5 3 Q-2.5 -5 0 3 Q2.5 -5 5 3' }),
         txt(0, 42, '0', 'b2-bulb__bit'),
-        txt(0, 64, String(Math.pow(2, pos)), 'b2-bulb__place'));
+        txt(0, 64, String(Math.pow(2, pos)), 'b2-bulb__place')));
       el.appendChild(g);
       bulbs.push({ g: g, bit: g.querySelector('.b2-bulb__bit'), pos: pos });
     }
     var carry = s('g', { class: 'b2-carry', opacity: 0 }, s('circle', { r: 8 }), txt(0, 1, '1', 'b2-carry__t'));
     el.appendChild(carry);
-    placeAt(carry, X0 + 7 * P, BY - 48);
+    placeAt(carry, X0 + 7 * P, BY - 30 * K - 18);
     stage.appendChild(el);
     var shownValue = 0;
     return function render(step, ctx) {
@@ -139,10 +140,10 @@
       dec.textContent = v; hexT.textContent = B.hex(v, 2); binT.textContent = B.bin(v, 8);
       if (!ctx.instant && n > 1 && ctx.direction >= 0 && d > 0) {
         var last = flips[n - 1], fromX = X0 + 7 * P, toX = X0 + (7 - Math.min(7, step.carryOut ? 7 : last)) * P;
-        placeAt(carry, fromX, BY - 48);
+        placeAt(carry, fromX, BY - 30 * K - 18);
         carry.setAttribute('opacity', 1);
         V.animate(carry, {}, { duration: 0 });
-        arcTo(carry, { x: step.carryOut ? X0 - 30 : toX, y: BY - 48 }, d * 0.9, 6).then(function (ok) { if (ok) carry.setAttribute('opacity', 0); });
+        arcTo(carry, { x: step.carryOut ? X0 - 30 : toX, y: BY - 30 * K - 18 }, d * 0.9, 6).then(function (ok) { if (ok) carry.setAttribute('opacity', 0); });
       } else carry.setAttribute('opacity', 0);
       cls(el, 'is-overflow', !!step.carryOut && !ctx.instant);
       shownValue = v;
@@ -767,18 +768,25 @@
   /* ================================================================== tape vs RAM race */
   function raceFigure(fig) {
     legend(fig.querySelector('[data-legend]'), [{ state: 'active', label: 'Head / selected address' }, { state: 'found', label: 'Byte read' }, { state: 'visited', label: 'Passed over' }]);
-    var N = 16, W = 600, H = 272, P = 34, C = 30, X0 = (W - (N * P - (P - C))) / 2, TY = 62, RY = 174;
+    /* Wide: one row of 16 per strip. Phones: each strip wraps to two rows of 8 so the bytes stay big enough to read. */
+    var N = 16, NARROW = window.innerWidth < 640;
+    var W = NARROW ? 360 : 600, C = NARROW ? 34 : 30, P = NARROW ? 41 : 34, PER = NARROW ? 8 : 16;
+    var X0 = (W - (PER * P - (P - C))) / 2;
+    var ROWGAP = C + (NARROW ? 40 : 30), TY = NARROW ? 46 : 62, RY = NARROW ? TY + 2 * ROWGAP + 62 : 174;
+    var H = NARROW ? RY + 2 * ROWGAP + 8 : 272;
+    function cellXY(base, i) { return { x: X0 + (i % PER) * P, y: base + Math.floor(i / PER) * ROWGAP }; }
     var data = B.garbage(N, 3);
     var el = svg(W, H, 'b2-race', 'A tape and a RAM with sixteen bytes each');
     el.setAttribute('role', 'group');
     el.appendChild(txt(X0 - 8, TY - 44, 'Tape: walk to the byte', 'b2-race__title'));
     el.appendChild(txt(X0 - 8, RY - 30, 'RAM: jump to the address', 'b2-race__title'));
-    el.appendChild(s('rect', { class: 'b2-race__tape', x: X0 - 8, y: TY - 8, width: N * P - (P - C) + 16, height: C + 16, rx: 6 }));
-    function row(y, key) {
+    for (var rr = 0; rr < N / PER; rr++) el.appendChild(s('rect', { class: 'b2-race__tape', x: X0 - 8, y: TY + rr * ROWGAP - 8, width: PER * P - (P - C) + 16, height: C + 16, rx: 6 }));
+    function row(base, key) {
       var out = [];
       for (var i = 0; i < N; i++) {
         (function (i) {
-          var g = s('g', { class: 'b2-race__cell', transform: 'translate(' + (X0 + i * P) + ' ' + y + ')', tabindex: '0', role: 'button', 'aria-label': 'Read address ' + B.hex(0x100 + i, 3) },
+          var xy = cellXY(base, i);
+          var g = s('g', { class: 'b2-race__cell', transform: 'translate(' + xy.x + ' ' + xy.y + ')', tabindex: '0', role: 'button', 'aria-label': 'Read address ' + B.hex(0x100 + i, 3) },
             s('rect', { width: C, height: C, rx: 5 }), txt(C / 2, C / 2 + 1, B.hexByte(data[i]), 'b2-race__v'), txt(C / 2, C + 14, B.hex(0x100 + i, 3).slice(-2), 'b2-race__a'));
           g.addEventListener('click', function () { read(i); });
           g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); read(i); } });
@@ -789,21 +797,18 @@
     }
     var tape = row(TY), ram = row(RY);
     var head = s('g', { class: 'b2-race__head' }, s('path', { d: 'M0 0 L-8 -12 L8 -12 Z' }));
-    el.appendChild(head); placeAt(head, X0 + C / 2, TY - 10);
-    var decoder = s('g', { class: 'b2-race__dec' }, s('rect', { x: -44, y: -13, width: 88, height: 26, rx: 13 }), txt(0, 1, 'address ?', 'b2-race__dt'));
-    el.appendChild(decoder); placeAt(decoder, W / 2, RY + C + 50);
+    el.appendChild(head);
+    function headXY(i) { var xy = cellXY(TY, i); return { x: xy.x + C / 2, y: xy.y - (NARROW && i >= PER ? 6 : 10) }; }
+    placeAt(head, headXY(0).x, headXY(0).y);
+    var decoder = s('g', { class: 'b2-race__dec' }, s('rect', { x: -56, y: -13, width: 112, height: 26, rx: 13 }), txt(0, 1, 'address ?', 'b2-race__dt'));
+    el.appendChild(decoder);
+    if (NARROW) placeAt(decoder, W - X0 - 52, RY - 34); else placeAt(decoder, W / 2, RY + C + 50);
     var wire = s('path', { class: 'b2-race__wire', opacity: 0 });
     el.appendChild(wire);
     fig.querySelector('[data-stage]').appendChild(el);
     var cap = fig.querySelector('[data-caption]');
     var stats = V.stats(fig.querySelector('[data-counters]'), { labels: { tape: 'Tape moves (this read)', ram: 'RAM steps (this read)', tapeTotal: 'Tape total', ramTotal: 'RAM total' }, states: { tape: 'visited', ram: 'active' } });
     var headAt = 0, timer = null, totals = { tape: 0, ram: 0 };
-    var stageEl = fig.querySelector('[data-stage]');
-    function follow(x) {   // keep the tape head in view when the stage scrolls sideways on phones
-      if (stageEl.scrollWidth <= stageEl.clientWidth + 2) return;
-      var k = el.getBoundingClientRect().width / W;
-      stageEl.scrollLeft = Math.max(0, x * k - stageEl.clientWidth / 2);
-    }
     stats.update({ tape: 0, ram: 0, tapeTotal: 0, ramTotal: 0 });
     function read(target) {
       if (timer) { clearInterval(timer); timer = null; }
@@ -811,17 +816,15 @@
       tape.forEach(function (g) { g.setAttribute('class', 'b2-race__cell'); });
       ram.forEach(function (g, i) { g.setAttribute('class', 'b2-race__cell' + (i === target ? ' is-found' : '')); });
       totals.ram += 1;
-      var tx = X0 + target * P + C / 2;
+      var tx = X0 + (target % PER) * P + C / 2;
       decoder.querySelector('text').textContent = 'address ' + B.hex(0x100 + target, 3);
-      wire.setAttribute('d', 'M' + (W / 2) + ' ' + (RY + C + 37) + ' C' + (W / 2) + ' ' + (RY + C + 20) + ' ' + tx + ' ' + (RY + C + 30) + ' ' + tx + ' ' + (RY + C + 2));
-      wire.setAttribute('opacity', 1);
+      if (!NARROW) { wire.setAttribute('d', 'M' + (W / 2) + ' ' + (RY + C + 37) + ' C' + (W / 2) + ' ' + (RY + C + 20) + ' ' + tx + ' ' + (RY + C + 30) + ' ' + tx + ' ' + (RY + C + 2)); wire.setAttribute('opacity', 1); }
       var tick = V.reducedMotion() ? 0 : 110;
       function stepTape() {
         if (done < moves) { tape[headAt].classList.remove('is-active'); tape[headAt].classList.add('is-visited'); headAt += dir; done++; }
-        placeAt(head, X0 + headAt * P + C / 2, TY - 10);
+        placeAt(head, headXY(headAt).x, headXY(headAt).y);
         tape[headAt].classList.remove('is-visited');
         tape[headAt].classList.add('is-active');
-        follow(X0 + headAt * P + C / 2);
         stats.update({ tape: done, ram: 1, tapeTotal: totals.tape + done, ramTotal: totals.ram });
         if (done >= moves) {
           if (timer) { clearInterval(timer); timer = null; }

@@ -37,7 +37,7 @@
   /* ================================================================== 1. hero teaser */
   function heroTeaser() {
     var stage = V.$('#teaser');
-    var view = C1.cardView(stage, { maxCard: 60, minCard: 30, gap: 9, readout: true, note: true, ptrLabel: '', raise: 12, label: 'Seven cards' });
+    var view = C1.cardView(stage, { maxCard: 76, minCard: window.innerWidth < 560 ? 30 : 44, gap: window.innerWidth < 560 ? 7 : 12, readout: true, note: true, ptrLabel: '', raise: 14, label: 'Seven cards' });
     var rng = V.rng(20), lap = 0;
     function data() {
       var vals = lap++ ? V.presets.random(7, { min: 1, max: 99, unique: true, rng: rng }) : [31, 58, 24, 72, 45, 96, 60];

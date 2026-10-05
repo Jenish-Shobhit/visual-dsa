@@ -37,7 +37,7 @@
   L10.initRingLab = function () {
     var fig = V.$('#lab-fig'), flowFig = V.$('#fig-flow');
     var st = { cap: 6, scheme: 'size', policy: 'reject', ops: Q().parseOps(PRESETS[0].text).ops };
-    var ringV = V.views.ring(fig.querySelector('[data-ring]'), { unrolled: false, radius: 112, headLabel: 'head', tailLabel: 'tail', label: 'The buffer drawn as a ring' });
+    var ringV = V.views.ring(fig.querySelector('[data-ring]'), { unrolled: false, radius: 92, headLabel: 'head', tailLabel: 'tail', label: 'The buffer drawn as a ring' });
     var flatV = V.views.array(fig.querySelector('[data-flat]'), { mode: 'boxes', cellSize: 46, showIndices: true, label: 'The same memory as a plain array' });
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: Q().ringCode(st.scheme, st.policy), default: 'pseudo', maxHeight: 340 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { title: 'Variables' });
@@ -248,7 +248,7 @@
     }
     input = V.inputRow(fig.querySelector('[data-input]'), {
       label: 'Your numbers (2 to 14 values, 0 to 99)', value: st.nums, parse: { min: 0, max: 99, minCount: 2, maxCount: 14, integers: true },
-      hint: 'Change k with the buttons on the right.', onApply: function (vals) { st.nums = vals; reload(); }
+      hint: 'The window size k has its own buttons: 2, 3, 4 or 5.', onApply: function (vals) { st.nums = vals; reload(); }
     });
     segK = V.segmented(fig.querySelector('[data-k]'), { label: 'Window size k', value: String(st.k),
       options: [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }, { value: '5', label: '5' }],

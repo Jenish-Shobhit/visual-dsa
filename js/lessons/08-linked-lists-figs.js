@@ -67,6 +67,7 @@
       var Lo = HUNT_LAYOUT[m];
       svg = s('svg', { viewBox: '0 0 ' + Lo.w + ' ' + Lo.h, role: 'img', 'aria-label': 'Scavenger hunt map with five spots' });
       svg.style.maxWidth = (Lo.w * 1.12) + 'px';
+      svg.style.setProperty('--k', Math.max(1, Lo.w / Math.max(240, stage.clientWidth - 28)).toFixed(3));   // text drawn larger when the map is scaled down
       var links = s('g'), spots = s('g'), cards = s('g');
       svg.appendChild(links); svg.appendChild(spots); svg.appendChild(cards);
       els = { spots: [], cards: [], links: [], lo: Lo };
@@ -100,7 +101,7 @@
         s('text', { class: 'llh-hand-k', x: 0, y: -10 }, 'HEAD CLUE'),
         s('text', { x: 0, y: 9 }, 'start: mailbox'));
       svg.appendChild(hand);
-      els.walker = s('g', { class: 'llh-walker' }, s('circle', { r: 13 }), s('text', {}, 'you'));
+      els.walker = s('g', { class: 'llh-walker' }, s('circle', { r: 14 }), s('text', {}, 'you'));
       svg.appendChild(els.walker);
       V.place(els.walker, { x: Lo.hand[0], y: Lo.hand[1] - 44 });
       stage.appendChild(svg);
@@ -328,11 +329,11 @@
     opts = opts || {};
     var R_NODE = 17, GAP = 64, MARGIN = 48, DIST = R_NODE + 19, SPREAD = 0.72;
     var svg = null, key = null, geo = null, nodeEls = [], edgeEls = {}, tokens = {}, jump = null, tags = {}, center = null, centerSub = null;
-    var tw = null, shown = { slow: null, fast: null }, facing = { slow: 1, fast: 1 };
+    var tw = null, shown = { slow: null, fast: null }, facing = { slow: 1, fast: 1 }, rings = {};
 
     function layout(mu, lambda) {
       var N = mu + lambda, pos = [], ang = [];
-      var R = lambda >= 2 ? Math.max(42, lambda * GAP / TAU) : 0;
+      var R = lambda >= 2 ? Math.max(42, lambda * 64 / TAU) : 0;   // ring spacing stays roomy: tokens and tags sit beside it
       var x0 = MARGIN + R_NODE, xE = x0 + mu * GAP;
       var top = 64 + (lambda >= 2 ? R : 24), cy = top;
       for (var k = 0; k < mu; k++) { pos.push([x0 + k * GAP, cy]); ang.push(-Math.PI / 2); }
@@ -347,6 +348,7 @@
       if (lambda === 0) { nullPos = [x0 + Math.max(0, mu) * GAP - (mu ? GAP * 0.25 : 0), cy]; right = nullPos[0] + 30 + MARGIN; }
       else if (lambda === 1) right = xE + R_NODE + 70 + MARGIN;
       else right = cx + R + R_NODE + MARGIN;
+      right += RPAD;
       var bottom = cy + Math.max(lambda >= 2 ? R + R_NODE + 44 : 0, R_NODE + 68);
       return { N: N, mu: mu, lambda: lambda, pos: pos, ang: ang, R: R, cx: cx, cy: cy, xE: xE, x0: x0, nullPos: nullPos, W: Math.max(right, 240), H: bottom };
     }
@@ -410,12 +412,14 @@
       if (pt.dx !== undefined && Math.abs(pt.dx) > 0.3) facing[who] = pt.dx < 0 ? -1 : 1;
       tokens[who].setAttribute('transform', 'translate(' + (pt.x + off.x).toFixed(1) + ' ' + (pt.y + off.y).toFixed(1) + ')');
       tokens[who].__glyph.setAttribute('transform', facing[who] < 0 ? 'scale(-1 1)' : '');
+      // a ring on the node itself says which node the animal stands at, even when its picture rests beside it
+      rings[who].setAttribute('cx', pt.x.toFixed(1)); rings[who].setAttribute('cy', pt.y.toFixed(1));
     }
 
     /* Resting spots for the two pointers. A token's box (glyph plus its caption) is tried at many places around its
        node; a spot is rejected when the box would touch a node circle, an arrow, a label or tag, or the other
        token, or leave the picture. The cheapest clean pair wins, preferring the spots straight above. */
-    var BOX = { l: -21, r: 21, t: -22, b: 27 };
+    var BOX = { l: -21, r: 21, t: -22, b: 27 }, K = 1, RPAD = 0;   // K: text enlargement when the drawing is scaled down to fit a phone
     function boxAt(x, y) { return { x0: x + BOX.l, x1: x + BOX.r, y0: y + BOX.t, y1: y + BOX.b }; }
     function boxHitsCircle(bx, c, r) {
       var dx = Math.max(bx.x0 - c[0], 0, c[0] - bx.x1), dy = Math.max(bx.y0 - c[1], 0, c[1] - bx.y1);
@@ -442,7 +446,7 @@
       }
       if (geo.lambda >= 3) o.rects.push({ x0: geo.cx + 14 - 34, x1: geo.cx + 14 + 34, y0: geo.cy - 16, y1: geo.cy + 34 });
       [step.entry, step.meet !== null && (step.kind === 'meet' || (step.phase === 2 && step.entry === null)) ? step.meet : null].forEach(function (k) {
-        var t = tagXY(k); if (t) o.rects.push({ x0: t[0] - 24, x1: t[0] + 24, y0: t[1] - 11, y1: t[1] + 11 });
+        var t = tagXY(k); if (t) o.rects.push({ x0: t[0] - 32 * K, x1: t[0] + 32 * K, y0: t[1] - 11 * K, y1: t[1] + 11 * K });
       });
       return o;
     }
@@ -483,14 +487,20 @@
 
     function build(step) {
       V.clear(stage);
+      // phones: tighter spacing, and text drawn larger when the picture still has to shrink, so labels stay readable
+      var avail = Math.max(240, stage.clientWidth - 28), narrow = avail < 460;
+      GAP = narrow ? 46 : 64; MARGIN = narrow ? 26 : 48; RPAD = narrow ? 40 : 0;
       geo = layout(step.mu, step.lambda);
+      K = Math.min(1.6, Math.max(1, geo.W / avail));
+      BOX = { l: -21 * K, r: 21 * K, t: -22 - 4 * (K - 1), b: 27 + 8 * (K - 1) };
       key = step.mu + ':' + step.lambda;
       svg = s('svg', { class: 'llr', viewBox: '0 0 ' + geo.W.toFixed(0) + ' ' + geo.H.toFixed(0), role: 'img',
         'aria-label': opts.label || ('List with a tail of ' + step.mu + ' nodes and a loop of ' + step.lambda + ' nodes') });
       svg.style.maxWidth = Math.round(geo.W * 1.45) + 'px';
+      svg.style.setProperty('--k', K.toFixed(3));
       svg.style.minWidth = Math.round(Math.min(geo.W * 0.64, 700)) + 'px';
-      var gEdges = s('g'), gNodes = s('g'), gLabels = s('g'), gTok = s('g');
-      [gLabels, gEdges, gNodes, gTok].forEach(function (g) { svg.appendChild(g); });
+      var gEdges = s('g'), gNodes = s('g'), gLabels = s('g'), gRing = s('g'), gTok = s('g');
+      [gLabels, gEdges, gNodes, gRing, gTok].forEach(function (g) { svg.appendChild(g); });
       edgeEls = {};
       var nx = step.next;
       for (var k = 0; k < geo.N; k++) {
@@ -539,16 +549,19 @@
       }
       tags = {};
       ['meet', 'entry'].forEach(function (nm) {
-        var tg = s('g', { class: 'llr-tag' + (nm === 'entry' ? ' is-found' : '') }, s('rect', { x: -22, y: -9, width: 44, height: 18, rx: 9 }), s('text', {}, nm));
+        var tw0 = (nm === 'meet' ? 60 : 44) * K, th0 = 18 * K;
+        var tg = s('g', { class: 'llr-tag' + (nm === 'entry' ? ' is-found' : '') }, s('rect', { x: -tw0 / 2, y: -th0 / 2, width: tw0, height: th0, rx: th0 / 2 }), s('text', {}, nm));
+        tg.__text = tg.lastChild;
         tg.setAttribute('opacity', '0');
         gLabels.appendChild(tg); tags[nm] = tg;
       });
       jump = s('path', { class: 'llr-jump', d: '' });
       jump.setAttribute('opacity', '0');
       gTok.appendChild(jump);
-      tokens = {};
+      tokens = {}; rings = {};
+      [['slow', 22], ['fast', 27]].forEach(function (r) { rings[r[0]] = s('circle', { class: 'llr-ring llr-' + r[0], r: r[1] }); gRing.appendChild(rings[r[0]]); });
       [['slow', tortoiseGlyph(), 'slow'], ['fast', hareGlyph(), 'fast']].forEach(function (t) {
-        var g = s('g', { class: 'llr-token llr-' + t[0] }, t[1], s('text', { class: 'llr-lbl', y: 21 }, t[2]));
+        var g = s('g', { class: 'llr-token llr-' + t[0] }, t[1], s('text', { class: 'llr-lbl', y: 21 + 6 * (K - 1) }, t[2]));
         g.__glyph = t[1];
         gTok.appendChild(g); tokens[t[0]] = g;
       });
@@ -592,15 +605,12 @@
       tagPlace(tags.meet, step.meet !== null && step.kind === 'meet' ? step.meet : (step.meet !== null && step.phase === 2 && step.entry === null ? step.meet : null));
       tagPlace(tags.entry, step.entry);
       if (tags.meet && step.meet !== null && step.entry !== null && step.meet === step.entry) tags.meet.setAttribute('opacity', '0');
-      if (centerSub) {
-        var past = step.meet !== null && step.phase === 1 && step.kind === 'meet' ? (step.meet - step.mu + step.lambda) % step.lambda : null;
-        V.clear(centerSub);
-        if (past === null) centerSub.textContent = 'loop';
-        else {
-          centerSub.textContent = 'met +' + past;   // k nodes past the entry; kept short so it fits inside a small loop
-          centerSub.appendChild(s('title', {}, 'The tortoise and hare met ' + past + ' nodes past the loop entry'));
-        }
-      }
+      var past = step.meet !== null && step.phase === 1 && step.kind === 'meet' ? (step.meet - step.mu + step.lambda) % step.lambda : null;
+      if (centerSub) centerSub.textContent = 'loop';
+      // how far past the entry they met rides on the "meet" tag beside the node, where there is room for it
+      tags.meet.__text.textContent = past === null ? 'meet' : 'meet +' + past;
+      if (!tags.meet.__title) { tags.meet.__title = s('title', {}); tags.meet.appendChild(tags.meet.__title); }
+      tags.meet.__title.textContent = past === null ? '' : 'The tortoise and hare met ' + past + ' nodes past the loop entry';
       // tokens
       if (tw) { tw.cancel(); tw = null; }
       var prev = ctx.prev;
@@ -654,9 +664,9 @@
       svg.appendChild(s('g', { class: 'chip' + (cls ? ' is-' + cls : '') }, s('rect', { x: x - w / 2, y: y - 8, width: w, height: 16, rx: 8 }), s('text', { x: x, y: y + 0.5 }, t)));
     }
     function num(x, y, n) { svg.appendChild(s('g', { class: 'num' }, s('circle', { cx: x, cy: y, r: 7 }), s('text', { x: x, y: y + 0.5 }, String(n)))); }
-    function lbl(x, y, t) { svg.appendChild(s('text', { class: 'lbl', x: x, y: y }, t)); }
+    function lbl(x, y, t, anchor) { svg.appendChild(s('text', { class: 'lbl', x: x, y: y, 'text-anchor': anchor || 'middle' }, t)); }
     if (kind === 'node') {
-      node(70, 36, 7); lbl(83.5, 30, 'value'); lbl(110, 30, 'next');
+      node(70, 36, 7); lbl(96, 30, 'value', 'end'); lbl(99, 30, 'next', 'start');
       arr(103.5, 48, 150, 48); lbl(170, 52, 'null');
       chip(40, 48, 'head'); arr(56, 48, 69, 48);
     } else if (kind === 'walk') {

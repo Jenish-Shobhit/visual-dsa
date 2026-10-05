@@ -473,13 +473,13 @@
         var fi = { id: it.id, value: it.value, index: i, state: st };
         if (it.consumed) fi.badge = 'old'; else if (!live) { fi.badge = 'lost'; fi.badgeState = 'error'; }
         flat.push(fi);
-        slots.push(it.consumed ? null : { id: it.id, value: it.value, state: st });
+        slots.push({ id: it.id, value: it.value, state: st });   // a dequeued value stays on the ring, muted, exactly as in the flat row
       }
       var regions = [];
       if (b > 0) {
         var end = head + b - 1;
-        if (end < C) regions.push({ id: 'live1', from: head, to: end, state: 'active', label: 'queue' });
-        else { regions.push({ id: 'live1', from: head, to: C - 1, state: 'active', label: 'queue' }); regions.push({ id: 'live2', from: 0, to: end - C, state: 'active' }); }
+        if (end < C) regions.push({ id: 'live1', from: head, to: end, state: 'active' });
+        else { regions.push({ id: 'live1', from: head, to: C - 1, state: 'active' }); regions.push({ id: 'live2', from: 0, to: end - C, state: 'active' }); }
       }
       var vars = { op: opLabel || VOIDV, head: head, tail: tl };
       if (scheme === 'size') vars.size = size;
@@ -760,7 +760,7 @@
         } else break;
       }
       var stK = {}; stK[i] = 'active';
-      var why = dq.length ? 'The back, ' + nm(nums[dq[dq.length - 1]]) + ', is larger than ' + nm(v) + ', so it stays: it may be the maximum once ' + nm(v) + '’s neighbours are gone.' : 'The deque is empty, so ' + nm(v) + ' is the only candidate.';
+      var why = dq.length ? 'The back, ' + nm(nums[dq[dq.length - 1]]) + ', is larger than ' + nm(v) + ', so it stays, and ' + nm(v) + ' joins behind it: ' + nm(v) + ' may become the maximum once ' + nm(nums[dq[dq.length - 1]]) + ' leaves the window.' : 'The deque is empty, so ' + nm(v) + ' is the only candidate.';
       dq.push(i);
       var hotDq = {}; hotDq['n' + i] = 'active';
       snap('push', i, why + ' Index ' + i + ' joins at the back. Values in the deque now decrease from front to back.', 'push', 'push', { states: stK });

@@ -117,7 +117,7 @@
     var svg = null, tiles = [], curKey = '', numText, formula, modText, ptr, bucketEls = [], m = 0, hint, lastAcc = 0, tw = null, geom = {}, C = null, last = null;
     function layout(narrow) {
       return narrow
-        ? { W: 360, HH: 336, TILE: 30, TH: 44, PITCH: 34, CH: 18, CODE: 10, BX: 10, BOXY: 92, BOXH: 92, NUM: 28, FORM: 12, MODY: 222, MODW: 210, MODF: 14, BUCKY: 276, BH: 34, BF: 12, LBL: 11 }
+        ? { W: 360, HH: 336, TILE: 30, TH: 44, PITCH: 34, CH: 18, CODE: 12, BX: 10, BOXY: 92, BOXH: 92, NUM: 28, FORM: 12.5, MODY: 222, MODW: 210, MODF: 14, BUCKY: 276, BH: 34, BF: 13, LBL: 12 }
         : { W: 640, HH: 352, TILE: 46, TH: 56, PITCH: 54, CH: 24, CODE: 12, BX: 58, BOXY: 112, BOXH: 100, NUM: 34, FORM: 14, MODY: 248, MODW: 220, MODF: 17, BUCKY: 296, BH: 38, BF: 14, LBL: 12 };
     }
     function accUpTo(chars, kind, n) {

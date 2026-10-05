@@ -11,7 +11,7 @@
   /* ================================================================== hero teaser: palindromes lighting up in mirror pairs */
   function heroTeaser() {
     var stage = V.$('#teaser');
-    var view = V.views.array(stage, { mode: 'boxes', cellSize: 56, showIndices: false, label: 'Palindrome teaser', pointerStyle: 'chip' });
+    var view = V.views.array(stage, { mode: 'boxes', cellSize: 76, showIndices: false, label: 'Palindrome teaser', pointerStyle: 'chip' });
     var words = ['racecar', 'level', 'rotator', 'kayak', 'deified', 'noon'], wi = 0;
     function data() {
       var w = words[wi++ % words.length];

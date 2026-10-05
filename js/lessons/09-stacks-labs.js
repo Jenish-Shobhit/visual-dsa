@@ -173,6 +173,7 @@
     var fig = V.$('#lab-postfix');
     if (!fig) return;
     var tokens = V.views.array(fig.querySelector('[data-tokens]'), { mode: 'boxes', cellSize: 44, emptyText: 'no tokens', label: 'Tokens of the postfix expression' });
+    var tw = L9.rowWrapper(fig.querySelector('[data-tokens]'), 6);
     var stack = V.views.stack(fig.querySelector('[data-stack]'), { cellSize: 34, label: 'Stack of values' });
     var forest = L9.forestView(fig.querySelector('[data-forest]'), { label: 'Expression trees built from the stack, left to right' });
     var panel = fig.querySelector('[data-verdict]');
@@ -199,7 +200,7 @@
     }
     function generate(toks) {
       var steps = A().postfixSteps(toks);
-      tokens.reset(); tokens.prepare(steps.map(tokState));
+      tokens.reset(); tokens.prepare(steps.map(function (s) { return tw.wrap(tokState(s)); }));
       stack.reset(); stack.prepare(steps.map(function (s) { return { items: s.stack }; }));
       forest.reset(); forest.prepare(steps);
       return steps;
@@ -208,7 +209,7 @@
     var player = V.player({
       root: fig, steps: steps,
       render: function (step, ctx) {
-        tokens.render(tokState(step), { duration: ctx.duration });
+        tokens.render(tw.wrap(tokState(step)), { duration: ctx.duration });
         stack.render({ items: step.stack }, { duration: ctx.duration });
         forest.render({ nodes: step.nodes, roots: step.roots, held: step.held }, { duration: ctx.duration });
         setPanel(panel, panelFor(step));
@@ -263,6 +264,7 @@
     var fig = V.$('#fig-shunting');
     if (!fig) return;
     var rows = V.views.array(fig.querySelector('[data-rows]'), { mode: 'boxes', cellSize: 44, label: 'Input and output rows of the shunting-yard algorithm' });
+    var sw = L9.rowWrapper(fig.querySelector('[data-rows]'), 6);
     var stack = V.views.stack(fig.querySelector('[data-stack]'), { cellSize: 34, label: 'Operator stack' });
     V.legend(fig.querySelector('[data-legend]'), [{ state: 'active', label: 'Token in hand' }, { state: 'compare', label: 'Compared with the top' }, { state: 'frontier', label: 'Waiting on the stack' }, { state: 'done', label: 'Output' }, { state: 'error', label: 'Error' }]);
     var n = 0;
@@ -276,7 +278,7 @@
     function generate(toks) {
       n = toks.length;
       var steps = A().shuntingSteps(toks);
-      rows.reset(); rows.prepare(steps.map(rowsState));
+      rows.reset(); rows.prepare(steps.map(function (s) { return sw.wrap(rowsState(s)); }));
       stack.reset(); stack.prepare(steps.map(function (s) { return { items: s.stack }; }));
       return steps;
     }
@@ -285,7 +287,7 @@
     var player = V.player({
       root: fig, steps: steps,
       render: function (step, ctx) {
-        rows.render(rowsState(step), { duration: ctx.duration });
+        rows.render(sw.wrap(rowsState(step)), { duration: ctx.duration });
         stack.render({ items: step.stack }, { duration: ctx.duration });
         send.disabled = step.result !== 'postfix';
         send.dataset.out = step.result === 'postfix' ? step.out.map(function (x) { return x.value; }).join(' ') : '';

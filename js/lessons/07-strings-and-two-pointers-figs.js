@@ -123,7 +123,10 @@
         if (c.ch === ' ') it.text = '␣';
         return it;
       });
-      view.render({ items: items }, { duration: 260 });
+      // phones: ten boxes in one row would be too narrow for a six-digit code point, so wrap to rows of five
+      var narrow = stage.clientWidth - 28 < 460 && items.length > 5, rows = [];
+      if (narrow) for (var r = 0; r < items.length; r += 5) rows.push({ id: 'r' + r / 5, items: items.slice(r, r + 5).map(function (it, q) { return Object.assign({}, it, { index: q }); }), length: Math.min(5, items.length - r), indexStart: r });
+      view.render(narrow ? { rows: rows } : { items: items }, { duration: 260 });
       var units = 0, bytes = 0;
       info.forEach(function (c) { units += c.units.length; bytes += c.bytes; });
       stats.update({ chars: info.length, units: units, bytes: bytes });
@@ -471,8 +474,10 @@
       var maxc = 1;
       st.letters.forEach(function (c) { maxc = Math.max(maxc, st.ca[c] || 0, st.cb[c] || 0); });
       var q1 = '“' + st.a + '”', q2 = '“' + st.b + '”';
+      var ymax = Math.max(2, maxc + 1), ystep = Math.ceil(ymax / 5), yticks = [];   // counts are whole numbers: integer ticks only
+      for (var tv = 0; tv <= ymax; tv += ystep) yticks.push(tv);
       var state = {
-        categories: st.letters.length ? st.letters : ['–'], y: { label: 'count', min: 0, max: Math.max(2, maxc + 1) },
+        categories: st.letters.length ? st.letters : ['–'], y: { label: 'count', min: 0, max: ymax, ticks: yticks },
         series: [{ id: 'a', label: q1, values: (st.letters.length ? st.letters : ['–']).map(function (c) { return st.ca[c] || 0; }), color: 0 },
           { id: 'b', label: q2, values: (st.letters.length ? st.letters : ['–']).map(function (c) { return st.cb[c] || 0; }), color: 1 }]
       };
@@ -515,7 +520,7 @@
     var chart = V.views.chart(fig.querySelector('[data-stage]'), { type: 'line', height: 320, label: 'Operations against input size, brute force and the pointer technique' });
     var note = fig.querySelector('[data-note]');
     var P = {
-      twosum: { title: 'Two-sum on a sorted array', slow: { label: 'brute force · all pairs', fn: function (x) { return x * (x - 1) / 2; } }, fast: { label: 'two pointers', fn: function (x) { return Math.max(0, x - 1); } }, real: function (m) { var o = A().ops.twoSum(m); return [o.brute, o.pointers]; }, unit: 'sums computed, target absent (worst case)', big: 'n(n − 1)/2 versus n − 1' },
+      twosum: { title: 'Two-sum on a sorted array', slow: { label: 'brute force · all pairs', fn: function (x) { return x * (x - 1) / 2; } }, fast: { label: 'two pointers', fn: function (x) { return Math.max(0, x - 1); } }, real: function (m) { var o = A().ops.twoSum(m); return [o.brute, o.pointers]; }, unit: 'sums computed in the worst case, with the target absent', big: 'n(n − 1)/2 versus n − 1' },
       substr: { title: 'Longest substring without repeats', slow: { label: 'brute force · every start', fn: function (x) { return x * (x + 1) / 2; } }, fast: { label: 'sliding window', fn: function (x) { return x; } }, real: function (m) { var o = A().ops.longest(m); return [o.brute, o.window]; }, unit: 'characters looked at, all characters different', big: 'n(n + 1)/2 versus about n' },
       range: { title: 'n range-sum queries', slow: { label: 'add each range again', fn: function (x) { return x * x; } }, fast: { label: 'prefix sums', fn: function (x) { return 2 * x; } }, real: function (m) { var o = A().ops.range(m); return [o.brute, o.prefix]; }, unit: 'additions and subtractions, n queries each covering the whole array', big: 'n × n versus n + n' },
       concat: { title: 'Building a string of n characters', slow: { label: 's = s + c in a loop', fn: function (x) { return x * (x + 1) / 2; } }, fast: { label: 'builder / join', fn: function (x) { return 2 * x; } }, real: function (m) { var o = A().ops.concat(m); return [o.naive, o.builder]; }, unit: 'characters written', big: 'n(n + 1)/2 versus 2n' }
@@ -529,7 +534,7 @@
         series: [{ id: 'slow', label: p.slow.label, fn: p.slow.fn, state: 'error' }, { id: 'fast', label: p.fast.label, fn: p.fast.fn, state: 'done' }],
         highlight: [{ series: 'slow', x: n, y: real[0], label: real[0].toLocaleString('en-US') }, { series: 'fast', x: n, y: Math.max(real[1], logY ? 1 : 0), label: real[1].toLocaleString('en-US') }]
       }, { duration: dur === undefined ? 700 : dur });
-      note.innerHTML = '<b>' + p.title + ', n = ' + n + ':</b> ' + real[0].toLocaleString('en-US') + ' versus ' + real[1].toLocaleString('en-US') + ' ' + p.unit + ' (counted by running the code). Formula: ' + p.big + '.' + (real[1] ? ' That is <b>' + (real[0] / real[1]).toFixed(1).replace(/\.0$/, '') + '×</b> more work.' : '');
+      note.innerHTML = '<b>' + p.title + ', n = ' + n + ':</b> ' + real[0].toLocaleString('en-US') + ' versus ' + real[1].toLocaleString('en-US') + ' ' + p.unit + ', counted by running the code. Formula: ' + p.big + '.' + (real[1] ? ' That is <b>' + (real[0] / real[1]).toFixed(1).replace(/\.0$/, '') + '×</b> more work.' : '');
     }
     V.segmented(fig.querySelector('[data-seg]'), {
       label: 'Problem', value: prob,

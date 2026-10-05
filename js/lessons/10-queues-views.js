@@ -41,7 +41,7 @@
       s('rect', { class: 'l10-booth__wall', x: 6, y: GROUND - 132, width: 122, height: 132, rx: 14 }),
       s('rect', { class: 'l10-booth__window', x: 22, y: GROUND - 96, width: 90, height: 50, rx: 8 }),
       s('rect', { class: 'l10-booth__shelf', x: 14, y: GROUND - 48, width: 106, height: 9, rx: 4 }),
-      s('rect', { class: 'l10-booth__sign', x: 12, y: GROUND - 178, width: 110, height: 38, rx: 10 }));
+      s('rect', { class: 'l10-booth__sign', x: 6, y: GROUND - 178, width: 122, height: 38, rx: 10 }));
     var signSmall = s('text', { class: 'l10-booth__small', x: 67, y: GROUND - 162, 'text-anchor': 'middle' }, 'NOW SERVING');
     var signNum = s('text', { class: 'l10-booth__num', x: 67, y: GROUND - 145, 'text-anchor': 'middle' }, '–');
     var ground = s('line', { class: 'l10-ground', x1: 0, x2: W, y1: GROUND, y2: GROUND });

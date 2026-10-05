@@ -31,11 +31,51 @@
   function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
   function nextPow2(n) { var c = 1; while (c < n) c *= 2; return c; }
 
+  /* Narrow stages: a block longer than 8 slots wraps into stacked rows of 8, so every slot stays visible and
+     readable instead of shrinking or scrolling off. Same step shape in, same step shape out. */
+  function wrapper(stage, per) {
+    function narrow() { return stage.clientWidth - 28 < 460; }
+    function chunkId(id, c) { return c ? id + '~' + c : id; }
+    function wrap(st) {
+      if (!narrow() || !st.rows) return st;
+      var info = {};
+      var rows = [];
+      st.rows.forEach(function (r) {
+        var len = r.length || 0;
+        (r.items || []).forEach(function (it, i) { if (it) len = Math.max(len, (typeof it.index === 'number' ? it.index : i) + 1); });
+        (r.ghosts || []).forEach(function (g) { len = Math.max(len, g + 1); });
+        var nch = Math.max(1, Math.ceil(len / per));
+        info[r.id] = { n: nch };
+        for (var c = 0; c < nch; c++) {
+          rows.push({ id: chunkId(r.id, c), label: c ? '' : r.label, length: Math.min(per, len - c * per), indexStart: (r.indexStart || 0) + c * per,
+            items: [], ghosts: (r.ghosts || []).filter(function (g) { return g >= c * per && g < (c + 1) * per; }).map(function (g) { return g - c * per; }),
+            pointers: [] });
+        }
+        (r.items || []).forEach(function (it, i) {
+          if (!it) return;
+          var slot = typeof it.index === 'number' ? it.index : i, c = Math.min(nch - 1, Math.floor(slot / per));
+          rows.filter(function (x) { return x.id === chunkId(r.id, c); })[0].items.push(Object.assign({}, it, { index: slot - c * per }));
+        });
+      });
+      function place(o) {
+        var rid = o.row !== undefined ? String(o.row) : st.rows[0].id, inf = info[rid];
+        if (!inf || inf.n < 2) return o;
+        var idx = o.index !== undefined ? o.index : o.over, c = Math.max(0, Math.min(inf.n - 1, Math.floor(idx / per)));
+        var out = Object.assign({}, o, { row: chunkId(rid, c) });
+        if (o.index !== undefined) out.index = idx - c * per; else out.over = idx - c * per;
+        return out;
+      }
+      var held = st.held ? (Array.isArray(st.held) ? st.held.map(place) : place(st.held)) : st.held;
+      return Object.assign({}, st, { rows: rows, pointers: (st.pointers || []).map(place), held: held });
+    }
+    return { wrap: wrap, narrow: narrow };
+  }
+
   /* ================================================================== hero teaser */
   function heroTeaser() {
     var host = V.$('#teaser'), lbl = V.$('.a6-hero__label');
     if (!host) return;
-    var view = V.views.array(host, { mode: 'boxes', cellSize: 44, rowLabels: 'above', label: 'Array teaser', reserve: { held: true } });
+    var view = V.views.array(host, { mode: 'boxes', cellSize: 68, rowLabels: 'above', label: 'Array teaser', reserve: { held: true } });
     var rng = V.rng(6);
     function lap() {
       var vals = V.presets.random(3, { min: 1, max: 9, rng: rng, unique: true });
@@ -224,7 +264,13 @@
       return Object.assign({}, s, { pointers: s.meta.cap ? s.pointers.filter(function (p) { return p.name === 'size'; }) : [],
         counters: { appendNo: s.meta.appendNo, thisAppend: s.meta.appendCost, copies: s.meta.totalCopies } });
     });
-    view.prepare(steps);
+    var wr = wrapper(stageOf(fig), 8), wasNarrow = wr.narrow(), lastStep = null;
+    view.prepare(steps.map(wr.wrap));
+    V.onResize(stageOf(fig), function () {
+      if (wr.narrow() === wasNarrow) return;
+      wasNarrow = wr.narrow(); view.reset(); view.prepare(steps.map(wr.wrap));
+      if (lastStep) view.render(wr.wrap(lastStep), { duration: 0 });
+    });
     var meters = fig.querySelector('[data-meters]');
     var sizeFill = h('i', { class: 'a6-meter__fill' });
     var sizeText = h('span', { class: 'a6-meter__text' });
@@ -246,7 +292,7 @@
     }
     var player = V.player({
       root: fig, steps: steps, baseStepMs: 950, label: 'Growth controls',
-      render: function (step, ctx) { view.render(step, { duration: ctx.duration }); meter(step.meta.size, step.meta.cap); },
+      render: function (step, ctx) { lastStep = step; view.render(wr.wrap(step), { duration: ctx.duration }); meter(step.meta.size, step.meta.cap); },
       caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterLabels: { appendNo: 'Append #', thisAppend: 'Work in this append', copies: 'Copies so far' }, counterStates: { thisAppend: 'swap', copies: 'swap' }
     });
@@ -290,11 +336,11 @@
   var FLOW = {
     nodes: [
       { id: 'start', type: 'start', text: 'insert(i, x)', col: 0, row: 0 },
-      { id: 'full', type: 'decision', text: 'size = capacity ?', col: 0, row: 1, maxWidth: 150 },
-      { id: 'grow', type: 'process', text: 'grow: allocate 2×,\ncopy all, free old', col: 1, row: 1, maxWidth: 170 },
-      { id: 'cond', type: 'decision', text: 'j > i ?\n(j starts at size)', col: 0, row: 2, maxWidth: 150 },
-      { id: 'shift', type: 'process', text: 'a[j] ← a[j − 1]\nj ← j − 1', col: 1, row: 2, maxWidth: 140 },
-      { id: 'write', type: 'process', text: 'a[i] ← x\nsize ← size + 1', col: 0, row: 3, maxWidth: 140 },
+      { id: 'full', type: 'decision', text: 'size = capacity ?', col: 0, row: 1, maxWidth: 150, narrow: { maxWidth: 104 } },
+      { id: 'grow', type: 'process', text: 'grow: allocate 2×,\ncopy all, free old', col: 1, row: 1, maxWidth: 170, narrow: { maxWidth: 110, text: 'grow:\nallocate 2×,\ncopy, free old' } },
+      { id: 'cond', type: 'decision', text: 'j > i ?\n(j starts at size)', col: 0, row: 2, maxWidth: 150, narrow: { maxWidth: 100 } },
+      { id: 'shift', type: 'process', text: 'a[j] ← a[j − 1]\nj ← j − 1', col: 1, row: 2, maxWidth: 140, narrow: { maxWidth: 96 } },
+      { id: 'write', type: 'process', text: 'a[i] ← x\nsize ← size + 1', col: 0, row: 3, maxWidth: 140, narrow: { maxWidth: 100 } },
       { id: 'done', type: 'end', text: 'done', col: 0, row: 4 }
     ],
     edges: [
@@ -314,6 +360,12 @@
       { state: 'key', label: 'New value in hand' }, { state: 'swap', label: 'Moving, copying, writing' }, { state: 'muted', label: 'Old block (copied)' },
       { state: 'compare', label: 'Comparing' }, { state: 'active', label: 'Index i' }, { state: 'found', label: 'Result' }]);
     var view = V.views.array(stageOf(fig), { mode: 'boxes', cellSize: 48, label: 'Array operations lab', reserve: { held: true }, height: 310 });
+    var wr = wrapper(stageOf(fig), 8), wasNarrow = wr.narrow(), lastRows = null;
+    V.onResize(stageOf(fig), function () {
+      if (wr.narrow() === wasNarrow) return;
+      wasNarrow = wr.narrow(); view.reset();
+      if (lastRows) view.render(wr.wrap(lastRows), { duration: 0 });
+    });
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: CODE.insert, default: 'pseudo', maxHeight: 360 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { i: 'active', j: 'swap', x: 'key', 'a[j]': 'compare', removed: 'muted', newCap: 'swap' } });
     var flowFig = V.$('#fig-flow');
@@ -337,7 +389,8 @@
     }
     function render(step, ctx) {
       if (step.meta) status.innerHTML = 'size <b>' + step.meta.size + '</b> · capacity <b>' + step.meta.cap + '</b>';
-      view.render({ rows: step.rows, held: step.held, pointers: step.pointers }, { duration: ctx.duration });
+      lastRows = { rows: step.rows, held: step.held, pointers: step.pointers };
+      view.render(wr.wrap(lastRows), { duration: ctx.duration });
       var usesFlow = step.meta && (step.meta.op === 'append' || step.meta.op === 'insert');
       flow.render({ active: usesFlow ? step.flow : null, visited: usesFlow ? step.flowVisited : [] }, { duration: ctx.duration });
       flowNote.textContent = usesFlow ? (step.flow ? 'Lab step: ' + ({ full: 'is the array full?', grow: 'growing the array', shift: 'shifting one element right', write: 'writing the new value', done: 'finished' })[step.flow] : '') : 'The lab is running ' + ({ read: 'a read', search: 'a search', delete: 'a delete', idle: 'nothing yet' })[step.kind === 'idle' ? 'idle' : step.meta.op] + '. This chart lights up for append and insert.';
@@ -519,13 +572,13 @@
   /* ================================================================== cost decision tree */
   var TREE = {
     nodes: [
-      { id: 'q1', type: 'decision', text: 'Do you know\nthe index?', col: 0, row: 0 },
-      { id: 'search', type: 'end', text: 'Search by value\nO(n)', col: 1, row: 0 },
-      { id: 'q2', type: 'decision', text: 'Adding or removing\nan element?', col: 0, row: 1 },
-      { id: 'rw', type: 'end', text: 'Read or overwrite a[i]\nO(1)', col: 1, row: 1 },
+      { id: 'q1', type: 'decision', text: 'Do you know\nthe index?', col: 0, row: 0, narrow: { text: 'Know the\nindex?' } },
+      { id: 'search', type: 'end', text: 'Search by value\nO(n)', col: 1, row: 0, narrow: { text: 'Search\nO(n)' } },
+      { id: 'q2', type: 'decision', text: 'Adding or removing\nan element?', col: 0, row: 1, narrow: { text: 'Add or\nremove?' } },
+      { id: 'rw', type: 'end', text: 'Read or overwrite a[i]\nO(1)', col: 1, row: 1, narrow: { text: 'Read a[i]\nO(1)' } },
       { id: 'q3', type: 'decision', text: 'At the end?', col: 0, row: 2 },
-      { id: 'end', type: 'end', text: 'append / pop\nO(1) amortized', col: 1, row: 2 },
-      { id: 'mid', type: 'end', text: 'insert / delete at i\nO(n − i) shifts', col: 0, row: 3 }
+      { id: 'end', type: 'end', text: 'append / pop\nO(1) amortized', col: 1, row: 2, narrow: { text: 'append\nO(1) amort.' } },
+      { id: 'mid', type: 'end', text: 'insert / delete at i\nO(n − i) shifts', col: 0, row: 3, narrow: { text: 'insert at i\nO(n − i)' } }
     ],
     edges: [
       { from: 'q1', to: 'search', label: 'no' }, { from: 'q1', to: 'q2', label: 'yes' },

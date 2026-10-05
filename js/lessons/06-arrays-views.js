@@ -223,7 +223,7 @@
   /* ================================================================== 2. bookshelf analogy */
   /* state: {shelves: [{id, cap, row, wall?}], books: [{id, label, shelf, slot, lifted?, state}], ruler: {shelf, to}|null} */
   function shelfView(stage) {
-    var W = 600, BW = 52, BH = 74, SLOT = 58, X0 = 40, ROWY = [170, 286], H = 318;
+    var W = 520, BW = 52, BH = 74, SLOT = 58, X0 = 28, ROWY = [170, 286], H = 318;
     var svg = svgRoot(W, H, 'A bookshelf: books of equal width packed side by side', 'a6-shelf');
     svg.style.maxWidth = '600px';
     var shelfLayer = s('g'), bookLayer = s('g'), top = s('g');
@@ -537,7 +537,7 @@
       var ROWH = CW + 52, GAP = 22;
       var SW = narrow ? W - 2 * pad - 30 : Math.min(320, W * 0.36), SH = 64;
       var SX = narrow ? pad + 22 : W - pad - SW - 8, SY = narrow ? 34 : 20;
-      var Y0 = narrow ? SY + SH + 112 : 132;
+      var Y0 = narrow ? SY + SH + 142 : 132;
       function rowsOf(cap) { return Math.max(1, Math.ceil(cap / per)); }
       var H = Y0 + rowsOf(8) * ROWH + GAP + rowsOf(16) * ROWH - 10;
       var svg = svgRoot(W, H, 'A dynamic array with coins stacked on its elements, and the bank balance over time', 'a6-bank');
@@ -573,6 +573,25 @@
         g.appendChild(s('ellipse', { class: 'a6-coin-face', cx: 0, cy: 0, rx: coinRx, ry: coinRy }));
         coinLayer.appendChild(g);
         return g;
+      }
+      /* a dashed outline where the next, twice-as-big block will be allocated: fills the room reserved for it */
+      var ghost = s('g', { class: 'a6-nextblock' });
+      blockLayer.appendChild(ghost);
+      var ghostText = s('text', { class: 'vz-caption', dy: '.35em' }, '');
+      function drawGhost(st) {
+        var live = st.blocks.filter(function (b) { return b.role === 'live' && b.cap; })[0];
+        var hasNew = st.blocks.some(function (b) { return b.role === 'new'; });
+        V.clear(ghost);
+        if (!live || hasNew || live.cap >= 16) { ghost.style.display = 'none'; return; }
+        ghost.style.display = '';
+        var cap2 = live.cap * 2, y0 = Y0 + rowsOf(live.cap) * ROWH + GAP;
+        for (var r = 0; r < rowsOf(cap2); r++) {
+          var nIn = Math.min(per, cap2 - r * per);
+          ghost.appendChild(s('rect', { class: 'a6-block-frame a6-block-frame--ghost', x: X0 - 5, y: y0 + r * ROWH - CW / 2 - 5, width: nIn * PITCH + 5, height: CW + 10, rx: 9 }));
+        }
+        ghostText.textContent = 'room for the next block: capacity ' + cap2;
+        ghostText.setAttribute('x', X0 - 3); ghostText.setAttribute('y', y0 + (rowsOf(cap2) - 1) * ROWH + CW / 2 + 22);
+        ghost.appendChild(ghostText);
       }
       var note = s('text', { class: 'vz-caption', x: X0 - 3, y: Y0 - CW / 2 - 96, dy: '.35em' }, '');
       if (narrow) note.setAttribute('y', 14);
@@ -650,6 +669,7 @@
         Object.keys(coins).forEach(function (id) {
           if (!cseen[id]) { var g = coins[id]; delete coins[id]; V.animate(g, { opacity: 0 }, { duration: ms * 0.5 }).then(function () { if (g.parentNode) g.parentNode.removeChild(g); }); }
         });
+        drawGhost(st);
         note.textContent = st.k ? 'append #' + st.k + '  ·  size ' + st.size + ' of ' + st.cap : 'no storage yet';
         drawSpark(st);
       }
@@ -715,7 +735,8 @@
           var rc = kk.split(',').map(Number), p = slotPos(idxOf(rc[0], rc[1])), el = stripCells[kk];
           if (fly) {
             var gp = gridCells[kk].__vdsa, delay = idxOf(rc[0], rc[1]) * 110;
-            V.place(el, { x: gp.x, y: gp.y, opacity: 0 });
+            // each tile leaves from just under its grid column, so it never slides across the other grid cells
+            V.place(el, { x: gp.x, y: gy + ROWS * gs + 14, opacity: 0 });
             V.animate(el, { x: p.x, y: p.y, opacity: 1 }, { duration: 620, delay: delay });
           } else V.animate(el, { x: p.x, y: p.y, opacity: 1 }, { duration: instant ? 0 : ms });
           var on = rc[0] === sel.r && rc[1] === sel.c;
@@ -824,7 +845,10 @@
   /* cellStrip(values, opts) -> <svg>: a row of cells. opts: {states, size, gap, addrs, idx, ids, label, tags: [{at, text}], ghostFrom} */
   function cellStrip(values, o) {
     o = o || {};
-    var C = o.size || 34, P = C + (o.gap === undefined ? 6 : o.gap), PAD = 6, TOP = (o.addrs ? 18 : 4) + (o.tags ? 26 : 0);
+    var C = o.size || 34, P = C + (o.gap === undefined ? 6 : o.gap), PAD = 6;
+    // address labels wider than their cell pitch alternate between two heights instead of running together
+    var stagger = !!o.addrs && Math.max.apply(null, o.addrs.map(function (a) { return String(a).length; })) * 7.4 > P;
+    var TOP = (o.addrs ? (stagger ? 32 : 18) : 4) + (o.tags ? 26 : 0);
     var n = o.length || values.length;
     var W = PAD * 2 + n * P - (P - C), H = TOP + C + (o.idx ? 20 : 6);
     var svg = svgRoot(W, H, o.label || ('Values ' + values.join(', ')));
@@ -839,7 +863,7 @@
         V.place(g, { x: x, y: y });
         if (o.ids) { g.setAttribute('data-id', o.ids[k]); g.setAttribute('data-label', o.idLabel ? o.idLabel(k) : 'cell ' + k); }
       }
-      if (o.addrs) label(svg, x, TOP - 9, o.addrs[k], 'vz-label a6-addr');
+      if (o.addrs) label(svg, x, TOP - 9 - (stagger && k % 2 ? 14 : 0), o.addrs[k], 'vz-label a6-addr');
       if (o.idx) label(svg, x, TOP + C + 10, o.idx === true ? String(k) : o.idx[k], 'vz-label');
     }
     (o.tags || []).forEach(function (t) {

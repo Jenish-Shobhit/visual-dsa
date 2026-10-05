@@ -199,10 +199,10 @@
   /* ================================================================== two stacks: undo/redo and browser history */
   var PALETTE = ['--st-active', '--st-compare', '--st-swap', '--st-done', '--st-pivot', '--st-frontier'];
   function shapeCanvas(host) {
-    var svg = s('svg', { class: 'l9-canvas', viewBox: '0 0 372 140', role: 'img', 'aria-label': 'Drawing canvas' });
+    var svg = s('svg', { class: 'l9-canvas', viewBox: '0 0 372 270', role: 'img', 'aria-label': 'Drawing canvas' });
     host.appendChild(svg);
     var els = {};
-    function pos(k) { return { x: 34 + (k % 6) * 60, y: 38 + Math.floor(k / 6) * 64 }; }
+    function pos(k) { return { x: 34 + (k % 6) * 60, y: 50 + Math.floor(k / 6) * 76 }; }
     function shape(kind, color) {
       var c = 'var(' + PALETTE[color % PALETTE.length] + ')';
       var el = kind === 'circle' ? s('circle', { r: 20 }) : kind === 'square' ? s('rect', { x: -19, y: -19, width: 38, height: 38, rx: 6 }) : s('path', { d: 'M0 -23 L23 17 L-23 17 Z', 'stroke-linejoin': 'round' });
@@ -229,7 +229,7 @@
       });
       svg.querySelector('.l9-canvas__empty') || null;
       var hint = svg.querySelector('.l9-canvas__empty');
-      if (!doc.length && !hint) { var t = s('text', { class: 'l9-canvas__empty', x: 186, y: 74, 'text-anchor': 'middle' }, 'empty canvas'); svg.appendChild(t); }
+      if (!doc.length && !hint) { var t = s('text', { class: 'l9-canvas__empty', x: 186, y: 135, 'text-anchor': 'middle' }, 'empty canvas'); svg.appendChild(t); }
       else if (doc.length && hint) hint.remove();
     };
   }

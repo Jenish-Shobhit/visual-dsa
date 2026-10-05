@@ -29,9 +29,38 @@
     io.observe(el);
   };
 
+  /* Token rows on a phone: 17 boxes in one row shrink below readable size, so on a narrow stage each row wraps into
+     lines of `per` boxes. wrap(state) takes {items, pointers} or {rows, pointers} and returns the {rows, pointers} form. */
+  L9.rowWrapper = function (stage, per) {
+    function narrow() { return stage.clientWidth - 28 < 480; }
+    function wrap(st) {
+      if (!narrow()) return st;
+      var src = st.rows || [{ id: 'main', items: st.items || [], length: st.length }], info = {}, rows = [];
+      src.forEach(function (r) {
+        var len = r.length || 0;
+        (r.items || []).forEach(function (it, i) { if (it) len = Math.max(len, (typeof it.index === 'number' ? it.index : i) + 1); });
+        var nch = Math.max(1, Math.ceil(len / per));
+        info[r.id] = nch;
+        for (var c = 0; c < nch; c++) rows.push({ id: c ? r.id + '~' + c : r.id, label: c ? '' : r.label, length: Math.min(per, len - c * per), indexStart: c * per, items: [] });
+        (r.items || []).forEach(function (it, i) {
+          if (!it) return;
+          var slot = typeof it.index === 'number' ? it.index : i, c = Math.min(nch - 1, Math.floor(slot / per));
+          rows.filter(function (x) { return x.id === (c ? r.id + '~' + c : r.id); })[0].items.push(Object.assign({}, it, { index: slot - c * per }));
+        });
+      });
+      var ptrs = (st.pointers || []).map(function (p) {
+        var rid = p.row !== undefined ? String(p.row) : src[0].id, nch = info[rid] || 1;
+        var c = Math.max(0, Math.min(nch - 1, Math.floor(p.index / per)));
+        return Object.assign({}, p, { row: c ? rid + '~' + c : rid, index: p.index - c * per });
+      });
+      return { rows: rows, pointers: ptrs };
+    }
+    return { wrap: wrap, narrow: narrow };
+  };
+
   /* ================================================================== forest view */
   L9.forestView = function (container, options) {
-    var opts = Object.assign({ levelH: 60, r: 19, label: 'Expression trees' }, options || {});
+    var opts = Object.assign({ levelH: 50, r: 19, label: 'Expression trees' }, options || {});
     var made = vz.createView(container, 'forest', { label: opts.label, className: 'l9-forest' }, draw);
     var ctx = made.ctx, api = made.api, tr = made.tr;
     ctx.layer('edges'); ctx.layer('nodes'); ctx.layer('tags');

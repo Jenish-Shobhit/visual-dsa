@@ -217,7 +217,8 @@ test('ring: dequeued slots stay physically filled (stale) until overwritten', ()
   const last = st[st.length - 1];
   const stale = last.flat.find((f) => f.value === 7);
   assert.equal(stale.state, 'muted'); assert.equal(stale.badge, 'old');
-  assert.equal(last.slots[stale.index], null, 'the ring view shows the slot as free');
+  assert.equal(last.slots[stale.index].value, 7, 'the ring view shows the stale value too');
+  assert.equal(last.slots[stale.index].state, 'muted');
 });
 test('ring: capacity is validated', () => {
   assert.throws(() => Q.ring(1, []), /capacity/);

@@ -834,7 +834,6 @@
     function stepsFor(op) { return ALG.raceSteps(op, values, 1, 4); }
     var steps = stepsFor('insertFront');
     function prep(st) { arr.reset(); lst.reset(); arr.prepare(st.map(function (s) { return s.array; })); lst.prepare(st.map(function (s) { return s.list; })); }
-    var allSteps = RACE_OPS.map(function (o) { return stepsFor(o.value); }).reduce(function (a, b) { return a.concat(b); }, []);
     var player = V.player({
       root: fig, steps: steps,
       render: function (step, ctx) {
@@ -846,12 +845,12 @@
       counterLabels: { array: 'Array steps', list: 'Linked list steps' },
       baseStepMs: 850, label: 'Race controls'
     });
-    prep(allSteps); player.refresh();
+    prep(steps); player.refresh();   // reserve room only for the chosen operation, so a read does not carry the empty lane an insert needs
     var seg = V.segmented(fig.querySelector('[data-seg]'), {
       label: 'Operation', value: 'insertFront', options: RACE_OPS,
       onChange: function (v) { go(v); }
     });
-    function go(v) { steps = stepsFor(v); prep(allSteps); player.setSteps(steps); player.play(); }
+    function go(v) { steps = stepsFor(v); prep(steps); player.setSteps(steps); player.play(); }
     V.$$('#cost-table tr[data-race]').forEach(function (tr) {
       tr.tabIndex = 0; tr.classList.add('ll-racerow'); tr.title = 'Race this operation above';
       function pick() { var v = tr.getAttribute('data-race'); seg.set(v); go(v); fig.scrollIntoView({ behavior: V.reducedMotion() ? 'auto' : 'smooth', block: 'nearest' }); }

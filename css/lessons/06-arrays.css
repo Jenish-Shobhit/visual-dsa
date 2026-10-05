@@ -48,7 +48,7 @@
 /* ------------------------------------------------------------------ shared SVG text */
 .a6 .a6-title { font-size: 12px; letter-spacing: .02em; }
 .a6 .a6-count { fill: var(--ink); font-weight: 700; font-size: 12.5px; letter-spacing: 0; }
-.a6 .a6-addr { font-size: 10px; }
+.a6 .a6-addr { font-size: 11.5px; }
 .a6 .a6-formula { fill: var(--ink); font: 650 13.5px var(--font-mono); }
 .a6 .a6-formula--big { font-size: 16px; }
 .a6 .a6-f0 { fill: color-mix(in srgb, var(--st-found) 75%, var(--ink)); }
@@ -59,7 +59,7 @@
 /* ------------------------------------------------------------------ access race */
 .a6 .a6-mem { fill: var(--bg-sunken); stroke: var(--line); stroke-width: 1; }
 .a6 .a6-ptrdot { fill: var(--vz-ink, var(--el-ink)); opacity: .55; }
-.a6 .a6-tag { font-size: 9.5px; fill: var(--ink-3); }
+.a6 .a6-tag { font-size: 10.5px; fill: var(--ink-3); }
 .a6 .a6-token-ring { fill: none; stroke: var(--st-active); stroke-width: 2.5; stroke-dasharray: 4 3; }
 .a6 .a6-target { fill: none; stroke: var(--st-compare); stroke-width: 2; stroke-dasharray: 5 4; }
 .a6 .a6-link .vz-line { stroke-width: 1.5px; }
@@ -83,6 +83,10 @@
 .a6 .a6-spine { stroke: color-mix(in srgb, var(--vz-ink, var(--el-ink)) 30%, transparent); stroke-width: 1.5; }
 .a6 .a6-ruler line { stroke: var(--st-active); stroke-width: 3; stroke-linecap: round; }
 .a6 .a6-ruler text { fill: color-mix(in srgb, var(--st-active) 75%, var(--ink)); font: 650 12px var(--font-sans); }
+/* the shelf viewBox is scaled down on phones, so its labels are drawn larger to land at 10.5px or more */
+svg.a6-shelf .a6-shelfg .vz-label, svg.a6-shelf .a6-ruler text { font-size: 13px; }
+@media (max-width: 640px) { svg.a6-shelf .a6-shelfg .vz-label, svg.a6-shelf .a6-ruler text { font-size: 17px; } }
+#fig-shelf .fig__stage { min-height: 0; }
 
 /* ------------------------------------------------------------------ cost-per-append chart */
 .a6 .a6-grid line { stroke: var(--line); stroke-width: 1; }
@@ -99,6 +103,8 @@
 
 /* ------------------------------------------------------------------ bank account */
 .a6 .a6-block-frame { fill: color-mix(in srgb, var(--bg-sunken) 60%, transparent); stroke: var(--line-strong); stroke-width: 1; }
+.a6 .a6-block-frame--ghost { fill: none; stroke-dasharray: 5 4; opacity: .7; }
+.a6 .a6-nextblock text { fill: var(--ink-3); }
 .a6 .a6-coin-edge { fill: color-mix(in srgb, var(--st-compare) 62%, black); }
 .a6 .a6-coin-face { fill: var(--st-compare); stroke: color-mix(in srgb, var(--st-compare) 55%, black); stroke-width: 1; }
 
@@ -113,7 +119,7 @@
 .a6 .a6-line { fill: none; stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 3; transition: fill var(--vz-dur), stroke var(--vz-dur); }
 .a6 .a6-line.is-cached { fill: color-mix(in srgb, var(--st-frontier) 12%, transparent); stroke: var(--st-frontier); stroke-width: 2; stroke-dasharray: none; }
 .a6 .a6-line.is-loading { stroke: var(--st-swap); }
-.a6 .a6-linelabel { font-size: 9.5px; }
+.a6 .a6-linelabel { font-size: 10.5px; }
 
 /* ------------------------------------------------------------------ small pictures */
 .a6 .a6-foreign { fill: color-mix(in srgb, var(--ink-3) 22%, var(--bg-sunken)); stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 2; }
@@ -146,7 +152,9 @@
 .a6-load__tick--grow::before { left: 100%; }
 .a6-load__tick--trig { color: color-mix(in srgb, var(--st-swap) 72%, var(--ink)); font-weight: 650; }
 .a6-load__tick--trig::before { background: var(--st-swap); }
-.a6-load__mark { position: absolute; left: var(--load, 0%); top: -24px; transform: translateX(-50%); font: 700 11px var(--font-mono); color: var(--ink); background: var(--bg-elev); padding: 0 4px; border-radius: 4px; transition: left var(--dur, 300ms) var(--ease-out); white-space: nowrap; }
+.a6-load__mark { position: absolute; left: clamp(26px, var(--load, 0%), calc(100% - 26px)); top: -24px; transform: translateX(-50%); font: 700 11px var(--font-mono); color: var(--ink); background: var(--bg-elev); padding: 0 4px; border-radius: 4px; transition: left var(--dur, 300ms) var(--ease-out); white-space: nowrap; }
+.a6-lane__head { flex-wrap: wrap; row-gap: 4px; }
+.a6-lane__head > b { white-space: nowrap; }
 .a6-load { padding-top: 22px; }
 
 /* ------------------------------------------------------------------ variations */

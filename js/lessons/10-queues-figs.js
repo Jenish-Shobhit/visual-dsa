@@ -161,7 +161,7 @@
     V.slider(fig.querySelector('[data-head]'), { label: 'head (slot of the front)', min: 0, max: C - 1, value: head, onInput: function (v) { head = v; draw(); } });
     V.slider(fig.querySelector('[data-size]'), { label: 'size (values stored)', min: 0, max: C, value: size, onInput: function (v) { size = v; if (kSlider) { kSlider.input.max = Math.max(0, size - 1); if (k > size - 1) { k = Math.max(0, size - 1); kSlider.set(k); } } draw(); } });
     kSlider = V.slider(fig.querySelector('[data-k]'), { label: 'look at position k', min: 0, max: C - 1, value: k, onInput: function (v) { k = v; draw(); } });
-    V.legend(fig.querySelector('[data-legend]'), [{ state: 'active', label: 'Position k' }, { state: 'default', label: 'Other stored values (numbered by position)' }]);
+    V.legend(fig.querySelector('[data-legend]'), [{ state: 'active', label: 'Position k' }, { state: 'default', label: 'Other stored values: big number = place in the queue' }, { state: 'muted', label: 'Small grey number = slot index in the array' }]);
     draw(0);
   };
 

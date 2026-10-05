@@ -143,8 +143,8 @@
     var addrs = [0x200C, 0x2010, 0x2014, 0x2018, 0x201C, 0x2020, 0x2024, 0x2028];
     var vals = [31, 8, 57, 14, 90, 26, 3, 45];
     var stage = stageOf(fig);
-    stage.appendChild(a6.cellStrip(vals, { size: 46, gap: 12, addrs: addrs.map(function (x) { return A.hex(x); }), ids: vals.map(function (_, k) { return 'q' + k; }),
-      idLabel: function (k) { return 'Cell at address ' + A.hex(addrs[k]) + ' holding ' + vals[k]; }, label: 'Eight memory cells labelled by address', scale: 1.25 }));
+    stage.appendChild(a6.cellStrip(vals, { size: 38, gap: 4, addrs: addrs.map(function (x) { return A.hex(x); }), ids: vals.map(function (_, k) { return 'q' + k; }),
+      idLabel: function (k) { return 'Cell at address ' + A.hex(addrs[k]) + ' holding ' + vals[k]; }, label: 'Eight memory cells labelled by address', scale: 1.5 }));
     V.clickQuiz(stage, {
       el: '#quiz-addr', id: 'addr-a5',
       question: 'Array <code>a</code> holds 4-byte integers and starts at <code>0x2000</code>, off to the left of this window. Click the cell that holds <code>a[5]</code>.',

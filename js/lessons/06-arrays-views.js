@@ -161,7 +161,7 @@
       gA.appendChild(ringA);
       var hopsA = label(gA, W - x0, yA, '', 'vz-caption a6-count', 'end');
 
-      label(gB, xb, yB, narrow ? 'Array: element k at base + k × 4' : 'Array: side by side, so element k is at base + k × 4', 'vz-caption a6-title', 'start');
+      label(gB, xb, yB, narrow ? 'Array: base + k × 4' : 'Array: side by side, so element k is at base + k × 4', 'vz-caption a6-title', 'start');
       var formula = label(gB, xb, yB + 24, '', 'a6-formula', 'start');
       var cellsB = data.values.map(function (v, k) {
         var g = cell(gB, pitch - 6, ch, v, { font: 14 });

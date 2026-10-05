@@ -339,10 +339,13 @@
     function by(v) { return BASE - (maxP ? HMAX * v / maxP : 0); }
     function build(step) {
       V.clear(stage); vals = step.values; valsKey = String(vals); n = vals.length;
+      var avail = stage.clientWidth || 440, tight = avail < 480;
+      PADL = tight ? 30 : 46; PADR = tight ? 26 : 30;
+      PITCH = tight ? Math.max(30, Math.min(54, Math.floor((avail - PADL - PADR) / (n + 0.2)))) : 54; BOX = Math.min(46, PITCH - 6);
       var P = step.P; maxP = Math.max.apply(null, P.concat([1]));
       var W = PADL + n * PITCH + PADR, H = BASE + 46;
       svg = s('svg', { class: 'l07-pfx', viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Values with a bar of prefix sums under the boundaries between them' });
-      svg.style.minWidth = Math.min(W, 440) + 'px'; svg.style.maxWidth = (W * 1.3) + 'px';
+      svg.style.minWidth = Math.min(W, tight ? Math.max(avail - 4, 300) : 440) + 'px'; svg.style.maxWidth = (W * 1.3) + 'px';
       band = s('rect', { class: 'band', x: 0, y: BOXTOP - 8, width: 0, height: BASE - BOXTOP + 8, rx: 10 });
       svg.appendChild(band);
       svg.appendChild(s('line', { class: 'axis', x1: PADL - 14, x2: W - PADR + 10, y1: BASE, y2: BASE }));

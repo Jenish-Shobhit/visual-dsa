@@ -33,9 +33,10 @@
   /* snapshot: {line: [{id, n}], serving: id | null}. People join at the right and are served at the left window. */
   L10.ticketLine = function (stage, opts) {
     opts = opts || {};
-    var W = 600, H = opts.height || 230, GROUND = H - 46, X0 = 190, STEP = 52, MAXV = 8;
+    var narrow = (stage.clientWidth || 999) < 480;   /* phones: a tighter line so the picture is not shrunk to half size */
+    var W = narrow ? 430 : 600, H = opts.height || 230, GROUND = H - 46, X0 = narrow ? 156 : 190, STEP = narrow ? 36 : 52, MAXV = 8;
     V.clear(stage);
-    var svg = s('svg', { class: 'l10-tl', viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': opts.label || 'A line of people waiting at a ticket window' });
+    var svg = s('svg', { class: 'l10-tl' + (narrow ? ' is-narrow' : ''), viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': opts.label || 'A line of people waiting at a ticket window' });
     var booth = s('g', { class: 'l10-booth' },
       s('rect', { class: 'l10-booth__wall', x: 6, y: GROUND - 132, width: 122, height: 132, rx: 14 }),
       s('rect', { class: 'l10-booth__window', x: 22, y: GROUND - 96, width: 90, height: 50, rx: 8 }),

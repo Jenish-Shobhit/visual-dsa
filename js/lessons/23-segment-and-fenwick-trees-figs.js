@@ -430,7 +430,11 @@
         var nd = shp.byId[id], inside = nd.lo >= 2 && nd.hi <= 7;
         if (id === 's0_7') return { correct: false, message: 'The root covers cells 0 to 7, but cells 0 and 1 are not in the query. It overlaps only in part, so its sum would be wrong.' };
         if (id === 's0_3') return { correct: false, message: '[0,3] includes cells 0 and 1, which are outside the range. It is only partly inside, so the query has to split it.' };
-        if (inside) return { correct: false, message: '[' + nd.lo + ',' + nd.hi + '] fits inside, but it is not the largest: its parent [4,7] is fully inside too. Look higher.' };
+        if (inside) {
+          var par = nd.parent ? shp.byId[nd.parent] : null, mine = '[' + nd.lo + ',' + nd.hi + ']';
+          if (par && par.lo >= 2 && par.hi <= 7) return { correct: false, message: mine + ' fits inside, but it is not the largest: its parent [' + par.lo + ',' + par.hi + '] is fully inside too. Look higher.' };
+          return { correct: false, message: mine + ' fits inside, and its parent' + (par ? ' [' + par.lo + ',' + par.hi + ']' : '') + ' reaches outside the range, so it is a valid block. But another node, [4,7], is larger and also fits. Look for the biggest one.' };
+        }
         return { correct: false, message: '[' + nd.lo + ',' + nd.hi + '] reaches outside the range. Only nodes whose whole segment lies in [2, 7] can be taken whole.' };
       },
       right: 'The range 2..7 splits into [2,3] and [4,7]. Node [4,7] is the largest block that fits: one stored sum replaces four cells. [2,3] is the other block, and it is smaller because cell 1 is missing from the range.'

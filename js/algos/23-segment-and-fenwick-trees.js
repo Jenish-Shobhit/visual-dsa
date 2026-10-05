@@ -411,7 +411,7 @@
       j = nj;
     }
     F.acc = keep - acc2;
-    F.push('done', '<b>' + p1 + ' − ' + acc2 + ' = ' + F.acc + '</b> is the sum of a[' + l + '..' + r + '], found by touching ' + F.counters.steps + ' blocks instead of ' + (r - l + 1) + ' cells.', 'rsub', { cursor: null, flow: 'end', answer: F.acc, vars: { l: l, r: r, sum: F.acc } });
+    F.push('done', '<b>' + p1 + ' − ' + acc2 + ' = ' + F.acc + '</b> is the sum of a[' + l + '..' + r + '], found by touching ' + F.counters.steps + ' block' + (F.counters.steps === 1 ? '' : 's') + ' instead of ' + (r - l + 1) + ' cell' + (r - l + 1 === 1 ? '' : 's') + '.', 'rsub', { cursor: null, flow: 'end', answer: F.acc, vars: { l: l, r: r, sum: F.acc } });
     return F.steps;
   }
 

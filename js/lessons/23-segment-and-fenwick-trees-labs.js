@@ -472,13 +472,26 @@
       });
       var idx = exps.indexOf(k), n = Math.pow(2, k);
       var top = 0; series.forEach(function (s) { s.points.forEach(function (p) { top = Math.max(top, p[1]); }); });
+      /* one number format for the bubbles and the sentence below, so they always agree */
+      function f(x) { return x >= 100 ? Math.round(x).toLocaleString('en-US') : x.toFixed(1); }
+      /* A bubble sits above its point and would cover a neighbour's ring when two values are close on screen.
+         Walk from the highest value down and skip a bubble that would land on one already shown; the sentence
+         below the chart always lists all four values. */
+      var PX = 240, ymaxV = log ? top * 1.6 : top * 1.05;
+      function py(v) { return log ? -PX * Math.log10(Math.max(1, v)) / Math.log10(ymaxV) : -PX * v / ymaxV; }
+      var shown = [], hl = [];
+      series.slice().sort(function (a, b) { return b.points[idx][1] - a.points[idx][1]; }).forEach(function (s) {
+        var v = s.points[idx][1], y = py(v);
+        var clash = shown.some(function (y2) { return y2 > y - 42 && y2 < y - 4; });
+        if (clash) return;
+        shown.push(y); hl.push({ series: s.id, x: n, y: v, label: f(v) });
+      });
       chart.render({
         x: { label: 'n (number of cells)', scale: 'log', min: 4, max: 1048576, ticks: [4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576] },
         y: log ? { label: (mode === 'query' ? 'cells read per range query' : 'cells written per update') + ' (log scale)', scale: 'log', min: 1, max: top * 1.6 } : { label: mode === 'query' ? 'cells read per range query' : 'cells written per update', min: 0, max: top * 1.05 },
         series: series,
-        highlight: series.map(function (s) { return { series: s.id, x: n, y: s.points[idx][1] }; })
+        highlight: hl
       }, { duration: dur });
-      function f(x) { return x >= 100 ? Math.round(x).toLocaleString('en-US') : x >= 10 ? x.toFixed(0) : x.toFixed(1); }
       note.innerHTML = 'At <b>n = ' + n.toLocaleString('en-US') + '</b>, one ' + (mode === 'query' ? 'range query' : 'point update') + ' touches on average: plain array <b>' + f(t[idx][keyOf('naive')]) + '</b>, prefix sums <b>' + f(t[idx][keyOf('prefix')]) + '</b>, segment tree <b>' + f(t[idx][keyOf('seg')]) + '</b>, Fenwick tree <b>' + f(t[idx][keyOf('fen')]) + '</b>. Doubling n adds about one step to the trees.';
     }
     V.segmented(fig.querySelector('[data-seg]'), { label: 'Operation', value: mode, options: [{ value: 'query', label: 'Range query' }, { value: 'update', label: 'Point update' }], onChange: function (m) { mode = m; draw(700); } });

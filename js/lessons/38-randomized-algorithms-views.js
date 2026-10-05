@@ -555,7 +555,7 @@
         var g = cells[r][c], rect = g.firstChild, t = g.lastChild;
         if (!probs) { rect.style.fill = ''; t.textContent = '–'; g.setAttribute('class', 'rz-hcell is-empty'); continue; }
         var p = probs[r][c], d = p - 1 / n, a = Math.min(1, Math.abs(d) / scale);
-        rect.style.fill = 'color-mix(in srgb, var(' + (d > 0 ? '--st-path' : '--st-active') + ') ' + Math.round(a * 78) + '%, var(--el-fill))';
+        rect.style.fill = 'color-mix(in srgb, var(' + (d > 0 ? '--st-path' : '--st-active') + ') ' + Math.round(a * 54) + '%, var(--el-fill))';
         t.textContent = (p * 100).toFixed(1) + '%';
         g.setAttribute('class', 'rz-hcell' + (a > 0.55 ? ' is-strong' : ''));
       }

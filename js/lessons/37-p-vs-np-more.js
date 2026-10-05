@@ -174,7 +174,7 @@
     var tp = [[230, 25], [195, 70], [265, 70], [175, 118], [215, 118], [285, 118]], te = [[0, 1], [0, 2], [1, 3], [1, 4], [2, 5]];
     te.forEach(function (e) { svgS.appendChild(s('line', { x1: tp[e[0]][0], y1: tp[e[0]][1], x2: tp[e[1]][0], y2: tp[e[1]][1], class: 'lm-edge is-on' })); });
     tp.forEach(function (p) { svgS.appendChild(s('circle', { cx: p[0], cy: p[1], r: 9, class: 'lm-node is-on' })); });
-    svgS.appendChild(L.txt(80, 141, 'lm-k', 'general graph: NP-hard', { 'text-anchor': 'middle' }));
+    svgS.appendChild(L.txt(80, 141, 'lm-k', 'general: NP-hard', { 'text-anchor': 'middle' }));
     svgS.appendChild(L.txt(230, 141, 'lm-k', 'tree: easy DP', { 'text-anchor': 'middle' }));
     V.$('[data-mini="special"]').appendChild(svgS);
     // pseudo-polynomial: 20 bits vs a million columns
@@ -184,14 +184,14 @@
     svgD.appendChild(s('path', { d: 'M150 68 V88 m-6 -7 l6 7 l6 -7', class: 'lm-arrow' }));
     svgD.appendChild(s('rect', { x: 20, y: 96, width: 260, height: 26, rx: 4, class: 'lm-big' }));
     svgD.appendChild(L.txt(150, 114, 'lm-t is-onbig', 'DP table with 1,000,000 columns', { 'text-anchor': 'middle' }));
-    svgD.appendChild(L.txt(150, 143, 'lm-k', 'work ~ n · T = n · 2²⁰: exponential in the bits', { 'text-anchor': 'middle' }));
+    svgD.appendChild(L.txt(150, 143, 'lm-k', 'work n · T = n · 2²⁰: exponential in bits', { 'text-anchor': 'middle' }));
     V.$('[data-mini="pseudo"]').appendChild(svgD);
     // undecidable vs NP-complete
     var svgU = s('svg', { viewBox: '0 0 300 150', class: 'l37-mini', role: 'img', 'aria-label': 'Two timelines: an NP-complete search takes very long but ends with an answer; an undecidable question never has an algorithm that always finishes' });
     svgU.appendChild(L.txt(14, 30, 'lm-k', 'NP-complete', { 'text-anchor': 'start' }));
-    svgU.appendChild(s('line', { x1: 14, y1: 46, x2: 230, y2: 46, class: 'lm-line' }));
-    svgU.appendChild(s('circle', { cx: 230, cy: 46, r: 11, class: 'lm-dot is-ok' })); svgU.appendChild(L.txt(230, 51, 'lm-tick', '✓', { 'text-anchor': 'middle' }));
-    svgU.appendChild(L.txt(250, 50, 'lm-k', 'slow, then done', { 'text-anchor': 'start' }));
+    svgU.appendChild(s('line', { x1: 14, y1: 46, x2: 200, y2: 46, class: 'lm-line' }));
+    svgU.appendChild(s('circle', { cx: 200, cy: 46, r: 11, class: 'lm-dot is-ok' })); svgU.appendChild(L.txt(200, 51, 'lm-tick', '✓', { 'text-anchor': 'middle' }));
+    svgU.appendChild(L.txt(220, 51, 'lm-k', 'then done', { 'text-anchor': 'start' }));
     svgU.appendChild(L.txt(14, 92, 'lm-k', 'Undecidable', { 'text-anchor': 'start' }));
     svgU.appendChild(s('line', { x1: 14, y1: 108, x2: 270, y2: 108, class: 'lm-line is-bad' }));
     svgU.appendChild(L.txt(283, 113, 'lm-t', '…', { 'text-anchor': 'middle' }));

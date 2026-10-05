@@ -283,7 +283,7 @@
   function reservoirHist() {
     var fig = V.$('#fig-res-hist'); if (!fig) return;
     var stage = fig.querySelector('[data-stage]'), n = 10, k = 3, seed = 4, RUNS = 10000;
-    var c = chart(stage, { type: 'bar', height: 260, label: 'How many times each stream item ended up in the reservoir, over 10,000 runs', valueLabels: true });
+    var c = chart(stage, { type: 'bar', height: 260, label: 'How many times each stream item ended up in the reservoir, over 10,000 runs', valueLabels: stage.clientWidth >= 460 });
     var stats = V.stats(fig.querySelector('[data-stats]'), { labels: { expected: 'Expected per item', min: 'Fewest', max: 'Most', spread: 'Spread' } });
     function draw(counts, dur) {
       var expected = RUNS * k / n, cats = V.range(n).map(function (i) { return LETTERS[i]; });
@@ -380,7 +380,7 @@
   function bloomFpFigure() {
     var fig = V.$('#fig-bloom-fp'); if (!fig) return;
     V.legend(fig.querySelector('[data-legend]'), [{ state: 'active', label: 'Formula (1 − e^(−kn/m))^k', shape: 'line' }, { state: 'compare', label: 'Measured with the real hash', shape: 'line' }]);
-    var c = chart(fig.querySelector('[data-stage]'), { type: 'line', height: 300, label: 'False-positive rate against words added',
+    var c = chart(fig.querySelector('[data-stage]'), { type: 'line', height: 300, labels: false, label: 'False-positive rate against words added',
       format: function (v, axis) { return axis === 'y' || (typeof axis === 'object' && axis && axis.axis === 'y') ? Math.round(v * 100) + '%' : String(v); }, valueFormat: function (v, ser) { return ser && ser.id === 'theory' || ser && ser.id === 'measured' ? (v * 100).toFixed(1) + '%' : String(v); } });
     var stats = V.stats(fig.querySelector('[data-stats]'), { labels: { n1: 'Words until 1% false positives', fp: 'False positives at n = m/8', bestk: 'Best k at n = m/8' }, states: { fp: 'error' } });
     var m = 128, k = 3, timer = 0;
@@ -726,11 +726,20 @@
     function paint() {
       var p = V.progress ? V.progress.get() : { completed: [], visited: [] };
       V.clear(map);
-      lessons.forEach(function (l) {
-        var done = p.completed.indexOf(l.id) >= 0, seen = p.visited.indexOf(l.id) >= 0;
-        map.appendChild(h('i', { title: l.number + '. ' + l.title + (done ? ' (completed)' : seen ? ' (visited)' : ''), style: { opacity: done ? 1 : seen ? 0.5 : 0.18, background: done ? 'var(--st-done)' : 'var(--ink-3)' } }));
+      var units = cur && cur.units ? cur.units : [];
+      units.forEach(function (u) {
+        var row = h('div', { class: 'rz-journey' }), sq = h('div', { class: 'rz-journey__sq' });
+        row.style.setProperty('--u', u.color);
+        row.appendChild(h('p', { class: 'rz-journey__name' }, h('b', null, 'Unit ' + u.number), ' ' + u.title));
+        lessons.filter(function (l) { return l.unit === u.id; }).forEach(function (l) {
+          var done = p.completed.indexOf(l.id) >= 0, seen = p.visited.indexOf(l.id) >= 0;
+          sq.appendChild(h('a', { href: l.id + '.html', class: 'rz-journey__l' + (done ? ' is-done' : seen ? ' is-seen' : ''),
+            title: l.number + '. ' + l.title + (done ? ' (completed)' : seen ? ' (visited)' : ''), 'aria-label': 'Lesson ' + l.number + ': ' + l.title + (done ? ', completed' : '') }, String(l.number)));
+        });
+        row.appendChild(sq); map.appendChild(row);
       });
-      count.textContent = lessons.length ? p.completed.length + ' of ' + lessons.length + ' lessons marked complete on this device. Mark this one complete below to add the last square.' : '';
+      count.textContent = !lessons.length ? '' : p.completed.length >= lessons.length ? 'Every lesson is marked complete on this device. Well done.'
+        : p.completed.length + ' of ' + lessons.length + ' lessons marked complete on this device. Squares fill in as you mark lessons complete; click one to revisit it.';
     }
     paint();
     if (V.progress && V.progress.onChange) V.progress.onChange(paint);

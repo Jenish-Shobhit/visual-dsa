@@ -38,7 +38,7 @@
 #race-verify .rc.is-unit rect { fill: color-mix(in srgb, var(--st-compare) 42%, var(--el-fill)); }
 #race-verify .rc.is-clash rect { fill: var(--st-error); }
 #race-verify .rc.is-clash .rc-t { fill: var(--on-state); }
-#race-solve .rc.is-placed .rc-t { fill: var(--st-active); font-weight: 700; }
+#race-solve .rc.is-placed .rc-t { fill: color-mix(in srgb, var(--st-active) 62%, var(--ink)); font-weight: 700; }
 #race-solve .rc.is-cur rect { fill: color-mix(in srgb, var(--st-active) 30%, var(--el-fill)); }
 #race-solve .rc.is-ok rect { fill: color-mix(in srgb, var(--st-done) 30%, var(--el-fill)); }
 #race-solve .rc.is-ok.is-placed .rc-t { fill: var(--ink); }
@@ -74,7 +74,7 @@
 .lm-t.is-key { fill: var(--on-state); }
 .lm-t.is-big { font-size: 20px; }
 .lm-t.is-onbig { fill: var(--ink); font-size: 13px; }
-.lm-k { font: 600 11.5px var(--font-sans); fill: var(--ink-2); }
+.lm-k { font: 650 12.5px var(--font-sans); fill: var(--ink-2); }
 .lm-dot { fill: var(--el-fill); stroke: var(--line-strong); stroke-width: 1.5; }
 .lm-dot.is-ok { fill: var(--st-done); stroke: var(--st-done); }
 .lm-tick { font: 800 14px var(--font-sans); fill: var(--on-state); }
@@ -127,8 +127,6 @@
 .tsp-hud-row { font: 600 25px var(--font-sans); }
 .tsp-hud-k { fill: var(--ink-3); }
 .tsp-hud-v { fill: var(--ink); font: 780 27px var(--font-mono); letter-spacing: -.02em; }
-.tsp--hero .tsp-hud-row { font-size: 30px; }
-.tsp--hero .tsp-hud-v { font-size: 34px; }
 .tsp-toolbar { align-items: flex-start; }
 .tsp-toolbar .btn-row { flex: 1 1 320px; }
 .tsp-note { min-height: 0; margin: 0; padding: 0 clamp(10px, 2vw, 16px); font-size: 14px; color: color-mix(in srgb, var(--st-compare) 40%, var(--ink)); }
@@ -232,7 +230,10 @@
 .web-key { margin: 0; padding: 10px clamp(12px, 2vw, 18px); font-size: 13.5px; line-height: 1.6; color: var(--ink-2); border-top: 1px solid var(--line); }
 .web-key b { font: 700 12.5px var(--font-mono); color: var(--ink); }
 
-.tsp--hero .tsp-name { font-size: 28px; }
+.tsp--hero .tsp-name { font-size: 38px; }
+.tsp--hero .tsp-hud-row { font-size: 38px; }
+.tsp--hero .tsp-hud-v { font-size: 42px; }
+.tabs .split p + p { margin-top: .75em; }
 .tsp--hero .tsp-layer--path .tsp-e { stroke-width: 6px; }
 .tsp--hero .tsp-layer--ghost .tsp-e { stroke-width: 15px; }
 
@@ -251,3 +252,9 @@
 
 /* summary card: three tiles per row on wide screens, so six tiles do not leave an orphan */
 @media (min-width: 760px) { #summary-card .summary__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* tour comparison table: on phones let the headers wrap instead of scrolling sideways */
+@container fig (max-width: 520px) {
+  .compare-table th, .compare-table td { padding-inline: 8px; white-space: normal; }
+  .compare-table th.num { line-height: 1.2; }
+}

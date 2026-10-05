@@ -415,7 +415,7 @@ Sources: `studies/dsa-NN-*.html` are the author's own deep lecture notes (use th
 - F: gallery of special graphs (tree, DAG, complete, bipartite with two-colouring animation, cycle).
 - D: "matrix or list?" decision diagram.
 **Checks:** degree of a vertex; fill in a row of the adjacency matrix; which representation for a sparse social network.
-**Sources:** `studies/dsa-11-graphs-and-their-traversals.html`, old `chapters/13-graphs.html`, `js/graph-model.js`.
+**Sources:** `studies/dsa-11-graphs-and-their-traversals.html`, old `chapters/13-graphs.html`.
 
 ### 26 · BFS & DFS
 **Big idea:** BFS explores in waves with a queue and finds fewest-edge paths; DFS dives deep with a stack (or recursion) and reveals structure; both are O(V + E).
@@ -431,7 +431,7 @@ Sources: `studies/dsa-NN-*.html` are the author's own deep lecture notes (use th
 - F: bipartite check — 2-colouring spreads; an odd cycle causes a conflict (red edge).
 - D: "BFS or DFS?" decision diagram.
 **Checks:** click the next node BFS will visit; DFS order from A with alphabetical neighbours; the shortest path length from BFS.
-**Sources:** `studies/dsa-11-graphs-and-their-traversals.html`, old `chapters/13-graphs.html`, `labs/graph-explorer.html`.
+**Sources:** `studies/dsa-11-graphs-and-their-traversals.html`, old `chapters/13-graphs.html`, `labs/graph-studio.html`.
 
 ### 27 · Topological sort & cycles
 **Big idea:** a DAG's vertices can be ordered so every edge points forward; Kahn's algorithm peels off nodes with no incoming edges, DFS orders by finish time; failure to finish means a cycle.
@@ -462,7 +462,7 @@ Sources: `studies/dsa-NN-*.html` are the author's own deep lecture notes (use th
 - C: nodes expanded vs grid size for Dijkstra and A*.
 - D: "which shortest-path algorithm?" decision flowchart (unweighted → BFS; non-negative → Dijkstra/A*; negative → Bellman-Ford; all pairs → Floyd-Warshall; DAG → topo order DP).
 **Checks:** which vertex is settled next; distance labels after a relaxation; does A* with this heuristic guarantee the shortest path.
-**Sources:** `studies/dsa-13-single-source-shortest-paths.html`, `labs/graph-explorer.html`, `js/graph-model.js`.
+**Sources:** `studies/dsa-13-single-source-shortest-paths.html`, `labs/graph-studio.html`.
 
 ### 29 · Bellman-Ford & Floyd-Warshall
 **Big idea:** relaxing every edge V−1 times handles negative weights (and detects negative cycles); a triple loop over intermediate vertices gives all-pairs distances.

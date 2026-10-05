@@ -31,6 +31,7 @@
 
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function ch(c) { return '<b>' + esc(c) + '</b>'; }
+  function pl(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
   function chars(s) { return String(s).split(''); }
   function matrix(r, c, v) { var m = []; for (var i = 0; i < r; i++) { m.push([]); for (var j = 0; j < c; j++) m[i].push(v); } return m; }
 
@@ -291,7 +292,7 @@
       push({ kind: 'look', table: board.snap({ cursor: [i, j], hr: i, hc: j, cells: over, arrows: arrows }), word: words({ ai: i, bj: j }), cands: cands,
         line: ['diag', 'del', 'ins'], vars: vars,
         predict: { i: i, j: j, same: same, vD: vD, vU: vU, vL: vL, value: dp[i][j], choice: t.choice[i][j] },
-        caption: 'Three ways to end up with the first ' + j + ' letters of B from the first ' + i + ' of A: <b>↖</b> ' + (same ? 'keep ' + ch(a[i - 1]) + ' (letters equal, free)' : 'replace ' + ch(a[i - 1]) + ' by ' + ch(b[j - 1])) + ' costs ' + vD + '; <b>↑</b> delete ' + ch(a[i - 1]) + ' costs ' + vU + '; <b>←</b> insert ' + ch(b[j - 1]) + ' costs ' + vL + '.' });
+        caption: 'Three ways to end up with the first ' + j + (j === 1 ? ' letter' : ' letters') + ' of B from the first ' + i + ' of A: <b>↖</b> ' + (same ? 'keep ' + ch(a[i - 1]) + ' (letters equal, free)' : 'replace ' + ch(a[i - 1]) + ' by ' + ch(b[j - 1])) + ' costs ' + vD + '; <b>↑</b> delete ' + ch(a[i - 1]) + ' costs ' + vU + '; <b>←</b> insert ' + ch(b[j - 1]) + ' costs ' + vL + '.' });
       var choice = t.choice[i][j], best = dp[i][j] = Math.min(vD, vU, vL);
       board.set(i, j, best);
       filled++;
@@ -343,7 +344,7 @@
     }
     push({ kind: 'replay', table: replayTable(-1, 'announce', fwdPath[0]), word: words({ mode: 'edit', cur: clone(cur), ai: 0, bj: 0, done: 0, next: 0 }), cands: null, line: 'trace',
       vars: { i: 0, j: 0, 'a[i]': null, 'b[j]': null, 'dp[i][j]': 0 },
-      caption: 'Now replay the path from the top-left corner. Each arrow becomes one edit to the word: the word <b>' + esc(a || '(empty)') + '</b> should turn into <b>' + esc(b || '(empty)') + '</b> in exactly ' + E + ' edits.' , edits: 0 });
+      caption: 'Now replay the path from the top-left corner. Each arrow becomes one edit to the word: the word <b>' + esc(a || '(empty)') + '</b> should turn into <b>' + esc(b || '(empty)') + '</b> in exactly ' + pl(E, 'edit') + '.' , edits: 0 });
     script.ops.forEach(function (op, k) {
       var cellAfter = fwdPath[k + 1];
       var pos = producedB;                                // tiles before this edit: kept, replaced or inserted so far
@@ -373,7 +374,7 @@
     push({ kind: 'done', table: board.snap({ cells: Object.assign({}, pathCells), arrows: pathArrows.slice() }),
       word: words({ mode: 'edit', cur: clone(cur), ai: m, bj: n, done: cur.length, next: cur.length, finished: true }), cands: null, line: 'ret',
       vars: { i: 0, j: 0, 'a[i]': null, 'b[j]': null, 'dp[i][j]': E },
-      caption: E === 0 ? 'The words are identical: zero edits.' : '<b>' + esc(a || '(empty)') + '</b> became <b>' + esc(b || '(empty)') + '</b> in <b>' + E + '</b> edits, and no shorter script exists: every cell along the way was a minimum.', edits: edits });
+      caption: E === 0 ? 'The words are identical: zero edits.' : '<b>' + esc(a || '(empty)') + '</b> became <b>' + esc(b || '(empty)') + '</b> in <b>' + E + '</b> ' + (E === 1 ? 'edit' : 'edits') + ', and no shorter script exists: every cell along the way was a minimum.', edits: edits });
     return S;
   }
 
@@ -424,7 +425,7 @@
       push({ kind: 'look', table: board.snap({ cursor: [i, w], hr: i, hc: w, cells: over, arrows: arrows }), stage: stage(i), cands: cands, line: ['skip', 'cmp'], vars: vars, reads: reads,
         predict: { i: i, w: w, fits: fits, skip: skip, take: take, value: dp[i][w] },
         caption: fits
-          ? 'Capacity ' + w + ', item #' + i + ' weighs ' + it.w + ' and is worth ' + it.v + '. <b>Skip</b> it: keep the best of the row above (' + skip + '). <b>Take</b> it: use the ' + (w - it.w) + ' units left over, best value there is ' + dp[i - 1][w - it.w] + ', plus ' + it.v + ' = ' + take + '.'
+          ? 'Capacity ' + w + ', item #' + i + ' weighs ' + it.w + ' and is worth ' + it.v + '. <b>Skip</b> it: keep the best of the row above (' + skip + '). <b>Take</b> it: use the ' + (w - it.w) + (w - it.w === 1 ? ' unit' : ' units') + ' left over, best value there is ' + dp[i - 1][w - it.w] + ', plus ' + it.v + ' = ' + take + '.'
           : 'Capacity ' + w + ' is smaller than item #' + i + ' (weight ' + it.w + '), so it cannot go in. The only choice is to <b>skip</b>: copy the cell above (' + skip + ').' });
       var tookIt = t.take[i][w];
       board.set(i, w, dp[i][w]); filled++;
@@ -502,7 +503,7 @@
       S.push({ kind: 'good', strip: { a: a, b: b, i: 0, j: 0, links: links, result: s, L: s.length, bad: false },
         caption: '<b>' + esc(s) + '</b> appears in both, in the same order. Length ' + s.length + (s.length === best ? ': the best possible.' : '. Can we do better?'), count: { cand: s.length, best: bestSoFar } });
     });
-    S.push({ kind: 'end', strip: S[S.length - 1].strip, caption: 'A has ' + a.length + ' letters, so it has 2<sup>' + a.length + '</sup> = ' + Math.pow(2, a.length) + ' subsequences to test against B. The table you are about to build finds the best in ' + (a.length * b.length) + ' small steps.', count: { cand: best, best: best } });
+    S.push({ kind: 'end', strip: S[S.length - 1].strip, caption: 'A has ' + pl(a.length, 'letter') + ', so it has 2<sup>' + a.length + '</sup> = ' + pl(Math.pow(2, a.length), 'subsequence') + ' to test against B. The table you are about to build finds the best in ' + (a.length * b.length) + ' small steps.', count: { cand: best, best: best } });
     return S;
   }
 
@@ -546,7 +547,7 @@
         pa.push(arrow(to, [rr, cc], 'path'));
         rr = to[0]; cc = to[1]; pc[cellKey(rr, cc)] = 'path';
       }
-      push({ kind: 'route', table: board.snap({ cells: pc, arrows: pa }), caption: 'One of those ' + total + ' routes, found by walking back from the goal through any neighbour that has a positive count.' });
+      push({ kind: 'route', table: board.snap({ cells: pc, arrows: pa }), caption: 'One of those ' + pl(total, 'route') + ', found by walking back from the goal through any neighbour that has a positive count.' });
     }
     return S;
   }
@@ -589,7 +590,7 @@
           : 'The ' + grp.length + ' cells on this anti-diagonal read only earlier diagonals, so they do not depend on each other: they could even be computed at the same time.' });
     }
     if (order === 'bad') push({ kind: 'end', table: board.snap(), caption: 'This order breaks the one rule: <b>finish a cell\'s inputs first</b>. Row by row, column by column and diagonal by diagonal all obey it.' });
-    else push({ kind: 'end', table: board.snap(), caption: 'Whole table filled, ' + (order === 'diag' ? (2 * n - 1) + ' diagonals' : n * n + ' cells') + ', with no cell ever reading an empty neighbour.' });
+    else push({ kind: 'end', table: board.snap(), caption: 'Whole table filled, ' + (order === 'diag' ? pl(2 * n - 1, 'diagonal') : pl(n * n, 'cell')) + ', with no cell ever reading an empty neighbour.' });
     return S;
   }
 

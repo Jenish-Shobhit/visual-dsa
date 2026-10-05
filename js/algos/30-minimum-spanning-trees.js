@@ -345,7 +345,7 @@
         snap('push', {
           line: 'push', flow: 'push',
           caption: addedNow.length
-            ? 'New vertex ' + top.v + ' opens new ways out: push ' + addedNow.map(function (e) { return dash(e) + ' (' + e.w + ')'; }).join(', ') + '.' + (dead ? ' ' + plural(dead, 'entry', 'entries') + ' in the queue now point inside the tree (dimmed): they are dead, but stay until they are popped.' : '')
+            ? 'New vertex ' + top.v + ' opens new ways out: push ' + addedNow.map(function (e) { return dash(e) + ' (' + e.w + ')'; }).join(', ') + '.' + (dead ? ' ' + plural(dead, 'entry', 'entries') + ' in the queue now ' + (dead === 1 ? 'points' : 'point') + ' inside the tree (dimmed): they are dead, but stay until they are popped.' : '')
             : top.v + ' has no edge to a vertex outside the tree, so nothing is pushed.' + (dead ? ' ' + plural(dead, 'dead entry', 'dead entries') + ' remain in the queue.' : '')
         });
       }
@@ -356,7 +356,7 @@
     snap('done', {
       line: 'done', flow: 'done',
       caption: complete
-        ? 'All ' + n + ' vertices are in the tree: ' + plural(n - 1, 'edge') + ', total weight <b>' + total + '</b>.' + (deadLeft ? ' The ' + plural(deadLeft, 'entry', 'entries') + ' still in the queue are dead, so Prim stops without popping them.' : '')
+        ? 'All ' + (n === 1 ? '1 vertex is' : n + ' vertices are') + ' in the tree: ' + plural(n - 1, 'edge') + ', total weight <b>' + total + '</b>.' + (deadLeft ? ' The ' + plural(deadLeft, 'entry', 'entries') + ' still in the queue are dead, so Prim stops without popping them.' : '')
         : 'The queue is empty but only ' + treeNodes.length + ' of ' + n + ' vertices are in the tree: ' + start + ' cannot reach the rest, so the graph is not connected. Prim gave the tree of ' + start + '’s component, weight <b>' + total + '</b>.'
     });
     return steps;

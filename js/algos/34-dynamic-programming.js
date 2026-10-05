@@ -27,6 +27,7 @@
 
   var INF = Infinity;
   function fmt(v) { return v === INF ? '∞' : String(v); }
+  function pl(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function range(n, s) { var out = []; for (var i = 0; i < n; i++) out.push((s || 0) + i); return out; }
 
@@ -179,9 +180,9 @@
     var result = call('c0');
     current = null;
     snap('end', memoMode
-      ? name(n) + ' = ' + result + ' with ' + calls + ' calls (' + hits + ' answered from the memo) instead of ' + naiveCalls(n) + '. Only ' + distinct + ' different questions exist.'
+      ? name(n) + ' = ' + result + ' with ' + pl(calls, 'call') + ' (' + hits + ' answered from the memo) instead of ' + naiveCalls(n) + '. Only ' + distinct + ' different questions exist.'
       : n < 2 ? name(n) + ' is a base case: one call, no repeats.'
-        : name(n) + ' = ' + result + ' after ' + calls + ' calls, but there are only ' + distinct + ' different questions: fib(0) to fib(' + n + '). ' + (calls - distinct) + ' calls were repeats.', null, null);
+        : name(n) + ' = ' + result + ' after ' + calls + ' calls, but there are only ' + distinct + ' different questions: fib(0) to fib(' + n + '). ' + (calls - distinct) + ((calls - distinct) === 1 ? ' call was a repeat.' : ' calls were repeats.'), null, null);
     return steps;
   }
   function ordinal(k) { return k === 2 ? 'second' : k === 3 ? 'third' : k === 4 ? 'fourth' : k === 5 ? 'fifth' : k + 'th'; }
@@ -204,15 +205,15 @@
       return steps;
     }
     push({ phase: 'tree', counter: tree.length,
-      caption: 'Every call plain recursion makes for <code>fib(' + n + ')</code>: ' + tree.length + ' circles. The number in each circle is its argument.' });
+      caption: 'Every call plain recursion makes for <code>fib(' + n + ')</code>: ' + pl(tree.length, 'circle') + '. The number in each circle is its argument.' });
     for (var k = n - 2; k >= 1; k--) {
       push({ phase: 'group', focus: k, counter: tree.length,
         caption: '<code>fib(' + k + ')</code> is computed <b>' + count[k] + ' times</b>. Every copy does the same work and returns the same value, ' + fib(k) + '.' });
     }
     push({ phase: 'repeats', counter: tree.length,
-      caption: 'Light up every repeat: ' + (tree.length - (n + 1)) + ' of the ' + tree.length + ' calls ask a question that was already answered.' });
+      caption: 'Light up every repeat: ' + (tree.length - (n + 1)) + ' of the ' + pl(tree.length, 'call') + (tree.length - (n + 1) === 1 ? ' asks a question that was' : ' ask a question that was') + ' already answered.' });
     push({ phase: 'collapse', counter: n + 1,
-      caption: 'Now glue together every call that asks the same question. ' + tree.length + ' circles collapse into <b>' + (n + 1) + ' cells</b>, one per value of k.' });
+      caption: 'Now glue together every call that asks the same question. ' + pl(tree.length, 'circle') + (tree.length === 1 ? ' collapses' : ' collapse') + ' into <b>' + pl(n + 1, 'cell') + '</b>, one per value of k.' });
     push({ phase: 'dag', counter: n + 1,
       caption: 'The tree edges become arrows: cell k reads cells k − 1 and k − 2. No arrow points right to left, so this graph has no cycles: it is a <b>DAG</b>.' });
     for (var f = 0; f <= n; f++) {
@@ -220,7 +221,7 @@
         caption: f < 2 ? 'Fill the cells left to right. Cell ' + f + ' is a base case: fib(' + f + ') = ' + f + '.'
           : 'Cell ' + f + ' = cell ' + (f - 1) + ' + cell ' + (f - 2) + ' = ' + fib(f - 1) + ' + ' + fib(f - 2) + ' = <b>' + fib(f) + '</b>. Both inputs are already filled.' });
     }
-    steps[steps.length - 1].caption += ' Done: ' + (n + 1) + ' cells instead of ' + tree.length + ' calls.';
+    steps[steps.length - 1].caption += ' Done: ' + pl(n + 1, 'cell') + ' instead of ' + pl(tree.length, 'call') + '.';
     return steps;
   }
 
@@ -643,7 +644,7 @@
       return best;
     }
     solve(amount);
-    pushL('Top-down finished: ' + Object.keys(done).length + ' of ' + (amount + 1) + ' cells were ever needed (' + calls + ' calls, deepest stack ' + maxDepth + ').', null, { end: true });
+    pushL('Finished: ' + Object.keys(done).length + ' of ' + pl(amount + 1, 'cell') + (Object.keys(done).length === 1 ? ' was' : ' were') + ' ever needed (' + pl(calls, 'call') + ', deepest stack ' + maxDepth + ').', null, { end: true });
     // ---- bottom-up
     var dp = [], filledR = 0;
     function cellsR(active) {
@@ -660,7 +661,7 @@
         caption: a === 0 ? 'dp[0] = 0: the base case comes first.' : 'dp[' + a + '] = ' + fmt(best) + ', read from ' + (arcs.length ? arcs.map(function (x) { return 'dp[' + x.from[1] + ']'; }).join(', ') : 'nothing (no coin fits)') + '.' });
     }
     R.push({ cells: cellsR(null), arcs: [], cursor: null, depth: 0, filled: filledR, end: true,
-      caption: 'Bottom-up finished: all ' + (amount + 1) + ' cells filled in index order, with no recursion at all.' });
+      caption: 'Finished: all ' + pl(amount + 1, 'cell') + ' filled in index order, with no recursion at all.' });
     var steps = [], N = Math.max(L.length, R.length);
     for (var i = 0; i < N; i++) {
       var l = L[Math.min(i, L.length - 1)], r = R[Math.min(i, R.length - 1)];
@@ -716,7 +717,7 @@
       inc.forEach(function (e) { relaxed++; es[e.id] = 'compare'; if (dist[e.from] + 1 < best) { best = dist[e.from] + 1; bestE = e; } });
       var ns = {}; ns[v] = 'active'; inc.forEach(function (e) { ns[e.from] = 'compare'; });
       snap({ kind: 'look', cursor: v, nodeStates: ns, edgeStates: es, relaxed: relaxed,
-        caption: inc.length ? 'Amount ' + v + ': ' + inc.length + ' arrow' + (inc.length === 1 ? '' : 's') + ' come in, from ' + inc.map(function (e) { return fmt(e.from); }).join(', ') + '. All of those are already settled.' : 'Amount ' + v + ': no arrow comes in.' });
+        caption: inc.length ? 'Amount ' + v + ': ' + inc.length + ' arrow' + (inc.length === 1 ? ' comes' : 's come') + ' in, from ' + inc.map(function (e) { return fmt(e.from); }).join(', ') + '. ' + (inc.length === 1 ? 'That one is' : 'All of those are') + ' already settled.' : 'Amount ' + v + ': no arrow comes in.' });
       dist[v] = best; par[v] = bestE;
       if (bestE) parEdge[v] = bestE.id;
       var ns2 = {}; ns2[v] = best === INF ? 'muted' : 'active';
@@ -730,7 +731,7 @@
       path.forEach(function (p) { ns3[p] = 'path'; });
       Object.keys(parEdge).forEach(function (k) { if (!es3[parEdge[k]]) es3[parEdge[k]] = 'muted'; });
       snap({ kind: 'path', nodeStates: ns3, edgeStates: es3, relaxed: relaxed,
-        caption: 'Follow the parents back from ' + target + ': <b>' + path.join(' → ') + '</b>. ' + (path.length - 1) + ' arrows, so ' + (path.length - 1) + ' coins. That is dynamic programming as a shortest path in a DAG.' });
+        caption: 'Follow the parents back from ' + target + ': <b>' + path.join(' → ') + '</b>. ' + pl(path.length - 1, 'arrow') + ', so ' + pl(path.length - 1, 'coin') + '. That is dynamic programming as a shortest path in a DAG.' });
       // greedy comparison: always take the biggest coin that fits
       var g = [0], gs = {}, gn = {}, left = target, at = 0, ok = true;
       while (left > 0) {
@@ -743,7 +744,7 @@
         var es4 = Object.assign({}, es3); Object.keys(gs).forEach(function (k) { es4[k] = 'error'; });
         var dashed = {}; Object.keys(gs).forEach(function (k) { dashed[k] = true; });
         snap({ kind: 'greedy', nodeStates: gn, edgeStates: es4, dashed: dashed, relaxed: relaxed,
-          caption: 'Greedy grabs the biggest coin each time: <b>' + g.join(' → ') + '</b>, ' + (g.length - 1) + ' coins. It commits early; the DAG compares every route and finds ' + (path.length - 1) + '.' });
+          caption: 'Greedy grabs the biggest coin each time: <b>' + g.join(' → ') + '</b>, ' + pl(g.length - 1, 'coin') + '. It commits early; the DAG compares every route and finds ' + (path.length - 1) + '.' });
       }
     }
     return steps;

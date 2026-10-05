@@ -303,7 +303,7 @@
         slots[slot] = it.id; status[it.id] = 'kept'; kept++;
         steps.push(snap('fill', t, {
           line: ['room', 'fill'], flow: 'fill', tokenState: 'kept', hot: slot,
-          caption: 'Only ' + i + ' of ' + k + ' places are used, so <b>' + esc(it.label) + '</b> goes straight in. Probability of keeping it so far: 1.'
+          caption: 'Only ' + i + ' of ' + plural(k, 'place') + ' ' + (i === 1 ? 'is' : 'are') + ' used, so <b>' + esc(it.label) + '</b> goes straight in. Probability of keeping it so far: 1.'
         }));
       } else {
         var j = 1 + Math.floor(rnd() * i);
@@ -456,7 +456,7 @@
         var cap;
         if (nx === null) cap = 'Level ' + s.level + ': nothing to the right of ' + nm(s.cur) + ' on this level. Don’t go right: <b>drop down</b>' + (s.level > 1 ? '.' : ', and this is the bottom, so the search is at its end.');
         else if (s.go) cap = 'Level ' + s.level + ': the next tower is <b>' + nx.key + '</b>, and ' + nx.key + ' &lt; ' + key + '. Still short of the target, so hop right.';
-        else cap = 'Level ' + s.level + ': the next tower is <b>' + nx.key + '</b>, and ' + nx.key + ' ' + (nx.key === key ? '=' : '&ge;') + ' ' + key + '. ' + (nx.key === key ? 'The target is right there, but the search still goes to the bottom level to confirm.' : 'Hopping would overshoot') + (s.level > 1 ? ', so <b>drop down</b> a level.' : '.');
+        else cap = 'Level ' + s.level + ': the next tower is <b>' + nx.key + '</b>, and ' + nx.key + ' ' + (nx.key === key ? '=' : '&ge;') + ' ' + key + '. ' + (nx.key === key ? (s.level > 1 ? 'The target is right there, but the search still drops to the bottom level to confirm.' : 'The target is right there, so this is the answer.') : 'Hopping would overshoot' + (s.level > 1 ? ', so <b>drop down</b> a level.' : '.'));
         steps.push(skipSnap(list, {
           kind: 'peek', target: key, cur: cur, peek: { key: nx ? nx.key : null, level: s.level, go: s.go }, path: s.path || lastPath(steps), states: st, cost: cost,
           line: insertMode ? 'search' : 'peek', vars: { x: nm(s.cur), level: s.level, target: key }, caption: cap
@@ -665,7 +665,7 @@
       }));
       steps.push(bloomSnap(st, 'end', {
         word: word, idx: idx, line: null,
-        caption: '<b>' + w + '</b> is in. The filter stores no words at all: only ' + st.m + ' bits, ' + st.bits.reduce(function (a, b) { return a + b; }, 0) + ' of them set.'
+        caption: '<b>' + w + '</b> is in. The filter stores no words at all: only ' + plural(st.m, 'bit') + ', ' + st.bits.reduce(function (a, b) { return a + b; }, 0) + ' of them set.'
       }));
       return { steps: steps, state: st };
     }

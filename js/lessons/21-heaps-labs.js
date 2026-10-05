@@ -287,7 +287,7 @@
   function steppingFigure(figSel, variants, legend, opts) {
     opts = opts || {};
     var fig = V.$(figSel);
-    var pair = L21.pair(fig.querySelector('[data-stage]'), { label: fig.querySelector('.fig__title').textContent });
+    var pair = L21.pair(fig.querySelector('[data-stage]'), { label: fig.querySelector('.fig__title').textContent, treeOptions: { levelHeight: 52 } });
     function stepsOf(v) { return v.steps(); }
     var cur = variants[0], steps = stepsOf(cur);
     pair.prepare(steps);

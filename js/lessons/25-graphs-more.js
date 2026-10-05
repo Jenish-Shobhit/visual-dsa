@@ -28,7 +28,7 @@
         { id: 'list', label: 'list, ' + d + ' friends each', fn: function (x) { return x + x * Math.min(d, x - 1); }, domain: [2, 200], state: 'path' }
       ];
       chart.render({
-        x: { label: 'number of vertices V', min: 2, max: 200 },
+        x: { label: fig.clientWidth < 520 ? 'vertices V' : 'number of vertices V', min: 2, max: 200 },
         y: log ? { label: 'cells of memory (log scale)', scale: 'log', min: 1, max: 100000 } : { label: 'cells of memory', min: 0, max: 40000 },
         series: series,
         highlight: [{ series: 'matrix', x: n, label: fmt(n * n) }, { series: 'list', x: n, label: fmt(n + n * Math.min(d, n - 1)) }]

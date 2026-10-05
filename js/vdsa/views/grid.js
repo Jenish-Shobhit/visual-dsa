@@ -323,7 +323,7 @@
       var gap = gapFor(G.cs), rr = cornerFor(G.cs), w = Math.max(0.5, G.cs - gap);
       var useRound = rr >= 1.5 && typeof c2d.roundRect === 'function';
       var fs = valueFont(G.cs);
-      var textFont = '600 ' + fs + 'px ' + fontSans, labFont = '500 ' + Math.max(7, Math.round(fs * 0.62)) + 'px ' + fontSans;
+      var textFont = '600 ' + fs + 'px ' + fontSans, labFont = '500 ' + Math.max(8, Math.round(fs * 0.72)) + 'px ' + fontSans, labFontSolo = '600 ' + fs + 'px ' + fontSans;
       c2d.textAlign = 'center'; c2d.textBaseline = 'middle';
       S.cells.each(function (rec) {
         var c = rec.cur, o = c.o === undefined ? 1 : c.o;
@@ -348,15 +348,15 @@
           if (sc !== 1) { c2d.save(); c2d.translate(x + w / 2, y + w / 2); c2d.scale(sc, sc); c2d.fillText(txt, 0, 0.5); c2d.restore(); }
           else c2d.fillText(txt, x + w / 2, y + w / 2 + 0.5);
         }
-        if (rec.lab) {
+        if (rec.lab && (!txt || G.cs >= (opts.subLabelMinCell || 0))) {
           c2d.fillStyle = rgba(c.ir, c.ig, c.ib, c.ia * o * 0.8);
-          c2d.font = labFont;
+          c2d.font = txt ? labFont : labFontSolo;
           if (txt) { c2d.textAlign = 'left'; c2d.fillText(rec.lab, x + 3, y + fs * 0.5); c2d.textAlign = 'center'; }
           else c2d.fillText(rec.lab, x + w / 2, y + w / 2 + 0.5);
         }
       });
     }
-    function valueFont(cs) { return vz.clamp(Math.round(cs * 0.36), 7, 15); }
+    function valueFont(cs) { return vz.clamp(Math.round(cs * 0.42), 8, 15); }
 
     function switchRenderer(useCanvas) {
       S.cells.clear();
@@ -633,11 +633,11 @@
               if (!rec.counting) vz.text(t, shown);
               if (isNew || geomChanged || textChanged) vz.place(t, rec.cx, rec.cy);
             } else dropText(rec, 'txt');
-            if (lab && G.cs >= 16) {
+            if (lab && G.cs >= 16 && (!shown || G.cs >= (opts.subLabelMinCell || 0))) {   // subLabelMinCell: drop a corner label beside a value when the cell is too small for both
               var le = ensureText(rec, 'lab');
               vz.state(le, st);
               vz.text(le, lab);
-              var lfs = Math.max(7, Math.round(fs * 0.62));
+              var lfs = shown ? Math.max(8, Math.round(fs * 0.72)) : fs;   // a lone label is the cell's value: full size
               vz.set(le, 'font-size', lfs);
               if (shown) { vz.set(le, 'text-anchor', 'start'); vz.set(le, 'x', vz.n2(rec.cx - G.cs / 2 + gap / 2 + 3)); vz.set(le, 'y', vz.n2(rec.cy - G.cs / 2 + gap / 2 + lfs * 0.75)); }
               else { vz.set(le, 'text-anchor', 'middle'); vz.set(le, 'x', vz.n2(rec.cx)); vz.set(le, 'y', vz.n2(rec.cy)); }

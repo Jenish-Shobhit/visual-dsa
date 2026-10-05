@@ -40,7 +40,8 @@
     ]);
     var stage = fig.querySelector('[data-stage]');
     var vals = { du: 5, w: 3, dv: 12 };   // dv null = ∞
-    var W = 680, H = 300, U = { x: 150, y: 160 }, P = { x: 530, y: 160 }, R = 34, mid = (U.x + P.x) / 2;
+    var narrow = stage.clientWidth > 0 && stage.clientWidth < 520;   // phones: draw in a narrower box so the text is not shrunk to 7px
+    var W = narrow ? 440 : 680, H = 300, U = { x: narrow ? 95 : 150, y: 160 }, P = { x: narrow ? 345 : 530, y: 160 }, R = 34, mid = (U.x + P.x) / 2;
     var mid_id = V.uid('rx');
     var svg = s('svg', { class: 'dj-rx', viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Two vertices u and v joined by an edge; a candidate distance travels from u to v and is compared with the distance v already has.' });
     svg.appendChild(s('defs', {}, s('marker', { id: mid_id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerUnits: 'userSpaceOnUse', markerWidth: 13, markerHeight: 13, orient: 'auto-start-reverse' }, s('path', { d: 'M0 0 L10 5 L0 10 z', class: 'rx-arrowhead' }))));

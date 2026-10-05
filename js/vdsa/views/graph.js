@@ -496,12 +496,19 @@
       vz.place(rec.el, c.x, c.y, c.s);
       vz.opacity(rec.el, c.o);
     }
+    function labelFs(label) {
+      var f = clamp(Math.round(R * 0.72), 10, 15), maxW = R * (opts.uniformLabels ? 1.9 : 1.7);
+      if (label) { var w = measureSans(label, f, 650); if (w > maxW) f = Math.max(8, Math.floor(f * maxW / w)); }
+      return f;
+    }
     function nodeContent(rec, n) {
       vz.set(rec.shape, 'r', r2(R));
       vz.set(rec.focus, 'r', r2(R + 4));
       var label = n.label === null || n.label === undefined ? '' : String(n.label);
-      var fs = clamp(Math.round(R * 0.72), 10, 15), maxW = R * 1.7;
-      if (label) { var w = measureSans(label, fs, 650); if (w > maxW) fs = Math.max(8, Math.floor(fs * maxW / w)); }
+      var fs = labelFs(label);
+      if (opts.uniformLabels && last && last.nodes) {   // opt-in: every label in the graph uses the size the widest one needs
+        last.nodes.forEach(function (o) { var f = labelFs(o.label === null || o.label === undefined ? '' : String(o.label)); if (f < fs) fs = f; });
+      }
       vz.text(rec.txt, label);
       vz.set(rec.txt, 'font-size', fs);
       if (n.sub !== undefined && n.sub !== null && n.sub !== '') {
@@ -514,7 +521,7 @@
           var bg = vz.svg('g', { class: 'vz-badge' }, rec.el);
           rec.badge = { g: bg, rect: vz.svg('rect', { rx: 8, ry: 8, height: 16, y: -8 }, bg), text: vz.svg('text', { 'text-anchor': 'middle', dy: '.35em' }, bg) };
         }
-        var bf = PF - 1, bh = bf + 6, t = vz.fmt(n.badge), bw = Math.max(bh, measure(t, bf, 650) + 9);
+        var bf = PF + 1, bh = bf + 6, t = vz.fmt(n.badge), bw = Math.max(bh, measure(t, bf, 650) + 9);
         vz.text(rec.badge.text, t);
         vz.set(rec.badge.rect, 'width', r2(bw)); vz.set(rec.badge.rect, 'x', r2(-bw / 2));
         vz.set(rec.badge.rect, 'height', bh); vz.set(rec.badge.rect, 'y', -bh / 2); vz.set(rec.badge.rect, 'rx', bh / 2); vz.set(rec.badge.rect, 'ry', bh / 2);
@@ -636,7 +643,7 @@
       R = clamp(opts.nodeRadius * Math.sqrt(Math.min(1, F.k)), opts.minRadius, opts.nodeRadius);
       AS = clamp(R * 0.56, 8, 11.5);
       PIPE = clamp(R * 0.55, 7, 12);
-      PF = Math.round(clamp(R * 0.6, 9.5, 11) * 2) / 2;      // pill / badge font size
+      PF = Math.round(clamp(R * 0.6, 10, 11) * 2) / 2;      // pill / badge font size
       var pfv = PF + 'px';
       if (svg.style.getPropertyValue('--vz-gf') !== pfv) svg.style.setProperty('--vz-gf', pfv);
       ctx.setHeight(F.height);

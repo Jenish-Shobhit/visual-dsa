@@ -166,7 +166,7 @@
     var drawBtn = fig.querySelector('[data-draw]');
     var editor = fig.querySelector('[data-editor]');
     var G = L.MAP, start = 'S', target = 'T', directed = false;
-    L.legend(fig.querySelector('[data-legend]'), L.LEGEND_DIJKSTRA.concat([{ state: 'path', shape: 'line', label: 'Route to target' }]));
+    L.legend(fig.querySelector('[data-legend]'), L.LEGEND_DIJKSTRA);
 
     var view = V.views.graph(stage, { bounds: { w: 1000, h: 600 }, maxHeight: 420, draggable: true, nodeRadius: 22, minRadius: 14, label: 'Lab graph' });
     var pq = L.pqPanel(fig.querySelector('[data-pq]'));

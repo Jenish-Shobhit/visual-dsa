@@ -319,17 +319,17 @@
   /* ================================================================== decision diagram */
   var DECISION = {
     nodes: [
-      { id: 'q1', type: 'decision', text: 'Prefix queries?', col: 2, row: 0, maxWidth: 150 },
-      { id: 'q2', type: 'decision', text: 'Set never changes?', col: 1, row: 1, maxWidth: 150 },
-      { id: 'q4', type: 'decision', text: 'Need order or ranges?', col: 3, row: 1, maxWidth: 150 },
-      { id: 'sortedA', type: 'end', text: 'Sorted array + binary search', col: 0, row: 2, maxWidth: 140 },
-      { id: 'q3', type: 'decision', text: 'Memory tight?', col: 2, row: 2, maxWidth: 140 },
-      { id: 'radix', type: 'end', text: 'Radix tree', col: 1, row: 3, maxWidth: 130 },
-      { id: 'trie', type: 'end', text: 'Plain trie', col: 2, row: 3, maxWidth: 130 },
-      { id: 'q5', type: 'decision', text: 'Data changes a lot?', col: 3, row: 2, maxWidth: 140 },
-      { id: 'hash', type: 'end', text: 'Hash map / set', col: 4, row: 2, maxWidth: 130 },
-      { id: 'bst', type: 'end', text: 'Balanced tree', col: 3, row: 3, maxWidth: 130 },
-      { id: 'sortedB', type: 'end', text: 'Sorted array', col: 4, row: 3, maxWidth: 130 }
+      { id: 'q1', type: 'decision', text: 'Prefix queries?', col: 2, row: 0, maxWidth: 70 },
+      { id: 'q2', type: 'decision', text: 'Set never changes?', col: 1, row: 1, maxWidth: 70 },
+      { id: 'q4', type: 'decision', text: 'Need order or ranges?', col: 3, row: 1, maxWidth: 70 },
+      { id: 'sortedA', type: 'end', text: 'Sorted array + binary search', col: 0, row: 2, maxWidth: 70 },
+      { id: 'q3', type: 'decision', text: 'Memory tight?', col: 2, row: 2, maxWidth: 70 },
+      { id: 'radix', type: 'end', text: 'Radix tree', col: 1, row: 3, maxWidth: 70 },
+      { id: 'trie', type: 'end', text: 'Plain trie', col: 2, row: 3, maxWidth: 70 },
+      { id: 'q5', type: 'decision', text: 'Data changes a lot?', col: 3, row: 2, maxWidth: 70 },
+      { id: 'hash', type: 'end', text: 'Hash map / set', col: 4, row: 2, maxWidth: 70 },
+      { id: 'bst', type: 'end', text: 'Balanced tree', col: 3, row: 3, maxWidth: 70 },
+      { id: 'sortedB', type: 'end', text: 'Sorted array', col: 4, row: 3, maxWidth: 70 }
     ],
     edges: [
       { from: 'q1', to: 'q2', label: 'yes' }, { from: 'q1', to: 'q4', label: 'no' },
@@ -369,7 +369,7 @@
       path = ['q1']; taken = {};
       view.render({ active: 'q1' }, { duration: 300 });
       verdict.innerHTML = '<p class="tr-verdict__hint">Click <b>yes</b> or <b>no</b> on the arrows leaving the highlighted question.</p>';
-      followActive('q1');
+      stage.scrollTo({ left: 0, behavior: 'auto' });   // open at the left edge; later answers scroll to follow
     }
     view.on('choose', function (e) {
       path.push(e.to); taken[e.node + '->' + e.to] = 'path';

@@ -14,17 +14,17 @@
     avl: {
       nodes: [
         { id: 'start', type: 'start', text: 'Walk back up: visit node v', col: 1.5, row: 0 },
-        { id: 'upd', type: 'process', text: 'Update height(v), then bf ← height(left) − height(right)', col: 1.5, row: 1, maxWidth: 200 },
+        { id: 'upd', type: 'process', text: 'Update height(v), then bf ← height(left) − height(right)', col: 1.5, row: 1, maxWidth: 96 },
         { id: 'dec1', type: 'decision', text: 'bf = ±2 ?', col: 1.5, row: 2 },
-        { id: 'ok', type: 'end', text: 'Balanced here: go on to the parent', col: 3.3, row: 2, maxWidth: 150 },
+        { id: 'ok', type: 'end', text: 'Balanced here: go on to the parent', col: 3, row: 2, maxWidth: 100 },
         { id: 'dec2', type: 'decision', text: 'v leans left ?', col: 1.5, row: 3 },
-        { id: 'dec3', type: 'decision', text: 'left child leans right ?', col: 0.5, row: 4, maxWidth: 130 },
-        { id: 'dec4', type: 'decision', text: 'right child leans left ?', col: 2.5, row: 4, maxWidth: 130 },
-        { id: 'LL', type: 'process', text: 'LL: rotate right at v', col: 0, row: 5, maxWidth: 120 },
-        { id: 'LR', type: 'process', text: 'LR: rotate left at the child, then right at v', col: 1, row: 5, maxWidth: 150 },
-        { id: 'RL', type: 'process', text: 'RL: rotate right at the child, then left at v', col: 2, row: 5, maxWidth: 150 },
-        { id: 'RR', type: 'process', text: 'RR: rotate left at v', col: 3, row: 5, maxWidth: 120 },
-        { id: 'done', type: 'end', text: 'Height restored: go on to the parent', col: 1.5, row: 6.3, maxWidth: 200 }
+        { id: 'dec3', type: 'decision', text: 'left child leans right ?', col: 0.5, row: 4, maxWidth: 96 },
+        { id: 'dec4', type: 'decision', text: 'right child leans left ?', col: 2.5, row: 4, maxWidth: 96 },
+        { id: 'LL', type: 'process', text: 'LL: rotate right at v', col: 0, row: 5, maxWidth: 96 },
+        { id: 'LR', type: 'process', text: 'LR: rotate left at the child, then right at v', col: 1, row: 5, maxWidth: 100 },
+        { id: 'RL', type: 'process', text: 'RL: rotate right at the child, then left at v', col: 2, row: 5, maxWidth: 100 },
+        { id: 'RR', type: 'process', text: 'RR: rotate left at v', col: 3, row: 5, maxWidth: 96 },
+        { id: 'done', type: 'end', text: 'Height restored: go on to the parent', col: 1.5, row: 6.3, maxWidth: 96 }
       ],
       edges: [
         { from: 'start', to: 'upd' },

@@ -328,7 +328,7 @@
   function kahnLab(fig) {
     var G = L.COURSES, pick = 'fifo';
     var stage = fig.querySelector('[data-stage]');
-    var view = V.views.graph(stage, { directed: true, allowSelfLoops: true, bounds: { w: 1000, h: 600 }, minRadius: 16, maxHeight: 430, label: 'Kahn lab graph' });
+    var view = V.views.graph(stage, { directed: true, allowSelfLoops: true, bounds: { w: 1000, h: 600 }, minRadius: 20, uniformLabels: true, maxHeight: 430, label: 'Kahn lab graph' });
     var box = fig.querySelector('[data-container]'), qHost = h('div'), sHost = h('div');
     box.appendChild(qHost); box.appendChild(sHost);
     var qv = V.views.queue(qHost, { cellSize: 36, label: 'Ready set (queue)' });
@@ -419,7 +419,7 @@
   function dfsLab(fig) {
     var G = L.COURSES;
     var stage = fig.querySelector('[data-stage]');
-    var view = V.views.graph(stage, { directed: true, allowSelfLoops: true, bounds: { w: 1000, h: 600 }, minRadius: 16, maxHeight: 430, label: 'DFS lab graph' });
+    var view = V.views.graph(stage, { directed: true, allowSelfLoops: true, bounds: { w: 1000, h: 600 }, minRadius: 20, uniformLabels: true, maxHeight: 430, label: 'DFS lab graph' });
     var strip = L.strip(fig.querySelector('[data-strip]'), { label: 'Answer so far, front first', empty: 'nothing finished yet' });
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: DFS_CODE, default: 'pseudo', title: 'dfs', maxHeight: 340 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { u: 'active', v: 'compare', stack: 'frontier', order: 'done' } });
@@ -489,7 +489,7 @@
   function sccLab(fig) {
     var G = SCC_PRESETS[0].g;
     var stage = fig.querySelector('[data-stage]');
-    var view = V.views.graph(stage, { directed: true, allowSelfLoops: true, bounds: { w: 1000, h: 600 }, nodeRadius: 26, minRadius: 16, maxHeight: 430, label: 'Strongly connected components lab graph' });
+    var view = V.views.graph(stage, { directed: true, allowSelfLoops: true, bounds: { w: 1000, h: 600 }, nodeRadius: 26, minRadius: 20, uniformLabels: true, maxHeight: 430, label: 'Strongly connected components lab graph' });
     var stripTitle = fig.querySelector('[data-strip-title]');
     var strip = L.strip(fig.querySelector('[data-strip]'), { label: 'Finish stack', empty: 'empty' });
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: SCC_CODE, default: 'pseudo', title: 'scc', maxHeight: 340 });

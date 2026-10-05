@@ -28,7 +28,7 @@
   function fghFigure(fig) {
     L.legend(fig.querySelector('[data-legend]'), [
       { state: 'visited', label: 'Expanded (number = g)' }, { state: 'active', label: 'Expanded last' },
-      { state: 'frontier', label: 'Frontier (big number = f, small = g + h)' }, { state: 'pivot', label: 'Target T' }
+      { state: 'frontier', label: fig.clientWidth < 520 ? 'Frontier (number = f)' : 'Frontier (big number = f, small = g + h)' }, { state: 'pivot', label: 'Target T' }
     ]);
     var R = 7, C = 11, S = [3, 1], T = [3, 9];
     var walls = [];
@@ -59,7 +59,7 @@
     }
     cells[key(T[0], T[1])] = { state: 'pivot', text: 'T' };
     walls.forEach(function (k) { cells[k] = { wall: true, state: 'muted' }; });
-    var view = V.views.grid(fig.querySelector('[data-stage]'), { mode: 'table', cellSize: 50, label: 'A search paused with its frontier labelled g plus h' });
+    var view = V.views.grid(fig.querySelector('[data-stage]'), { mode: 'table', cellSize: 50, subLabelMinCell: 34, label: 'A search paused with its frontier labelled g plus h' });
     view.render({ rows: R, cols: C, walls: walls, cells: cells }, { duration: 0 });
     tagCells(view, R, C, function (r, c) {
       var i = info[key(r, c)];

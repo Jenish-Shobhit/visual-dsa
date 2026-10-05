@@ -118,8 +118,8 @@
     var stages = { bst: fig.querySelector('[data-stage="bst"]'), avl: fig.querySelector('[data-stage="avl"]'), rb: fig.querySelector('[data-stage="rb"]') };
     var views = {
       bst: V.views.tree(stages.bst, { nodeSize: 26, minNodeSize: 16, levelHeight: 25, gap: 0.5, label: 'Plain binary search tree' }),
-      avl: V.views.tree(stages.avl, { nodeSize: 34, gap: 0.5, label: 'AVL tree' }),
-      rb: V.views.tree(stages.rb, { nodeSize: 34, gap: 0.5, label: 'Red-black tree' })
+      avl: V.views.tree(stages.avl, { nodeSize: 34, minNodeSize: 16, gap: 0.5, label: 'AVL tree' }),
+      rb: V.views.tree(stages.rb, { nodeSize: 34, minNodeSize: 16, gap: 0.5, label: 'Red-black tree' })
     };
     var meters = {};
     ['bst', 'avl', 'rb'].forEach(function (k) { meters[k] = fig.querySelector('[data-meter="' + k + '"]'); });
@@ -135,7 +135,7 @@
     function prepare(steps) { ['bst', 'avl', 'rb'].forEach(function (k) { views[k].reset(); views[k].prepare(steps.map(function (s) { return s.trees[k]; })); }); }
     prepare(res.steps);
     var player = V.player({
-      root: fig, steps: res.steps, baseStepMs: 1100, label: 'Race controls',
+      root: fig, steps: res.steps, startAt: res.steps.length - 1, baseStepMs: 1100, label: 'Race controls',
       caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'), counterLabels: L.LABELS,
       render: function (s, c) {
         ['bst', 'avl', 'rb'].forEach(function (k) {
@@ -149,7 +149,7 @@
     V.segmented(fig.querySelector('[data-seg]'), {
       label: 'Insertion order', value: 'sorted',
       options: [{ value: 'sorted', label: 'Sorted' }, { value: 'reversed', label: 'Reversed' }, { value: 'random', label: 'Random' }],
-      onChange: function (v) { var r = orders[v](); prepare(r.steps); player.setSteps(r.steps); }
+      onChange: function (v) { var r = orders[v](); prepare(r.steps); player.setSteps(r.steps, { index: r.steps.length - 1 }); }
     });
   }
 

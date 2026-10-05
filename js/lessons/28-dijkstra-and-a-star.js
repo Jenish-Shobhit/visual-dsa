@@ -62,7 +62,8 @@
     { state: 'done', label: 'Settled (final)' },
     { state: 'compare', shape: 'line', label: 'Edge being relaxed' },
     { state: 'frontier', shape: 'line', label: 'Best route so far' },
-    { state: 'done', shape: 'line', label: 'Shortest-path tree' }
+    { state: 'done', shape: 'line', label: 'Shortest-path tree' },
+    { state: 'pivot', label: 'Final route' }
   ];
 
   /* ================================================================== graph snapshots */
@@ -80,6 +81,7 @@
       if (step && step.dist && o.badge !== false) node.badge = fmtDist(step.dist[n.id]);
       if (step && step.parent && step.parent[n.id] && o.sub !== false) node.sub = 'via ' + step.parent[n.id];
       if (step && step.truth && step.wrong && step.wrong.indexOf(n.id) >= 0) { node.sub = 'really ' + step.truth[n.id]; node.badgeState = 'error'; }
+      if (node.state === 'path') node.state = 'pivot';   // the finished route gets its own colour: orange read as "edge being relaxed"
       if (o.mapNode) o.mapNode(node, step);
       return node;
     });
@@ -91,6 +93,7 @@
         edge.state = step.pulse.result === 'relax' ? 'active' : step.pulse.result === 'ignore' ? 'error' : 'compare';
         edge.pulse = true;
       }
+      if (edge.state === 'path') edge.state = 'pivot';
       if (o.mapEdge) o.mapEdge(edge, step);
       return edge;
     });

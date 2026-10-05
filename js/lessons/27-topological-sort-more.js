@@ -15,7 +15,7 @@
       { state: 'default', shape: 'outline', label: 'Not computed yet' }, { state: 'active', label: 'Computing now' }, { state: 'done', label: 'Finish time known' },
       { state: 'compare', shape: 'line', label: 'Prerequisite that finishes last' }, { state: 'path', label: 'Critical path' }
     ]);
-    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: 'auto', maxHeight: 400, label: 'Course graph with durations and earliest finish times' });
+    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: 'auto', minRadius: 17, uniformLabels: true, maxHeight: 400, label: 'Course graph with durations and earliest finish times' });
     V.player({
       root: fig, steps: steps, caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'), baseStepMs: 1200, label: 'Critical path controls',
       counterLabels: { done: 'Courses scheduled', best: 'Latest finish (weeks)' }, counterStates: { done: 'done', best: 'path' },
@@ -49,7 +49,7 @@
     lv.levels.forEach(function (Ly, i) { Ly.forEach(function (id) { roundOf[id] = i + 1; }); });
     var pos = L.layeredPos(g, { pad: 80 });
     var st1 = V.$('[data-mini="rounds"]');
-    var v1 = V.views.graph(st1, { directed: true, bounds: 'auto', maxHeight: 250, label: 'Courses grouped into rounds: everyone in a round can be taken together' });
+    var v1 = V.views.graph(st1, { directed: true, bounds: 'auto', minRadius: 17, uniformLabels: true, maxHeight: 250, label: 'Courses grouped into rounds: everyone in a round can be taken together' });
     v1.render(L.gs(g, { states: (function () { var o = {}; g.nodes.forEach(function (n) { o[n.id] = L.ccState(roundOf[n.id]); }); return o; }()) }, {
       pos: pos, mapNode: function (n) { n.sub = 'round ' + roundOf[n.id]; }
     }), { duration: 0 });
@@ -160,7 +160,7 @@
     if (!snap) for (i = 2; i < steps.length; i++) if (steps[i].kind === 'take' && steps[i - 1].ready.length >= 2) { snap = steps[i - 1]; break; }
     var state = Object.assign({}, snap, { states: Object.assign({}, snap.states), pulse: null });
     Object.keys(state.states).forEach(function (id) { if (state.states[id] === 'active') state.states[id] = 'done'; });
-    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, label: 'Kahn paused mid-run', maxHeight: 340 });
+    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, minRadius: 17, uniformLabels: true, label: 'Kahn paused mid-run', maxHeight: 340 });
     view.render(L.gs(g, state, { badge: 'indeg', sub: 'pos' }), { duration: 0 });
     L.tagNodes(view, function (id) { return L.COURSE_NAMES[id] + ' (' + id + ')'; });
     var qv = V.views.queue(fig.querySelector('[data-container]'), { cellSize: 36, label: 'Ready set' });
@@ -182,7 +182,7 @@
     // 0. which courses can start?
     var figF = V.$('#fig-quiz-first');
     L.legend(figF.querySelector('[data-legend]'), [{ state: 'default', shape: 'outline', label: 'Course' }, { state: 'default', shape: 'line', label: 'Arrow: “before”' }]);
-    var viewF = V.views.graph(figF.querySelector('[data-stage]'), { directed: true, label: 'Course prerequisites', maxHeight: 340 });
+    var viewF = V.views.graph(figF.querySelector('[data-stage]'), { directed: true, minRadius: 17, uniformLabels: true, label: 'Course prerequisites', maxHeight: 340 });
     viewF.render(L.gs(g, null), { duration: 0 });
     L.tagNodes(viewF, function (id) { return L.COURSE_NAMES[id] + ' (' + id + ')'; });
     V.clickQuiz(figF.querySelector('[data-stage]'), {

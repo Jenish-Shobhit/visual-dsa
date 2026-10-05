@@ -373,7 +373,7 @@
       { state: 'path', label: 'Waits for it' },
       { state: 'default', shape: 'line', label: 'Arrow: “before”' }
     ]);
-    var view = V.views.graph(stage, { directed: true, minRadius: 16, label: 'Course prerequisites: an arrow from a to b means take a before b', maxHeight: 400 });
+    var view = V.views.graph(stage, { directed: true, minRadius: 21, uniformLabels: true, label: 'Course prerequisites: an arrow from a to b means take a before b', maxHeight: 400 });
     var picked = null;
     var DEFAULT_CAP = 'Click a course to light up everything that must come before it and everything that waits for it.';
     function show(dur) {
@@ -507,7 +507,7 @@
       { state: 'default', shape: 'outline', label: 'Waiting (badge > 0)' }, { state: 'frontier', label: 'Ready (badge 0)' },
       { state: 'active', label: 'Placed now' }, { state: 'done', label: 'Placed' }, { state: 'muted', shape: 'line', label: 'Arrow removed' }
     ]);
-    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: 'auto', nodeRadius: 30, maxHeight: 300, label: 'Two courses point into Algorithms; its in-degree badge counts down as they are placed' });
+    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: 'auto', nodeRadius: 30, uniformLabels: true, maxHeight: 300, label: 'Two courses point into Algorithms; its in-degree badge counts down as they are placed' });
     var strip = L.strip(fig.querySelector('[data-strip]'), { label: 'Order so far', empty: 'nothing placed yet' });
     V.player({
       root: fig, steps: steps, caption: fig.querySelector('[data-caption]'), baseStepMs: 1100, label: 'In-degree controls',
@@ -577,7 +577,7 @@
       { state: 'default', shape: 'outline', label: 'Waiting' }, { state: 'frontier', label: 'Ready' }, { state: 'done', label: 'Placed' },
       { state: 'compare', label: 'Stuck behind the cycle' }, { state: 'error', label: 'Stuck / on the cycle' }, { state: 'muted', shape: 'line', label: 'Arrow removed' }
     ]);
-    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, allowSelfLoops: true, minRadius: 16, maxHeight: 400, label: 'Kahn on the course graph with an extra arrow' });
+    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, allowSelfLoops: true, minRadius: 21, uniformLabels: true, maxHeight: 400, label: 'Kahn on the course graph with an extra arrow' });
     var strip = L.strip(fig.querySelector('[data-strip]'), { label: 'Order so far', empty: 'nothing placed yet' });
     var steps, pos;
     function gen() {

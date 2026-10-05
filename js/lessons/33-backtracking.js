@@ -309,7 +309,7 @@
     });
     V.quiz('#quiz-unchoose', {
       question: 'Which bugs come from <b>forgetting to unchoose</b>? Pick all that apply.', options: ['A later branch starts with items from an earlier branch', 'Results contain too many items', 'The search visits fewer nodes than it should', 'Two queens share a column in a “solution”'],
-      answer: [0, 1, 3], explain: 'Without unchoose the state keeps every past choice, so later branches inherit stale items, sets keep growing, and used columns or digits stay blocked or leaked. The tree itself is still walked in full, so the node count does not shrink.',
+      answer: [0, 1, 2], explain: 'Without unchoose the state keeps every past choice. Later branches inherit stale items, and result lists grow too long. A stale used-set also blocks choices that are really free, so the search prunes too much: it visits fewer nodes and can miss real solutions. It never puts two queens in one column. A stale column mark blocks that column instead.',
       id: 'forgot-unchoose'
     });
   }

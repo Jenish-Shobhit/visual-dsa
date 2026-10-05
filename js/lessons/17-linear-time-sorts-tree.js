@@ -301,7 +301,7 @@
       draw();
       if (remaining === 1) {
         var need = S().minComparisons(n);
-        caption.innerHTML = '<b>One ordering left after ' + asked + ' question' + (asked === 1 ? '' : 's') + '.</b> That is ⌈log₂ ' + total() + '⌉ = ' + need + ': halving is the best any question can do, so no comparison sort finishes in fewer than ' + need + ' comparisons on every input.';
+        caption.innerHTML = '<b>One ordering left after ' + asked + ' question' + (asked === 1 ? '' : 's') + '.</b> That is ⌈log₂ ' + total() + '⌉ = ' + need + ': halving is the best any question can do, so no comparison sort finishes in fewer than ' + need + ' comparison' + (need === 1 ? '' : 's') + ' on every input.';
         caption.setAttribute('data-state', 'done');
       } else {
         caption.innerHTML = 'Question ' + asked + ': the answer keeps the bigger half, so <b>' + before + '</b> orderings become <b>' + remaining + '</b>. Even a perfectly chosen question cannot remove more than half.';

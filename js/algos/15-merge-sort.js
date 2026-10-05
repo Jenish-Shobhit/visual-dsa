@@ -554,7 +554,6 @@
         if (mid >= n - 1) {
           var lone = byRow(row, lo, hi);
           lone.forEach(function (it) { pos[it.id] = { row: row + 1, slot: pos[it.id].slot }; st[it.id] = 'swap'; });
-          ops.writes += lone.length;
           snap('carry', 'The last run, a[' + lo + (hi > lo ? '..' + hi : '') + '], has no partner in this pass, so it moves up unchanged. (In real code it is simply left in place; the picture moves it so every row shows the whole array.)', { width: width, range: [lo, hi] });
           continue;
         }

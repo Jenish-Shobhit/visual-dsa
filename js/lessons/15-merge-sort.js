@@ -242,7 +242,7 @@
       explain: [
         'It is still sorted: on a tie either front is a correct next value, because they are equal.',
         'Right. Equal values are interchangeable for sortedness but not for identity. If the left run holds 3<sub>a</sub> and the right run 3<sub>b</sub>, taking the right one first puts 3<sub>b</sub> before 3<sub>a</sub>.',
-        'The number of comparisons does not depend on which side wins a tie: each comparison still writes exactly one value.',
+        'Not reliably. The count can move either way with the tie rule: merging [3, 5] with [3] takes 2 comparisons with ≤ and 1 with <, while merging [3] with [3, 5] is the other way round. Each comparison still writes one value. What really changes is stability.',
         'Something does change: the order of equal records. That matters when you sort by one field and the records carry others.'
       ]
     });

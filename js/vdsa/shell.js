@@ -589,10 +589,43 @@
     }
     fillBigO(doc);
     buildFooter();
+    initScrollCues();
     win.addEventListener('scroll', onScroll, { passive: true });
     win.addEventListener('resize', onScroll, { passive: true });
     onScroll();
     if (location.hash === '#contents') openContents();
+  }
+
+  /* Edge fades on horizontally scrolling wrappers (classes styled in vdsa.css next to .fig__stage--scroll). */
+  var CUE_SEL = '.fig__stage--scroll, [class*="fig__stage--sc"], .table-wrap, .code-panel__body, pre.code-block, .lesson-body pre, [data-scroll-fade]';
+  function initScrollCues() {
+    var seen = typeof WeakSet === 'function' ? new WeakSet() : null;
+    var raf = 0;
+    function update(el) {
+      var max = el.scrollWidth - el.clientWidth, x = Math.abs(el.scrollLeft);
+      var on = max > 2;
+      el.classList.toggle('has-more-start', on && x > 2);
+      el.classList.toggle('has-more-end', on && x < max - 2);
+    }
+    function refresh() {
+      raf = 0;
+      var list = doc.querySelectorAll(CUE_SEL);
+      for (var i = 0; i < list.length; i++) {
+        var el = list[i];
+        if (el.hasAttribute('data-no-scroll-fade')) continue;
+        if (seen && !seen.has(el)) {
+          seen.add(el);
+          el.addEventListener('scroll', function () { update(this); }, { passive: true });
+          if (win.ResizeObserver) new win.ResizeObserver(schedule).observe(el);
+        }
+        update(el);
+      }
+    }
+    function schedule() { if (!raf) raf = win.requestAnimationFrame(refresh); }
+    win.addEventListener('resize', schedule, { passive: true });
+    win.addEventListener('load', schedule);
+    if (win.MutationObserver && doc.body) new win.MutationObserver(schedule).observe(doc.body, { childList: true, subtree: true });
+    schedule();
   }
 
   VDSA.shell = {

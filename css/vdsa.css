@@ -795,6 +795,15 @@ select.field, .select {
 /* Wide diagrams (flowcharts, long arrays) keep a readable size on phones and scroll inside the stage. */
 .fig__stage--scroll { overflow-x: auto; overscroll-behavior-x: contain; justify-items: safe center; }
 .fig__stage--scroll > svg, .fig__stage--scroll > svg.vz.vz { min-width: var(--stage-min, 620px); }
+/* Scroll affordance: shell.js (initScrollCues) toggles .has-more-start / .has-more-end on horizontally overflowing
+   wrappers; a mask fades the content on the side(s) that continue. Nothing is painted when there is no overflow. */
+.has-more-start, .has-more-end {
+  --sc-l: 0px; --sc-r: 0px;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--sc-l), #000 calc(100% - var(--sc-r)), transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 var(--sc-l), #000 calc(100% - var(--sc-r)), transparent 100%);
+}
+.has-more-start { --sc-l: 30px; }
+.has-more-end { --sc-r: 30px; }
 .fig__caption {
   min-height: calc(1.55em * 2 + 26px);
   padding: 13px 18px;

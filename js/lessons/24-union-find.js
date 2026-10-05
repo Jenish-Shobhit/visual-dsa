@@ -116,7 +116,12 @@
 
     function measure() {
       var w = host.clientWidth || host.getBoundingClientRect().width || 320;
-      return Math.max(w, o.minWidth || 0);
+      return Math.max(w, minW());
+    }
+    /* minSlot: never squeeze nodes closer than this many px per leaf slot; the stage scrolls instead */
+    function minW() {
+      var padX = o.pointers === false ? 16 : 40;
+      return Math.max(o.minWidth || 0, o.minSlot ? Math.max(reserve.slots, 1) * o.minSlot + 2 * padX : 0);
     }
     function computeDims(n) {
       var W = measure(), padX = o.pointers === false ? 16 : 40;
@@ -129,7 +134,7 @@
       dims = { W: W, H: H, r: r, slot: slot, level: level, padX: padX, padT: padT, n: n };
       svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
       svg.setAttribute('width', W); svg.setAttribute('height', H);
-      svg.style.minWidth = (o.minWidth || 0) + 'px';
+      svg.style.minWidth = minW() + 'px';
       var fs = Math.max(8, Math.min(15, r * 0.95));
       recs.forEach(function (rec) {
         rec.disc.setAttribute('r', r);
@@ -286,7 +291,7 @@
     host.classList.add('uf-pair');
     host.appendChild(fHost);
     if (o.array !== false) host.appendChild(aHost);
-    var forest = L.forestView(fHost, { label: o.label || 'Forest', minWidth: o.minWidth || 0, showRank: o.showRank, maxSlot: o.maxSlot, nodeR: o.nodeR, pointers: o.pointers, levelH: o.levelH });
+    var forest = L.forestView(fHost, { label: o.label || 'Forest', minWidth: o.minWidth || 0, minSlot: o.minSlot, showRank: o.showRank, maxSlot: o.maxSlot, nodeR: o.nodeR, pointers: o.pointers, levelH: o.levelH });
     var arr = o.array === false ? null : V.views.array(aHost, { mode: 'boxes', label: (o.label || 'Forest') + ': parent array', cellSize: 44, outerPointers: false });
     function fstate(st) { return { parent: st.parent, rank: o.showRank === false ? null : st.rank, states: st.states, edgeStates: st.edgeStates, pointers: st.pointers, colors: st.colors }; }
     function astate(st) {

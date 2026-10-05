@@ -255,7 +255,7 @@
     var n = p0.n, byRank = p0.byRank, compress = p0.compress, ops = UF.parseOps(p0.text, n).values;
     var pending = null;
 
-    var pair = L.pair(stage, { label: 'Union-find forest', nodeR: 17, showRank: true, levelH: 58, minWidth: 430 });
+    var pair = L.pair(stage, { label: 'Union-find forest', nodeR: 17, showRank: true, levelH: 58, minWidth: 0 });
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: codeFor(byRank, compress), default: 'pseudo', title: 'DSU', maxHeight: 330 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { x: 'active', ra: 'compare', rb: 'compare' } });
 

@@ -683,7 +683,7 @@
       if (d.union(e.a, e.b)) { kept++; total += e.w; edgeStates[e.id] = 'done'; push('keep', 'Different groups: keep it and merge the groups. Total weight ' + total + '.', e.id); }
       else { edgeStates[e.id] = 'muted'; push('skip', 'Already connected: this edge would close a cycle, so skip it.', e.id); }
     });
-    push('end', 'Done: ' + kept + ' edges connect the graph with total weight ' + total + '.');
+    push('end', 'Done: ' + plural(kept, 'edge') + (kept === 1 ? ' connects' : ' connect') + ' the graph with total weight ' + total + '.');
     return steps;
   }
 

@@ -116,3 +116,13 @@ test('growth: counts only, sorted input separates the families', () => {
   const r = A.growth(['bubble', 'merge'], 'random', {});
   assert.ok(r.series.bubble.cmp[r.ns.length - 1] > 10 * r.series.merge.cmp[r.ns.length - 1]);
 });
+
+test('takeaway: teaches the right lesson for the input shape', () => {
+  const rows = (ids, preset) => A.podium(ids.map((id) => Object.assign({ id }, A.buildLane(id, A.makeInput(preset, 40, 3), {}))));
+  assert.match(A.takeaway(rows(['insertion', 'merge', 'heap'], 'sorted'), 'sorted'), /Insertion sort wins/);
+  assert.match(A.takeaway(rows(['insertion', 'merge'], 'reversed'), 'reversed'), /worst case for the simple sorts/);
+  assert.match(A.takeaway(rows(['counting', 'merge'], 'random'), 'random'), /never comparing/);
+  assert.match(A.takeaway(rows(['quick', 'merge', 'heap'], 'sorted'), 'sorted', 'last'), /Quick sort with the last element/);
+  assert.equal(A.takeaway([{ id: 'merge', total: 5 }], 'random'), '');
+  assert.match(A.takeaway([{ id: 'merge', total: 5 }, { id: 'heap', total: 5 }], 'random'), /dead heat/);
+});

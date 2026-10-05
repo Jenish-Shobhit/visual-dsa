@@ -76,7 +76,8 @@
         chips[c.key] = { val: val, text: '0' };
         chipRow.appendChild(h('div', { class: 'ts-stat', title: c.title || null }, h('span', { class: 'ts-stat__l' }, c.label), val));
       });
-      var hint = h('p', { class: 'ts-pane__hint', hidden: true }, 'Insert a value, or try “' + (M.KINDS[k].word ? 'Insert 5 random words' : 'Insert 10 random') + '”');
+      var hint = h('p', { class: 'ts-pane__hint', hidden: true }, 'Nothing here yet. Type a value above, or ',
+        h('button', { class: 'ts-pane__try', type: 'button', onclick: function () { var b = $('[data-bulk="random"]', root); if (b) b.click(); } }, M.KINDS[k].word ? 'insert 5 random words' : 'insert 10 random numbers'));
       var viewEl = h('div', { class: 'ts-pane__view' }, hint);
       var cap = h('p', { class: 'ts-pane__cap', 'aria-live': 'off' });
       var lesson = h('span', { class: 'ts-pane__lesson' }, lessonLink(M.KINDS[k].lesson, kinds.length > 1 ? 'Lesson ' + M.KINDS[k].lesson.slice(0, 2) : null));

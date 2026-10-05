@@ -272,7 +272,8 @@
     el('[data-race-title]').textContent = 'Same ' + vals.length + ' numbers, one clock';
     paintPlay(); paintAlgos();
     renderResults();
-    el('[data-status]').textContent = race.lanes.length + ' lanes ready. The longest one needs ' + num(race.max) + ' ticks.';
+    el('[data-why]').hidden = true;
+    el('[data-status]').textContent = race.lanes.length + ' lanes ready. Press the play button to start. The longest one needs ' + num(race.max) + ' ticks.';
     if (performance.now() - t0 > 400) el('[data-status]').textContent += ' (Big inputs take a moment to prepare.)';
     kick();
   }
@@ -341,10 +342,10 @@
   function play() {
     if (!race.lanes.length) return;
     if (race.t >= race.max) { race.t = 0; race.lanes.forEach(function (l) { l.lock = null; }); }
-    race.playing = true; paintPlay(); el('[data-status]').textContent = ''; kick();
+    race.playing = true; paintPlay(); el('[data-status]').textContent = ''; el('[data-why]').hidden = true; kick();
   }
   function toggle() { if (race.playing) pause(); else play(); }
-  function restart() { pause(); race.t = 0; race.lanes.forEach(function (l) { l.lock = null; }); race.dirty = true; paintPlay(); el('[data-status]').textContent = ''; kick(); }
+  function restart() { pause(); race.t = 0; race.lanes.forEach(function (l) { l.lock = null; }); race.dirty = true; paintPlay(); el('[data-status]').textContent = ''; el('[data-why]').hidden = true; kick(); }
   function clockTo(t) { race.t = Math.max(0, Math.min(race.max, t)); race.lanes.forEach(function (l) { l.lock = null; }); race.dirty = true; kick(); }
   function stepClock(d) {
     pause();
@@ -362,6 +363,8 @@
     var msg = f.name + ' finished first with ' + num(first.total) + ' ticks';
     if (p.length > 1) msg += '; ' + l.name + ' needed ' + num(last.total) + (first.total > 0 && last.total > first.total ? ' (' + (last.total / first.total).toFixed(1).replace(/\.0$/, '') + '× as many)' : '') + '.';
     el('[data-status]').textContent = msg;
+    var why = A.takeaway(p, st.custom ? 'custom' : st.preset, st.pivot);
+    var box = el('[data-why]'); box.textContent = why; box.hidden = !why;
   }
 
   /* ------------------------------------------------------------------ podium, chart, table */
@@ -381,6 +384,7 @@
         h('span', { class: 'sa-pod__work' }, d ? num(d.total) + ' ticks' : ''),
         h('span', { class: 'sa-pod__step' }, h('b', null, d ? ord(d.rank) : ord(i + 1)))));
     });
+    if (!done.length) box.appendChild(h('p', { class: 'sa-pod__hint' }, 'Places fill in as lanes finish. Press play above.'));
     box.appendChild(wrap);
     if (race.podium.length > 3) {
       var rest = h('ol', { class: 'sa-rest', start: 4 });

@@ -265,6 +265,26 @@
     return out;
   }
 
+  /* One teaching sentence about why this race came out the way it did. rows = podium(); preset = input shape id; pivot = quick sort pivot id. */
+  var SIMPLE = ['bubble', 'selection', 'insertion', 'cocktail'], NOCMP = ['counting', 'radix', 'bucket'], QUICKS = ['quick'];
+  function takeaway(rows, preset, pivot) {
+    if (!rows || rows.length < 2) return '';
+    var ids = rows.map(function (r) { return r.id; }), first = rows[0].id, lastRow = rows[rows.length - 1], last = lastRow.id;
+    var has = function (set) { return ids.some(function (i) { return set.indexOf(i) >= 0; }); };
+    var name = function (id) { return get(id).short; };
+    if (rows[0].total === lastRow.total) return 'A dead heat: every racer did the same amount of work on this input.';
+    if (preset === 'sorted' || preset === 'nearly') {
+      if (ids.indexOf('insertion') >= 0 && first === 'insertion') return 'Insertion sort wins because there is almost nothing to fix: each number is compared with its left neighbour, found in place, and left alone. Work is about n, not n².';
+      if (last === 'quick' && (pivot || 'last') === 'last' && preset === 'sorted') return 'Quick sort with the last element as pivot hits its worst case: the pivot is always the biggest value, so one side is empty and the work grows like n².';
+      if (has(SIMPLE) && (first === 'bubble' || first === 'cocktail')) return 'Bubble and cocktail sort stop after one pass with no swaps, so nearly sorted input is cheap for them.';
+    }
+    if (preset === 'reversed' && has(SIMPLE) && SIMPLE.indexOf(last) >= 0) return 'Reversed is the worst case for the simple sorts: every number has to travel the whole way, about n²/2 moves. Merge and heap sort barely notice the order.';
+    if (preset === 'few' && has(QUICKS) && ids.indexOf('three') >= 0 && rows.filter(function (r) { return r.id === 'three'; })[0].total < rows.filter(function (r) { return r.id === 'quick'; })[0].total) return '3-way quick sort groups equal values in one pass, so a handful of distinct values means very little work.';
+    if (NOCMP.indexOf(first) >= 0) return name(first) + ' wins by never comparing two numbers: it counts or buckets values by their digits, so its ticks are all writes. The catch is that it needs numbers in a small range.';
+    if (SIMPLE.indexOf(last) >= 0 && ids.some(function (i) { return SIMPLE.indexOf(i) < 0 && NOCMP.indexOf(i) < 0; })) return name(last) + ' is the slowest because it fixes one pair at a time (n² work), while the divide-and-conquer sorts halve the problem again and again (n log n). Raise n to widen the gap.';
+    return name(first) + ' did the least work here, ' + name(last) + ' the most. Change the input shape and race again to see whether the order holds.';
+  }
+
   var GROWTH_NS = [8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256];
   /* Counts only: {ns, series: {id: {cmp: [...], wr: [...]}}} on the same input shape at each n */
   function growth(ids, preset, o) {
@@ -294,6 +314,6 @@
     ALGOS: ALGOS, get: get, QUICK_PIVOTS: QUICK_PIVOTS, GROWTH_NS: GROWTH_NS,
     makeInput: makeInput, parseInput: parseInput, clampN: clampN,
     steps: steps, codeOf: codeOf, count: count, picture: picture,
-    buildLane: buildLane, laneIndexAt: laneIndexAt, podium: podium, growth: growth
+    buildLane: buildLane, laneIndexAt: laneIndexAt, podium: podium, takeaway: takeaway, growth: growth
   };
 }));

@@ -42,7 +42,7 @@
 }
 .gs-algo:hover { border-color: var(--accent); }
 .gs-algo:focus-visible { outline: none; box-shadow: var(--ring); }
-.gs-algo[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.gs-algo[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .gs-algo.is-off { opacity: .48; border-style: dashed; cursor: not-allowed; }
 .gs-algo.is-off[aria-pressed="true"] { opacity: .8; background: color-mix(in srgb, var(--st-error) 16%, var(--bg-elev)); border-color: var(--st-error); color: var(--ink); }
 .gs-algo.has-warn::after { content: "!"; margin-left: 7px; width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; font: 800 11px var(--font-sans); background: var(--st-compare); color: var(--on-state); }
@@ -152,4 +152,17 @@
   .gs-stage { min-height: 300px; }
   .gs-hint, .gs-facts { padding-inline: 14px; }
   .gs-dl > div { grid-template-columns: 1fr; }
+}
+
+/* mobile: preset and size controls fold away so the algorithm and the canvas are closer to the top */
+.gs-more__sum { display: none; }
+.gs-more > .gs-row { margin-bottom: 0; }
+@media (max-width: 640px) {
+  .gs-more__sum { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 2px; font-weight: 650; font-size: 14.5px; color: var(--ink); cursor: pointer; list-style: none; }
+  .gs-more__sum::-webkit-details-marker { display: none; }
+  .gs-more__sum::after { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); transform: rotate(45deg); transition: transform var(--dur-fast); margin-right: 4px; }
+  .gs-more[open] > .gs-more__sum::after { transform: rotate(-135deg); }
+  .gs-more__sum:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  .gs-more { border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  .gs-more[open] { padding-bottom: 8px; }
 }

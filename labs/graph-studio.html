@@ -48,6 +48,8 @@
     </header>
 
     <div class="fig__toolbar gs-tools">
+      <details class="gs-more" open>
+      <summary class="gs-more__sum">Graph presets, size and actions</summary>
       <div class="gs-row">
         <div class="gs-field gs-field--switches">
           <div data-directed></div>
@@ -69,6 +71,7 @@
           <button class="btn btn--sm btn--ghost" type="button" data-act="share" title="Copy a link to this exact graph and algorithm">Copy link</button>
         </div>
       </div>
+      </details>
       <div class="gs-row gs-row--algo">
         <div class="gs-field gs-field--algos">
           <span class="field-label" id="gs-algo-l">Algorithm</span>
@@ -157,5 +160,14 @@
   </nav>
 
 </main>
+<script>
+(function () {
+  var d = document.querySelector('.gs-more'); if (!d || !window.matchMedia) return;
+  var mq = matchMedia('(max-width: 640px)');
+  function sync() { d.open = !mq.matches; }
+  sync();
+  if (mq.addEventListener) mq.addEventListener('change', sync);
+})();
+</script>
 </body>
 </html>

@@ -423,7 +423,7 @@
         stack.pop(); mark();
         return;
       }
-      snap('enter', 'base', '<b>' + name + '</b>: ' + k + ' discs. Disc ' + k + ' must reach ' + PEG[to] + ', but discs 1–' + (k - 1) + ' sit on top of it. Not the base case.');
+      snap('enter', 'base', '<b>' + name + '</b>: ' + k + ' discs. Disc ' + k + ' must reach ' + PEG[to] + ', but ' + (k === 2 ? 'disc 1 sits' : 'discs 1–' + (k - 1) + ' sit') + ' on top of it. Not the base case.');
       snap('first', 'first', 'Step 1 of 3: park the ' + (k - 1) + ' smaller disc' + (k - 1 === 1 ? '' : 's') + ' on the spare peg ' + PEG[via] + ' by calling <b>hanoi(' + (k - 1) + ', ' + PEG[from] + '→' + PEG[via] + ')</b>. Trust it to work.');
       rec(k - 1, from, via, to, id);
       move(k, from, to);
@@ -436,7 +436,7 @@
     }
     snap('start', null, n + ' disc' + (n === 1 ? '' : 's') + ' on peg A. Goal: move the whole tower to C, one disc at a time, never putting a larger disc on a smaller one.');
     rec(n, 0, 2, 1, null);
-    snap('done', null, 'Solved in <b>' + moves + ' moves</b> = 2<sup>' + n + '</sup> − 1. No solution can use fewer: disc ' + n + ' moves once, and before it can, the other ' + (n - 1) + ' discs must be moved out of the way and back.');
+    snap('done', null, 'Solved in <b>' + moves + ' moves</b> = 2<sup>' + n + '</sup> − 1. No solution can use fewer: disc ' + n + ' moves once, and before it can, the other ' + (n - 1) + (n === 2 ? ' disc' : ' discs') + ' must be moved out of the way and back.');
     steps.calls = calls;
     steps.total = total;
     return steps;
@@ -614,7 +614,7 @@
         stack.pop();
         if (!stack.length) break;
       }
-      snap('All ' + (start + 1) + ' frames came off the stack. The base case is what made that possible.');
+      snap('All ' + (start + 1) + (start === 0 ? ' frame' : ' frames') + ' came off the stack. The base case is what made that possible.');
     }
     return steps;
   }
@@ -666,7 +666,7 @@
       if (t === 0) cap = 'Three ways to compute ' + n + '!. Each starts with one frame. Press play and watch how many frames each one keeps in memory.';
       else if (a.note === 'call') cap = 'Plain recursion pushes a new frame for every call, and each one waits with unfinished work (“' + a.frames[a.frames.length - 1].note + '”).';
       else if (a.note === 'return' && t < A.length - 2) cap = 'Plain recursion unwinds: each frame finishes its pending multiplication and pops. The other two finished long ago with a single frame.';
-      else cap = 'All three return ' + val + '. Plain recursion needed ' + (n + 1) + ' frames at its peak; the reused tail call and the loop needed one.';
+      else cap = 'All three return ' + val + '. Plain recursion needed ' + (n + 1) + (n === 0 ? ' frame' : ' frames') + ' at its peak; the reused tail call and the loop needed one.';
       steps.push({
         lanes: [a, b, c],
         peaks: [peak(A, t), peak(B, t), peak(C, t)],

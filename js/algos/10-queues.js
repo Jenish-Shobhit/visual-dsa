@@ -453,6 +453,7 @@
     var buf = new Array(C).fill(null);          // {id, value, consumed}
     var head = 0, tail = 0, size = 0, n = 0;    // size is used by scheme 'size'; tail by the other two
     var cnt = { enqueued: 0, dequeued: 0, wraps: 0, refused: 0, overwritten: 0 };
+    var tailWrapped = false;                   // the last advance wrapped the write index; the next write lands on slot 0
     var accepted = [], outs = [], steps = [];
 
     function tailIdx() { return scheme === 'size' ? (head + size) % C : tail; }
@@ -537,14 +538,16 @@
         var overwritten = buf[slot] && !buf[slot].consumed ? buf[slot] : null;
         buf[slot] = item;
         if (overwritten) cnt.overwritten++;
-        var wrapNote = slot < head || (scheme === 'size' && head + size >= C) ? ' The index ran off the end of the array and came back: this is the <b>wrap-around</b>.' : '';
+        var wrapNote = tailWrapped ? ' The write index wrapped from slot ' + (C - 1) + ' back to slot 0 at the end of the previous enqueue (already counted in Wrap-arounds), so this write lands at the start of the array.'
+          : (slot < head || (scheme === 'size' && head + size >= C) ? ' The queue now straddles the end of the array: this slot sits before <b>head</b> because the write index wrapped earlier.' : '');
+        tailWrapped = false;
         snap('write', 'Write ' + nm(op.value) + ' into slot <b>' + slot + '</b>' + (scheme === 'size' ? ' = ' + tailFormula() : '') + '.' + wrapNote +
           (overwritten ? ' The value ' + nm(overwritten.value) + ' that was there is gone: unread data destroyed.' : ''), 'enq-write', 'e-write', label, { slot: slot, state: 'swap' });
         steps[steps.length - 1].wrapWrite = slot === 0 && cnt.enqueued > 0;
         // ---- advance
         var oldTail = tailIdx();
         if (scheme === 'size') size++; else tail = (tail + 1) % C;
-        if (oldTail === C - 1) cnt.wraps++;
+        if (oldTail === C - 1) { cnt.wraps++; tailWrapped = true; }
         cnt.enqueued++;
         accepted.push(true);
         var nt = tailIdx();

@@ -500,14 +500,14 @@
     };
   };
   function indegreeFigure(fig) {
-    var g = graph([['M1', 100, 150], ['M2', 100, 300], ['M3', 100, 450], ['ALG', 800, 300]], [['M1', 'ALG'], ['M2', 'ALG'], ['M3', 'ALG']]);
-    g.nodes[0].label = 'DISC'; g.nodes[1].label = 'DS'; g.nodes[2].label = 'MATH'; g.nodes[3].label = 'ALG';
+    /* The two real prerequisites of ALG in L.COURSES (DISC and DS); their own prerequisites are left out to keep the picture small. */
+    var g = graph([['DISC', 100, 200], ['DS', 100, 400], ['ALG', 800, 300]], [['DISC', 'ALG'], ['DS', 'ALG']]);
     var steps = T.kahn(L.plain(g)).filter(function (st) { return !st.layered; });
     L.legend(fig.querySelector('[data-legend]'), [
       { state: 'default', shape: 'outline', label: 'Waiting (badge > 0)' }, { state: 'frontier', label: 'Ready (badge 0)' },
       { state: 'active', label: 'Placed now' }, { state: 'done', label: 'Placed' }, { state: 'muted', shape: 'line', label: 'Arrow removed' }
     ]);
-    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: 'auto', nodeRadius: 30, maxHeight: 300, label: 'Three courses point into Algorithms; its in-degree badge counts down as they are placed' });
+    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: 'auto', nodeRadius: 30, maxHeight: 300, label: 'Two courses point into Algorithms; its in-degree badge counts down as they are placed' });
     var strip = L.strip(fig.querySelector('[data-strip]'), { label: 'Order so far', empty: 'nothing placed yet' });
     V.player({
       root: fig, steps: steps, caption: fig.querySelector('[data-caption]'), baseStepMs: 1100, label: 'In-degree controls',

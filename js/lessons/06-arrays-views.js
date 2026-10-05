@@ -235,6 +235,8 @@
     ruler.appendChild(rulerLine); ruler.appendChild(rulerText);
     top.appendChild(ruler);
     function slotX(slot) { return X0 + slot * SLOT + SLOT / 2; }
+    /* a shelf that has faded out stays out of the way (its index numbers must never sit under the live shelf's) */
+    function hideLater(g, ms) { setTimeout(function () { if (+getComputedStyle(g).opacity < 0.05) g.style.visibility = 'hidden'; }, (ms || 0) + 60); }
     function makeShelf(sh) {
       var g = s('g', { class: 'a6-shelfg' });
       var len = sh.cap * SLOT + 12;
@@ -263,10 +265,12 @@
         st.shelves.forEach(function (sh) {
           seen[sh.id] = true;
           var g = shelves[sh.id] || (shelves[sh.id] = makeShelf(sh));
+          if (!sh.gone) g.style.visibility = '';
           V.animate(g, { y: ROWY[sh.row], opacity: sh.gone ? 0 : 1 }, { duration: ms });
+          if (sh.gone) hideLater(g, ms);
           g.wall.style.display = sh.wall ? '' : 'none';
         });
-        Object.keys(shelves).forEach(function (id) { if (!seen[id]) V.animate(shelves[id], { opacity: 0 }, { duration: ms }); });
+        Object.keys(shelves).forEach(function (id) { if (!seen[id]) { V.animate(shelves[id], { opacity: 0 }, { duration: ms }); hideLater(shelves[id], ms); } });
         var bseen = {};
         var moving = st.books.filter(function (b) { var g = books[b.id]; return g && g.__slot !== undefined && (g.__slot !== b.slot || g.__shelf !== b.shelf); });
         st.books.forEach(function (b) {

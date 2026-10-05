@@ -339,10 +339,10 @@
 
         var vl = S.lbl.use('v' + k, buildLabel);
         vz.text(vl.el, L9.fmt(v)); vz.toggle(vl.el, 'is-strong', true);
-        vz.set(vl.el, 'font-size', G.sw < 26 ? 9 : 12);
+        vz.set(vl.el, 'font-size', G.sw < 26 ? 11 : 12);
         upd(vl, { x: G.x(k), y: G.base - h - 6, o: 1 }, { o: 0 });
         var il = S.lbl.use('i' + k, buildLabel);
-        vz.text(il.el, k); vz.toggle(il.el, 'is-strong', state.i === k);
+        vz.text(il.el, k); vz.toggle(il.el, 'is-strong', state.i === k); vz.set(il.el, 'font-size', 11);
         upd(il, { x: G.x(k), y: G.idxY, o: 1 }, { o: 0 });
 
         var cell = S.cells.use('a' + k, buildCell);
@@ -356,7 +356,7 @@
         vz.toggle(cell.el, 'is-empty', txt === '');
         vz.set(cell.rect, 'x', vz.n2(-G.cw / 2)); vz.set(cell.rect, 'y', vz.n2(-G.ch / 2)); vz.set(cell.rect, 'width', vz.n2(G.cw)); vz.set(cell.rect, 'height', G.ch);
         vz.text(cell.txt, txt === '' ? '?' : txt);
-        vz.set(cell.txt, 'font-size', G.cw < 26 ? 10 : 13);
+        vz.set(cell.txt, 'font-size', G.cw < 26 ? 11 : 13);
         var t = { x: G.x(k), y: G.ansY + G.ch / 2, o: 1, s: 1 };
         upd(cell, t, { o: 0, s: 1 });
         if (!cell.isNew && was !== undefined && was === '' && txt !== '' && ms > 0) { cell.cur.s = 1.35; cell.from.s = 1.35; }

@@ -249,8 +249,11 @@
     function draw(state, ms) {
       G = geometry(state);
       ctx.setHeight(G.H);
+      var covered = {};
+      state.cells.forEach(function (cc) { covered[cc] = true; covered[cc + 1] = true; });   // a node sits on two cells: their filler digits would show through its outline
       for (var c = 0; c < MEM_CELLS; c++) {
         var p = G.cellXY(c);
+        vz.set(cellEls[c].t, 'display', state.mode !== 'list' && covered[c] ? 'none' : null);
         vz.set(cellEls[c].r, 'x', p.x + 1); vz.set(cellEls[c].r, 'y', p.y + 1); vz.set(cellEls[c].r, 'width', G.cw - 2); vz.set(cellEls[c].r, 'height', G.ch - 2);
         vz.set(cellEls[c].t, 'x', p.x + G.cw / 2); vz.set(cellEls[c].t, 'y', p.y + G.ch / 2);
       }
@@ -605,6 +608,7 @@
       tagPlace(tags.meet, step.meet !== null && step.kind === 'meet' ? step.meet : (step.meet !== null && step.phase === 2 && step.entry === null ? step.meet : null));
       tagPlace(tags.entry, step.entry);
       if (tags.meet && step.meet !== null && step.entry !== null && step.meet === step.entry) tags.meet.setAttribute('opacity', '0');
+      [tags.meet, tags.entry].forEach(function (g) { if (g) g.style.visibility = g.getAttribute('opacity') === '0' ? 'hidden' : ''; });   // a tag that is not shown takes no space
       var past = step.meet !== null && step.phase === 1 && step.kind === 'meet' ? (step.meet - step.mu + step.lambda) % step.lambda : null;
       if (centerSub) centerSub.textContent = 'loop';
       // how far past the entry they met rides on the "meet" tag beside the node, where there is room for it

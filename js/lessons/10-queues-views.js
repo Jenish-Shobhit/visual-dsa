@@ -34,22 +34,25 @@
   L10.ticketLine = function (stage, opts) {
     opts = opts || {};
     var narrow = (stage.clientWidth || 999) < 480;   /* phones: a tighter line so the picture is not shrunk to half size */
-    var W = narrow ? 430 : 600, H = opts.height || 230, GROUND = H - 46, X0 = narrow ? 156 : 190, STEP = narrow ? 36 : 52, MAXV = 8;
+    /* opts.width / opts.step / opts.offset let the hero crop the picture to the people it will actually show and centre it. */
+    var W = opts.width || (narrow ? 430 : 600), H = opts.height || 230, GROUND = H - 46, X0 = narrow ? 156 : 190, STEP = opts.step || (narrow ? 36 : 52), MAXV = 8, OX = opts.offset || 0;
     V.clear(stage);
     var svg = s('svg', { class: 'l10-tl' + (narrow ? ' is-narrow' : ''), viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': opts.label || 'A line of people waiting at a ticket window' });
+    var root = s('g', { class: 'l10-tl__scene', transform: 'translate(' + OX + ' 0)' });
+    svg.appendChild(root);
     var booth = s('g', { class: 'l10-booth' },
       s('rect', { class: 'l10-booth__wall', x: 6, y: GROUND - 132, width: 122, height: 132, rx: 14 }),
       s('rect', { class: 'l10-booth__window', x: 22, y: GROUND - 96, width: 90, height: 50, rx: 8 }),
       s('rect', { class: 'l10-booth__shelf', x: 14, y: GROUND - 48, width: 106, height: 9, rx: 4 }),
-      s('rect', { class: 'l10-booth__sign', x: 6, y: GROUND - 178, width: 122, height: 38, rx: 10 }));
-    var signSmall = s('text', { class: 'l10-booth__small', x: 67, y: GROUND - 162, 'text-anchor': 'middle' }, 'NOW SERVING');
-    var signNum = s('text', { class: 'l10-booth__num', x: 67, y: GROUND - 145, 'text-anchor': 'middle' }, '–');
-    var ground = s('line', { class: 'l10-ground', x1: 0, x2: W, y1: GROUND, y2: GROUND });
+      s('rect', { class: 'l10-booth__sign', x: 6, y: GROUND - 182, width: 122, height: 42, rx: 10 }));
+    var signSmall = s('text', { class: 'l10-booth__small', x: 67, y: GROUND - 167, 'text-anchor': 'middle' }, 'NOW SERVING');
+    var signNum = s('text', { class: 'l10-booth__num', x: 67, y: GROUND - 146, 'text-anchor': 'middle' }, '–');
+    var ground = s('line', { class: 'l10-ground', x1: -OX, x2: W - OX, y1: GROUND, y2: GROUND });
     var front = s('g', { class: 'l10-tag l10-tag--front' }, s('rect', { x: -26, y: -13, width: 52, height: 22, rx: 11 }), s('text', { x: 0, y: 3, 'text-anchor': 'middle' }, 'front'), s('path', { d: 'M-5 9 L5 9 L0 16 Z' }));
     var back = s('g', { class: 'l10-tag l10-tag--back' }, s('path', { d: 'M-5 -9 L5 -9 L0 -16 Z' }), s('rect', { x: -22, y: -9, width: 44, height: 22, rx: 11 }), s('text', { x: 0, y: 7, 'text-anchor': 'middle' }, 'back'));
-    var hint = s('text', { class: 'l10-hint', x: W - 6, y: H - 8, 'text-anchor': 'end' }, 'new arrivals join here →');
-    svg.appendChild(booth); svg.appendChild(signSmall); svg.appendChild(signNum); svg.appendChild(ground); svg.appendChild(hint);
-    svg.appendChild(front); svg.appendChild(back);
+    var hint = s('text', { class: 'l10-hint', x: W - OX - 6, y: GROUND + 47, 'text-anchor': 'end' }, 'new arrivals join here →');
+    root.appendChild(booth); root.appendChild(signSmall); root.appendChild(signNum); root.appendChild(ground); root.appendChild(hint);
+    root.appendChild(front); root.appendChild(back);
     V.place(front, { x: X0, y: GROUND - 82, opacity: 0 });
     V.place(back, { x: X0, y: GROUND + 20, opacity: 0 });
     stage.appendChild(svg);
@@ -60,7 +63,7 @@
         s('circle', { class: 'l10-p__head', cx: 0, cy: -46, r: 12 }),
         s('rect', { class: 'l10-p__body', x: -16, y: -32, width: 32, height: 34, rx: 13 }),
         s('text', { class: 'l10-p__num', x: 0, y: -10, 'text-anchor': 'middle' }, String(p.n)));
-      svg.insertBefore(g, front);
+      root.insertBefore(g, front);
       var rec = { g: g, n: p.n, x: slotX(MAXV) + 40 };
       V.place(g, { x: rec.x, y: GROUND, opacity: 0 });
       return rec;

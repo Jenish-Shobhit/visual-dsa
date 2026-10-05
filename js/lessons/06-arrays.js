@@ -75,15 +75,14 @@
   function heroTeaser() {
     var host = V.$('#teaser'), lbl = V.$('.a6-hero__label');
     if (!host) return;
-    var view = V.views.array(host, { mode: 'boxes', cellSize: 80, rowLabels: 'above', label: 'Array teaser', reserve: { held: true } });
+    var view = V.views.array(host, { mode: 'boxes', cellSize: 80, rowLabels: 'above', label: 'Array teaser', outerPointers: false });
     var rng = V.rng(6);
     function lap() {
       var vals = V.presets.random(3, { min: 1, max: 9, rng: rng, unique: true });
       var st = A.makeState(vals, 4), steps = [];
       var ops = [
         { type: 'insert', index: rng.int(0, 2), value: rng.int(10, 19) },
-        { type: 'append', value: rng.int(20, 29) },
-        { type: 'insert', index: rng.int(0, 1), value: rng.int(30, 39) }
+        { type: 'append', value: rng.int(20, 29) }   // the lap ends on the doubled array: one lifted value, never two rows that both hold one
       ];
       ops.forEach(function (op) {
         var r = A.arrayOp(st, op);
@@ -94,12 +93,34 @@
         });
         st = r.state;
       });
-      view.reset(); view.prepare(steps);
+      /* Lanes are reserved by fit() drawing the frames that show the first array (and the doubling): the doubled array's own
+         lifted value only appears once it is the single row, so it must not claim a lane while two rows share the stage.
+         (No view.prepare here: that pins every frame to the tallest, which would park the one-row frames at the top.) */
+      view.reset();
+      fit(steps.filter(function (s) { return s.rows[0].id === 'b0'; }));
       return steps;
     }
+    /* Doubling shows two rows at once (the tallest frame). Pick the largest cell size at which that frame fits the stage,
+       so nothing is clipped at the top or bottom and the shorter frames are as big as the width allows. */
+    function fit(steps) {
+      var stg = host.parentNode, cs = getComputedStyle(stg), svg = host.querySelector('svg');
+      var avail = stg.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - (lbl ? lbl.offsetHeight + 10 : 0) - 2;
+      if (!svg || avail < 60) return;
+      [84, 76, 68, 60, 54, 48, 44, 40, 36, 32, 28].some(function (c) {
+        cell2 = c; view.setOptions({ cellSize: c });
+        var m = 0;
+        steps.forEach(function (s) { view.render({ rows: s.rows, held: s.held, pointers: [] }, { duration: 0 }); m = Math.max(m, parseFloat(svg.style.height) || 0); });
+        return m <= avail;
+      });
+      view.render({ rows: steps[0].rows, held: steps[0].held, pointers: [] }, { duration: 0 });
+    }
+    var cell2 = 48, cellNow = 0;
+    function cellFor(step) { return step.rows.length > 1 || step.rows[0].length > 4 ? cell2 : Math.min(84, Math.round(cell2 * 1.5)); }
     V.teaser(host, {
       steps: lap(), regenerate: lap, stepMs: 820, holdMs: 1600,
       render: function (step, ctx) {
+        var c = cellFor(step);
+        if (c !== cellNow) { cellNow = c; view.setOptions({ cellSize: c }); }
         view.render({ rows: step.rows, held: step.held, pointers: [] }, { duration: ctx.duration });
         if (lbl) lbl.textContent = step.label;
       }
@@ -364,6 +385,7 @@
     V.onResize(stageOf(fig), function () {
       if (wr.narrow() === wasNarrow) return;
       wasNarrow = wr.narrow(); view.reset();
+      prep(A.arrayOp(labState, { type: 'insert', index: 0, value: 4 }).steps);
       if (lastRows) view.render(wr.wrap(lastRows), { duration: 0 });
     });
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: CODE.insert, default: 'pseudo', maxHeight: 360 });
@@ -377,6 +399,10 @@
     var op = 'insert', startValues = [3, 8, 5, 1, 6, 9, 2, 7];
     function capFor(vals) { return vals.length ? Math.max(2, nextPow2(vals.length)) : 0; }
     labState = A.makeState(startValues, capFor(startValues));
+    /* prepare() pins the stage to the tallest snapshot, so hand it the wrapped steps of the default run (it doubles the
+       array into two rows, the tallest the lab gets) and of every later run: Run never makes the figure jump. */
+    function prep(steps) { view.prepare(steps.map(function (s) { return wr.wrap({ rows: s.rows, held: s.held, pointers: s.pointers }); })); }
+    prep(A.arrayOp(labState, { type: 'insert', index: 2, value: 4 }).steps);
     function showStatus() {}
     function syncFields() {
       fig.querySelector('[data-idx-wrap]').hidden = !(op === 'read' || op === 'insert' || op === 'delete');
@@ -426,7 +452,7 @@
       if (r.error) { errEl.textContent = r.error; return; }
       errEl.textContent = '';
       code.setSource(CODE[op]);
-      view.reset(); view.prepare(r.steps);
+      view.reset(); prep(r.steps);
       labState = r.state;
       labPlayer.setSteps(r.steps);
       if (autoplay !== false) labPlayer.play();

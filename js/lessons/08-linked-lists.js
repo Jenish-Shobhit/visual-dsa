@@ -44,11 +44,24 @@
       baseStepMs: o.baseStepMs || 1300,
       label: (o.label || 'Figure') + ' controls'
     }, o.player || {}));
-    view.prepare(o.prepare || o.steps);
+    var host = fig.querySelector(o.stage || '[data-stage]'), pool = o.prepare || o.steps;
+    /* Hold the stage at the tallest layout of every step in the pool (a list can wrap onto a second row part-way through),
+       so the figure never changes height while it plays or when its trace is replaced. */
+    function pin(states) {
+      var svg = host.querySelector('svg'), m = 0;
+      if (!svg) return;
+      view.setOptions({ height: 0 });
+      states.forEach(function (st) { view.render(st, { duration: 0 }); });
+      states.forEach(function (st) { view.render(st, { duration: 0 }); m = Math.max(m, parseFloat(svg.style.height) || 0); });
+      view.setOptions({ height: m });
+    }
+    view.prepare(pool); pin(pool);
     player.refresh();
+    var lastW = host.clientWidth;
+    V.onResize(host, function () { if (Math.abs(host.clientWidth - lastW) < 2) return; lastW = host.clientWidth; pin(pool); player.refresh(); });
     return {
       view: view, player: player,
-      load: function (steps, prepareAlso) { view.reset(); view.prepare(prepareAlso || steps); player.setSteps(steps); }
+      load: function (steps, prepareAlso) { pool = prepareAlso || steps; view.reset(); view.prepare(pool); pin(pool); player.setSteps(steps); }
     };
   }
   function vals(a) { return a.length ? a.join(' → ') + ' → null' : 'null (empty)'; }
@@ -314,7 +327,7 @@
     var host = h('div', { class: 'll-teaser__view' });
     var note = h('p', { class: 'll-teaser__note', 'aria-hidden': 'true' });
     stage.appendChild(title); stage.appendChild(host); stage.appendChild(note);
-    var view = V.views.list(host, { label: 'A linked list reversing itself', describe: false });
+    var view = V.views.list(host, { label: 'A linked list reversing itself', describe: false, zoom: function (w) { return w >= 600 ? 1.5 : w >= 420 ? 1.25 : 1; } });
     var steps = ALG.teaserSteps([3, 7, 1, 9, 4]);
     view.prepare(steps);
     var reversedAt = steps.findIndex(function (st) { return st.note && st.note.indexOf('4 → 9') === 0; });

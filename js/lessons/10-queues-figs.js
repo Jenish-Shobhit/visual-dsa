@@ -64,10 +64,10 @@
     var ops = [{ type: 'enq', value: 7 }, { type: 'enq', value: 3 }, { type: 'enq', value: 9 }, { type: 'peek' }, { type: 'deq' }, { type: 'enq', value: 4 }, { type: 'deq' }, { type: 'deq' }, { type: 'deq' }, { type: 'deq' }];
     var steps = Q().queueOps(ops);
     var view = V.views.queue(fig.querySelector('[data-stage]'), { label: 'A queue: values join at the rear and leave at the front', cellSize: 54 });
-    view.prepare(steps);
+    view.prepare(steps.map(function (s) { return { items: s.items, label: s.label || '\u00a0' }; }));
     var player = V.player({
       root: fig, steps: steps,
-      render: function (s, ctx) { view.render({ items: s.items, label: s.label }, { duration: ctx.duration }); },
+      render: function (s, ctx) { view.render({ items: s.items, label: s.label || '\u00a0' }, { duration: ctx.duration }); },   // a blank label keeps the caption line reserved on every step
       caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterLabels: { enqueue: 'enqueue calls', dequeue: 'dequeue calls', peek: 'peek calls', refused: 'Refused (empty)' },
       counterStates: { refused: 'error' }, baseStepMs: 1350, label: 'Queue operations controls'
@@ -177,7 +177,7 @@
     function chips(el, list, waiting) {
       V.clear(el);
       list.forEach(function (x) { el.appendChild(h('span', { class: 'l10-served', title: x.value + ' waited ' + x.wait + ' ticks' }, h('b', null, x.value), h('small', null, String(x.wait)))); });
-      waiting.forEach(function (x) { el.appendChild(h('span', { class: 'l10-served is-waiting', title: x.value + ' has waited ' + x.wait + ' ticks so far' }, h('b', null, x.value), h('small', null, x.wait + '…'))); });
+      waiting.forEach(function (x) { el.appendChild(h('span', { class: 'l10-served is-waiting', title: x.value + ' has waited ' + x.wait + ' ticks so far' }, h('b', null, x.value), h('small', null, x.wait + ' so far'))); });
       if (!list.length && !waiting.length) el.appendChild(h('span', { class: 'l10-served__none' }, 'nothing yet'));
     }
     function render(s, ctx) {
@@ -186,8 +186,18 @@
       chips(servedS, s.servedStack, s.kind === 'done' ? s.waitingStack : []);
       chips(servedQ, s.servedQueue, s.kind === 'done' ? s.waitingQueue : []);
     }
+    /* The last step adds the "still waiting" chips (which can wrap onto a second line): measure that worst case first and
+       hold it as the minimum height of both chip boxes, so the figure does not grow on the final step. */
+    function reserveChips(st) {
+      var last = st[st.length - 1], boxes = [servedS.parentNode, servedQ.parentNode];
+      boxes.forEach(function (b) { b.style.minHeight = ''; });
+      chips(servedS, last.servedStack, last.waitingStack || []); chips(servedQ, last.servedQueue, last.waitingQueue || []);
+      var m = Math.max(boxes[0].offsetHeight, boxes[1].offsetHeight);
+      boxes.forEach(function (b) { b.style.minHeight = m + 'px'; });
+    }
     function load(plan) {
       var st = Q().stackVsQueue(plan);
+      reserveChips(st);
       stackView.reset(); queueView.reset(); stackView.prepare(st.map(function (x) { return { items: x.stack, capacity: 8 }; })); queueView.prepare(st.map(function (x) { return { items: x.queue, capacity: 8 }; }));
       if (player) player.setSteps(st);
       else player = V.player({ root: fig, steps: st, render: render, caption: fig.querySelector('[data-caption]'), counters: null, baseStepMs: 1200, label: 'Stack versus queue controls',
@@ -242,7 +252,7 @@
     var fig = V.$('#fig-deque');
     var C = 8, model = Q().dequeCreate(C), next = 1, timer = 0;
     var dq = V.views.deque(fig.querySelector('[data-deque]'), { capacity: C, cellSize: 46, label: 'The deque in logical order, front to back' });
-    var ring = V.views.ring(fig.querySelector('[data-ring]'), { label: 'The same deque stored in a ring buffer', radius: 100, unrolled: false, showCenter: false, headLabel: 'head', tailLabel: 'next back' });
+    var ring = V.views.ring(fig.querySelector('[data-ring]'), { label: 'The same deque stored in a ring buffer', radius: 150, unrolled: false, showCenter: false, headLabel: 'head', tailLabel: 'next back' });
     var msg = fig.querySelector('[data-msg]');
     var stats = V.stats(fig.querySelector('[data-stats]'), { labels: { size: 'Size', head: 'head slot', ops: 'Operations' }, states: { head: 'active' } });
     var opsN = 0;

@@ -11,7 +11,7 @@
   /* ================================================================== hero teaser: palindromes lighting up in mirror pairs */
   function heroTeaser() {
     var stage = V.$('#teaser');
-    var view = V.views.array(stage, { mode: 'boxes', cellSize: 88, showIndices: false, label: 'Palindrome teaser', pointerStyle: 'chip' });
+    var view = V.views.array(stage, { mode: 'boxes', cellSize: 112, showIndices: false, label: 'Palindrome teaser', pointerStyle: 'chip', outerPointers: false });
     var words = stage.clientWidth < 520 ? ['level', 'kayak', 'noon', 'civic', 'radar'] : ['racecar', 'level', 'rotator', 'kayak', 'deified', 'noon'], wi = 0;   // shorter words on phones so the boxes stay big
     function data() {
       var w = words[wi++ % words.length];
@@ -21,7 +21,16 @@
     }
     var first = data();
     var mid = first.findIndex(function (s, k) { return s.kind === 'match' && k > 3; });
-    V.teaser(stage, { steps: first, render: function (s, ctx) { view.render({ items: s.items, pointers: s.pointers }, { duration: ctx.duration }); }, stepMs: 700, holdMs: 1700, regenerate: data, staticIndex: mid > 0 ? mid : first.length - 1 });
+    var wrapTimer = 0;
+    /* A new word: let the old tiles fade out completely, then bring the new ones in (no cross-fade, so tiles never sit on each other). */
+    function draw(s, ctx) {
+      clearTimeout(wrapTimer);
+      if (ctx.wrap && !ctx.instant) {
+        view.render({ items: [], pointers: [] }, { duration: 260 });
+        wrapTimer = setTimeout(function () { view.render({ items: s.items, pointers: s.pointers }, { duration: ctx.duration }); }, 340);
+      } else view.render({ items: s.items, pointers: s.pointers }, { duration: ctx.duration });
+    }
+    V.teaser(stage, { steps: first, render: draw, stepMs: 700, holdMs: 1700, regenerate: data, staticIndex: mid > 0 ? mid : first.length - 1 });
   }
 
   /* ================================================================== intuition: three families of one-pass walks */

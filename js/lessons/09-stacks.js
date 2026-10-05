@@ -28,7 +28,16 @@
     var view = stackOf(stage, { capacity: 4, cellSize: 38, cellWidth: 440, label: 'Plates stack animation' });
     var steps = A().scenarioSteps(ops('A B C D - - E F - - - G'), { intro: false });
     view.prepare(steps.map(function (st) { return { items: st.items, capacity: 4 }; }));
-    V.teaser(stage, { steps: steps, render: playStack(view, 4), stepMs: 620, holdMs: 1300, staticIndex: 3 });
+    var play = playStack(view, 4), wrapTimer = 0;
+    /* End of the loop: the finished stack empties completely, then the next lap starts (no half-faded plates left hanging). */
+    function render(step, ctx) {
+      clearTimeout(wrapTimer);
+      if (ctx.wrap && !ctx.instant) {
+        view.render({ items: [], capacity: 4 }, { duration: 300 });
+        wrapTimer = setTimeout(function () { play(step, ctx); }, 380);
+      } else play(step, ctx);
+    }
+    V.teaser(stage, { steps: steps, render: render, stepMs: 620, holdMs: 1300, staticIndex: 3 });
   }
 
   /* ================================================================== the problem: nested unfinished work */

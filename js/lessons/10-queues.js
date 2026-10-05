@@ -10,8 +10,17 @@
   /* ================================================================== hero teaser: a ticket line */
   function heroTeaser() {
     var stage = V.$('#teaser');
-    var view = L10.ticketLine(stage, { height: 250, label: 'A ticket line' });
     var steps = Q().ticketLine('j j j s j j s j s s s s'.split(' '));
+    var maxLine = steps.reduce(function (m, st) { return Math.max(m, st.line.length); }, 1);
+    var narrow = (stage.clientWidth || 999) < 480, x0 = narrow ? 156 : 190;
+    var cs = getComputedStyle(stage), H = 232;
+    var availW = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), availH = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    /* Crop the picture to the stage's own shape (so it is never scaled taller than the stage), give it an even margin, and
+       spread the longest line this loop shows across the width so the stage is used instead of hugging the left edge. */
+    var margin = narrow ? 12 : 24, minStep = narrow ? 36 : 52, maxStep = narrow ? 44 : 112;
+    var W = Math.max(narrow ? 400 : 0, x0 + (maxLine - 1) * minStep + 24 + margin * 2, availW > 0 && availH > 0 ? Math.ceil(H * availW / availH) : 0);
+    var step = Math.max(minStep, Math.min(maxStep, (W - margin * 2 - 24 - x0) / Math.max(1, maxLine - 1)));
+    var view = L10.ticketLine(stage, { height: H, label: 'A ticket line', width: W, step: step, offset: margin });
     V.teaser(stage, {
       steps: steps, render: function (s, ctx) { view.render(s, { duration: ctx.duration }); },
       stepMs: 900, holdMs: 1400, staticIndex: 6

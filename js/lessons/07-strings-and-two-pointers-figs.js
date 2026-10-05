@@ -275,7 +275,7 @@
       lanes.forEach(function (l) { l.total = l.trace.pairs.length; });
       T = Math.max(lanes[0].total, lanes[1].total);
       var st = [];
-      for (var k = 0; k <= T; k++) st.push({ t: k });
+      for (var k = 0; k <= T; k++) st.push({ t: k, caption: caption(k) });   // real text per step, so the caption box is sized for the longest one
       return st;
     }
     function caption(k) {
@@ -304,8 +304,6 @@
       root: fig, steps: st, render: render, caption: '[data-caption]', baseStepMs: 520, label: 'Race controls',
       speeds: [0.5, 1, 2, 4, 8], speed: 1
     });
-    // captions come from the current tick, not stored per step
-    player.on('step', function (step) { var el = fig.querySelector('[data-caption]'); if (el) el.innerHTML = caption(step.t); });
     function reload() { st = build(); player.setSteps(st); fig.querySelector('[data-caption]').innerHTML = caption(0); }
     reload();
     V.segmented(fig.querySelector('[data-seg]'), {

@@ -456,7 +456,7 @@
     var tagS = s('text', { class: 'cut-tag cut-tag--s' }, 'S'), tagT = s('text', { class: 'cut-tag cut-tag--t' }, 'V − S');
     [defs, sideS, sideT, knife, knifeHit, hTop, hBot, tagS, tagT].forEach(function (n) { svg.appendChild(n); });
     wrap.appendChild(svg);
-    var top = 470, bot = 560, showMst = false;
+    var top = 600, bot = 680, showMst = false;
     var explored = {}, exploredCount = 0, okCount = 0;
 
     var sliders = fig.querySelector('[data-sliders]');
@@ -555,7 +555,7 @@
       while ((function () { var S = g.nodes.filter(function (n) { return (b - t) * n.y - 600 * (n.x - t) > 0; }).length; return S === 0 || S === g.nodes.length; }()) && tries < 30);
       setCut(t, b);
     });
-    fig.querySelector('[data-reset]').addEventListener('click', function () { setCut(470, 560); });
+    fig.querySelector('[data-reset]').addEventListener('click', function () { setCut(600, 680); });
     V.toggle(fig.querySelector('[data-mst-toggle]'), { label: 'Show the MST', checked: false, onChange: function (c) { showMst = c; update(250); } });
     V.onResize(wrap, function () { layout(); });
     update(0);

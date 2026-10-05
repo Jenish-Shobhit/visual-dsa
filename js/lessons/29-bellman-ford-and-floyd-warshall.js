@@ -209,7 +209,7 @@
     var host = h('div', { class: 'bf-hero__grid' });
     stage.classList.add('bf-hero');
     stage.appendChild(label); stage.appendChild(host);
-    var view = V.views.grid(host, { cellSize: 56, countUp: true, label: 'Distance matrix during Floyd-Warshall' });
+    var view = V.views.grid(host, { cellSize: 38, countUp: true, label: 'Distance matrix during Floyd-Warshall' });
     var graphs = [L.CLRS], lap = 0;
     function make(gr) {
       var all = SP.floydWarshall(gr, { mode: 'improve' });

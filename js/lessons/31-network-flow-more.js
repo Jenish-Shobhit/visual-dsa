@@ -183,7 +183,7 @@
     edges.forEach(function (e) {
       var a = P[e[0]], b = P[e[1]], st = e[2];
       svg.appendChild(s('line', { x1: a[1], y1: a[2], x2: b[1], y2: b[2], style: 'stroke:' + (st ? 'var(--st-' + st + ')' : 'var(--el-edge)') + ';stroke-width:' + (st ? 4 : 2) + (e[3] ? ';stroke-dasharray:4 3' : '') + ';stroke-linecap:round' }));
-      if (e[4]) svg.appendChild(s('text', { x: (a[1] + b[1]) / 2, y: (a[2] + b[2]) / 2 - 5, 'text-anchor': 'middle', style: 'fill:var(--ink-2);font:700 9px var(--font-mono)' }, e[4]));
+      if (e[4]) svg.appendChild(s('text', { x: (a[1] + b[1]) / 2, y: (a[2] + b[2]) / 2 - 5, 'text-anchor': 'middle', style: 'fill:var(--ink-2);font:700 11px var(--font-mono)' }, e[4]));
     });
     nodes.forEach(function (n) {
       var st = n[3] || 'default';

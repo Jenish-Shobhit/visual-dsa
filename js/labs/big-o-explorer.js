@@ -18,6 +18,36 @@
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function fmtN(n) { return B.group(n); }
   function badge(id, text) { return h('span', { class: 'big-o', 'data-o': id === 'nk' ? 'nk' : id }, text || B.byId(id).label); }
+  /* Unicode superscripts (10³⁰¹) render at ~8px in mono; show them as real <sup> so they stay 10px or more. */
+  var SUPCH = '⁰¹²³⁴⁵⁶⁷⁸⁹⁻', PLAIN = '0123456789-';
+  function setRich(el, str) {
+    str = String(str);
+    if (!/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]/.test(str)) { el.textContent = str; return; }
+    el.textContent = '';
+    str.split(/([⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+)/).forEach(function (part, i) {
+      if (!part) return;
+      if (i % 2) el.appendChild(h('sup', { class: 'bx-sup' }, part.split('').map(function (c) { return PLAIN.charAt(SUPCH.indexOf(c)); }).join('')));
+      else el.appendChild(document.createTextNode(part));
+    });
+  }
+  /* The chart packs end-of-line labels ~13px apart; open them up to a readable pitch. */
+  function spreadLabels(host) {
+    var busy = false;
+    function run() {
+      if (busy) return; busy = true;
+      var list = [].slice.call(host.querySelectorAll('.vz-series-label')).filter(function (t) { return t.textContent && !t.classList.contains('is-inside') && +getComputedStyle(t).opacity > 0.05; })
+        .map(function (t) { return { t: t, y: parseFloat(t.getAttribute('y')) }; }).filter(function (o) { return isFinite(o.y); }).sort(function (a, b) { return a.y - b.y; });
+      var PITCH = 19, i;
+      for (i = 1; i < list.length; i++) if (list[i].y < list[i - 1].y + PITCH) list[i].y = list[i - 1].y + PITCH;
+      var svg = host.querySelector('svg'), maxY = svg ? svg.getBoundingClientRect().height - 18 : Infinity;
+      for (i = list.length - 1; i >= 0; i--) { var cap = i === list.length - 1 ? maxY : list[i + 1].y - PITCH; if (list[i].y > cap) list[i].y = cap; }
+      list.forEach(function (o) { var v = String(Math.round(o.y * 100) / 100); if (o.t.getAttribute('y') !== v) o.t.setAttribute('y', v); });
+      obs.takeRecords();
+      busy = false;
+    }
+    var obs = new MutationObserver(function () { run(); });
+    obs.observe(host, { subtree: true, attributes: true, attributeFilter: ['y'] });
+  }
   function rateLabel() { return '10' + B.sup(S.rate); }
 
   /* ------------------------------------------------------------------ URL state */
@@ -162,11 +192,11 @@
     CLASSES.forEach(function (c) {
       var cell = $('[data-c="' + c.id + '"]', valuesEl), on = S.on.indexOf(c.id) >= 0;
       cell.classList.toggle('is-off', !on);
-      $('[data-vnum]', cell).textContent = B.formatCount(c.log10(n));
+      setRich($('[data-vnum]', cell), B.formatCount(c.log10(n)));
     });
     var u = $('[data-c="user"]', valuesEl);
     u.hidden = !userOn();
-    if (userOn()) $('[data-vnum]', u).textContent = B.formatCount(userLog10(n));
+    if (userOn()) setRich($('[data-vnum]', u), B.formatCount(userLog10(n)));
   }
 
   /* ------------------------------------------------------------------ controls above the chart */
@@ -257,10 +287,10 @@
   }
   function paintRow(id, log10ops) {
     var r = timeRows[id], d = B.formatDuration(log10ops - S.rate);
-    r.ops.textContent = B.formatCount(log10ops) + (log10ops < 0.3 && log10ops > -1 ? ' step' : ' steps');
+    setRich(r.ops, B.formatCount(log10ops) + (log10ops < 0.3 && log10ops > -1 ? ' step' : ' steps'));
     r.time.innerHTML = '';
     r.time.appendChild(h('b', null, d.text));
-    if (d.sub) r.time.appendChild(h('small', null, d.sub));
+    if (d.sub) { var sm = h('small', null); setRich(sm, d.sub); r.time.appendChild(sm); }
     r.fill.style.width = tpos(log10ops - S.rate) + '%';
     r.row.classList.toggle('is-long', d.long);
     r.row.setAttribute('data-tier', d.tier);
@@ -291,10 +321,10 @@
     $('[data-dbl-n]').textContent = 'n = ' + fmtN(D.n);
     CLASSES.forEach(function (c) {
       var ce = cardEls[c.id], ls = c.log10(D.n), h0 = D.hist[c.id];
-      ce.num.textContent = B.formatCount(ls);
+      setRich(ce.num, B.formatCount(ls));
       if (D.prev !== null) {
         var r = ls - c.log10(D.prev);
-        ce.ratio.textContent = B.formatRatio(r);
+        setRich(ce.ratio, B.formatRatio(r));
         ce.ratio.classList.remove('is-pop'); void ce.ratio.offsetWidth; if (bump) ce.ratio.classList.add('is-pop');
       } else ce.ratio.textContent = 'start';
       var mn = Math.min.apply(null, h0.concat([ls])), mx = Math.max.apply(null, h0.concat([ls]));
@@ -519,6 +549,7 @@
     chart = VDSA.views.chart($('[data-chart]'), { type: 'line', height: 400, label: 'Growth of running time for each complexity class', samples: 96 });
     chart.on('hover', function (e) { hoverN = Math.max(1, Math.round(e.x)); paintValues(); });
     var host = $('[data-chart]');
+    spreadLabels(host);
     function leave() { if (hoverN !== null) { hoverN = null; paintValues(); } }
     host.addEventListener('pointerleave', leave);
     host.addEventListener('focusout', leave);

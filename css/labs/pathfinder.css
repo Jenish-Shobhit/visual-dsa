@@ -22,8 +22,9 @@
 .pf-chips--end { margin-left: auto; align-self: flex-end; }
 .pf .seg { flex-wrap: wrap; }
 .pf .slider { grid-template-columns: auto minmax(90px, 1fr) auto; min-width: 0; }
-.pf-panel .slider { grid-template-columns: 7.8em minmax(80px, 1fr) 4.6em; column-gap: 10px; }
-.pf-ctl--slider { flex: 1 1 300px; max-width: 360px; align-self: flex-end; }
+.pf-panel .slider { grid-template-columns: 7.8em minmax(80px, 1fr) minmax(4.6em, auto); column-gap: 10px; }
+.pf-ctl--slider { flex: 1 1 300px; max-width: 380px; align-self: flex-end; display: flex; align-items: center; min-height: 40px; }
+.pf-ctl--slider > * { flex: 1 1 auto; min-width: 0; }
 .pf-row--maze > .pf-ctl--grow { flex: 1 1 100%; }
 .pf-row--maze .pf-chips--end { margin-left: auto; }
 .pf-row--maze { align-items: flex-end; }
@@ -52,7 +53,8 @@
 .pf-stage { padding: clamp(8px, 1.6cqi, 18px); min-height: 200px; touch-action: none; }
 .fig__stage > .vz-grid-host { width: 100%; justify-self: stretch; }
 .pf-stats { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); }
-.pf-stats .stat { flex: 1 1 130px; max-width: 240px; }
+.pf-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pf-stats .stat { min-width: 0; max-width: none; }
 .pf-caption { min-height: calc(1.55em * 2 + 26px); }
 .pf-fig .fig__foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 24px; }
 .pf-foot__r { flex: 1 1 420px; }
@@ -100,9 +102,18 @@
 
 @media (max-width: 640px) {
   .pf-bar { padding: 8px 10px; gap: 8px 12px; }
-  .pf-speed { flex: 1 1 100%; }
+  .pf-bar { display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+  .pf-bar > * { min-width: 0; }
+  .pf-transport, .pf-speed, .pf-scrub { grid-column: 1 / -1; }
+  .pf-speed { flex: none; }
+  .pf-bar [data-turbo] { order: 3; }
+  .pf-bar [data-heat] { order: 4; }
+  .pf-scrub { order: 5; }
+  .pf-ctl { flex: 1 1 100%; }
+  .pf-ctl--slider { max-width: none; flex: 1 1 100%; }
+  .pf-panel .slider { grid-template-columns: 8.2em minmax(60px, 1fr) minmax(4.6em, auto); }
   .pf-chips--end { margin-left: 0; }
-  .pf-stats .stat { flex: 1 1 calc(50% - 8px); min-width: 0; }
+  .pf-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pf-stage { padding: 6px; }
   .pf-select { max-width: 100%; }
   .pf .btn--sm { height: 36px; }

@@ -120,6 +120,16 @@
     return table[Math.min(Math.max(levels, 0), table.length - 1)];
   }
 
+  /* The tree view scales node text with node size (9px on small nodes); keep every label at 10px or more. */
+  function readable(root) {
+    var ts = root.querySelectorAll('.ts-pane__view svg text');
+    for (var i = 0; i < ts.length; i++) {
+      var t = ts[i]; t.style.fontSize = '';
+      var fs = parseFloat(t.getAttribute('font-size'));
+      if (fs && fs < 10) t.style.fontSize = '10px';
+    }
+  }
+
   function render(step, ctx) {
     var dur = ctx && !ctx.instant ? ctx.duration : 0;
     var lv = 0;
@@ -131,6 +141,7 @@
       if (!f) return;
       if (p.nodeSize !== want) { p.nodeSize = want; p.view.setOptions({ nodeSize: want }); }
       p.view.render(f.view, { duration: dur });
+      readable(p.el);
       updateChips(p, f);
       p.hint.hidden = f.nodes > 0;
       if (mode.compare) p.cap.innerHTML = f.caption || '';

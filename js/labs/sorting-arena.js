@@ -104,7 +104,7 @@
     });
     ui.log = V.toggle(el('[data-log]'), { label: 'Log scale', checked: st.log, onChange: function (c) { st.log = c; renderGrowth(); syncUrl(); } });
     ui.n = V.slider(el('[data-n]'), {
-      label: 'Numbers', min: A.MIN_N, max: A.MAX_N, value: st.n, format: function (v) { return 'n = ' + v; },
+      label: 'How many', min: A.MIN_N, max: A.MAX_N, value: st.n, format: function (v) { return 'n = ' + v; },
       onInput: function (v) { st.n = v; st.custom = null; st.preset = st.preset === 'custom' ? 'random' : st.preset; paintPresets(); debounceRebuild(); },
       onChange: function (v) { st.n = v; rebuildNow(); }
     });
@@ -380,7 +380,7 @@
     order.forEach(function (i) {
       var d = done[i], info = d && A.get(d.id), lane = d && race.lanes.filter(function (l) { return l.id === d.id; })[0];
       wrap.appendChild(h('li', { class: 'sa-pod__col' + (d ? ' is-filled' : ''), 'data-place': i + 1, style: lane ? { '--lane': 'var(--st-' + LANE_STATES[lane.slot] + ')' } : null },
-        h('span', { class: 'sa-pod__who' }, d ? info.short : '…'),
+        h('span', { class: 'sa-pod__who' }, d ? info.short : 'Not yet'),
         h('span', { class: 'sa-pod__work' }, d ? num(d.total) + ' ticks' : ''),
         h('span', { class: 'sa-pod__step' }, h('b', null, d ? ord(d.rank) : ord(i + 1)))));
     });
@@ -390,7 +390,7 @@
       var rest = h('ol', { class: 'sa-rest', start: 4 });
       race.podium.slice(3).forEach(function (p, k) {
         var d = done.filter(function (x) { return x.id === p.id; })[0];
-        rest.appendChild(h('li', null, h('span', null, d ? ord(p.rank) : '…'), ' ', d ? A.get(p.id).short : '', d ? h('small', null, ' ' + num(p.total) + ' ticks') : null));
+        rest.appendChild(h('li', null, h('span', null, d ? ord(p.rank) : ord(k + 4)), ' ', d ? A.get(p.id).short : h('small', null, 'not yet'), d ? h('small', null, ' ' + num(p.total) + ' ticks') : null));
       });
       box.appendChild(rest);
     }

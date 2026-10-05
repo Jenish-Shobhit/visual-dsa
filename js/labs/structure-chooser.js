@@ -52,7 +52,7 @@
 
   /* ------------------------------------------------------------------ hero teaser */
   function teaser() {
-    var host = $('#teaser'), ns = 'http://www.w3.org/2000/svg', W = 400, H = 320;
+    var host = $('#teaser'), ns = 'http://www.w3.org/2000/svg', W = 400, H = 356;
     var svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('class', 'sc-tz'); svg.setAttribute('aria-hidden', 'true');
     function el(tag, a) { var e = document.createElementNS(ns, tag); for (var k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; }
     var pos = {}, depth = 4, idx = 0;

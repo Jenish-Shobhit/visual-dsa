@@ -4,6 +4,13 @@
 (function () {
   'use strict';
   var V = window.VDSA, h = V.h;
+  /* nearly sorted, but never fully sorted: two random swaps can cancel, so guarantee one inversion */
+  function nearlySorted(n, o) {
+    var a = V.presets.nearlySorted(n, o), i;
+    for (i = 0; i + 1 < a.length; i++) if (a[i] > a[i + 1]) return a;
+    if (a.length > 1) { i = Math.floor(a.length / 2) - 1; var t = a[i]; a[i] = a[i + 1]; a[i + 1] = t; }
+    return a;
+  }
   var L14 = V.lessons.l14;
   var NAMES = ['bubble', 'selection', 'insertion'];
   var TITLE = { bubble: 'Bubble sort', selection: 'Selection sort', insertion: 'Insertion sort' };
@@ -252,7 +259,7 @@
         { label: 'Random', value: function () { return V.presets.random(N, { min: 5, max: 95 }); } },
         { label: 'Sorted', title: 'Best case for bubble (early exit) and insertion sort', value: function () { return V.presets.sorted(N, { min: 5, max: 95 }); } },
         { label: 'Reversed', title: 'Worst case: every pair is out of order', value: function () { return V.presets.reversed(N, { min: 5, max: 95 }); } },
-        { label: 'Nearly sorted', value: function () { return V.presets.nearlySorted(N, { min: 5, max: 95, swaps: 2 }); } },
+        { label: 'Nearly sorted', value: function () { return nearlySorted(N, { min: 5, max: 95, swaps: 2 }); } },
         { label: 'Few unique', value: function () { return V.presets.fewUnique(N, { min: 10, max: 90, k: 3 }); } },
         { label: 'All equal', value: [5, 5, 5, 5, 5, 5] },
         { label: 'One value', value: [42] }
@@ -293,7 +300,7 @@
       var o = { min: 5, max: 95, seed: seed };
       if (preset === 'sorted') return V.presets.sorted(n, o);
       if (preset === 'reversed') return V.presets.reversed(n, o);
-      if (preset === 'nearly') return V.presets.nearlySorted(n, Object.assign({ swaps: 2 }, o));
+      if (preset === 'nearly') return nearlySorted(n, Object.assign({ swaps: 2 }, o));
       if (preset === 'few') return V.presets.fewUnique(n, Object.assign({ k: 3 }, o));
       return V.presets.random(n, o);
     }
@@ -353,7 +360,7 @@
     var o = { min: 1, max: 999, seed: seed };
     if (preset === 'sorted') return V.presets.sorted(n, o);
     if (preset === 'reversed') return V.presets.reversed(n, o);
-    if (preset === 'nearly') return V.presets.nearlySorted(n, Object.assign({ swaps: Math.max(1, Math.round(n / 10)) }, o));
+    if (preset === 'nearly') return nearlySorted(n, Object.assign({ swaps: Math.max(1, Math.round(n / 10)) }, o));
     if (preset === 'few') return V.presets.fewUnique(n, Object.assign({ k: 4 }, o));
     return V.presets.random(n, o);
   }

@@ -107,6 +107,7 @@
       caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterStates: { comparisons: 'compare', swaps: 'swap' }, baseStepMs: 1050, label: 'Heap lab controls'
     });
+    L21.holdVars(fig, player);
 
     function load(steps, op) {
       lastOp = op;
@@ -245,6 +246,7 @@
       caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterStates: { comparisons: 'compare', swaps: 'swap' }, baseStepMs: 900, label: 'Heap sort controls'
     });
+    L21.holdVars(fig, player);
     // flow ids from the sort steps light the shared sift-down flowchart too, which is helpful, not required
     function load(values) {
       var steps = H().sort(values);

@@ -165,6 +165,7 @@
       counterStates: { visited: 'compare', used: 'done', written: 'swap' },
       baseStepMs: 1000, label: 'Segment tree lab controls'
     });
+    L.holdVars(fig, player);
 
     /* predictions */
     player.addCheckpoint(function (st) {
@@ -275,6 +276,7 @@
       counterLabels: { visited: 'Nodes visited', pushes: 'Tags pushed down' }, counterStates: { visited: 'compare', pushes: 'key' },
       baseStepMs: 1100, label: 'Lazy propagation lab controls'
     });
+    L.holdVars(fig, player);
     player.addCheckpoint(function (st) {
       for (var k = 1; k < st.length; k++) if (st[k].kind === 'push') return k;
       return -1;
@@ -385,6 +387,7 @@
       counterLabels: { steps: 'Blocks visited' }, counterStates: { steps: 'compare' },
       baseStepMs: 1050, label: 'Fenwick lab controls'
     });
+    L.holdVars(fig, player);
 
     function jumpCheck(kind) {
       return function (st) {

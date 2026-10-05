@@ -135,7 +135,7 @@
       svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
       svg.setAttribute('width', W); svg.setAttribute('height', H);
       svg.style.minWidth = minW() + 'px';
-      var fs = Math.max(10, Math.min(15, r * 0.95));
+      var fs = Math.max(11.5, Math.min(15, r * 0.95));
       recs.forEach(function (rec) {
         rec.disc.setAttribute('r', r);
         rec.text.setAttribute('font-size', fs.toFixed(1));
@@ -373,6 +373,8 @@
     stage.appendChild(svg);
     var gHalo = s('g'), gDots = s('g');
     svg.appendChild(gHalo); svg.appendChild(gDots);
+    var live = s('text', { class: 'uf-hero-live', x: W / 2, y: H - 8, 'text-anchor': 'middle' }, '');
+    svg.appendChild(live);
     var halos = [], dots = [];
     for (var i = 0; i < N; i++) {
       var hc = s('circle', { class: 'uf-hero-halo', cx: 0, cy: 0, r: 0, opacity: 0 });
@@ -404,20 +406,43 @@
       return steps;
     }
     function layout(st) {
-      var gs = UF.groupsOf(st.parent), pos = new Array(N), halo = [];
+      var gs = UF.groupsOf(st.parent), pos = new Array(N), halo = [], items = [];
       gs.forEach(function (g) {
         var cx = 0, cy = 0;
         g.forEach(function (m) { cx += st.pts[m][0]; cy += st.pts[m][1]; });
         cx /= g.length; cy /= g.length;
-        if (g.length === 1) { pos[g[0]] = [cx, cy]; return; }
-        var rr = 8 + 5.2 * g.length;
-        g.forEach(function (m, k) { var ang = -Math.PI / 2 + (k / g.length) * Math.PI * 2; pos[m] = [cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr]; });
-        halo.push({ min: g[0], cx: cx, cy: cy, r: rr + 18, c: st.colors[g[0]] });
+        var rr = g.length === 1 ? 0 : 8 + 5.2 * g.length;
+        items.push({ g: g, cx: cx, cy: cy, rr: rr, r: g.length === 1 ? (narrow ? 14 : 18) : rr + 18 });
       });
-      return { pos: pos, halo: halo };
+      /* relaxation: push overlapping groups (and halos) apart, then keep each one inside the stage, clear of the caption line */
+      var capH = 26;
+      for (var it = 0; it < 60; it++) {
+        var moved = false;
+        for (var a = 0; a < items.length; a++) for (var b = a + 1; b < items.length; b++) {
+          var A = items[a], B = items[b], dx = B.cx - A.cx, dy = B.cy - A.cy, dd = Math.hypot(dx, dy), need = A.r + B.r + 4;
+          if (dd < need) {
+            if (dd < 0.01) { dx = 1; dy = 0; dd = 1; }
+            var push = (need - dd) / 2 + 0.01;
+            A.cx -= dx / dd * push; A.cy -= dy / dd * push; B.cx += dx / dd * push; B.cy += dy / dd * push; moved = true;
+          }
+        }
+        items.forEach(function (q) {
+          q.cx = Math.min(Math.max(q.cx, Math.min(q.r + 4, W / 2)), Math.max(W - q.r - 4, W / 2));
+          q.cy = Math.min(Math.max(q.cy, Math.min(q.r + 4, (H - capH) / 2)), Math.max(H - capH - q.r - 4, (H - capH) / 2));
+        });
+        if (!moved) break;
+      }
+      items.forEach(function (q) {
+        if (q.g.length === 1) { pos[q.g[0]] = [q.cx, q.cy]; return; }
+        q.g.forEach(function (m, k) { var ang = -Math.PI / 2 + (k / q.g.length) * Math.PI * 2; pos[m] = [q.cx + Math.cos(ang) * q.rr, q.cy + Math.sin(ang) * q.rr]; });
+        halo.push({ min: q.g[0], cx: q.cx, cy: q.cy, r: q.r, c: st.colors[q.g[0]] });
+      });
+      return { pos: pos, halo: halo, groups: gs.length };
     }
     function render(st, ctx) {
       var lay = layout(st), d = ctx.duration;
+      var unions = N - lay.groups;
+      live.textContent = lay.groups + (lay.groups === 1 ? ' group' : ' groups') + ' \u00b7 ' + unions + (unions === 1 ? ' union' : ' unions');
       var byMin = {};
       lay.halo.forEach(function (hh) { byMin[hh.min] = hh; });
       for (var i = 0; i < N; i++) {

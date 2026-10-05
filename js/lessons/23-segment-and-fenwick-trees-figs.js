@@ -25,7 +25,7 @@
   /* ================================================================== hero teaser */
   L.heroTeaser = function () {
     var stage = V.$('#teaser');
-    var view = L.segView(stage, { compact: true, cellMax: 56, nodeH: 32, rowH: 45, label: 'Segment tree animation' });
+    var view = L.segView(stage, { compact: true, cellMax: 56, nodeH: 38, rowH: 54, label: 'Segment tree animation' });
     var arr = [4, 7, 2, 9, 5, 3, 8, 6];
     var steps = [];
     [[1, 5], [0, 3], [3, 7], [2, 2]].forEach(function (rg) {
@@ -474,7 +474,7 @@
       var g = s('g', { class: 'l23-bar is-' + st });
       g.appendChild(s('rect', { class: 'l23-bbox', x: x0 + (i - low) * cw + 1, y: 6 + (3 - lvl) * 17, width: low * cw - 2, height: 14, rx: 5 }));
       svg.appendChild(g);
-      var t = s('text', { class: 'l23-fidx', x: x0 + (i - 0.5) * cw, y: 76, 'text-anchor': 'middle', style: 'font-size:9px' }); t.textContent = i; svg.appendChild(t);
+      var t = s('text', { class: 'l23-fidx', x: x0 + (i - 0.5) * cw, y: 76, 'text-anchor': 'middle', style: 'font-size:10.5px' }); t.textContent = i; svg.appendChild(t);
     }
     return svg;
   }

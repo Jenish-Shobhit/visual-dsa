@@ -39,6 +39,28 @@
     return out;
   };
 
+  /* Keep a lab's side column from growing and shrinking as the variables panel gains and loses rows: reserve the height of the
+     fullest step of the current trace (and never give height back if a row ever wraps taller than planned). */
+  L23.holdVars = function (fig, player) {
+    var panel = fig && fig.querySelector('.vars');
+    if (!panel || !player) return;
+    var floor = 0, rowH = 0, base = 0;
+    function bump(px) { if (px > floor + 1) { floor = px; panel.style.minHeight = Math.ceil(px) + 'px'; } }
+    function plan(steps) {
+      var list = panel.querySelector('.vars__list'), rows = panel.querySelectorAll('.vars__row').length;
+      if (!rowH && list && rows) { rowH = list.getBoundingClientRect().height / rows; base = panel.getBoundingClientRect().height - list.getBoundingClientRect().height; }
+      if (!rowH) rowH = 34.7;
+      if (!base) base = 42;
+      var most = 0;
+      (steps || []).forEach(function (st) { most = Math.max(most, Object.keys(st.vars || {}).length); });
+      if (most) bump(base + most * rowH + 4);
+    }
+    var set = player.setSteps;
+    player.setSteps = function (steps) { plan(steps); return set.apply(this, arguments); };
+    plan(player.steps);
+    if (window.ResizeObserver) new ResizeObserver(function () { bump(panel.getBoundingClientRect().height); }).observe(panel);
+  };
+
   L23.whenNear = function (el, fn) {
     el = V.$(el);
     if (!el) return;
@@ -82,7 +104,7 @@
       var cw = clamp(Math.floor((W - 2 * pad) / n), minCw, maxCw);
       var svgW = Math.max(W, cw * n + 2 * pad);
       var x0 = (svgW - cw * n) / 2;
-      var nodeH = o.nodeH || (o.compact ? 34 : 40), rowH = o.rowH || (o.compact ? 54 : 64), top = 20;
+      var nodeH = o.nodeH || (o.compact ? 38 : 40), rowH = o.rowH || (o.compact ? 56 : 64), top = 24;
       var g = { W: svgW, cw: cw, x0: x0, nodeH: nodeH, rowH: rowH, top: top, x: {}, y: {}, w: {} };
       (function pos(id) {
         var nd = shp.byId[id];
@@ -122,9 +144,12 @@
           gEdges.appendChild(r.edge);
         }
         if (!nd.leaf) {
-          var ext = nd.hi - nd.lo + 1;
-          r.ext = s('rect', { class: 'l23-ext is-default', x: g.x0 + nd.lo * g.cw + 3, width: ext * g.cw - 6, y: y + h / 2 + 3, height: 3, rx: 1.5 });
-          gExt.appendChild(r.ext);
+          /* the extent bar sits just under the node and is a little shorter than the span it stands for; compact drawings leave it out */
+          if (o.ext !== false && !o.compact) {
+            var ext = nd.hi - nd.lo + 1, ew = Math.max(w, ext * g.cw - 22);
+            r.ext = s('rect', { class: 'l23-ext is-default', x: x - ew / 2, width: ew, y: y + h / 2 + 2, height: 2.5, rx: 1.25 });
+            gExt.appendChild(r.ext);
+          }
         } else if (g.showArray) {
           var top = y + h / 2 + 3;
           r.drop = s('line', { class: 'l23-drop', x1: x, x2: x, y1: top, y2: g.cellsY });
@@ -133,23 +158,26 @@
         r.g = s('g', { class: 'l23-node is-default', 'data-id': id, transform: 'translate(' + x + ' ' + y + ')' });
         r.ring = s('rect', { class: 'l23-ring', x: -w / 2 - 4, y: -h / 2 - 4, width: w + 8, height: h + 8, rx: 13 });
         r.box = s('rect', { class: 'l23-box', x: -w / 2, y: -h / 2, width: w, height: h, rx: 9 });
-        r.lbl = s('text', { class: 'l23-nlabel', y: -h / 2 + (o.compact ? 11 : 13), 'text-anchor': 'middle' });
+        r.lbl = s('text', { class: 'l23-nlabel', y: -h / 2 + (o.compact ? 12 : 13), 'text-anchor': 'middle' });
         r.lbl.textContent = nd.leaf ? '[' + nd.lo + ']' : '[' + nd.lo + ',' + nd.hi + ']';
         r.val = s('text', { class: 'l23-nval', y: h / 2 - (o.compact ? 8 : 9), 'text-anchor': 'middle' });
         r.g.appendChild(r.ring); r.g.appendChild(r.box); r.g.appendChild(r.lbl); r.g.appendChild(r.val);
         r.g.setAttribute('aria-label', 'Node covering ' + (nd.leaf ? 'index ' + nd.lo : 'indices ' + nd.lo + ' to ' + nd.hi));
         gNodes.appendChild(r.g);
-        r.ret = s('g', { class: 'l23-ret', style: 'opacity:0' });
+        /* chips float just above the top corners (clear of the node's own label and of the neighbours); the outer <g>
+           carries the position, the inner one is what pops, so the scale animation never replaces the translate */
+        var off = Math.max(w / 2 - 4, 14);
+        r.ret = s('g', { class: 'l23-ret', style: 'opacity:0', transform: 'translate(' + (x + off) + ' ' + (y - h / 2 - 7) + ')' });
+        r.retIn = s('g', { class: 'l23-pop' });
         r.retBox = s('rect', { rx: 8, height: 16, y: -8 });
         r.retTxt = s('text', { 'text-anchor': 'middle', y: 0.5 });
-        r.ret.appendChild(r.retBox); r.ret.appendChild(r.retTxt);
-        r.ret.setAttribute('transform', 'translate(' + (x + w / 2 - 4) + ' ' + (y - h / 2 - 1) + ')');
+        r.retIn.appendChild(r.retBox); r.retIn.appendChild(r.retTxt); r.ret.appendChild(r.retIn);
         gChips.appendChild(r.ret);
-        r.tag = s('g', { class: 'l23-tag', style: 'opacity:0' });
+        r.tag = s('g', { class: 'l23-tag', style: 'opacity:0', transform: 'translate(' + (x - off) + ' ' + (y - h / 2 - 7) + ')' });
+        r.tagIn = s('g', { class: 'l23-pop' });
         r.tagBox = s('rect', { rx: 8, height: 16, y: -8 });
         r.tagTxt = s('text', { 'text-anchor': 'middle', y: 0.5 });
-        r.tag.appendChild(r.tagBox); r.tag.appendChild(r.tagTxt);
-        r.tag.setAttribute('transform', 'translate(' + (x - w / 2 + 4) + ' ' + (y - h / 2 - 1) + ')');
+        r.tagIn.appendChild(r.tagBox); r.tagIn.appendChild(r.tagTxt); r.tag.appendChild(r.tagIn);
         gChips.appendChild(r.tag);
         st.rec[id] = r;
       });
@@ -201,7 +229,7 @@
       box.setAttribute('x', -w / 2); box.setAttribute('width', w);
       setText(txt, text);
       g.style.opacity = 1;
-      if (!shown || prev !== String(text)) pop(g, dur);
+      if (!shown || prev !== String(text)) pop(g.firstChild, dur);
     }
 
     function render(snap, opts) {
@@ -283,13 +311,15 @@
     var st = { n: 0, geo: null, bars: [], cells: [], bits: [], idx: [], arcs: {}, last: null, handlers: {}, arcLayer: null };
     var bandEl, curG, curBox, curTxt;
 
+    /* one cell width for setup and resize: n cells plus the half-cell either side that the out-of-range cursor needs must fit the stage */
+    function fenCw(W, n) { return clamp(Math.floor((W - 64 - 14) / (n + 1)), o.cellMin || 34, o.cellMax || 56); }
     function bitLen(n) { return n.toString(2).length; }
     function colX(g, k) { return g.x0 + (clamp(k, 0, g.n + 1) - 0.5) * g.cw; }
 
     function setup(n) {
       var W = innerW(container) || o.width || 640;
       var padL = 64, padR = 14;   // wide enough for the right-aligned row labels ("blocks T")
-      var cw = clamp(Math.floor((W - padL - padR) / (n + 0.6)), o.cellMin || 34, o.cellMax || 56);
+      var cw = fenCw(W, n);
       var svgW = Math.max(W, cw * (n + 1) + padL + padR);
       var maxLevel = 0;
       for (var i = 1; i <= n; i++) maxLevel = Math.max(maxLevel, Math.round(Math.log2(i & -i)));
@@ -428,10 +458,7 @@
       }
     }
 
-    function fenWidth(n) {
-      var W = innerW(container) || o.width || 640;
-      return clamp(Math.floor((W - 46 - 14) / (n + 0.6)), o.cellMin || 34, o.cellMax || 56);
-    }
+    function fenWidth(n) { return fenCw(innerW(container) || o.width || 640, n); }
     V.onResize(container, function () {
       if (!st.n || !st.last) return;
       if (fenWidth(st.n) === st.geo.cw && (Math.abs(innerW(container) - st.geo.W) < 2 || st.geo.W >= innerW(container))) return;

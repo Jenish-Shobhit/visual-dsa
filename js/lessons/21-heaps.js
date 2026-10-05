@@ -14,7 +14,7 @@
   function heroTeaser() {
     var stage = V.$('#teaser');
     if (!stage) return;
-    var pair = L21.pair(stage, { label: 'Heap teaser', nodeSize: 30, cellSize: 34, pointers: false, treeOptions: { levelHeight: 46 }, arrayOptions: { showIndices: false } });
+    var pair = L21.pair(stage, { label: 'Heap teaser', nodeSize: 30, cellSize: 34, pointers: false, treeOptions: { levelHeight: 46 }, arrayOptions: { showIndices: false, arc: false } });
     var rng = V.rng(21);
     function data() {
       var base = V.presets.random(8, { min: 20, max: 90, unique: true, rng: rng });

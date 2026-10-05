@@ -224,7 +224,7 @@
   ];
   function cycleFigure(fig) {
     var gStage = fig.querySelector('[data-stage="graph"]'), fStage = fig.querySelector('[data-stage="forest"]');
-    var graph = V.views.graph(gStage, { bounds: { w: 1000, h: 600 }, maxHeight: 340, label: 'Graph whose edges are checked one at a time' });
+    var graph = V.views.graph(gStage, { bounds: { w: 1000, h: 600 }, maxHeight: 340, nodeRadius: 30, minRadius: 24, label: 'Graph whose edges are checked one at a time' });
     var forest = L.forestView(fStage, { label: 'Union-find forest for the edges kept so far', nodeR: 17, maxSlot: 56, pointers: false, showRank: true, levelH: 56 });
     L.legend(fig.querySelector('[data-legend]'), [
       { state: 'default', shape: 'line', label: 'Not looked at yet' }, { state: 'compare', shape: 'line', label: 'Edge being tested' },

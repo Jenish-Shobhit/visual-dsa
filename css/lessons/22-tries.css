@@ -80,7 +80,7 @@
 .tr-slots { display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 4px; animation: tr-in .35s var(--ease-out); }
 .tr-slot { position: relative; aspect-ratio: 1; display: grid; place-items: center; border: 1.5px dashed var(--line-strong); border-radius: 5px; background: var(--bg-sunken); }
 .tr-slot i { position: absolute; top: 1px; left: 3px; font: 600 9px var(--font-mono); font-style: normal; color: var(--ink-3); }
-.tr-slot b { font-size: 13px; color: var(--st-path); line-height: 1; }
+.tr-slot b { font-size: 13px; color: var(--st-path-text); line-height: 1; }
 .tr-slot.is-used { border-style: solid; border-color: var(--st-path); background: color-mix(in srgb, var(--st-path) 14%, var(--bg-elev)); }
 .tr-slot.is-used i { color: color-mix(in srgb, var(--st-path) 70%, var(--ink)); }
 .tr-map, .tr-list { display: flex; flex-direction: column; gap: 6px; animation: tr-in .35s var(--ease-out); }
@@ -140,9 +140,9 @@
 }
 .tr-race__title { margin: 0 0 10px; font: 750 15px var(--font-sans); color: var(--ink); }
 .tr-race__sub { font-weight: 500; font-size: 13px; color: var(--ink-3); margin-left: 6px; }
-.tr-race__result { margin: 10px 0 8px; font-size: 14px; color: var(--ink-2); min-height: 1.5em; }
+.tr-race__result { margin: 10px 0 8px; font-size: 14px; color: var(--ink-2); line-height: 26px; min-height: 26px; }   /* one fixed line height, so the big answer number never makes the figure taller */
 .tr-race__result b { color: var(--ink); }
-.tr-big { font-size: 22px; font-weight: 800; }
+.tr-big { font-size: 22px; font-weight: 800; line-height: 1; }
 .tr-chips--race { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 6px; }
 .tr-race .fig__stage { min-height: 150px; padding: 8px; background-image: none; }
 
@@ -170,7 +170,10 @@
 .mini__stage > svg.tr-mini { width: auto; max-width: 100%; height: auto; }
 #summary-card .summary__viz { height: 132px; }
 #summary-card .summary__viz > svg.tr-mini { width: auto; height: 100%; max-width: 100% !important; }
-#fig-merge .tr-fig { max-width: 540px; }
+#fig-merge .tr-fig { max-width: 600px; }
 
 /* summary tiles: tall enough that the miniature tries keep readable letters */
 #summary-card .summary__viz { height: 172px; }
+
+/* hero: a letter changes colour only once its circle is half way through changing fill, so it is never pale-on-pale mid-fade */
+#teaser .vz .vz-ink { transition: fill 0ms linear calc(var(--vz-dur, 300ms) * .5), opacity var(--vz-dur) var(--vz-ease); }

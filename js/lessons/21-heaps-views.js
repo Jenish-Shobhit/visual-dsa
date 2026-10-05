@@ -17,6 +17,28 @@
 
   L21.fmt = function (v) { return typeof v === 'number' && v < 0 ? '−' + Math.abs(v) : String(v); };
 
+  /* Keep a lab's side column from growing and shrinking as the variables panel gains and loses rows: reserve the height of the
+     fullest step of the current trace (and never give height back if a row ever wraps taller than planned). */
+  L21.holdVars = function (fig, player) {
+    var panel = fig && fig.querySelector('.vars');
+    if (!panel || !player) return;
+    var floor = 0, rowH = 0, base = 0;
+    function bump(px) { if (px > floor + 1) { floor = px; panel.style.minHeight = Math.ceil(px) + 'px'; } }
+    function plan(steps) {
+      var list = panel.querySelector('.vars__list'), rows = panel.querySelectorAll('.vars__row').length;
+      if (!rowH && list && rows) { rowH = list.getBoundingClientRect().height / rows; base = panel.getBoundingClientRect().height - list.getBoundingClientRect().height; }
+      if (!rowH) rowH = 34.7;
+      if (!base) base = 42;
+      var most = 0;
+      (steps || []).forEach(function (st) { most = Math.max(most, Object.keys(st.vars || {}).length); });
+      if (most) bump(base + most * rowH + 4);
+    }
+    var set = player.setSteps;
+    player.setSteps = function (steps) { plan(steps); return set.apply(this, arguments); };
+    plan(player.steps);
+    if (window.ResizeObserver) new ResizeObserver(function () { bump(panel.getBoundingClientRect().height); }).observe(panel);
+  };
+
   L21.whenNear = function (el, fn) {
     el = V.$(el);
     if (!el) return;
@@ -91,7 +113,13 @@
       tree.prepare(ms.map(function (m) { return m.tree; }));
       if (arr.prepare) arr.prepare(ms.map(function (m) { return m.array; }));
     };
-    api.reset = function () { tree.reset(); if (arr.reset) arr.reset(); hot = null; };
+    /* the tree never gives height back (a trace that ends on an empty or tiny heap would otherwise shrink the figure at its last step) */
+    var treeMin = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () {
+      var hh = Math.ceil(treeEl.getBoundingClientRect().height);
+      if (hh > treeMin + 1) { treeMin = hh; treeEl.style.minHeight = hh + 'px'; }
+    }).observe(treeEl);
+    api.reset = function () { tree.reset(); if (arr.reset) arr.reset(); hot = null; treeMin = 0; treeEl.style.minHeight = ''; };
     api.step = function () { return cur; };
     api.setHot = function (id) {
       var v = id === null || id === undefined ? null : String(id);

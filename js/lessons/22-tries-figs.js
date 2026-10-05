@@ -168,7 +168,7 @@
 
   /* ================================================================== radix compression */
   var RADIX_PRESETS = {
-    roman: ['romane', 'romanus', 'romulus', 'rubens', 'ruber', 'rubicon', 'rubicundus'],
+    roman: ['romane', 'romanus', 'romulus', 'rubens', 'ruber', 'rubicon'],
     play: ['play', 'played', 'player', 'plan', 'plant', 'planet'],
     cars: ['car', 'card', 'care', 'careful', 'cat', 'dog'],
     few: ['owl', 'ant', 'eel', 'yak']
@@ -177,7 +177,7 @@
     var fig = V.$('#fig-radix');
     if (!fig) return;
     V.legend(fig.querySelector('[data-legend]'), [{ state: 'frontier', label: 'Node just merged' }, { state: 'found', shape: 'ring', label: 'Word ends here (✓)' }, { state: 'default', shape: 'dot', label: 'Node (label = letters)' }]);
-    var view = L.treeView(fig.querySelector('[data-stage]'), { nodeSize: 34, minNodeSize: 15, label: 'A trie folding into a radix tree' });
+    var view = L.treeView(fig.querySelector('[data-stage]'), { nodeSize: 32, minNodeSize: 15, levelHeight: 46, label: 'A trie folding into a radix tree' });
     var words = RADIX_PRESETS.roman;
     var first = T.compressSteps(words);
     view.prepare(first.map(function (s) { return s.tree; }));
@@ -250,6 +250,8 @@
       { state: 'visited', label: 'Bit already read' }
     ]);
     var view = L.treeView(fig.querySelector('[data-stage]'), { nodeSize: 36, minNodeSize: 16, label: 'Binary trie of routing prefixes' });
+    /* no "node" cursor pill on the trie: it lands on the child below, and the blue node already marks where the walk is */
+    function noPtr(tree) { return Object.assign({}, tree, { pointers: [] }); }
     var bitsView = V.views.array(fig.querySelector('[data-bits]'), { mode: 'boxes', cellSize: 34, showIndices: true, outerPointers: false, label: 'Address bits' });
     var code = V.codePanel(fig.querySelector('[data-code]'), { languages: LPM_CODE, default: 'pseudo', maxHeight: 260 });
     var vars = V.varsPanel(fig.querySelector('[data-vars]'), { states: { bit: 'compare', node: 'active', best: 'found' } });
@@ -266,13 +268,13 @@
 
     var addr = '10111001';
     var first = T.lpmSteps(T.ROUTES, addr);
-    view.prepare(first.map(function (s) { return s.tree; }));
+    view.prepare(first.map(function (s) { return noPtr(s.tree); }));
     var player = V.player({
       root: fig, steps: first, baseStepMs: 950, animMs: 600, label: 'Routing lookup controls',
       code: code, vars: vars, caption: fig.querySelector('[data-caption]'), counters: fig.querySelector('[data-counters]'),
       counterLabels: { read: 'Bits read', bestLen: 'Best prefix length' }, counterStates: { read: 'visited', bestLen: 'found' },
       render: function (step, ctx) {
-        view.render(step.tree, { duration: ctx.duration });
+        view.render(noPtr(step.tree), { duration: ctx.duration });
         bitsView.render(step.bits, { duration: ctx.duration });
         markRoute(step.kind === 'result' ? step.bestPrefix : null);
       }
@@ -308,7 +310,7 @@
       ],
       onApply: function (bits) {
         var s = T.lpmSteps(T.ROUTES, bits);
-        view.reset(); view.prepare(s.map(function (x) { return x.tree; }));
+        view.reset(); view.prepare(s.map(function (x) { return noPtr(x.tree); }));
         bitsView.reset();
         player.setSteps(s);
         player.play();

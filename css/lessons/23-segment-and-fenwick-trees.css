@@ -52,7 +52,7 @@
 .l23-edge { fill: none; stroke: var(--el-edge); stroke-width: 1.6px; transition: stroke var(--t, 300ms), stroke-width var(--t, 300ms), opacity var(--t, 300ms); }
 .l23-edge:not(.is-default) { stroke: var(--c); stroke-width: 2.6px; }
 .l23-edge.is-muted { stroke: var(--el-edge); stroke-width: 1.4px; opacity: .4; }
-.l23-ext { fill: color-mix(in srgb, var(--el-edge) 50%, transparent); transition: fill var(--t, 300ms), opacity var(--t, 300ms); }
+.l23-ext { fill: color-mix(in srgb, var(--el-edge) 45%, transparent); transition: fill var(--t, 300ms), opacity var(--t, 300ms); }
 .l23-ext:not(.is-default) { fill: var(--c); }
 .l23-ext.is-muted { opacity: .35; }
 .l23-drop { stroke: var(--line-strong); stroke-width: 1.2px; stroke-dasharray: 2 4; }
@@ -70,22 +70,23 @@
 .l23-ret text { font: 700 10.5px var(--font-mono); fill: var(--bg-elev); dominant-baseline: central; }
 .l23-tag rect { fill: var(--st-key); }
 .l23-tag text { font: 750 10.5px var(--font-mono); fill: var(--on-state); dominant-baseline: central; }
-.l23-ret, .l23-tag { pointer-events: none; transform-box: fill-box; transition: opacity var(--t, 300ms); }
+.l23-ret, .l23-tag { pointer-events: none; transition: opacity var(--t, 300ms); }
+.l23-pop { transform-box: fill-box; transform-origin: center; }
 .l23-token { fill: var(--st-active); stroke: var(--bg-elev); stroke-width: 2.4px; pointer-events: none; }
 .l23-token.is-up { fill: var(--st-key); }
 
 /* ---------------------------------------------------------------- Fenwick view */
 .l23-bval { font: 720 14px var(--font-sans); fill: var(--el-ink); font-variant-numeric: tabular-nums; pointer-events: none; transform-box: fill-box; transform-origin: center; }
-.l23-btag { font: 600 9.5px var(--font-mono); fill: var(--ink-2); pointer-events: none; }
-.l23-rowlbl { font: 600 10px var(--font-sans); fill: var(--ink-3); letter-spacing: .02em; }
+.l23-btag { font: 600 11px var(--font-mono); fill: var(--ink-2); pointer-events: none; }
+.l23-rowlbl { font: 600 11px var(--font-sans); fill: var(--ink-3); letter-spacing: .02em; }
 .l23-fidx { font: 700 12.5px var(--font-mono); fill: var(--ink-2); transition: fill var(--t, 300ms); }
-.l23-fidx.is-cur { fill: var(--st-active); }
-.l23-fbin { font: 600 9px var(--font-mono); }
+.l23-fidx.is-cur { fill: var(--st-active-text); }
+.l23-fbin { font: 600 11px var(--font-mono); }
 .l23-bit { fill: var(--ink-3); transition: fill var(--t, 300ms); }
 .l23-bit.is-one { fill: var(--ink-2); font-weight: 700; }
-.l23-bit.is-low { fill: var(--st-pivot); font-weight: 800; }
+.l23-bit.is-low { fill: var(--st-pivot-text); font-weight: 800; }
 .l23-fbin.is-cur .l23-bit.is-one { fill: var(--ink); }
-.l23-fbin.is-cur .l23-bit.is-low { fill: var(--st-pivot); }
+.l23-fbin.is-cur .l23-bit.is-low { fill: var(--st-pivot-text); }
 .l23-fband { fill: color-mix(in srgb, var(--st-active) 8%, transparent); stroke: color-mix(in srgb, var(--st-active) 38%, transparent); stroke-width: 1.2px; stroke-dasharray: 4 4; pointer-events: none; }
 .l23-fcur rect { fill: var(--st-active); }
 .l23-fcur text { font: 750 12px var(--font-mono); fill: var(--on-state); }
@@ -141,9 +142,9 @@
 .l23-input { flex: 1 1 460px; min-width: 0; }
 .l23-ops { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .l23-seghost .seg { flex-wrap: wrap; }
-.l23-msg { margin: 0; min-height: 0; font-size: 13.5px; color: var(--st-error); font-weight: 600; }
+.l23-msg { margin: 0; min-height: 0; font-size: 13.5px; color: var(--st-error-text); font-weight: 600; }
 .l23-msg:empty { display: none; }
-.l23-err { font-size: 13px; color: var(--st-error); font-weight: 600; }
+.l23-err { font-size: 13px; color: var(--st-error-text); font-weight: 600; }
 .l23-err:empty { display: none; }
 .l23-note { margin: 0; font-size: 14px !important; line-height: 1.5 !important; color: var(--ink-2); }
 .l23-note b { color: var(--ink); font-weight: 650; }
@@ -165,8 +166,8 @@
 .l23-panel__stage { overflow-x: auto; display: grid; justify-items: safe center; align-content: start; padding-bottom: 2px; }
 .l23-big { display: flex; align-items: baseline; gap: 10px; padding: 8px 2px 2px; }
 .l23-big__n { font: 780 40px/1 var(--font-sans); letter-spacing: -.03em; color: var(--ink-3); font-variant-numeric: tabular-nums; min-width: 1ch; }
-.l23-big[data-verb="read"] .l23-big__n { color: var(--st-compare); }
-.l23-big[data-verb="written"] .l23-big__n { color: var(--st-swap); }
+.l23-big[data-verb="read"] .l23-big__n { color: var(--st-compare-text); }
+.l23-big[data-verb="written"] .l23-big__n { color: var(--st-swap-text); }
 .l23-big__l { font-size: 13px; color: var(--ink-3); font-weight: 600; }
 .l23-panel__note { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); min-height: 4.4em; }
 .l23-panel__note b { color: var(--ink); font-weight: 650; }
@@ -193,8 +194,8 @@
 /* ---------------------------------------------------------------- summary tiles */
 .l23-tile .l23-nlabel { display: none; }
 .l23-tile .l23-tag rect { fill: var(--st-key); }
-.l23-tile .l23-tag text { font: 750 9px var(--font-mono); fill: var(--on-state); dominant-baseline: central; }
-.l23-tile .l23-rowlbl { font-size: 9.5px; }
+.l23-tile .l23-tag text { font: 750 10.5px var(--font-mono); fill: var(--on-state); dominant-baseline: central; }
+.l23-tile .l23-rowlbl { font-size: 10.5px; }
 .l23-bitc rect { fill: var(--bg-sunken); }
 .l23-bitc text { font: 700 11px var(--font-mono); fill: var(--ink-3); }
 .l23-bitc.is-one rect { fill: color-mix(in srgb, var(--ink) 12%, var(--bg-elev)); }
@@ -214,4 +215,6 @@
 #summary-card .summary__viz { height: 124px; }
 
 /* hero teaser: the tree + array is tall; on phones give the stage the height it needs rather than squeezing the tree */
-@media (max-width: 700px) { .hero__stage#teaser { aspect-ratio: auto; min-height: 340px; } }
+/* the tree draws at its natural height (node boxes tall enough for label + value), so the stage follows its content */
+.hero__stage#teaser { aspect-ratio: auto; min-height: 0; padding-block: 14px; }
+@media (max-width: 700px) { .hero__stage#teaser { min-height: 340px; } }

@@ -78,7 +78,8 @@
   function heroTeaser() {
     var stage = V.$('#teaser');
     if (!stage) return;
-    var words = ['tea', 'team', 'ten', 'tap', 'to'], cur = [], steps = [];
+    /* words that fork early, so the picture reads as a tree that fills the stage rather than one narrow chain */
+    var words = ['tea', 'ten', 'to', 'tap', 'inn', 'in', 'hat'], cur = [], steps = [];
     words.forEach(function (w, i) {
       var r = T.opTrace(cur, 'insert', w, { brief: i > 0 });
       steps = steps.concat(r.steps);
@@ -88,11 +89,13 @@
       var cs = getComputedStyle(stage);
       return Math.max(200, stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
     }
-    var view = L.treeView(stage, { nodeSize: 40, gap: 3, height: innerHeight(), label: 'A trie growing as words are inserted' });
-    view.prepare(steps.map(function (st) { return st.tree; }));
+    /* the "node" cursor pill is left out here: it lands on the child below (the node colour already says where we are) */
+    function noPointer(tree) { return Object.assign({}, tree, { pointers: [] }); }
+    var view = L.treeView(stage, { nodeSize: 40, gap: 2.5, height: innerHeight(), label: 'A trie growing as words are inserted' });
+    view.prepare(steps.map(function (st) { return noPointer(st.tree); }));
     V.teaser(stage, {
       steps: steps,
-      render: function (step, ctx) { view.render(step.tree, { duration: ctx.duration }); },
+      render: function (step, ctx) { view.render(noPointer(step.tree), { duration: ctx.duration }); },
       stepMs: 520, holdMs: 2000, instantWrap: false, staticIndex: steps.length - 1
     });
     V.onResize(stage, function () { view.setOptions({ height: innerHeight() }); });
@@ -153,16 +156,16 @@
     ]);
     var WORDS = ['car', 'card', 'care', 'cat', 'dog'];
     var t = T.build(WORDS), lay = T.layoutTrie(t);
-    var W = 420, H = 320, TS = 34;
+    var W = 460, H = 320, TS = 34;
     var stage = fig.querySelector('[data-stage]');
     var svg = s('svg', { class: 'tr-fig tr-merge', viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Five words as rows of letter tiles that merge into a trie' });
-    svg.style.maxWidth = '540px';
+    svg.style.maxWidth = '600px';
     var edgesG = s('g'), tilesG = s('g'), headG = s('g');
     svg.appendChild(edgesG); svg.appendChild(tilesG); svg.appendChild(headG);
-    var count = s('text', { class: 'tr-merge__count', x: 16, y: 26 }, '');
+    var count = s('text', { class: 'tr-merge__count', x: W / 2, y: 26, 'text-anchor': 'middle' }, '');
     headG.appendChild(count);
     function rowPos(r, j) { return { x: W / 2 + (j - 1.5) * (TS + 8), y: 60 + r * 52 }; }
-    function treePos(prefix) { var p = lay.pos['p:' + prefix]; return { x: W / 2 + (p.x - (lay.width - 1) / 2) * 84, y: 52 + p.depth * 58 }; }
+    function treePos(prefix) { var p = lay.pos['p:' + prefix]; return { x: W / 2 + (p.x - (lay.width - 1) / 2) * 90, y: 52 + p.depth * 58 }; }
     var first = {}, tiles = [];
     WORDS.forEach(function (w, r) {
       w.split('').forEach(function (ch, j) {
@@ -189,7 +192,7 @@
     }(t.root));
     var rootG = s('g', { class: 'tr-tile tr-tile--root' }, s('rect', { class: 'tr-tile__box', x: -22, y: -15, width: 44, height: 30, rx: 15 }), s('text', { class: 'tr-tile__t tr-tile__t--sm' }, 'root'));
     tilesG.appendChild(rootG);
-    var rp = { x: W / 2 + ((lay.pos['p:'].x) - (lay.width - 1) / 2) * 84, y: 52 };
+    var rp = { x: W / 2 + ((lay.pos['p:'].x) - (lay.width - 1) / 2) * 90, y: 52 };
     V.place(rootG, rp); rootG.style.opacity = 0;
     stage.appendChild(svg);
     var letters = WORDS.join('').length;

@@ -462,7 +462,7 @@
   /* ================================================================== cost chart */
   L.initCost = function () {
     var fig = V.$('#fig-cost'), stage = fig.querySelector('[data-stage]');
-    var chart = V.views.chart(stage, { type: 'line', height: 320, label: 'Operations per query or update as the array grows' });
+    var chart = V.views.chart(stage, { type: 'line', height: 320, label: 'Operations per query or update as the array grows', format: function (v, axis) { return axis === 'x' ? (v >= 1048576 ? (v / 1048576) + 'M' : v >= 1024 ? (v / 1024) + 'k' : String(v)) : null; } });
     var note = fig.querySelector('[data-note]');
     var exps = []; for (var e = 2; e <= 20; e++) exps.push(e);
     var table = null;
@@ -501,7 +501,7 @@
         series: series,
         highlight: hl
       }, { duration: dur });
-      note.innerHTML = 'At <b>n = ' + n.toLocaleString('en-US') + '</b>, one ' + (mode === 'query' ? 'range query' : 'point update') + ' touches on average: plain array <b>' + f(t[idx][keyOf('naive')]) + '</b>, prefix sums <b>' + f(t[idx][keyOf('prefix')]) + '</b>, segment tree <b>' + f(t[idx][keyOf('seg')]) + '</b>, Fenwick tree <b>' + f(t[idx][keyOf('fen')]) + '</b>. Doubling n adds about one step to the trees.';
+      note.innerHTML = 'At <b>n = ' + n.toLocaleString('en-US') + '</b>, one ' + (mode === 'query' ? 'range query' : 'point update') + ' touches on average: plain array <b>' + f(t[idx][keyOf('naive')]) + '</b>, prefix sums <b>' + f(t[idx][keyOf('prefix')]) + '</b>, segment tree <b>' + f(t[idx][keyOf('seg')]) + '</b>, Fenwick tree <b>' + f(t[idx][keyOf('fen')]) + '</b>. Doubling n adds about one step to a Fenwick tree or a point update, and a few to a segment-tree range query.';
     }
     V.segmented(fig.querySelector('[data-seg]'), { label: 'Operation', value: mode, options: [{ value: 'query', label: 'Range query' }, { value: 'update', label: 'Point update' }], onChange: function (m) { mode = m; draw(700); } });
     V.toggle(fig.querySelector('[data-toggle]'), { label: 'Log scale', checked: true, onChange: function (on) { log = on; draw(900); } });

@@ -79,7 +79,7 @@
     function render(dur) {
       var cross = mode === 'knap' ? A.ops.knapCross(W) : 0;
       var ann = [{ x: n, text: 'n = ' + n }];
-      if (mode === 'knap' && cross > 1 && cross <= MAXN) ann.push({ x: cross, text: 'below n = ' + cross + ' brute force is cheaper', state: 'muted' });
+      if (mode === 'knap' && cross > 1 && cross <= MAXN) ann.push({ x: cross, pos: 'bottom', text: 'below n = ' + cross + '\nbrute force is cheaper', state: 'muted' });
       chart.render({
         x: { label: mode === 'knap' ? 'number of items n' : 'string length n', min: 1, max: MAXN },
         y: { label: 'operations (log scale)', scale: 'log', min: 1, max: 1e13 },

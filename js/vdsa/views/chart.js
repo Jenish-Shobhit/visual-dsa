@@ -11,7 +11,8 @@
        { id: 'bubble', label: 'bubble sort', points: [[8, 28], [16, 120], [32, 496]], markers: true }
      ],
      highlight: { series: 'bubble', x: 16 },                         // ringed point + value label
-     annotations: [{ x: 32, text: 'n = 32' }, { y: 500, text: 'budget', state: 'error' }]
+     annotations: [{ x: 32, text: 'n = 32' },   // text may hold '\n' (second line); pos: 'bottom' puts a vertical line's text at the foot
+                  { y: 500, text: 'budget', state: 'error' }]
    }, { duration: ctx.duration });
 
    Bar:     { categories: ['bubble', 'insertion'], series: [{ id: 'cmp', label: 'comparisons', values: [45, 30] }, ...] }
@@ -217,7 +218,7 @@
       if (w === undefined) { w = vz.textWidth(str, px, mono, weight); textCache.set(k, w); }
       return w;
     }
-    function tickText(v, axis) { return opts.format ? String(opts.format(v, axis)) : L.formatTick(v); }
+    function tickText(v, axis) { var f = opts.format ? opts.format(v, axis) : null; return f === null || f === undefined ? L.formatTick(v) : String(f); }
     function valueText(v, s) { return opts.valueFormat ? String(opts.valueFormat(v, s)) : L.formatValue(v); }
     /* Series colour: an explicit semantic `state` (is-<state>) or the categorical slot vz-cat-<n>. */
     function colorClass(el, s, i) {
@@ -378,7 +379,8 @@
       vz.opacity(rec.el, rec.cur.o);
       if (rec.grid) { vz.set(rec.line, 'x1', N2(x)); vz.set(rec.line, 'x2', N2(x)); vz.set(rec.line, 'y1', N2(P.top)); vz.set(rec.line, 'y2', N2(P.bottom)); }
       else { vz.set(rec.line, 'x1', N2(x)); vz.set(rec.line, 'x2', N2(x)); vz.set(rec.line, 'y1', N2(P.bottom)); vz.set(rec.line, 'y2', N2(P.bottom + 4)); }
-      vz.set(rec.text, 'x', N2(x)); vz.set(rec.text, 'y', N2(P.bottom + 14));
+      var hw = (rec.tw || 0) / 2, lx = hw ? vz.clamp(x, hw + 2, P.W - hw - 2) : x;   // keep an edge label inside the svg
+      vz.set(rec.text, 'x', N2(lx)); vz.set(rec.text, 'y', N2(P.bottom + 14));
     }
     function buildSeries(rec) {
       rec.el = vz.svg('g', { class: 'vz-series' }, ctx.layers.plot);
@@ -422,7 +424,7 @@
         vz.set(r.rect, 'x', N2(c.x)); vz.set(r.rect, 'width', N2(Math.max(0, c.w)));
         vz.set(r.rect, 'y', N2(yTop)); vz.set(r.rect, 'height', N2(Math.max(0, h)));
         vz.opacity(r.el, c.o);
-        vz.set(r.text, 'x', N2(c.x + c.w / 2)); vz.set(r.text, 'y', N2(c.y <= y0 ? c.y - 5 : c.y + 13));
+        vz.set(r.text, 'x', N2(c.x + c.w / 2)); vz.set(r.text, 'y', N2(c.y <= y0 ? c.y - 5 - (r.stagger ? 12 : 0) : c.y + 13 + (r.stagger ? 12 : 0)));
         vz.opacity(r.text, Math.min(c.o, c.lo === undefined ? 1 : c.lo));
         if (r.counting) vz.text(r.text, valueText(r.intCount ? Math.round(c.v) : c.v, r.series));
       };
@@ -446,11 +448,13 @@
       rec.line = vz.svg('line', { class: 'vz-annot-line' }, rec.el);
       rec.dot = vz.svg('circle', { class: 'vz-annot-dot', r: 3.5 }, rec.el);
       rec.text = vz.svg('text', { class: 'vz-annot-text', dy: '.35em' }, rec.el);
+      rec.text2 = vz.svg('text', { class: 'vz-annot-text', dy: '.35em' }, rec.el);   // second line when the text has a '\n'
       rec.paint = function (r) {
         var c = r.cur;
         vz.opacity(r.el, c.o);
         vz.set(r.line, 'x1', N2(c.x1)); vz.set(r.line, 'x2', N2(c.x2)); vz.set(r.line, 'y1', N2(c.y1)); vz.set(r.line, 'y2', N2(c.y2));
         vz.set(r.text, 'x', N2(c.tx)); vz.set(r.text, 'y', N2(c.ty));
+        vz.set(r.text2, 'x', N2(c.tx)); vz.set(r.text2, 'y', N2(c.ty + 13)); vz.set(r.text2, 'text-anchor', r.text.getAttribute('text-anchor') || 'start');
         vz.set(r.dot, 'cx', N2(c.x2)); vz.set(r.dot, 'cy', N2(c.y2));
       };
     }
@@ -466,6 +470,14 @@
         vz.opacity(r.el, c.o);
         vz.set(r.ring, 'r', N2(9 * c.s));
       };
+    }
+
+    /* Axis titles never run past the svg: a title wider than the chart is squeezed to fit. Returns its width. */
+    function fitTitle(el, txt) {
+      var w = txt ? measure(txt, 11.5, 600) : 0, max = P.W - 8;
+      if (w > max) { el.setAttribute('textLength', N2(max)); el.setAttribute('lengthAdjust', 'spacingAndGlyphs'); w = max; }
+      else { el.removeAttribute('textLength'); el.removeAttribute('lengthAdjust'); }
+      return w;
     }
 
     /* ---------------------------------------------------------- draw */
@@ -495,9 +507,11 @@
       var yTitle = S.misc.use('ytitle', function (r) { r.el = vz.svg('text', { class: 'vz-axis-title', 'text-anchor': 'start' }, ctx.layers.axes); r.paint = function () {}; });
       vz.text(yTitle.el, m.ys.label || '');
       vz.set(yTitle.el, 'x', 4); vz.set(yTitle.el, 'y', 14);
+      fitTitle(yTitle.el, m.ys.label || '');
       var xTitle = S.misc.use('xtitle', function (r) { r.el = vz.svg('text', { class: 'vz-axis-title', 'text-anchor': 'end' }, ctx.layers.axes); r.paint = function () {}; });
       vz.text(xTitle.el, m.type === 'bar' ? '' : (m.xs.label || ''));
-      vz.set(xTitle.el, 'x', N2(P.right)); vz.set(xTitle.el, 'y', N2(P.H - 6));
+      var xtw = fitTitle(xTitle.el, m.type === 'bar' ? '' : (m.xs.label || ''));
+      vz.set(xTitle.el, 'x', N2(vz.clamp(P.right, xtw + 4, P.W - 4))); vz.set(xTitle.el, 'y', N2(P.H - 6));
       S.misc.end();
 
       /* y ticks (major + minor) */
@@ -531,10 +545,15 @@
       /* x ticks / categories */
       S.xt.begin(); S.cats.begin();
       if (m.type === 'bar') {
+        /* thin crowded category labels: label every k-th when the widest label does not fit its band */
+        var catW = 0;
+        m.categories.forEach(function (c) { catW = Math.max(catW, measure(c, 11, 500)); });
+        var catEvery = Math.max(1, Math.ceil((catW + 6) / Math.max(1, P.band)));
         m.categories.forEach(function (c, i) {
           var rec = S.cats.use(c, buildCat);
           var cx = P.left + P.band * (i + 0.5);
-          var maxW = P.band - 4, txt = c;
+          var maxW = P.band * catEvery - 4, txt = c;
+          if (i % catEvery !== 0) txt = '';
           if (measure(txt, 11, 500) > maxW) { while (txt.length > 1 && measure(txt + '…', 11, 500) > maxW) txt = txt.slice(0, -1); txt += '…'; }
           vz.text(rec.el, txt);
           var t = { x: cx, o: 1 };
@@ -542,12 +561,20 @@
           vz.retarget(rec, t); rec.delay = 0; push(rec);
         });
       } else {
+        /* thin overlapping x labels: label every k-th tick when the widest label is wider than the tick pitch */
+        var xw = 0, pitch = Infinity, xpos = m.x.ticks.map(function (v) { return P.x(v); });
+        m.x.ticks.forEach(function (v, i) {
+          if (!m.x.every || i % m.x.every === 0) xw = Math.max(xw, measure(tickText(v, 'x'), 11, 500));
+          if (i > 0) pitch = Math.min(pitch, Math.abs(xpos[i] - xpos[i - 1]));
+        });
+        var xEvery = isFinite(pitch) && pitch > 0 ? Math.max(1, Math.ceil((xw + 8) / pitch)) : 1;
         m.x.ticks.forEach(function (v, i) {
           var rec = S.xt.use('x' + v, function (r) { buildTick(r, 'x'); });
           rec.grid = !!opts.xGrid;
           vz.toggle(rec.el, 'is-grid', rec.grid);
-          vz.text(rec.text, !m.x.every || i % m.x.every === 0 ? tickText(v, 'x') : '');
+          vz.text(rec.text, (!m.x.every || i % m.x.every === 0) && i % xEvery === 0 ? tickText(v, 'x') : '');
           vz.set(rec.text, 'text-anchor', 'middle');
+          rec.tw = rec.text.textContent ? measure(rec.text.textContent, 11, 500) : 0;
           var tx = P.x(v), t = { x: tx, o: 1 };
           if (rec.isNew) { var fx = old && old.x ? old.x(v) : tx; if (!isFinite(fx)) fx = tx; rec.cur = { x: vz.clamp(fx, P.left - 40, P.right + 40), o: animate ? 0 : 1 }; }
           vz.retarget(rec, t); rec.delay = 0; push(rec);
@@ -605,7 +632,16 @@
             vz.toggle(rec.label, 'is-inside', anchor.x < P.right - 20);
             labelItems.push({ id: s.id, y: ly, h: 14 });
           }
-          labelTargets[s.id] = { x: lx, y: ly };
+          if (anchor && anchor.out && anchor.x < P.left + P.pw * 0.86) {
+            /* two labels leaving through the top: step the later one down when their text would overlap */
+            var lw = measure(s.label, 12, 650);
+            for (var pass = 0; pass < 8; pass++) {
+              var bump = false;
+              for (var id in labelTargets) { var q = labelTargets[id]; if (q.out && lx < q.x + q.w + 4 && lx + lw > q.x - 4 && Math.abs(ly - q.y) < 14) { ly = q.y + 15; bump = true; } }
+              if (!bump) break;
+            }
+          }
+          labelTargets[s.id] = { x: lx, y: ly, w: measure(s.label, 12, 650), out: !!(anchor && anchor.out && anchor.x < P.left + P.pw * 0.86) };
           var t = { t: 1, o: 1, lx: lx, ly: ly, lo: rec.labelHidden || P.labelW <= 0 ? 0 : 1 };
           if (rec.isNew) rec.cur = { t: 0, o: animate && !intro ? 0 : 1, lx: lx, ly: ly, lo: 0 };
           else rec.cur.t = 0;
@@ -625,6 +661,10 @@
         var ns = Math.max(1, m.series.length), inner = P.band * 0.78, bw = Math.max(2, inner / ns - (ns > 1 ? 3 : 0));
         var showVals = opts.valueLabels && bw >= 16;
         var y0 = P.y(Math.max(m.y.min, Math.min(0, m.y.max)));
+        /* grouped bars whose value labels are wider than the bar: raise every other series' label a line */
+        var labW = 0;
+        m.series.forEach(function (s) { (s.raw.values || []).forEach(function (v) { if (v !== undefined && v !== null && isFinite(v)) labW = Math.max(labW, measure(valueText(+v, s), 11, 600)); }); });
+        var tight = ns > 1 && showVals && labW > bw + 2;
         var hlBar = state.highlight && state.highlight.category !== undefined ? state.highlight : null;
         m.series.forEach(function (s, si) {
           (m.categories || []).forEach(function (c, ci) {
@@ -632,6 +672,7 @@
             if (v === undefined || v === null || !isFinite(v)) return;
             var rec = S.bars.use(s.id + '|' + c, buildBar);
             rec.series = s;
+            rec.stagger = tight && si % 2 === 1;
             colorClass(rec.el, s, s.index); colorClass(rec.text, s, s.index);
             var isHl = hlBar && String(hlBar.category) === c && (hlBar.series === undefined || String(hlBar.series) === s.id);
             vz.toggle(rec.el, 'is-dim', !!hlBar && !isHl);
@@ -689,11 +730,13 @@
 
       /* annotations */
       S.annots.begin();
+      var annotBoxes = [];   // annotation text boxes, so highlight pills keep clear of them
       (state.annotations || []).forEach(function (a, i) {
         if (!a) return;
         var rec = S.annots.use(a.id !== undefined ? String(a.id) : 'a' + i, buildAnnot);
         vz.state(rec.el, a.state || 'default');
-        vz.text(rec.text, a.text || '');
+        var aLines = String(a.text || '').split('\n');
+        vz.text(rec.text, aLines[0]); vz.text(rec.text2, aLines.slice(1).join(' '));
         var hasX = a.x !== undefined && a.x !== null && m.type !== 'bar', hasY = a.y !== undefined && a.y !== null;
         var t;
         var X = hasX ? P.x(a.x) : null, Y = hasY ? sy(a.y) : null;
@@ -703,7 +746,7 @@
           vz.set(rec.text, 'text-anchor', right ? 'start' : 'end');
           vz.set(rec.dot, 'opacity', null); vz.toggle(rec.el, 'is-point', true);
         } else if (hasX) {
-          t = { x1: X, y1: P.top, x2: X, y2: P.bottom, tx: X + 5, ty: P.top + 7, o: 1 };
+          t = { x1: X, y1: P.top, x2: X, y2: P.bottom, tx: X + 5, ty: a.pos === 'bottom' ? P.bottom - 8 - (aLines.length > 1 ? 13 : 0) : P.top + 7, o: 1 };
           vz.set(rec.text, 'text-anchor', X > P.left + P.pw * 0.75 ? 'end' : 'start');
           if (X > P.left + P.pw * 0.75) t.tx = X - 5;
           vz.set(rec.dot, 'opacity', '0'); vz.toggle(rec.el, 'is-point', false);
@@ -712,6 +755,9 @@
           vz.set(rec.text, 'text-anchor', 'start');
           vz.set(rec.dot, 'opacity', '0'); vz.toggle(rec.el, 'is-point', false);
         } else return;
+        var aw = 0; aLines.forEach(function (l) { aw = Math.max(aw, measure(l, 11, 600)); });
+        var aEnd = rec.text.getAttribute('text-anchor') === 'end';
+        annotBoxes.push({ x0: aEnd ? t.tx - aw : t.tx, x1: aEnd ? t.tx : t.tx + aw, y0: t.ty - 7, y1: t.ty + (aLines.length - 1) * 13 + 7 });
         if (rec.isNew) rec.cur = Object.assign({}, t, { o: animate ? 0 : 1 });
         vz.retarget(rec, t); rec.delay = intro ? 0.6 : 0; push(rec);
       });
@@ -719,6 +765,7 @@
 
       /* highlighted points (line / scatter) */
       S.hls.begin();
+      var placed = annotBoxes.slice();   // pills (and annotation text) already positioned, as absolute {x0, x1, y0, y1}
       var hls = state.highlight ? (Array.isArray(state.highlight) ? state.highlight : [state.highlight]) : [];
       if (m.type !== 'bar') hls.forEach(function (h, i) {
         if (!h || h.x === undefined) return;
@@ -734,10 +781,27 @@
         var txt = h.label != null ? String(h.label) : valueText(yv, s);
         vz.text(rec.text, txt);
         var tw = measure(txt, 11.5, 700) + 16;
-        vz.set(rec.pill, 'width', N2(tw)); vz.set(rec.pill, 'x', N2(-tw / 2));
         var X = P.x(h.x), Y = sy(yv);
+        /* keep the pill (and its text) inside the svg: shift it sideways when the point is near an edge */
+        var px = vz.clamp(-tw / 2, 2 - X, P.W - 2 - tw - X);
+        if (tw > P.W - 4) px = -X + 2;
+        vz.set(rec.pill, 'width', N2(tw)); vz.set(rec.pill, 'x', N2(px));
+        vz.set(rec.text, 'x', N2(px + tw / 2));
         var above = Y - 34 > P.top - 10;
-        vz.set(rec.pill, 'y', above ? -34 : 14); vz.set(rec.text, 'y', above ? -24 : 24);
+        function hit(off) {
+          return placed.some(function (q) { return X + px < q.x1 && X + px + tw > q.x0 && Y + off < q.y1 && Y + off + 20 > q.y0; });
+        }
+        var off = above ? -34 : 14;
+        if (hit(off)) {
+          /* try the other side, then further out; keep the pill inside the svg and below the y title; else stay put */
+          var alt = above ? 14 : -34, cands = [], k;
+          for (k = 0; k < 5; k++) { cands.push(off + (above ? -23 : 23) * k); cands.push(alt + (above ? 23 : -23) * k); }
+          var pick = null, lo = m.ys.label ? 20 : 0;
+          cands.forEach(function (c) { if (pick === null && Y + c >= lo && Y + c + 20 <= P.bottom + 2 && !hit(c)) pick = c; });
+          if (pick !== null) off = pick;
+        }
+        placed.push({ x0: X + px, x1: X + px + tw, y0: Y + off, y1: Y + off + 20 });
+        vz.set(rec.pill, 'y', off); vz.set(rec.text, 'y', off + 10);
         var t = { x: X, y: Y, o: Y >= P.top - 2 && Y <= P.bottom + 2 ? 1 : 0, s: 1 };
         if (rec.isNew) { rec.cur = { x: X, y: Y, o: animate ? 0 : t.o, s: animate ? 2 : 1 }; rec.delay = intro ? 0.7 : 0; }
         else rec.delay = 0;

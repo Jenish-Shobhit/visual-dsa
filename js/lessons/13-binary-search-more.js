@@ -230,14 +230,14 @@
       V.clear(svg);
       W = Math.max(300, stage.clientWidth || 640);
       svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('width', W); svg.setAttribute('height', H);
-      el('title1', 'text', { class: 'l13-ov-cap', x: pad, y: 16 }, '1. What a 32-bit int can hold, and where lo and hi sit');
+      el('title1', 'text', { class: 'l13-ov-cap', x: pad, y: 16 }, '1. A 32-bit int, with lo and hi');
       el('track', 'rect', { class: 'l13-ov-track', x: pad, y: trackY, width: W - 2 * pad, height: trackH, rx: 6 });
       el('zero', 'line', { class: 'l13-ov-zero', x1: X(0), x2: X(0), y1: trackY - 6, y2: trackY + trackH + 6 });
       el('zerotext', 'text', { class: 'l13-ov-small', x: X(0), y: trackY + trackH + 20, 'text-anchor': 'middle' }, '0');
       el('mintext', 'text', { class: 'l13-ov-small', x: pad, y: trackY + trackH + 20, 'text-anchor': 'start' }, '−2,147,483,648');
       el('maxtext', 'text', { class: 'l13-ov-small', x: W - pad, y: trackY + trackH + 20, 'text-anchor': 'end' }, '2,147,483,647');
       el('lo', 'g', { class: 'l13-ov-mk is-active' }); el('hi', 'g', { class: 'l13-ov-mk is-active' });
-      el('title2', 'text', { class: 'l13-ov-cap', x: pad, y: sumY - 20 }, '2. The sum lo + hi, drawn to scale on the same line');
+      el('title2', 'text', { class: 'l13-ov-cap', x: pad, y: sumY - 20 }, '2. lo + hi, to scale on the same line');
       el('sum1', 'rect', { class: 'l13-ov-sum', y: sumY - 8, height: 18, rx: 4 });
       el('sum2', 'rect', { class: 'l13-ov-sum is-wrap', y: sumY - 8, height: 18, rx: 4 });
       el('sumtext', 'text', { class: 'l13-ov-small', y: sumY + 30, 'text-anchor': 'start' }, '');

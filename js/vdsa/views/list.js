@@ -678,6 +678,7 @@
 
       /* pointers */
       S.ptrs.begin();
+      var nullDrawn = {};   // several pointers can be null on one side: draw the "null" word once
       M.pointers.forEach(function (p) {
         var rec = S.ptrs.use(p.key, buildPtr);
         shapePtr(rec, p);
@@ -690,7 +691,8 @@
           var yy = left ? G.nullLy : G.nullRy;
           var hasMarker = Object.keys(nullFor).some(function (k) { return nullFor[k].left === left; });
           ty = up ? yy - 10 : yy + 10;
-          nl = hasMarker ? 0 : 1;
+          nl = hasMarker || nullDrawn[left ? 'L' : 'R'] ? 0 : 1;
+          nullDrawn[left ? 'L' : 'R'] = true;
           var nr = left ? 0 : G.rowOf(Math.max(0, G.rowLen - 1));
           ly = up ? G.chipA[nr] - p._level * 22 : G.chipB[nr] + p._level * 22;
         } else {

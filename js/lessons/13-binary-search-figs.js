@@ -16,7 +16,7 @@
   /* ================================================================== hero teaser: bars, half of them dimming */
   L13.heroTeaser = function () {
     var stage = V.$('#teaser');
-    var view = V.views.array(stage, { mode: 'bars', showIndices: false, showValues: false, maxValue: 100, minValue: 0, label: 'Binary search animation', cellSize: 22, outerPointers: false, barHeight: 250 });
+    var view = V.views.array(stage, { mode: 'bars', showIndices: false, showValues: false, maxValue: 100, minValue: 0, label: 'Binary search animation', cellSize: 22, outerPointers: false, barHeight: stage.clientHeight < 300 ? 200 : 250 });
     var rng = V.rng(13);
     function data() {
       var vals = V.presets.sorted(31, { min: 6, max: 98, rng: rng });

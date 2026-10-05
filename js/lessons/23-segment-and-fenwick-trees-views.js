@@ -82,7 +82,7 @@
       var cw = clamp(Math.floor((W - 2 * pad) / n), minCw, maxCw);
       var svgW = Math.max(W, cw * n + 2 * pad);
       var x0 = (svgW - cw * n) / 2;
-      var nodeH = o.compact ? 34 : 40, rowH = o.compact ? 54 : 64, top = 20;
+      var nodeH = o.nodeH || (o.compact ? 34 : 40), rowH = o.rowH || (o.compact ? 54 : 64), top = 20;
       var g = { W: svgW, cw: cw, x0: x0, nodeH: nodeH, rowH: rowH, top: top, x: {}, y: {}, w: {} };
       (function pos(id) {
         var nd = shp.byId[id];

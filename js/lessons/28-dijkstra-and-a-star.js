@@ -10,6 +10,25 @@
   var SP = V.algos.shortestPaths;
   var L = V.L28 = V.L28 || {};
 
+  /* Layout stability: reserve the tallest height a panel reaches over every step of the current run, so playing never shifts the page.
+     paint(step) must draw the panel with no animation; the player draws its own current step again straight after setSteps. */
+  L.reserve = function (player, host, paint, first) {
+    var set = player.setSteps;
+    function measure(steps) {
+      var top = 0;
+      host.style.minHeight = '';
+      steps.forEach(function (st) { paint(st); top = Math.max(top, host.offsetHeight); });
+      if (top) host.style.minHeight = top + 'px';
+      if (steps.length) paint(steps[0]);
+    }
+    player.setSteps = function (steps, o) { measure(steps); return set.call(player, steps, o); };
+    if (first) measure(first);
+    return measure;
+  };
+  L.reserveVars = function (player, vars, first) {
+    return L.reserve(player, vars.el, function (st) { vars.update(st.vars || {}, st.varStates); }, first);
+  };
+
   /* ================================================================== data */
   /* graph([[id, x, y, label?]], [[a, b, w]], directed) in the 1000 × 600 logical box */
   L.graph = function (nodes, edges, directed) {
@@ -268,7 +287,13 @@
   function heroTeaser() {
     var stage = V.$('#teaser');
     if (!stage) return;
-    var view = V.views.graph(stage, { bounds: { w: 1000, h: 600 }, maxHeight: 330, nodeRadius: 21, minRadius: 12, label: 'Dijkstra on a map of towns' });
+    /* the map's nodes span x 80..900, y 80..520; stretch x to the stage's aspect so the map fills the card */
+    var cs0 = getComputedStyle(stage);
+    var iw = (stage.clientWidth - parseFloat(cs0.paddingLeft) - parseFloat(cs0.paddingRight)) || 700;
+    var ih = (stage.clientHeight - parseFloat(cs0.paddingTop) - parseFloat(cs0.paddingBottom)) || 276;
+    var SX = Math.max(0.6, Math.min(1.9, ((iw - 76) / (ih - 76)) / (820 / 440)));
+    var view = V.views.graph(stage, { bounds: { x: 80, y: 80, w: Math.round(820 * SX), h: 440 }, maxHeight: Math.round(ih), nodeRadius: 22, minRadius: 12, label: 'Dijkstra on a map of towns' });
+    function stretch(gs) { gs.nodes = gs.nodes.map(function (n) { return Object.assign({}, n, { x: 80 + (n.x - 80) * SX }); }); return gs; }
     var laps = [['A', 'K'], ['K', 'A'], ['E', 'F'], ['I', 'C']], lap = 0;
     function steps() {
       var p = laps[lap++ % laps.length];
@@ -276,7 +301,7 @@
     }
     V.teaser(stage, {
       steps: steps(),
-      render: function (step, ctx) { view.render(L.graphState(L.WORLD, step, { sub: false }), { duration: ctx.duration }); },
+      render: function (step, ctx) { view.render(stretch(L.graphState(L.WORLD, step, { sub: false })), { duration: ctx.duration }); },
       stepMs: 520, holdMs: 2000, regenerate: steps, instantWrap: false
     });
   }

@@ -75,7 +75,7 @@
   function heroTeaser() {
     var host = V.$('#teaser'), lbl = V.$('.a6-hero__label');
     if (!host) return;
-    var view = V.views.array(host, { mode: 'boxes', cellSize: 68, rowLabels: 'above', label: 'Array teaser', reserve: { held: true } });
+    var view = V.views.array(host, { mode: 'boxes', cellSize: 80, rowLabels: 'above', label: 'Array teaser', reserve: { held: true } });
     var rng = V.rng(6);
     function lap() {
       var vals = V.presets.random(3, { min: 1, max: 9, rng: rng, unique: true });

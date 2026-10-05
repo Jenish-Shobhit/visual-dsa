@@ -20,7 +20,7 @@
     var steps = gen.steps.filter(function (st) { return st.kind !== 'conflict'; }).map(function (st) {
       return Object.assign({}, st, { hud: 'queens ' + st.cols.length + ' / 6 · backtracks ' + st.counters.backtracks });
     });
-    var view = B.boardView(stage, { cell: 44, label: 'Chessboard' });
+    var view = B.boardView(stage, { cell: 40, label: 'Chessboard' });
     V.teaser(stage, {
       steps: steps, stepMs: 300, holdMs: 2200,
       render: function (st, ctx) {

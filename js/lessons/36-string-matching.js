@@ -14,8 +14,8 @@
   /* ================================================================== hero teaser: KMP jumping along a text */
   function heroTeaser() {
     var stage = V.$('#teaser');
-    var view = SM.view(stage, { cell: 34, minCell: 12, labels: false, indices: false, label: 'KMP search animation', gapY: 26 });
-    var steps = A().kmp('abababacabababaca', 'ababaca');
+    var view = SM.view(stage, { cell: 46, minCell: 12, labels: false, indices: false, label: 'KMP search animation', gapY: 30 });
+    var steps = A().kmp(stage.clientWidth < 520 ? 'abababacaba' : 'abababacabababaca', 'ababaca');   // a shorter text on phones keeps the cells (and letters) readable
     view.prepare(steps);
     var jump = steps.findIndex(function (s) { return s.kind === 'jump'; });
     V.teaser(stage, { steps: steps, render: function (s, ctx) { view.render(s, { duration: ctx.duration }); }, stepMs: 620, holdMs: 1900,

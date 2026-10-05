@@ -73,7 +73,7 @@
       var cs = getComputedStyle(stage);
       return Math.max(160, stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
     }
-    var view = bstView(stage, { nodeSize: 44, gap: 0.8, height: innerHeight(), describe: false, pad: 8, label: 'A key dropping into a binary search tree' });
+    var view = bstView(stage, { nodeSize: 46, gap: 2.4, height: innerHeight(), describe: false, pad: 8, label: 'A key dropping into a binary search tree' });
     view.el.setAttribute('aria-hidden', 'true');
     /* level order of the balanced tree over sorted keys: the first three make a bushy start */
     function levelOrder(sorted) {

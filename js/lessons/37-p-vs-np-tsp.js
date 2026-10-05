@@ -12,14 +12,16 @@
      remove, add, scan {from, to:[{id,d}], pick}, cur, flash, hud [{k, v}], kind. */
   L.tspView = function (stage, opts) {
     opts = opts || {};
-    var svg = s('svg', { class: 'tsp' + (opts.hero ? ' tsp--hero' : ''), viewBox: '0 -140 1000 740', role: 'img', 'aria-label': opts.label || 'Map of cities and the tour drawn so far' });
+    /* hero on a wide stage: the counters sit in a column to the left of the map instead of above it, so the map fills the card */
+    var wideHero = !!opts.hero && stage.clientWidth > 0 && stage.clientHeight > 0 && stage.clientWidth / stage.clientHeight > 1.8;
+    var svg = s('svg', { class: 'tsp' + (opts.hero ? ' tsp--hero' : '') + (wideHero ? ' tsp--wide' : ''), viewBox: wideHero ? '-690 -20 1710 640' : '0 -140 1000 740', role: 'img', 'aria-label': opts.label || 'Map of cities and the tour drawn so far' });
     var names = ['ghost', 'tree', 'path', 'remove', 'add', 'scan'];
     var layerEls = {}, layers = {};
     names.forEach(function (n) { layerEls[n] = s('g', { class: 'tsp-layer tsp-layer--' + n }); layers[n] = {}; svg.appendChild(layerEls[n]); });
     var gCity = s('g', { class: 'tsp-cities' }), gHud = s('g', { class: 'tsp-hud' });
     svg.appendChild(gCity); svg.appendChild(gHud);
     V.clear(stage); stage.appendChild(svg);
-    var pts = [], cityEls = [], clickFn = null, lastRoles = '';
+    var pts = [], cityEls = [], clickFn = null, lastRoles = '', hudX = 0, hudY = 0;
 
     function key(a, b) { return a < b ? a + '-' + b : b + '-' + a; }
     function pairsOf(list, closed) {
@@ -70,11 +72,28 @@
 
     function setCities(list) {
       pts = list; lastRoles = '';
+      if (wideHero && pts.length) {   // crop the view to the cities: counters column on the left, map on the right, both centred
+        var bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9, HW = 500, ta = stage.clientWidth / stage.clientHeight;
+        pts.forEach(function (p) { bx0 = Math.min(bx0, p.x); bx1 = Math.max(bx1, p.x); by0 = Math.min(by0, p.y); by1 = Math.max(by1, p.y); });
+        bx0 -= 50; bx1 += 50; by0 -= 50; by1 += 50;
+        var VW = Math.max(HW + 40 + (bx1 - bx0), (by1 - by0) * ta), VH = VW / ta, cy = (by0 + by1) / 2;
+        var vx = bx1 - VW + 10;            // right edge of the map sits at the right edge of the view
+        hudX = vx + 24; hudY = cy; svg.setAttribute('viewBox', [vx, cy - VH / 2, VW, VH].map(function (n) { return Math.round(n); }).join(' '));
+      }
+      else if (opts.hero && pts.length) {   // narrow hero: counters above the map, the view cropped to the cities and centred
+        var nx0 = 1e9, nx1 = -1e9, ny0 = 1e9, ny1 = -1e9, nta = stage.clientWidth / stage.clientHeight;
+        pts.forEach(function (p) { nx0 = Math.min(nx0, p.x); nx1 = Math.max(nx1, p.x); ny0 = Math.min(ny0, p.y); ny1 = Math.max(ny1, p.y); });
+        nx0 -= 50; nx1 += 50; ny0 -= 40; ny1 += 40;
+        var CH = 150 + (ny1 - ny0), NW = Math.max(nx1 - nx0, 780, CH * nta), NH = NW / nta;
+        var nvx = (nx0 + nx1) / 2 - NW / 2, nvy = ny0 - 150 - (NH - CH) / 2;
+        hudX = nvx + 20; hudY = ny0 - 108;
+        svg.setAttribute('viewBox', [nvx, nvy, NW, NH].map(function (n) { return Math.round(n); }).join(' '));
+      }
       clearLayers();
       V.clear(gCity); cityEls = [];
       pts.forEach(function (p, i) {
         var g = s('g', { class: 'tsp-city', transform: 'translate(' + p.x + ' ' + p.y + ')', 'data-city': i, tabindex: '0', role: 'button', 'aria-label': 'City ' + A.letter(i) + (opts.hero ? '' : '. Press Enter to remove it.') });
-        var k = opts.hero ? 1.5 : 1;
+        var k = wideHero ? 1.1 : opts.hero ? 1.5 : 1;
         g.appendChild(s('circle', { r: 19 * k, class: 'tsp-start' }));
         g.appendChild(s('circle', { r: 15 * k, class: 'tsp-dot' }));
         g.appendChild(s('text', { class: 'tsp-name', 'text-anchor': 'middle', y: 1 }, A.letter(i)));
@@ -111,7 +130,7 @@
       });
       V.clear(gHud);
       (step.hud || []).forEach(function (row, i) {
-        var t = s('text', { x: 20, y: (opts.hero ? -108 : -100) + i * (opts.hero ? 46 : 36), class: 'tsp-hud-row' },
+        var t = s('text', wideHero ? { x: hudX, y: hudY + (i - ((step.hud || []).length - 1) / 2) * 60, class: 'tsp-hud-row' } : (opts.hero && hudY) ? { x: hudX, y: hudY + i * 50, class: 'tsp-hud-row' } : { x: 20, y: (opts.hero ? -108 : -100) + i * (opts.hero ? 46 : 36), class: 'tsp-hud-row' },
           s('tspan', { class: 'tsp-hud-k' }, row.k + '  '), s('tspan', { class: 'tsp-hud-v' }, String(row.v)));
         gHud.appendChild(t);
       });

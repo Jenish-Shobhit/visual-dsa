@@ -72,7 +72,7 @@
       var cs = getComputedStyle(stage);
       return Math.max(170, stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
     }
-    var view = V.views.tree(stage, { nodeSize: 42, gap: 0.7, height: innerHeight(), describe: false, label: 'A tree balancing itself' });
+    var view = V.views.tree(stage, { nodeSize: 48, gap: 2.4, height: innerHeight(), describe: false, label: 'A tree balancing itself' });
     view.el.setAttribute('aria-hidden', 'true');
     var laps = [
       [10, 20, 30, 40, 50, 60, 70],

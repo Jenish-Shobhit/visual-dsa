@@ -25,10 +25,10 @@
   function heroTeaser() {
     var stage = V.$('#teaser');
     if (!stage) return;
-    var view = stackOf(stage, { capacity: 6, cellSize: 40, cellWidth: 120, label: 'Plates stack animation' });
+    var view = stackOf(stage, { capacity: 4, cellSize: 38, cellWidth: 440, label: 'Plates stack animation' });
     var steps = A().scenarioSteps(ops('A B C D - - E F - - - G'), { intro: false });
-    view.prepare(steps.map(function (st) { return { items: st.items, capacity: 6 }; }));
-    V.teaser(stage, { steps: steps, render: playStack(view, 6), stepMs: 620, holdMs: 1300, staticIndex: 3 });
+    view.prepare(steps.map(function (st) { return { items: st.items, capacity: 4 }; }));
+    V.teaser(stage, { steps: steps, render: playStack(view, 4), stepMs: 620, holdMs: 1300, staticIndex: 3 });
   }
 
   /* ================================================================== the problem: nested unfinished work */

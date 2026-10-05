@@ -11,7 +11,7 @@
   /* ================================================================== hero teaser: pivots glow, values split around them */
   function heroTeaser() {
     var stage = V.$('#teaser');
-    var view = V.views.array(stage, { mode: 'bars', showIndices: false, showValues: false, maxValue: 100, minValue: 0, label: 'Quick sort animation', cellSize: 34 });
+    var view = V.views.array(stage, { mode: 'bars', showIndices: false, showValues: false, maxValue: 100, minValue: 0, label: 'Quick sort animation', cellSize: 58, barHeight: 210 });
     var rng = V.rng(16);
     function data() {
       var st = S().quickLomuto(V.presets.random(11, { min: 12, max: 98, unique: true, rng: rng }), { pivot: 'last' })

@@ -25,7 +25,7 @@
   /* ================================================================== hero teaser */
   L.heroTeaser = function () {
     var stage = V.$('#teaser');
-    var view = L.segView(stage, { compact: true, cellMax: 50, label: 'Segment tree animation' });
+    var view = L.segView(stage, { compact: true, cellMax: 56, nodeH: 32, rowH: 45, label: 'Segment tree animation' });
     var arr = [4, 7, 2, 9, 5, 3, 8, 6];
     var steps = [];
     [[1, 5], [0, 3], [3, 7], [2, 2]].forEach(function (rg) {

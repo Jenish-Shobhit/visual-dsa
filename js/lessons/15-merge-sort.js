@@ -10,10 +10,10 @@
   /* ================================================================== hero teaser: split down, merge up */
   function heroTeaser() {
     var stage = V.$('#teaser');
-    var view = V.views.array(stage, { mode: 'boxes', cellSize: 42, showIndices: false, label: 'Merge sort animation' });
+    var view = V.views.array(stage, { mode: 'boxes', cellSize: 90, showIndices: false, label: 'Merge sort animation' });
     var rng = V.rng(15);
     function data() {
-      var st = M().mergeLevels(V.presets.random(8, { min: 1, max: 9, unique: true, rng: rng })).map(function (x) { return L15.stripLabels(x); });
+      var st = M().mergeLevels(V.presets.random(6, { min: 1, max: 9, unique: true, rng: rng })).map(function (x) { return L15.stripLabels(x); });
       view.reset(); view.prepare(st);
       return st;
     }

@@ -15,7 +15,7 @@
       var cs = getComputedStyle(stage);
       return Math.max(200, stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
     }
-    var view = V.views.tree(stage, { nodeSize: 44, gap: 1, height: innerHeight(), describe: false, label: 'A tree growing and being walked' });
+    var view = V.views.tree(stage, { nodeSize: 50, gap: 2.2, height: innerHeight(), describe: false, label: 'A tree growing and being walked' });
     view.el.setAttribute('aria-hidden', 'true');
     var layer = L.tourLayer(view, tree);
     var steps = A.teaserSteps(tree);

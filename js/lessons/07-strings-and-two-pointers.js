@@ -11,8 +11,8 @@
   /* ================================================================== hero teaser: palindromes lighting up in mirror pairs */
   function heroTeaser() {
     var stage = V.$('#teaser');
-    var view = V.views.array(stage, { mode: 'boxes', cellSize: 76, showIndices: false, label: 'Palindrome teaser', pointerStyle: 'chip' });
-    var words = ['racecar', 'level', 'rotator', 'kayak', 'deified', 'noon'], wi = 0;
+    var view = V.views.array(stage, { mode: 'boxes', cellSize: 88, showIndices: false, label: 'Palindrome teaser', pointerStyle: 'chip' });
+    var words = stage.clientWidth < 520 ? ['level', 'kayak', 'noon', 'civic', 'radar'] : ['racecar', 'level', 'rotator', 'kayak', 'deified', 'noon'], wi = 0;   // shorter words on phones so the boxes stay big
     function data() {
       var w = words[wi++ % words.length];
       var st = A().palindrome(w).map(function (s) { return Object.assign({}, s, { regions: [] }); });

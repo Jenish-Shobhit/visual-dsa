@@ -13,7 +13,7 @@
   /* ================================================================== hero teaser: bars bubbling into order */
   function heroTeaser() {
     var stage = V.$('#teaser');
-    var view = V.views.array(stage, { mode: 'bars', showIndices: false, showValues: false, maxValue: 100, minValue: 0, label: 'Bubble sort animation', cellSize: 34 });
+    var view = V.views.array(stage, { mode: 'bars', showIndices: false, showValues: false, maxValue: 100, minValue: 0, label: 'Bubble sort animation', cellSize: 58, barHeight: 210 });
     var rng = V.rng(14);
     function data() {
       var st = S().bubble(V.presets.random(11, { min: 12, max: 98, rng: rng })).filter(function (s) { return s.kind !== 'pass'; });

@@ -200,9 +200,21 @@
     for (var c = 7; c <= 13; c++) walls.push('8,' + c);
     for (r = 2; r <= 5; r++) walls.push(r + ',11');
     walls.push('3,12', '3,13', '9,5', '10,5', '1,8', '2,8', '5,14', '6,14', '10,10', '10,11');
-    var grid = { rows: R, cols: C, walls: walls };
     var starts = [[5, 2], [10, 13], [1, 14], [6, 8]], lap = 0;
-    var view = V.views.grid(stage, { mode: 'path', cellSize: 30, showValues: false, label: 'BFS wave on a grid' });
+    /* wide stage: size the cells so all 12 rows fit its height, add columns to fill its width and centre the maze in them */
+    var cs0 = getComputedStyle(stage);
+    var iw = stage.clientWidth - parseFloat(cs0.paddingLeft) - parseFloat(cs0.paddingRight);
+    var ih = stage.clientHeight - parseFloat(cs0.paddingTop) - parseFloat(cs0.paddingBottom);
+    var cell = 30;
+    if (iw > 0 && ih > 0 && iw / ih > 1.8) {
+      cell = Math.floor(ih / R) - 1;
+      var C2 = Math.max(C, Math.min(28, Math.floor(iw / cell))), off = Math.floor((C2 - C) / 2);
+      walls = walls.map(function (w) { var q = w.split(','); return q[0] + ',' + (+q[1] + off); });
+      starts = starts.map(function (q) { return [q[0], q[1] + off]; });
+      C = C2;
+    }
+    var grid = { rows: R, cols: C, walls: walls };
+    var view = V.views.grid(stage, { mode: 'path', cellSize: cell, showValues: false, label: 'BFS wave on a grid' });
     function steps() { var st = GS.gridLayers(grid, starts[lap++ % starts.length]); return st; }
     V.teaser(stage, {
       steps: steps(),

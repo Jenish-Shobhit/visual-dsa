@@ -92,9 +92,15 @@
     var ids = 'ABCDEFGHIJK'.split('');
     var edges = [[0, 1], [0, 2], [1, 3], [2, 3], [1, 4], [3, 6], [3, 7], [2, 5], [5, 7], [6, 8], [7, 8], [4, 6], [2, 9], [5, 10], [8, 10]];
     var extra = [[9, 0], [10, 7], [4, 3], [6, 7]];
+    /* fit the 900-wide drawing to the stage's own aspect: y is stretched so the network fills it (no clipping at the rim) */
+    var cs0 = getComputedStyle(stage);
+    var iw = (stage.clientWidth - parseFloat(cs0.paddingLeft) - parseFloat(cs0.paddingRight)) || 700;
+    var ih = (stage.clientHeight - parseFloat(cs0.paddingTop) - parseFloat(cs0.paddingBottom)) || 276;
+    var BH = Math.round(820 * (ih - 82) / (iw - 82)), KY = (BH - 48) / 430;   /* bounds hug the nodes (+ float); the view adds its own radius padding */
+    base = base.map(function (p) { return [p[0], 24 + (p[1] - 70) * KY]; });
     var F = 16, rng = V.rng(9);
     var phase = base.map(function () { return rng() * Math.PI * 2; });
-    var view = V.views.graph(stage, { bounds: { x: 60, y: 20, w: 900, h: 520 }, maxHeight: 360, nodeRadius: 26, minRadius: 13, label: 'A network of eleven dots, floating gently, with messages travelling along its lines' });
+    var view = V.views.graph(stage, { bounds: { x: 104, y: 0, w: 820, h: BH }, maxHeight: ih, nodeRadius: 26, minRadius: 13, label: 'A network of eleven dots, floating gently, with messages travelling along its lines' });
     function frame(f) {
       var t = f / F * Math.PI * 2;
       var pulse = f % edges.length;

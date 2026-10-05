@@ -84,13 +84,18 @@
       steps = steps.concat(r.steps);
       cur = r.words;
     });
-    var view = L.treeView(stage, { nodeSize: 34, label: 'A trie growing as words are inserted' });
+    function innerHeight() {
+      var cs = getComputedStyle(stage);
+      return Math.max(200, stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
+    }
+    var view = L.treeView(stage, { nodeSize: 40, gap: 3, height: innerHeight(), label: 'A trie growing as words are inserted' });
     view.prepare(steps.map(function (st) { return st.tree; }));
     V.teaser(stage, {
       steps: steps,
       render: function (step, ctx) { view.render(step.tree, { duration: ctx.duration }); },
       stepMs: 520, holdMs: 2000, instantWrap: false, staticIndex: steps.length - 1
     });
+    V.onResize(stage, function () { view.setOptions({ height: innerHeight() }); });
   }
 
   /* ================================================================== 2. problem: the scan */

@@ -365,7 +365,10 @@
   function heroTeaser() {
     var stage = V.$('#teaser');
     if (!stage) return;
-    var W = 460, H = 300, N = 16, lap = 0;
+    var cs0 = getComputedStyle(stage);
+    var W = Math.round(stage.clientWidth - parseFloat(cs0.paddingLeft) - parseFloat(cs0.paddingRight)) || 460;
+    var H = Math.round(stage.clientHeight - parseFloat(cs0.paddingTop) - parseFloat(cs0.paddingBottom)) || 300;
+    var narrow = W < 500, N = narrow ? 12 : 16, lap = 0, MX = 46, MY = 42, MIND = narrow ? 46 : 62;   /* the dots fill the stage at its own aspect; margins leave room for the group halos */
     var svg = s('svg', { class: 'uf-hero', viewBox: '0 0 ' + W + ' ' + H, role: 'presentation' });
     stage.appendChild(svg);
     var gHalo = s('g'), gDots = s('g');
@@ -374,16 +377,16 @@
     for (var i = 0; i < N; i++) {
       var hc = s('circle', { class: 'uf-hero-halo', cx: 0, cy: 0, r: 0, opacity: 0 });
       gHalo.appendChild(hc); halos.push(hc);
-      var dc = s('circle', { class: 'uf-hero-dot', r: 9, cx: 0, cy: 0 });
+      var dc = s('circle', { class: 'uf-hero-dot', r: narrow ? 9 : 12, cx: 0, cy: 0 });
       var dg = s('g', null, dc); gDots.appendChild(dg); dots.push({ g: dg, c: dc });
     }
     function scatter(seed) {
       var rng = V.rng(seed), pts = [], guard = 0;
       while (pts.length < N && guard++ < 4000) {
-        var p = [40 + rng() * (W - 80), 40 + rng() * (H - 80)];
-        if (pts.every(function (q) { return Math.hypot(p[0] - q[0], p[1] - q[1]) > 58; })) pts.push(p);
+        var p = [MX + rng() * (W - 2 * MX), MY + rng() * (H - 2 * MY)];
+        if (pts.every(function (q) { return Math.hypot(p[0] - q[0], p[1] - q[1]) > MIND; })) pts.push(p);
       }
-      while (pts.length < N) pts.push([40 + rng() * (W - 80), 40 + rng() * (H - 80)]);
+      while (pts.length < N) pts.push([MX + rng() * (W - 2 * MX), MY + rng() * (H - 2 * MY)]);
       return pts;
     }
     /* Nearest-first merging (single linkage): the same order Kruskal would use. */

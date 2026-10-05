@@ -401,7 +401,7 @@
         snap('compare', { mark: m2, edges: [[pos, c, 'compare']], pointers: [ptr('i', pos, 'key'), ptr('c', c, 'compare')], line: 'cmp', flow: 'down:cmp',
           vars: { i: pos, c: c, 'a[i]': a[pos].value, 'a[c]': a[c].value },
           caption: 'Compare ' + b(a[pos]) + ' with its ' + winWord + ' child ' + b(a[c]) + '. ' +
-            (wins ? fmt(a[c].value) + ' ' + gt + ' ' + fmt(a[pos].value) + ' would sit below the root of its own subtree, which breaks ' + rule + ', so swap.'
+            (wins ? fmt(a[pos].value) + ' sits above ' + fmt(a[c].value) + ', which breaks ' + rule + ', so swap them.'
                   : fmt(a[pos].value) + ' already beats or ties both children, so the rule holds and the sinking stops. Equal values never swap.') });
         if (!wins) {
           snap('settle', { mark: mk(pos, 'key'), pointers: [ptr('i', pos, 'key')], line: 'stop', flow: 'down:done', vars: { i: pos, 'a[i]': a[pos].value },
@@ -881,7 +881,7 @@
             pos--;
             snap('shift', { mark: m2, touched: touchedS.slice(), caption: 'Shift: <b>' + fmt(a[pos + 1].value) + '</b> moves one slot right (cost so far ' + cost + ').' });
           }
-          snap('done', { mark: mk1(pos, 'key'), touched: touchedS, caption: 'Placed. Insert cost ' + cost + ' in total so far: on average about half the array moves.' });
+          snap('done', { mark: mk1(pos, 'key'), touched: touchedS, caption: 'Placed. Insert cost ' + cost + ' in total so far' + (cost <= 2 ? ': the new value already belonged at the end, so nothing had to move.' : ': the further left the value belongs, the more cells have to move.') });
         } else {
           var T = makeTracer({ items: a, kind: 'min', prefix: pre, uid: uidn });
           T.insert(op.value, { id: id, intro: false });

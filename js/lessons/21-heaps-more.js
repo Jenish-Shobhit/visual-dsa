@@ -292,7 +292,7 @@
         var cap;
         if (i === 0) cap = 'The same eight values, stored three ways. Each operation below is applied to all three. Highlighted cells were compared, moved or written by the last operation.';
         else cap = '<span class="l21-op">' + f.label + '</span> Unsorted array: <b>' + f.cost.unsorted + '</b>. Sorted array: <b>' + f.cost.sorted + '</b>. Heap: <b>' + f.cost.heap + '</b>. ' +
-          (f.op.op === 'extract' ? 'Extract is one step for the sorted array, a full scan for the unsorted one, and one path for the heap.' : 'Insert is one step for the unsorted array, a shift of many cells for the sorted one, and one path for the heap.');
+          (f.op.op === 'extract' ? 'Extract is one step for the sorted array, a full scan for the unsorted one, and one path for the heap.' : 'Insert is one step for the unsorted array, ' + (f.cost.sorted > f.cost.unsorted + 1 ? 'a walk and shift of several cells for the sorted one' : 'almost free for the sorted one this time, because ' + (f.op.value !== undefined ? '<b>' + f.op.value + '</b> ' : 'the new value ') + 'already belongs at the end') + ', and one path for the heap.');
         return { frame: f, caption: cap, max: max, index: i };
       });
     }

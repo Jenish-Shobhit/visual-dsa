@@ -215,8 +215,26 @@
   function buildDrawer() {
     drawer = h('dialog', { class: 'drawer', id: 'vdsa-contents', 'aria-labelledby': 'vdsa-contents-title' });
     wireDialog(drawer);
-    drawer.addEventListener('close', function () { if (contentsBtn) contentsBtn.focus({ preventScroll: true }); });
+    drawer.addEventListener('close', function () {
+      if (drawerNavId) { var id = drawerNavId; drawerNavId = null; if (focusHeading(id)) return; }
+      if (shortcutsFromDrawer) return; // the shortcuts dialog is taking over; it hands focus back to Contents when it closes
+      if (contentsBtn) contentsBtn.focus({ preventScroll: true });
+    });
     body.appendChild(drawer);
+  }
+  var drawerNavId = null, shortcutsFromDrawer = false;
+  /* After following an in-page link, put keyboard focus on the heading it points to (not on the trigger or <body>). */
+  function focusHeading(id) {
+    var el = id && doc.getElementById(id);
+    if (!el) return false;
+    if (!el.hasAttribute('tabindex') && !/^(A|BUTTON|INPUT|SELECT|TEXTAREA|SUMMARY)$/.test(el.tagName)) el.setAttribute('tabindex', '-1');
+    el.focus({ preventScroll: true });
+    return doc.activeElement === el;
+  }
+  function hashId(a) {
+    var href = a && a.getAttribute('href') || '';
+    if (href.charAt(0) !== '#' || href.length < 2) return null;
+    try { return decodeURIComponent(href.slice(1)); } catch (_) { return href.slice(1); }
   }
   function renderDrawer() {
     VDSA.clear(drawer);
@@ -242,7 +260,7 @@
     if (tocItems.length) {
       var list = h('ul', { class: 'drawer-toc' });
       tocItems.forEach(function (it) {
-        list.appendChild(h('li', null, h('a', { href: '#' + it.id, class: it.id === activeTocId ? 'is-active' : null, onclick: function () { closeContents(); } }, it.label)));
+        list.appendChild(h('li', null, h('a', { href: '#' + it.id, class: it.id === activeTocId ? 'is-active' : null, onclick: function () { drawerNavId = it.id; closeContents(); } }, it.label)));
       });
       bodyEl.appendChild(h('section', { class: 'drawer__section drawer__section--toc' },
         h('h3', { class: 'drawer__label' }, 'On this page ', h('span', { class: 'score-chip', 'data-quiz-score': '', hidden: true, style: { marginLeft: '6px', height: '22px', fontSize: '12px' } })), list));
@@ -297,7 +315,7 @@
     bodyEl.appendChild(h('section', { class: 'drawer__section drawer__section--more' }, h('h3', { class: 'drawer__label' }, 'Explore more'), more));
 
     drawer.appendChild(h('div', { class: 'drawer__foot' },
-      h('button', { type: 'button', onclick: function () { closeContents(); setTimeout(showShortcuts, 50); } }, svgIcon(ICONS.keyboard), 'Keyboard shortcuts ', h('kbd', null, '?')),
+      h('button', { type: 'button', onclick: function () { shortcutsFromDrawer = true; closeContents(); setTimeout(showShortcuts, 50); } }, svgIcon(ICONS.keyboard), 'Keyboard shortcuts ', h('kbd', null, '?')),
       h('a', { href: VDSA.url('about.html'), style: { color: 'inherit' } }, 'About')
     ));
     return bodyEl;
@@ -321,6 +339,11 @@
     if (!modal) {
       modal = h('dialog', { class: 'modal', 'aria-labelledby': 'vdsa-keys-title' });
       wireDialog(modal);
+      modal.addEventListener('close', function () {
+        if (!shortcutsFromDrawer) return;
+        shortcutsFromDrawer = false;
+        if (contentsBtn) contentsBtn.focus({ preventScroll: true });
+      });
       body.appendChild(modal);
     }
     VDSA.clear(modal);
@@ -423,7 +446,21 @@
     main.insertBefore(aside, main.firstChild);
     main.classList.add('has-toc');
     body.appendChild(backdrop);
-    body.appendChild(fab);
+    // Right after the header (it is position:fixed, so layout is unchanged) so keyboard users reach it early, not after the whole page.
+    if (header && header.parentNode === body) body.insertBefore(fab, header.nextSibling); else body.appendChild(fab);
+    (function () { // slide the floating button away while scrolling down so it never sits over content
+      var lastY = win.pageYOffset || 0, ticking = false;
+      win.addEventListener('scroll', function () {
+        if (ticking) return; ticking = true;
+        win.requestAnimationFrame(function () {
+          ticking = false;
+          var y = win.pageYOffset || 0, dy = y - lastY;
+          if (Math.abs(dy) < 6) return;
+          fab.classList.toggle('is-away', dy > 0 && y > 200);
+          lastY = y;
+        });
+      }, { passive: true });
+    })();
 
     function wide() { return !!wideQuery.matches; }
     function collapsed() { return main.classList.contains('toc-collapsed'); }
@@ -467,7 +504,12 @@
     openBtn.addEventListener('click', function () { setCollapsed(false); });
     fab.addEventListener('click', openPanel);
     backdrop.addEventListener('click', function () { closePanel(false); });
-    list.addEventListener('click', function (e) { if (e.target.closest('a') && !wide()) closePanel(false); });
+    list.addEventListener('click', function (e) {
+      var a = e.target.closest('a');
+      if (!a || wide()) return;
+      closePanel(false);
+      focusHeading(hashId(a));
+    });
     aside.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panelOpen()) { e.stopPropagation(); closePanel(true); } });
     var onChange = function () { body.classList.remove('toc-open'); sync(); };
     if (wideQuery.addEventListener) wideQuery.addEventListener('change', onChange); else if (wideQuery.addListener) wideQuery.addListener(onChange);

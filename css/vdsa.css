@@ -503,7 +503,7 @@ body.toc-open .toc { transform: none; visibility: visible; transition: transform
 }
 body.toc-open .toc-backdrop { opacity: 1; pointer-events: auto; }
 .toc-fab {
-  position: fixed; z-index: 30; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  position: fixed; z-index: 30; right: 12px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   display: inline-flex; align-items: center; gap: 8px;
   height: 42px; padding: 0 16px 0 13px;
   border: 1px solid var(--line); border-radius: 999px;
@@ -515,7 +515,9 @@ body.toc-open .toc-backdrop { opacity: 1; pointer-events: auto; }
 }
 .toc-fab svg { width: 18px; height: 18px; color: var(--unit, var(--accent)); }
 .toc-fab:hover { border-color: var(--line-strong); transform: translateY(-1px); }
-body.toc-open .toc-fab { opacity: 0; pointer-events: none; }
+body.toc-open .toc-fab { opacity: 0; pointer-events: none; visibility: hidden; }
+/* On phones the button slides away while reading downward (shell.js toggles .is-away); it stays reachable on scroll-up and on keyboard focus. */
+@media (max-width: 1279px) { .toc-fab.is-away:not(:focus-visible) { transform: translateY(calc(100% + 32px)); opacity: 0; pointer-events: none; } }
 @media (max-width: 520px) {
   .toc-fab { width: 44px; height: 44px; padding: 0; justify-content: center; }
   .toc-fab__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

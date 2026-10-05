@@ -396,7 +396,7 @@
       }
     },
     {
-      id: 'list', name: 'Reversing a linked list', short: 'Linked list', lesson: '08-linked-lists', unit: 'u2',
+      id: 'list', name: 'Reversing a linked list', short: 'Lists', lesson: '08-linked-lists', unit: 'u2',
       caption: 'One arrow flips per step while prev and curr walk down the list. Nothing is copied.',
       alt: 'Animation: a linked list of four nodes is reversed; each next arrow swings to point backwards while the prev and curr pointers move forward.',
       stepMs: 860, holdMs: 1600, staticIndex: 3,
@@ -409,12 +409,14 @@
     }
   ];
 
+  /* How long the empty first frame of a scene stays up, so the eye can settle before anything moves. */
+  var INTRO_MS = 800;
   function initReel() {
     var root = $('#reel');
     if (!root) return;
     var stage = $('[data-reel-stage]', root), tabsHost = $('[data-reel-tabs]', root);
     var nameEl = $('[data-reel-name]', root), fromEl = $('[data-reel-from]', root), capEl = $('[data-reel-caption]', root);
-    var toggle = $('[data-reel-toggle]', root);
+    var toggle = $('[data-reel-toggle]', root), stepEl = $('[data-reel-step]', root), hero = root.closest('.hh');
     var scenes = SCENES.filter(function (sc) {
       var need = { sort: 'array', bfs: 'grid', avl: 'tree', dijkstra: 'graph', dp: 'grid', list: 'list' }[sc.id];
       return typeof V[need] === 'function';
@@ -430,7 +432,7 @@
       stage.appendChild(sc.el);
       var fill = h('span', { class: 'reel__fill' });
       var tab = h('button', { type: 'button', class: 'reel__tab', 'data-unit': sc.unit, 'aria-label': 'Show ' + sc.name, title: sc.name },
-        h('span', { class: 'reel__tab-label', 'aria-hidden': 'true' }, sc.short),
+        h('span', { class: 'reel__tab-label', 'aria-hidden': 'true' }, h('span', { class: 'reel__tab-text' }, sc.short)),
         h('span', { class: 'reel__track', 'aria-hidden': 'true' }, fill));
       tab.addEventListener('click', function () { go(i, true); });
       tabsHost.appendChild(tab);
@@ -443,7 +445,7 @@
     }
     function sceneTime(i, fromStep) {
       var sc = scenes[i], b = ensure(i), n = b.steps.length;
-      return Math.max(0, n - 1 - (fromStep || 0)) * sc.stepMs + sc.holdMs;
+      return Math.max(0, n - 1 - (fromStep || 0)) * sc.stepMs + sc.holdMs + (fromStep ? 0 : INTRO_MS - sc.stepMs);
     }
     function setFill(i, frac, ms) {
       var f = fills[i];
@@ -459,11 +461,15 @@
       setFill(i, a, 0);
       return a;
     }
+    function showStep() {
+      if (stepEl) stepEl.textContent = 'Step ' + (step + 1) + ' of ' + built[cur].steps.length;
+    }
     function show(i, index) {
       var b = ensure(i), sc = scenes[i];
       var prevScene = cur;
       cur = i; step = index || 0;
       b.render(b.steps[step], 0);
+      showStep();
       scenes.forEach(function (x, k) {
         x.el.classList.toggle('is-active', k === i);
         x.el.setAttribute('aria-hidden', k === i ? 'false' : 'true');
@@ -475,6 +481,7 @@
       });
       setFill(i, reduced() ? 1 : 0, 0);
       root.setAttribute('data-unit', sc.unit);
+      if (hero) hero.setAttribute('data-unit', sc.unit);
       nameEl.textContent = sc.name;
       var l = C.byId(sc.lesson);
       fromEl.textContent = l ? 'Lesson ' + pad2(l.number) : '';
@@ -500,13 +507,14 @@
       if (step < b.steps.length - 1) {
         step++;
         b.render(b.steps[step], Math.round(sc.stepMs * 0.8));
+        showStep();
         schedule(step === b.steps.length - 1 ? sc.holdMs : sc.stepMs);
       } else {
         var nx = (cur + 1) % scenes.length;
         if (nx === 0) fills.forEach(function (f, k) { setFill(k, 0, 0); });
         show(nx, 0);
         startFill();
-        schedule(scenes[nx].stepMs + 250);
+        schedule(INTRO_MS);
       }
     }
     function sync() {
@@ -514,7 +522,7 @@
       if (should && !running) {
         running = true;
         startFill();
-        schedule(scenes[cur].stepMs);
+        schedule(step === 0 ? INTRO_MS : scenes[cur].stepMs);
       } else if (!should && running) {
         running = false;
         clearTimeout(timer); timer = 0;
@@ -525,11 +533,11 @@
       clearTimeout(timer); timer = 0;
       if (reduced()) { show(i, Math.min(scenes[i].staticIndex || 0, ensure(i).steps.length - 1)); return; }
       show(i, 0);
-      if (running) { startFill(); schedule(scenes[i].stepMs + 250); }
+      if (running) { startFill(); schedule(INTRO_MS); }
       else if (fromUser && userPaused) {
         // paused: show a representative frame of the chosen scene instead of its empty first step
         var b = ensure(i), si = Math.min(scenes[i].staticIndex || 0, b.steps.length - 1);
-        step = si; b.render(b.steps[si], 0); setFill(i, si / Math.max(1, b.steps.length - 1), 0);
+        step = si; b.render(b.steps[si], 0); showStep(); setFill(i, si / Math.max(1, b.steps.length - 1), 0);
       }
     }
     function syncToggle() {
@@ -587,7 +595,8 @@
     var bits = [];
     if (inProg) bits.push(inProg + ' in progress');
     bits.push(live === total ? 'every lesson is published' : live + ' of ' + total + ' published so far');
-    var line = h('p', { class: 'jm__sub' }, bits.join(', ') + '.');
+    var txt = bits.join(', ') + '.';
+    var line = h('p', { class: 'jm__sub' }, txt.charAt(0).toUpperCase() + txt.slice(1));
     if (act.lesson) line.appendChild(h('span', null, ' ', h('a', { href: act.href }, act.label)));
     host.appendChild(line);
   }
@@ -597,6 +606,8 @@
     if (!host || !canvas) return;
     mapState.host = host; mapState.canvas = canvas;
     mapState.card = h('div', { class: 'jm-card', 'aria-hidden': 'true' });
+    // the "you are here" pulse only runs while the map is on screen
+    VDSA.onVisible(canvas, function (v) { mapState.visible = v; var sv = $('.jm-svg', canvas); if (sv) sv.classList.toggle('is-idle', !v); }, { threshold: 0.01 });
     renderMap(true);
     VDSA.onResize(canvas, function (r) {
       var w = Math.round(r.width);
@@ -660,8 +671,15 @@
     var FS = 12.5, LH = 15.5, GAP = 22, RST = 13;
     function measure(text, weight) { return vz && vz.textWidth ? vz.textWidth(text, FS, false, weight || 560) : text.length * FS * 0.55; }
     function wrap(text, width, weight) {
-      if (vz && vz.wrap) return vz.wrap(text, width, FS, function (t) { return measure(t, weight); }).slice(0, 3);
-      return [text];
+      if (!(vz && vz.wrap)) return [text];
+      var ls = vz.wrap(text, width, FS, function (t) { return measure(t, weight); });
+      // never strand a lone roman numeral ("Dynamic programming / I"): pull the previous word down with it
+      var last = ls.length - 1;
+      if (last > 0 && /^[IVX]+$/.test(ls[last])) {
+        var parts = ls[last - 1].split(' ');
+        if (parts.length > 1) { ls[last] = parts.pop() + ' ' + ls[last]; ls[last - 1] = parts.join(' '); }
+      }
+      return ls.slice(0, 3);
     }
     var S_MIN = 80;
     // First pass with a guessed turn radius, then refine once label heights are known.
@@ -744,7 +762,8 @@
       for (var i = Math.max(1, a); i <= b; i++) {
         var n = nodes[i];
         var soft = n.kind === 'lesson' && !isLive(n.lesson);
-        gLine.appendChild(s('path', { class: 'jm-line' + (soft ? ' is-soft' : ''), 'data-unit': u.id, d: 'M' + nodes[i - 1].x.toFixed(1) + ' ' + nodes[i - 1].y.toFixed(1) + seg(i) }));
+        var doneSeg = n.kind === 'lesson' && p.completed.indexOf(n.lesson.id) !== -1;
+        gLine.appendChild(s('path', { class: 'jm-line' + (soft ? ' is-soft' : '') + (doneSeg ? ' is-done' : ''), 'data-unit': u.id, d: 'M' + nodes[i - 1].x.toFixed(1) + ' ' + nodes[i - 1].y.toFixed(1) + seg(i) }));
       }
     });
 
@@ -793,6 +812,7 @@
 
     canvas.appendChild(svg);
     canvas.appendChild(mapState.card);
+    svg.classList.toggle('is-idle', !mapState.visible);
     hideCard();
     wireMap(svg);
   }
@@ -1062,7 +1082,8 @@
       var a = h('a', { class: 'labcard', href: url(lab.href), 'data-lab': lab.id },
         thumb,
         h('span', { class: 'labcard__body' },
-          h('span', { class: 'labcard__title' }, lab.title),
+          h('span', { class: 'labcard__title' }, lab.title,
+            s('svg', { class: 'labcard__go', viewBox: '0 0 24 24', 'aria-hidden': 'true', focusable: 'false', fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s('path', { d: 'M5 12h14M13 6l6 6-6 6' }))),
           h('span', { class: 'labcard__blurb' }, lab.blurb)));
       host.appendChild(h('li', null, a));
       cards.push({ lab: lab, a: a, thumb: thumb, loop: null });

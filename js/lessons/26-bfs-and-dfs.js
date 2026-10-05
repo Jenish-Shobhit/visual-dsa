@@ -391,7 +391,7 @@
     // only vertices are targets: keep edges out of the tab order
     [gB, gD].forEach(function (g) { V.$$('.vz-hit', g.el).forEach(function (e) { e.removeAttribute('tabindex'); e.setAttribute('aria-hidden', 'true'); e.style.pointerEvents = 'none'; }); });
     var foot = fig.querySelector('.fig__foot');
-    foot.insertBefore(h('span', null, 'Click any vertex to race to it instead. '), foot.firstChild);
+    if (foot && !/Click any vertex/.test(foot.textContent)) foot.insertBefore(h('span', null, 'Click any vertex to race to it instead. '), foot.firstChild);
   }
 
   /* ================================================================== three states (mini row) */

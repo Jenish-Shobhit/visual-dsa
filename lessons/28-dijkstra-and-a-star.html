@@ -54,7 +54,7 @@
     <!-- ============================================================ THE PROBLEM -->
     <section id="problem">
       <h2>The problem</h2>
-      <p>Your phone finds the fastest way home. The map is a graph, and every road carries a number: the minutes it takes to drive. BFS from the last lesson counts <em>roads</em>, not <em>minutes</em>. Watch it choose.</p>
+      <p>Your phone finds the fastest way home. The map is a graph, and every road carries a number: the minutes it takes to drive. BFS from <a href="26-bfs-and-dfs.html">lesson 26</a> counts <em>roads</em>, not <em>minutes</em>. Watch it choose.</p>
       <figure class="fig wide" id="fig-hops">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Fewest roads is not the fastest route</h3></div>
@@ -166,7 +166,7 @@
         <figcaption class="fig__alt">Text alternative: Dijkstra from S settles B at 2, then A at 5 (through B, cheaper than the direct edge of 7), then C at 6, D at 8 and T at 11. The shortest route is S, B, A, C, D, T.</figcaption>
       </figure>
       <p>Each vertex remembers its <strong>parent</strong>, the neighbour that gave it its best distance. The parent edges form a tree, the <strong>shortest-path tree</strong>, and following parents back from any vertex spells out its shortest route in reverse.</p>
-      <p>One detail keeps the queue simple. A binary heap cannot cheaply lower an entry that is already inside it. So when a shorter route is found, Dijkstra pushes a <em>new</em> entry and leaves the old one behind. The leftover is <strong>stale</strong>: when it finally reaches the front, its distance is larger than the vertex’s current one, and it is thrown away. This is called lazy deletion.</p>
+      <p>One detail keeps the queue simple. A plain heap does not know where each entry sits, so lowering one needs a position map (<a href="21-heaps.html">lesson 21</a>’s decrease-key). Simpler: push a <em>new</em> entry and leave the old one behind. The leftover is <strong>stale</strong>: when it finally reaches the front, its distance is larger than the vertex’s current one, and it is thrown away. This is called lazy deletion.</p>
       <figure class="fig" id="fig-lazy">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Stale entries: lazy deletion</h3></div>
@@ -360,7 +360,7 @@
     <!-- ============================================================ COST -->
     <section id="cost">
       <h2>What it costs</h2>
-      <p>With a binary heap, each edge relaxation may push one entry, so at most E entries enter the queue. Each push and each pop costs O(log V), and every vertex is expanded once.</p>
+      <p>With a binary heap, each edge relaxation may push one entry, so at most E + 1 entries enter the queue (the start, plus one per successful relaxation). Each push and each pop costs O(log V), and every vertex is expanded once.</p>
       <div class="table-wrap">
         <table class="table">
           <thead><tr><th scope="col">Queue</th><th scope="col">Time (V vertices, E edges)</th><th scope="col">Best when</th></tr></thead>
@@ -400,7 +400,7 @@
       </details>
       <details class="accordion">
         <summary>Why does A* ever expand more than Dijkstra?</summary>
-        <div class="accordion__body"><p>With a consistent, admissible h it never expands a cell that Dijkstra would skip, so it does at most as much work (ties aside). A poor guess, such as h = 0, saves nothing. An inconsistent guess can force A* to reopen cells and spend extra time.</p></div>
+        <div class="accordion__body"><p>An inconsistent h can force A* to reopen cells and spend extra time. With a consistent, admissible h it never expands a cell that Dijkstra would skip, so it does at most as much work (ties aside). A poor guess, such as h = 0, saves nothing.</p></div>
       </details>
     </section>
 
@@ -416,7 +416,7 @@
           <button data-tab="multi">Many sources</button>
         </div>
         <div data-tab-panel="early"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="early"></div><figcaption>Dijkstra stops the moment T is settled: the rest of the map is never touched.</figcaption></figure><div><p>When you need one destination, stop as soon as it leaves the queue. Its distance is final at that moment, so everything after is wasted work. This is the <em>found</em> step in the lab.</p><pre data-code-block="early"></pre></div></div></div>
-        <div data-tab-panel="bidir"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="bidir"></div><figcaption>Two small circles cover less area than one big circle.</figcaption></figure><div><p>Run one search from the start and one backwards from the goal, and stop when they meet. Each search only has to reach about half the distance, and the area it covers grows with the square of the radius, so the work drops sharply.</p><pre data-code-block="bidir"></pre></div></div></div>
+        <div data-tab-panel="bidir"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="bidir"></div><figcaption>Two small circles cover less area than one big circle.</figcaption></figure><div><p>Run one search from the start and one backwards from the goal, and do not stop at the first meeting. Keep a best meeting path found so far, and stop once the top of the forward queue plus the top of the backward queue is at least that best. Each search only has to reach about half the distance, and the area it covers grows with the square of the radius, so the work drops sharply.</p><pre data-code-block="bidir"></pre></div></div></div>
         <div data-tab-panel="zeroone"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="zeroone"></div><figcaption>Weights 0 go to the front of a deque, weights 1 to the back.</figcaption></figure><div><p>When every weight is 0 or 1, a double-ended queue replaces the heap. Push a weight-0 neighbour on the front and a weight-1 neighbour on the back: the deque stays sorted by distance and the whole search runs in O(V + E).</p><pre data-code-block="zeroone"></pre></div></div></div>
         <div data-tab-panel="multi"><div class="split"><figure class="mini"><div class="mini__stage" data-mini="multi"></div><figcaption>Two sources: each town shows the distance to the nearest one.</figcaption></figure><div><p>Start with several vertices in the queue, all at distance 0. One run gives every vertex its distance to the <em>nearest</em> source: the closest fire station, the closest charging point.</p><pre data-code-block="multi"></pre></div></div></div>
       </div>
@@ -465,7 +465,7 @@
           <p>Edsger Dijkstra designed his algorithm in about twenty minutes in 1956, sitting on a café terrace in Amsterdam with his fiancée, without pencil or paper. He wanted a demonstration for the new ARMAC computer that anyone could follow: the shortest route between Dutch cities. He published it in 1959, together with a minimum-spanning-tree method, in a three-page note.</p>
           <p>A* came in 1968, from Hart, Nilsson and Raphael at SRI, to plan paths for Shakey, a robot that decided its own moves. In 2025 a team showed that Dijkstra’s sorting barrier for directed graphs can be broken, running in time O(m log<sup>2/3</sup> n).</p>
         </div>
-        <p class="history__source">Sources: E. W. Dijkstra, “A Note on Two Problems in Connexion with Graphs”, <em>Numerische Mathematik</em> 1 (1959); P. Hart, N. Nilsson, B. Raphael, <em>IEEE Trans. SSC</em> 4(2) (1968); R. Duan et al., STOC 2025. See docs/research/HISTORY.md.</p>
+        <p class="history__source">Sources: E. W. Dijkstra, “A Note on Two Problems in Connexion with Graphs”, <em>Numerische Mathematik</em> 1 (1959); P. Hart, N. Nilsson, B. Raphael, <em>IEEE Trans. SSC</em> 4(2) (1968); R. Duan et al., STOC 2025.</p>
       </div>
     </section>
 

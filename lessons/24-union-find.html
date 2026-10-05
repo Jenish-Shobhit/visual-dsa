@@ -347,12 +347,12 @@
           <tbody>
             <tr><th scope="row">Naive linking</th><td>Chain: n − 1 levels</td><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="n2">O(m·n)</span></td></tr>
             <tr><th scope="row">Union by rank</th><td>At most log₂ n</td><td class="num"><span class="big-o" data-o="logn"></span></td><td class="num"><span class="big-o" data-o="nlogn">O(m log n)</span></td></tr>
-            <tr><th scope="row">Path compression only</th><td>Can be tall for a while</td><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="nlogn">O(m log n) amortised</span></td></tr>
-            <tr><th scope="row">Rank + compression</th><td>Very flat</td><td class="num"><span class="big-o" data-o="logn"></span></td><td class="num"><span class="big-o" data-o="1">O(m·α(n)) amortised</span></td></tr>
+            <tr><th scope="row">Path compression only</th><td>Can be tall for a while</td><td class="num"><span class="big-o" data-o="n"></span></td><td class="num"><span class="big-o" data-o="nlogn">O(m log n) amortized</span></td></tr>
+            <tr><th scope="row">Rank + compression</th><td>Very flat</td><td class="num"><span class="big-o" data-o="logn"></span></td><td class="num"><span class="big-o" data-o="1">O(m·α(n)) amortized</span></td></tr>
           </tbody>
         </table>
       </div>
-      <p>The last row is the headline: <strong>O(m·α(n))</strong> for <em>m</em> operations, where α is the <strong>inverse Ackermann function</strong>. It grows so slowly that α(n) is at most 4 for any number of elements you could ever store. Robert Tarjan proved in 1975 that this is exactly the right bound, and in 1989 Fredman and Saks proved that no such structure can beat it.</p>
+      <p>The last row is the headline: <strong>O(m·α(n))</strong> for <em>m</em> operations, where α is the <strong>inverse Ackermann function</strong>. It grows so slowly that α(n) is at most 4 for any number of elements you could ever store. Robert Tarjan proved in 1975 that this algorithm achieves O(m·α(n)) and that no better bound holds for it; in 1989 Fredman and Saks proved that no structure can beat it in the cell-probe model.</p>
       <figure class="fig wide" id="fig-alpha">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">α(n) next to log₂ n</h3></div>
@@ -397,7 +397,7 @@
         <p class="callout__title">Backwash</p>
         <p>Once the grid percolates, BOTTOM is connected to every open site in the last row. If “is this site full of water?” asked the same structure, every dry bottom site would suddenly look wet. Use a second structure without the BOTTOM node to answer that question; the picture above does.</p>
       </aside>
-      <p>Repeat the experiment many times on a bigger grid. The chance of percolating jumps from almost 0 to almost 1 in a narrow band around 59 % open sites, a real phase transition, discovered with exactly this structure.</p>
+      <p>Repeat the experiment many times on a bigger grid. The chance of percolating jumps from almost 0 to almost 1 in a narrow band around 59 % open sites, a real phase transition, which physicists measure with exactly this structure.</p>
       <figure class="fig wide" id="fig-perc-curve">
         <header class="fig__head">
           <div class="fig__titles"><span class="fig__kicker"></span><h3 class="fig__title">Chance of percolating against the fraction of open sites</h3></div>
@@ -477,7 +477,7 @@
       <div class="summary wide" id="summary-card">
         <div class="summary__head">
           <div><p class="summary__kicker">Cheat sheet</p><p class="summary__title">Union-find</p></div>
-          <div class="cluster"><span class="big-o big-o--lg" data-o="1" title="amortised"></span><span class="chip chip--sm">O(m·α(n)) with both tricks</span><span class="chip chip--sm">O(n) space</span></div>
+          <div class="cluster"><span class="big-o big-o--lg" data-o="1" title="amortized"></span><span class="chip chip--sm">O(m·α(n)) with both tricks</span><span class="chip chip--sm">O(n) space</span></div>
         </div>
         <div class="summary__grid"></div>
       </div>
@@ -490,7 +490,7 @@
         <div class="history__year">1964<small>first published</small></div>
         <p class="history__people">Bernard Galler &amp; Michael Fischer<span>“An improved equivalence algorithm”</span></p>
         <div class="history__body">
-          <p>Union-find was invented to compile FORTRAN. Its EQUIVALENCE statement lets several names share one storage location, and in 1964 Galler and Fischer tracked the groups of names as trees of parent pointers. In 1975 Robert Tarjan proved that with union by rank and path compression each operation costs O(α(n)), a function that stays at 4 or below for any input you could ever store.</p>
+          <p>Union-find was invented to compile FORTRAN. Its EQUIVALENCE statement lets several names share one storage location, and in 1964 Galler and Fischer tracked the groups of names as trees of parent pointers. In 1975 Robert Tarjan proved that with union by rank and path compression each operation costs amortized O(α(n)), a function that stays at 4 or below for any input you could ever store.</p>
         </div>
         <p class="history__source">Source: B. A. Galler and M. J. Fischer, <em>Communications of the ACM</em> 7(5), 1964; R. E. Tarjan, “Efficiency of a good but not linear set union algorithm”, <em>Journal of the ACM</em> 22(2), 1975.</p>
       </div>

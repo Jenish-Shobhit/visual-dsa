@@ -403,7 +403,7 @@
         'A find climbs one pointer per level, and the tree can still have several levels, so it is not constant.',
         'Right. A root of rank r covers at least 2<sup>r</sup> elements, so ranks (and heights) never exceed log₂ n. The balanced-merges workload reaches it exactly.',
         'That is the naive structure. Rank exists to stop chains from forming.',
-        'α(n) is the amortised cost when you use both rank and path compression. Rank alone only gives log n for one find.'
+        'α(n) is the amortized cost when you use both rank and path compression. Rank alone only gives log n for one find.'
       ]
     });
     // click on the forest

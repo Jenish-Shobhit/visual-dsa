@@ -173,7 +173,7 @@
 
     var steps = [
       { m: 0, deg: false, odd: false, caption: 'Königsberg in 1735: a river, two islands, four separate pieces of land and <b>seven bridges</b>. Can you walk a route that crosses every bridge exactly once? Citizens tried for years and always failed.' },
-      { m: 1, deg: false, odd: false, caption: 'Leonhard Euler threw away everything that does not matter: shapes, sizes, distances. Each piece of land becomes a <b>vertex</b> (a dot). Each bridge becomes an <b>edge</b> (a line). Two islands linked by two bridges get two parallel lines.' },
+      { m: 1, deg: false, odd: false, caption: 'Leonhard Euler threw away everything that does not matter: shapes, sizes, distances. Each piece of land becomes a <b>vertex</b> (a dot). Each bridge becomes an <b>edge</b> (a line). Two pieces of land linked by two bridges get two parallel lines.' },
       { m: 1, deg: true, odd: false, caption: 'Count the edges touching each vertex: its <b>degree</b>. The island A has five bridges, and B, C and D have three each. Notice that all four numbers are odd.' },
       { m: 1, deg: true, odd: true, caption: 'A walk that crosses every bridge once passes <em>through</em> most vertices: it enters on one bridge and leaves on another, using bridges in pairs. So only the start and the finish can have an odd degree. Königsberg has <b>four</b> odd vertices, so no such walk exists.' }
     ];

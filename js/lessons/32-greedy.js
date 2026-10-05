@@ -215,12 +215,12 @@
     var spec = {
       nodes: [
         { id: 'start', type: 'start', text: 'A problem', col: 0, row: 0 },
-        { id: 'd1', type: 'decision', text: 'Locally best pick is part of some optimal answer?', col: 0, row: 1, maxWidth: 200 },
-        { id: 'd2', type: 'decision', text: 'What is left is the same problem, smaller?', col: 0, row: 2, maxWidth: 200 },
-        { id: 'd3', type: 'decision', text: 'Can you prove it? (exchange, staying ahead, matroid)', col: 0, row: 3, maxWidth: 200 },
-        { id: 'safe', type: 'end', text: 'Greedy is safe: sort by the rule, commit, never look back', col: 0, row: 4, maxWidth: 220 },
-        { id: 'fail', type: 'end', text: 'Greedy can fail: use dynamic programming or search', col: 1, row: 1.5, maxWidth: 190 },
-        { id: 'unproven', type: 'process', text: 'Unproven: hunt for a counterexample on tiny inputs', col: 1, row: 3, maxWidth: 190 }
+        { id: 'd1', type: 'decision', text: 'Locally best pick is part of some optimal answer?', col: 0, row: 1, maxWidth: 200, narrow: { maxWidth: 76 } },
+        { id: 'd2', type: 'decision', text: 'What is left is the same problem, smaller?', col: 0, row: 2, maxWidth: 200, narrow: { maxWidth: 76 } },
+        { id: 'd3', type: 'decision', text: 'Can you prove it? (exchange, staying ahead, matroid)', col: 0, row: 3, maxWidth: 200, narrow: { maxWidth: 76 } },
+        { id: 'safe', type: 'end', text: 'Greedy is safe: sort by the rule, commit, never look back', col: 0, row: 4, maxWidth: 220, narrow: { maxWidth: 76, text: 'Greedy is safe: sort, commit' } },
+        { id: 'fail', type: 'end', text: 'Greedy can fail: use dynamic programming or search', col: 1, row: 1.5, maxWidth: 190, narrow: { maxWidth: 66, text: 'Greedy can fail: try DP' } },
+        { id: 'unproven', type: 'process', text: 'Unproven: hunt for a counterexample on tiny inputs', col: 1, row: 3, maxWidth: 190, narrow: { maxWidth: 66, text: 'Unproven: hunt for a counterexample' } }
       ],
       edges: [
         { from: 'start', to: 'd1' }, { from: 'd1', to: 'd2', label: 'yes' }, { from: 'd1', to: 'fail', label: 'no' },
@@ -389,7 +389,7 @@
 
   function codeBlocks() {
     var t = $('[data-code-block="template"]');
-    if (t) V.codeBlock(t, ['function greedy(candidates, key, fits) {', '  const chosen = [];', '  for (const c of [...candidates].sort(key)) {   // best-looking first', '    if (fits(chosen, c)) chosen.push(c);          // commit; never remove', '  }', '  return chosen;', '}'].join('\n'), 'js');
+    if (t) V.codeBlock(t, ['function greedy(candidates, key, fits) {', '  const chosen = [];', '  // best-looking first', '  for (const c of [...candidates].sort(key)) {', '    // commit; never remove', '    if (fits(chosen, c)) chosen.push(c);', '  }', '  return chosen;', '}'].join('\n'), 'js');
   }
 
   V.ready(function () {

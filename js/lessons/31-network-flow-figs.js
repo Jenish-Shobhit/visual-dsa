@@ -35,7 +35,7 @@
   function greedyFigure(fig) {
     var net = L.DIAMOND;
     var steps = greedySteps();
-    var pair = L.pair(fig, net, { maxHeight: 320, leftLabel: 'Pipes: flow over capacity', rightLabel: 'Residual graph: room left and reverse arcs' });
+    var pair = L.pair(fig, net, { maxHeight: 340, leftLabel: 'Pipes: flow over capacity', rightLabel: 'Residual graph: room left and reverse arcs' });
     L.legend(fig.querySelector('[data-legend]'), [L.LEG.empty, L.LEG.flow, L.LEG.full, L.LEG.path, L.LEG.reverse]);
     var player = V.player({
       root: fig, steps: steps, render: function (step, ctx) { pair.render(step, ctx); },
@@ -142,15 +142,17 @@
       if (i === 0) o.caption = 'The last augmentation is done and the total is <b>' + st.value + '</b>. Is there another route? To find out, run the same search once more, in the residual graph on the right.';
       return o;
     });
-    var pair = L.pair(fig, net, { maxHeight: 320, leftLabel: 'Pipes at the end', rightLabel: 'Final residual graph' });
+    var pair = L.pair(fig, net, { maxHeight: 340, leftLabel: 'Pipes at the end', rightLabel: 'Final residual graph' });
     L.legend(fig.querySelector('[data-legend]'), [L.LEG.queued, L.LEG.visited, L.LEG.current, L.LEG.cut, L.LEG.full]);
     var eq = fig.querySelector('[data-eq]');
+    function eqText(step) { return '<span>Cut capacity</span> <b>' + step.cut.caps.join(' + ') + ' = ' + step.cut.value + '</b> <span>=</span> <span>max flow</span> <b>' + step.value + '</b>'; }
+    steps.forEach(function (s) { if (s.kind === 'cut') eq.innerHTML = eqText(s); });   // reserve the banner's height from the first step
     var player = V.player({
       root: fig, steps: steps,
       render: function (step, ctx) {
         pair.render(step, ctx, { levels: true });
         if (step.kind === 'cut') {
-          eq.innerHTML = '<span>Cut capacity</span> <b>' + step.cut.caps.join(' + ') + ' = ' + step.cut.value + '</b> <span>=</span> <span>max flow</span> <b>' + step.value + '</b>';
+          eq.innerHTML = eqText(step);
           eq.classList.add('is-on');
         } else { eq.classList.remove('is-on'); }
       },
@@ -168,12 +170,13 @@
     var fin = L.last(res), maxV = fin.value;
     var minCut = fin.cut;
     var total = N.edges.reduce(function (a, e) { return a + e.cap; }, 0);
-    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: { w: 1000, h: 600 }, maxHeight: 400, label: 'Cut explorer: click a vertex to move it between the two sides', nodeRadius: 24 });
+    var view = V.views.graph(fig.querySelector('[data-stage]'), { directed: true, bounds: { w: 1000, h: 600 }, maxHeight: 440, label: 'Cut explorer: click a vertex to move it between the two sides', nodeRadius: 24 });
     var inS = {};
     inS[N.source] = true;
     var best = Infinity;
     var read = fig.querySelector('[data-read]'), meterFill = fig.querySelector('[data-fill]'), meterMark = fig.querySelector('[data-mark]'), bestEl = fig.querySelector('[data-best]');
     meterMark.style.left = (maxV / total * 100) + '%';
+    if (maxV / total < 0.3) meterMark.classList.add('is-lo'); else if (maxV / total > 0.7) meterMark.classList.add('is-hi');
     L.legend(fig.querySelector('[data-legend]'), [L.LEG.side, { state: 'default', shape: 'outline', label: 'Sink side T' }, L.LEG.cut, { state: 'muted', shape: 'line', label: 'Edge back into S (does not count)' }]);
     function render(ms) {
       var S = N.ids.filter(function (id) { return inS[id]; });
@@ -182,7 +185,7 @@
       var val = caps.reduce(function (a, b) { return a + b; }, 0);
       var st = { fl: fin.fl, states: {}, kind: 'x', cut: null };
       N.ids.forEach(function (id) { st.states[id] = inS[id] ? 'frontier' : 'default'; });
-      var gs = L.flowState(net, st, {});
+      var gs = L.flowState(net, st, { spread: true });
       gs.nodes.forEach(function (n) { if (n.id === N.sink) n.state = 'key'; });
       gs.edges.forEach(function (e) { if (edgesCut[e.id] === 'cut') e.state = 'error'; else if (edgesCut[e.id] === 'back') e.state = 'muted'; });
       view.render(gs, { duration: ms });
